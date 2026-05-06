@@ -1,0 +1,600 @@
+# Translation of Plugins - GLS Shipping for WooCommerce - Stable (latest release) in Hungarian
+# This file is distributed under the same license as the Plugins - GLS Shipping for WooCommerce - Stable (latest release) package.
+msgid ""
+msgstr ""
+"PO-Revision-Date: 2025-04-23 15:04:03+0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: GlotPress/4.0.3\n"
+"Language: hu\n"
+"Project-Id-Version: Plugins - GLS Shipping for WooCommerce - Stable (latest release)\n"
+
+#: includes/methods/class-gls-shipping-method-parcel-locker.php:53
+#: includes/methods/class-gls-shipping-method-parcel-shop.php:53
+#: includes/methods/class-gls-shipping-method.php:65
+msgid "Enable this shipping globally."
+msgstr "Engedélyezze ezt a szállítási módot globálisan."
+
+#: includes/methods/class-gls-shipping-method-parcel-locker-zones.php:83
+#: includes/methods/class-gls-shipping-method-parcel-locker.php:82
+#: includes/methods/class-gls-shipping-method-parcel-shop-zones.php:80
+#: includes/methods/class-gls-shipping-method-parcel-shop.php:82
+#: includes/methods/class-gls-shipping-method-zones.php:80
+#: includes/methods/class-gls-shipping-method.php:94
+msgid "Cart total amount above which shipping will be free. Set to 0 to disable."
+msgstr "A kosár végösszege, amely felett a szállítás ingyenes lesz. Állítsa 0-ra a letiltáshoz."
+
+#: includes/methods/class-gls-shipping-method-parcel-locker-zones.php:81
+#: includes/methods/class-gls-shipping-method-parcel-locker.php:80
+#: includes/methods/class-gls-shipping-method-parcel-shop-zones.php:78
+#: includes/methods/class-gls-shipping-method-parcel-shop.php:80
+#: includes/methods/class-gls-shipping-method-zones.php:78
+#: includes/methods/class-gls-shipping-method.php:92
+msgid "Free Shipping Threshold"
+msgstr "Ingyenes szállítási küszöbérték"
+
+#. translators: %s: weight unit (e.g. kg, lbs)
+#: includes/methods/class-gls-shipping-method-parcel-locker-zones.php:72
+#: includes/methods/class-gls-shipping-method-parcel-locker.php:73
+#: includes/methods/class-gls-shipping-method-parcel-shop-zones.php:71
+#: includes/methods/class-gls-shipping-method-parcel-shop.php:73
+#: includes/methods/class-gls-shipping-method-zones.php:71
+#: includes/methods/class-gls-shipping-method.php:85
+msgid "Optional: Enter weight based rates (one per line). Format: max_weight|cost. Example: 1|100 means up to 1 %s costs 100. Leave empty to use default price."
+msgstr "Opcionális: Adja meg a súly alapú díjszabást (soronként egyet). Formátum: max_súly|költség. Példa: 1|100 azt jelenti, hogy 1 %s súlyig 100-ba kerül. Hagyja üresen az alapértelmezett ár használatához."
+
+#: includes/methods/class-gls-shipping-method-parcel-locker-zones.php:68
+#: includes/methods/class-gls-shipping-method-parcel-locker.php:70
+#: includes/methods/class-gls-shipping-method-parcel-shop-zones.php:68
+#: includes/methods/class-gls-shipping-method-parcel-shop.php:70
+#: includes/methods/class-gls-shipping-method-zones.php:68
+#: includes/methods/class-gls-shipping-method.php:82
+msgid "Weight Based Rates: max_weight|cost"
+msgstr "Súly alapú díjszabás: max_súly|költség"
+
+#: includes/methods/class-gls-shipping-method-parcel-locker-zones.php:57
+#: includes/methods/class-gls-shipping-method-parcel-shop-zones.php:57
+#: includes/methods/class-gls-shipping-method-zones.php:57
+msgid "Title to be displayed on site"
+msgstr "Az oldalon megjelenítendő cím"
+
+#: includes/admin/class-gls-shipping-order.php:192
+msgid "Regenerate Shipping Label"
+msgstr "Újra generálja a szállítási címkét."
+
+#: includes/admin/class-gls-shipping-order.php:149
+#: includes/admin/class-gls-shipping-order.php:213
+msgid "Number of Packages:"
+msgstr "Csomagok száma:"
+
+#: includes/admin/class-gls-shipping-order.php:104
+msgid "GLS Tracking Numbers:"
+msgstr "GLS nyomkövetési számok:"
+
+#: includes/admin/class-gls-shipping-bulk.php:392
+msgid "An error occurred while generating the GLS labels PDF."
+msgstr "Hiba történt a GLS címkék PDF generálása közben."
+
+#. translators: %s: URL to download the PDF file
+#: includes/admin/class-gls-shipping-bulk.php:382
+msgid "<br><a href=\"%s\" target=\"_blank\">Click here to download the PDF</a>"
+msgstr "<br><a href=\"%s\" target=\"_blank\">Kattintson ide a PDF letöltéséhez</a>"
+
+#. translators: %s: comma-separated list of order IDs that failed
+#: includes/admin/class-gls-shipping-bulk.php:317
+#: includes/admin/class-gls-shipping-bulk.php:374
+msgid "Failed order IDs: %s"
+msgstr "Sikertelen rendelési azonosítók: %s"
+
+#. translators: %s: number of failed labels
+#: includes/admin/class-gls-shipping-bulk.php:306
+msgid "%s label failed to generate."
+msgid_plural "%s labels failed to generate."
+msgstr[0] "%s címke generálása sikertelen."
+msgstr[1] "%s címkék generálása sikertelen."
+
+#. translators: %s: number of generated labels
+#: includes/admin/class-gls-shipping-bulk.php:293
+msgid "%s GLS label was successfully generated."
+msgid_plural "%s GLS labels were successfully generated."
+msgstr[0] "%s GLS címke sikeresen generálva."
+msgstr[1] "%s GLS címkék sikeresen generálva."
+
+#: includes/admin/class-gls-shipping-bulk.php:81
+msgid "Bulk Print GLS Labels"
+msgstr "GLS címkék tömeges nyomtatása"
+
+#: includes/admin/class-gls-shipping-bulk.php:80
+msgid "Bulk Generate GLS Labels"
+msgstr "GLS címkék tömeges generálása"
+
+#: includes/admin/class-gls-shipping-bulk.php:70
+msgid "Generate GLS Label"
+msgstr "GLS címke generálása"
+
+#: includes/admin/class-gls-shipping-bulk.php:63
+msgid "Download GLS Label"
+msgstr "GLS címke letöltése"
+
+#. translators: %s: number of failed labels
+#: includes/admin/class-gls-shipping-bulk.php:363
+msgid "%s label failed to generate. "
+msgid_plural "%s labels failed to generate. "
+msgstr[0] "%s címke generálása sikertelen. "
+msgstr[1] "%s címke generálása sikertelen. "
+
+#. translators: %s: number of orders processed
+#: includes/admin/class-gls-shipping-bulk.php:350
+msgid "GLS label for %s order has been generated. "
+msgid_plural "GLS labels for %s orders have been generated. "
+msgstr[0] "A(z) %s rendeléshez tartozó GLS címke elkészült. "
+msgstr[1] "A(z) %s rendeléshez tartozó GLS címkék elkészültek. "
+
+#: includes/methods/class-gls-shipping-method.php:225
+msgid "Select the Printer Type."
+msgstr "Válassza ki a nyomtató típusát."
+
+#: includes/methods/class-gls-shipping-method.php:223
+msgid "Type of Printer"
+msgstr "Nyomtató típusa"
+
+#: includes/methods/class-gls-shipping-method.php:213
+msgid "Select the Print Position."
+msgstr "Válassza ki a nyomtatási pozíciót."
+
+#: includes/methods/class-gls-shipping-method.php:211
+msgid "Print Position"
+msgstr "Nyomtatási pozíció"
+
+#: includes/methods/class-gls-shipping-method.php:192
+msgid "Only in Serbia! REQUIRED"
+msgstr "Csak Szerbiában! KÖTELEZŐ"
+
+#: includes/methods/class-gls-shipping-method.php:190
+msgid "Sender Identity Card Number. Required for Serbia."
+msgstr "Feladó személyazonosító igazolványszáma. Szerbiában kötelező."
+
+#: includes/public/class-gls-shipping-checkout.php:104
+msgid "Select Parcel Shop"
+msgstr "Válassza ki a csomagátvevő pontot."
+
+#: includes/public/class-gls-shipping-checkout.php:102
+msgid "Select Parcel Locker"
+msgstr "Válassza ki a csomagautomatát."
+
+#: includes/public/class-gls-shipping-checkout.php:68
+msgid "Please select a parcel locker/shop by clicking on Select Parcel button."
+msgstr "Kérjük, válassza ki a csomagautomatát vagy átvételi pontot a „Csomag kiválasztása” gombra kattintva."
+
+#: includes/admin/class-gls-shipping-pickup.php:365
+#: includes/public/class-gls-shipping-assets.php:61
+#: includes/public/class-gls-shipping-assets.php:139
+msgid "Address"
+msgstr "Cím"
+
+#: includes/methods/class-gls-shipping-method.php:378
+#: includes/public/class-gls-shipping-assets.php:60
+#: includes/public/class-gls-shipping-assets.php:138
+msgid "Name"
+msgstr "Név"
+
+#: includes/public/class-gls-shipping-assets.php:59
+#: includes/public/class-gls-shipping-assets.php:137
+msgid "Pickup Location"
+msgstr "Átvételi hely"
+
+#: includes/methods/class-gls-shipping-method.php:321
+msgid "Store Phone number that will be sent to GLS as a contact information."
+msgstr "Üzlet telefonszáma, amelyet GLS-nek küldenek kapcsolattartási információként."
+
+#: includes/methods/class-gls-shipping-method.php:318
+#: includes/methods/class-gls-shipping-method.php:320
+msgid "Store Phone Number"
+msgstr "Üzlet telefonszáma"
+
+#: includes/methods/class-gls-shipping-method.php:313
+msgid "Available within specific limits based on the country."
+msgstr "Elérhető az adott országra vonatkozó korlátozások szerint."
+
+#: includes/methods/class-gls-shipping-method.php:312
+msgid "Enable INS"
+msgstr "INS engedélyezése"
+
+#: includes/methods/class-gls-shipping-method.php:310
+msgid "Insurance Service (INS)"
+msgstr "Biztosítási szolgáltatás (INS)"
+
+#: includes/methods/class-gls-shipping-method.php:306
+msgid "Enable AOS"
+msgstr "AOS engedélyezése"
+
+#: includes/methods/class-gls-shipping-method.php:304
+msgid "Addressee Only Service (AOS)"
+msgstr "Kizárólag címzett szolgáltatás (AOS)"
+
+#: includes/methods/class-gls-shipping-method.php:300
+msgid "Enable SM2"
+msgstr "SM2 engedélyezése"
+
+#: includes/methods/class-gls-shipping-method.php:298
+msgid "SMS Pre-advice Service (SM2)"
+msgstr "SMS előzetes értesítési szolgáltatás (SM2)"
+
+#: includes/methods/class-gls-shipping-method.php:294
+msgid "SMS Service Text. Variables that can be used in the text of the SMS: #ParcelNr#, #COD#, #PickupDate#, #From_Name#, #ClientRef#."
+msgstr "SMS szolgáltatás szövege. Az SMS szövegében használható változók: #ParcelNr#, #COD#, #PickupDate#, #From_Name#, #ClientRef#."
+
+#: includes/methods/class-gls-shipping-method.php:293
+msgid "SM1 Service Text"
+msgstr "SM1 szolgáltatás szövege"
+
+#: includes/methods/class-gls-shipping-method.php:291
+msgid "SMS Service Text"
+msgstr "SMS szolgáltatás szövege"
+
+#: includes/methods/class-gls-shipping-method.php:286
+msgid "SMS service with a maximum text length of 130."
+msgstr "SMS szolgáltatás, amelynek maximális szöveghossza 130 karakter."
+
+#: includes/methods/class-gls-shipping-method.php:285
+msgid "Enable SM1"
+msgstr "SM1 engedélyezése"
+
+#: includes/admin/class-gls-shipping-order.php:539
+#: includes/methods/class-gls-shipping-method.php:283
+msgid "SMS Service (SM1)"
+msgstr "SMS szolgáltatás (SM1)"
+
+#: includes/methods/class-gls-shipping-method.php:278
+msgid "Not available without FDS service."
+msgstr "FDS szolgáltatás nélkül nem elérhető."
+
+#: includes/methods/class-gls-shipping-method.php:277
+msgid "Enable FSS"
+msgstr "FSS engedélyezése"
+
+#: includes/methods/class-gls-shipping-method.php:275
+msgid "Flexible Delivery SMS Service (FSS)"
+msgstr "Rugalmas kézbesítési SMS szolgáltatás (FSS)"
+
+#: includes/methods/class-gls-shipping-method.php:270
+msgid "Can’t be used with T09, T10, and T12 services."
+msgstr "Nem használható T09, T10 és T12 szolgáltatásokkal."
+
+#: includes/methods/class-gls-shipping-method.php:269
+msgid "Enable FDS"
+msgstr "FDS engedélyezése"
+
+#: includes/methods/class-gls-shipping-method.php:267
+msgid "Flexible Delivery Service (FDS)"
+msgstr "Rugalmas kézbesítési szolgáltatás (FDS)"
+
+#: includes/methods/class-gls-shipping-method.php:263
+msgid "Enable CS1"
+msgstr "CS1 engedélyezése"
+
+#: includes/admin/class-gls-shipping-order.php:512
+#: includes/methods/class-gls-shipping-method.php:261
+msgid "Contact Service (CS1)"
+msgstr "Kapcsolatfelvételi szolgáltatás (CS1)"
+
+#: includes/methods/class-gls-shipping-method.php:251
+msgid "Availability depends on the country. Can’t be used with FDS and FSS services."
+msgstr "Az elérhetőség az adott országtól függ. Nem használható FDS és FSS szolgáltatásokkal."
+
+#: includes/methods/class-gls-shipping-method.php:250
+msgid "Express Delivery Service Time"
+msgstr "Expressz kézbesítési szolgáltatás időtartama"
+
+#: includes/methods/class-gls-shipping-method.php:248
+msgid "Express Delivery Service (T09, T10, T12)"
+msgstr "Expressz kézbesítési szolgáltatás (T09, T10, T12)"
+
+#: includes/methods/class-gls-shipping-method.php:243
+msgid "Not available in Serbia."
+msgstr "Szerbiában nem elérhető."
+
+#: includes/methods/class-gls-shipping-method.php:242
+msgid "Enable 24H"
+msgstr "24H engedélyezése"
+
+#: includes/methods/class-gls-shipping-method.php:240
+msgid "Guaranteed 24h Service (24H)"
+msgstr "Garantált 24 órás szolgáltatás (24H)"
+
+#: includes/methods/class-gls-shipping-method.php:237
+msgid "Enable/Disable each of GLS Services for your store."
+msgstr "Engedélyezze vagy tiltsa le a GLS szolgáltatásokat az üzlete számára."
+
+#: includes/methods/class-gls-shipping-method.php:235
+msgid "GLS Services"
+msgstr "GLS szolgáltatások"
+
+#: includes/methods/class-gls-shipping-method.php:206
+msgid "Enter the format for order reference. Use {{order_id}} where you want the order ID to be inserted."
+msgstr "Adja meg a rendelési hivatkozás formátumát. Használja a {{order_id}} változót, ahol a rendelési azonosítót szeretné beszúrni."
+
+#: includes/methods/class-gls-shipping-method.php:204
+msgid "Order Reference Format"
+msgstr "Rendelési hivatkozás formátuma"
+
+#: includes/methods/class-gls-shipping-method.php:186
+msgid "Enable logging of GLS API requests and responses"
+msgstr "Engedélyezze a GLS API kérések és válaszok naplózását"
+
+#: includes/methods/class-gls-shipping-method.php:184
+msgid "Enable Logging"
+msgstr "Naplózás engedélyezése"
+
+#: includes/methods/class-gls-shipping-method.php:174
+msgid "Sandbox"
+msgstr "Tesztkörnyezet"
+
+#: includes/methods/class-gls-shipping-method.php:173
+msgid "Production"
+msgstr "Éles környezet"
+
+#: includes/methods/class-gls-shipping-method.php:170
+msgid "Select the mode for the GLS API."
+msgstr "Válassza ki a GLS API módját."
+
+#: includes/methods/class-gls-shipping-method.php:168
+msgid "Mode"
+msgstr "Mód"
+
+#: includes/methods/class-gls-shipping-method.php:155
+msgid "Select the country for the GLS service."
+msgstr "Válassza ki az országot a GLS szolgáltatáshoz."
+
+#: includes/methods/class-gls-shipping-method.php:153
+#: includes/public/class-gls-shipping-assets.php:62
+#: includes/public/class-gls-shipping-assets.php:140
+msgid "Country"
+msgstr "Ország"
+
+#: includes/methods/class-gls-shipping-method.php:149
+msgid "Enter your GLS Password."
+msgstr "Adja meg a GLS jelszavát."
+
+#: includes/methods/class-gls-shipping-method.php:147
+msgid "Password"
+msgstr "Jelszó"
+
+#: includes/methods/class-gls-shipping-method.php:143
+msgid "Enter your GLS Username."
+msgstr "Adja meg a GLS felhasználónevét."
+
+#: includes/methods/class-gls-shipping-method.php:141
+msgid "Username"
+msgstr "Felhasználónév"
+
+#: includes/methods/class-gls-shipping-method.php:137
+msgid "Enter your GLS Client ID."
+msgstr "Adja meg a GLS ügyfélazonosítóját."
+
+#: includes/methods/class-gls-shipping-method.php:135
+#: includes/methods/class-gls-shipping-method.php:448
+msgid "Client ID"
+msgstr "Ügyfélazonosító"
+
+#: includes/methods/class-gls-shipping-method.php:115
+msgid "API Settings for all of the GLS Shipping Options."
+msgstr "API beállítások az összes GLS szállítási opcióhoz."
+
+#: includes/methods/class-gls-shipping-method.php:113
+msgid "GLS API Settings"
+msgstr "GLS API beállítások"
+
+#: includes/methods/class-gls-shipping-method-zones.php:31
+#: includes/methods/class-gls-shipping-method-zones.php:58
+#: includes/methods/class-gls-shipping-method.php:29
+#: includes/methods/class-gls-shipping-method.php:72
+msgid "Delivery to Address"
+msgstr "Kézbesítés címre"
+
+#: includes/methods/class-gls-shipping-method-zones.php:24
+#: includes/methods/class-gls-shipping-method.php:24
+msgid "Parcels are shipped to the customer’s address."
+msgstr "A csomagokat a vásárló címére szállítjuk."
+
+#: includes/methods/class-gls-shipping-method-zones.php:23
+#: includes/methods/class-gls-shipping-method.php:23
+msgid "GLS Delivery to Address"
+msgstr "GLS címre történő kézbesítés"
+
+#: includes/methods/class-gls-shipping-method-parcel-shop-zones.php:58
+#: includes/methods/class-gls-shipping-method-parcel-shop.php:60
+msgid "Delivery to GLS Parcel Shop"
+msgstr "Kézbesítés GLS csomagátvevő pontra"
+
+#: includes/methods/class-gls-shipping-method-parcel-shop-zones.php:31
+#: includes/methods/class-gls-shipping-method-parcel-shop.php:27
+msgid "Delivery to GLC Parcel Shop"
+msgstr "Kézbesítés GLC csomagátvevő pontra"
+
+#: includes/methods/class-gls-shipping-method-parcel-shop-zones.php:24
+#: includes/methods/class-gls-shipping-method-parcel-shop.php:22
+msgid "Parcel Shop Delivery (PSD) service that ships parcels to the GLS Parcel Shop. GLS Parcel Shop can be selected from the interactive GLS Parcel Shop and GLS Locker finder map."
+msgstr "A csomagátvevő ponti kézbesítési (PSD) szolgáltatás csomagokat küld a GLS csomagátvevő pontra. A GLS csomagátvevő pont az interaktív GLS térképről választható ki."
+
+#: includes/methods/class-gls-shipping-method-parcel-shop-zones.php:23
+#: includes/methods/class-gls-shipping-method-parcel-shop.php:21
+msgid "GLS Parcel Shop"
+msgstr "GLS csomagátvevő pont"
+
+#: includes/methods/class-gls-shipping-method-parcel-locker.php:120
+#: includes/methods/class-gls-shipping-method-parcel-shop.php:120
+#: includes/methods/class-gls-shipping-method.php:110
+msgid "Select countries to support for this shipping method."
+msgstr "Válassza ki az országokat, amelyeket támogatni kíván ezzel a szállítási móddal."
+
+#: includes/methods/class-gls-shipping-method-parcel-locker.php:114
+#: includes/methods/class-gls-shipping-method-parcel-shop.php:114
+#: includes/methods/class-gls-shipping-method.php:164
+msgid "Serbia"
+msgstr "Szerbia"
+
+#: includes/methods/class-gls-shipping-method-parcel-locker.php:116
+#: includes/methods/class-gls-shipping-method-parcel-shop.php:116
+#: includes/methods/class-gls-shipping-method.php:163
+msgid "Slovakia"
+msgstr "Szlovákia"
+
+#: includes/methods/class-gls-shipping-method-parcel-locker.php:115
+#: includes/methods/class-gls-shipping-method-parcel-shop.php:115
+#: includes/methods/class-gls-shipping-method.php:162
+msgid "Slovenia"
+msgstr "Szlovénia"
+
+#: includes/methods/class-gls-shipping-method-parcel-locker.php:113
+#: includes/methods/class-gls-shipping-method-parcel-shop.php:113
+#: includes/methods/class-gls-shipping-method.php:161
+msgid "Romania"
+msgstr "Románia"
+
+#: includes/methods/class-gls-shipping-method-parcel-locker.php:107
+#: includes/methods/class-gls-shipping-method-parcel-shop.php:107
+#: includes/methods/class-gls-shipping-method.php:160
+msgid "Hungary"
+msgstr "Magyarország"
+
+#: includes/methods/class-gls-shipping-method-parcel-locker.php:99
+#: includes/methods/class-gls-shipping-method-parcel-shop.php:99
+#: includes/methods/class-gls-shipping-method.php:158
+msgid "Czech Republic"
+msgstr "Csehország"
+
+#: includes/methods/class-gls-shipping-method-parcel-locker.php:106
+#: includes/methods/class-gls-shipping-method-parcel-shop.php:106
+#: includes/methods/class-gls-shipping-method.php:159
+msgid "Croatia"
+msgstr "Horvátország"
+
+#: includes/methods/class-gls-shipping-method-parcel-locker.php:91
+#: includes/methods/class-gls-shipping-method-parcel-shop.php:91
+#: includes/methods/class-gls-shipping-method.php:103
+msgid "Supported Countries"
+msgstr "Támogatott országok"
+
+#: includes/methods/class-gls-shipping-method-parcel-locker-zones.php:63
+#: includes/methods/class-gls-shipping-method-parcel-locker.php:65
+#: includes/methods/class-gls-shipping-method-parcel-shop-zones.php:63
+#: includes/methods/class-gls-shipping-method-parcel-shop.php:65
+#: includes/methods/class-gls-shipping-method-zones.php:63
+#: includes/methods/class-gls-shipping-method.php:77
+msgid "Enter the shipping price for this method."
+msgstr "Adja meg a szállítási árat ehhez a módszerhez."
+
+#: includes/methods/class-gls-shipping-method-parcel-locker-zones.php:61
+#: includes/methods/class-gls-shipping-method-parcel-locker.php:63
+#: includes/methods/class-gls-shipping-method-parcel-shop-zones.php:61
+#: includes/methods/class-gls-shipping-method-parcel-shop.php:63
+#: includes/methods/class-gls-shipping-method-zones.php:61
+#: includes/methods/class-gls-shipping-method.php:75
+msgid "Shipping Price"
+msgstr "Szállítási ár"
+
+#: includes/methods/class-gls-shipping-method-parcel-locker-zones.php:58
+#: includes/methods/class-gls-shipping-method-parcel-locker.php:60
+msgid "Delivery to GLS Parcel Locker"
+msgstr "Kézbesítés GLS csomagautomatába"
+
+#: includes/methods/class-gls-shipping-method-parcel-locker.php:59
+#: includes/methods/class-gls-shipping-method-parcel-shop.php:59
+#: includes/methods/class-gls-shipping-method.php:71
+msgid "Title to be display on site"
+msgstr "A weboldalon megjelenítendő cím"
+
+#: includes/methods/class-gls-shipping-method-parcel-locker-zones.php:55
+#: includes/methods/class-gls-shipping-method-parcel-locker.php:57
+#: includes/methods/class-gls-shipping-method-parcel-shop-zones.php:55
+#: includes/methods/class-gls-shipping-method-parcel-shop.php:57
+#: includes/methods/class-gls-shipping-method-zones.php:55
+#: includes/methods/class-gls-shipping-method.php:69
+msgid "Title"
+msgstr "Cím"
+
+#: includes/methods/class-gls-shipping-method-parcel-locker.php:51
+#: includes/methods/class-gls-shipping-method-parcel-shop.php:51
+#: includes/methods/class-gls-shipping-method.php:63
+msgid "Enable"
+msgstr "Engedélyezés"
+
+#: includes/methods/class-gls-shipping-method-parcel-locker-zones.php:31
+#: includes/methods/class-gls-shipping-method-parcel-locker.php:27
+msgid "Delivery to GLC Parcel Locker"
+msgstr "Kézbesítés GLC csomagautomatába"
+
+#: includes/methods/class-gls-shipping-method-parcel-locker-zones.php:24
+#: includes/methods/class-gls-shipping-method-parcel-locker.php:22
+msgid "Parcel Shop Delivery (PSD) service that ships parcels to the GLS Locker. GLS Parcel Locker can be selected from the interactive GLS Parcel Shop and GLS Locker finder map."
+msgstr "A csomagátvevő ponti kézbesítési (PSD) szolgáltatás csomagokat küld a GLS csomagautomatába. A GLS csomagautomata az interaktív GLS térképről választható ki."
+
+#: includes/methods/class-gls-shipping-method-parcel-locker-zones.php:23
+#: includes/methods/class-gls-shipping-method-parcel-locker.php:21
+msgid "GLS Parcel Locker"
+msgstr "GLS csomagautomata"
+
+#: includes/admin/class-gls-shipping-order.php:256
+msgid "Generate Shipping Label"
+msgstr "Szállítási címke generálása"
+
+#: includes/admin/class-gls-shipping-order.php:146
+msgid "Print Label"
+msgstr "Címke nyomtatása"
+
+#: includes/admin/class-gls-shipping-order.php:113
+#: includes/public/class-gls-shipping-my-account.php:48
+msgid "GLS Tracking Number: "
+msgstr "GLS nyomkövetési szám: "
+
+#: includes/admin/class-gls-shipping-order.php:88
+#: includes/public/class-gls-shipping-my-account.php:41
+msgid "Country:"
+msgstr "Ország:"
+
+#: includes/admin/class-gls-shipping-order.php:87
+#: includes/public/class-gls-shipping-my-account.php:40
+msgid "Address:"
+msgstr "Cím:"
+
+#: includes/admin/class-gls-shipping-order.php:86
+#: includes/public/class-gls-shipping-my-account.php:39
+msgid "Name:"
+msgstr "Név:"
+
+#: includes/admin/class-gls-shipping-order.php:85
+#: includes/public/class-gls-shipping-my-account.php:38
+msgid "ID:"
+msgstr "Azonosító:"
+
+#: includes/admin/class-gls-shipping-order.php:84
+#: includes/public/class-gls-shipping-my-account.php:37
+msgid "GLS Pickup Location:"
+msgstr "GLS átvételi hely:"
+
+#: includes/admin/class-gls-shipping-order.php:38
+msgid "GLS Shipping Info"
+msgstr "GLS szállítási információ"
+
+#. Author URI of the plugin
+#: gls-shipping-for-woocommerce.php
+msgid "https://inchoo.hr"
+msgstr "https://inchoo.hr"
+
+#. Author of the plugin
+#: gls-shipping-for-woocommerce.php
+msgid "Inchoo"
+msgstr "Inchoo"
+
+#. Plugin Name of the plugin
+#: gls-shipping-for-woocommerce.php
+msgid "GLS Shipping for WooCommerce"
+msgstr "GLS szállítás WooCommerce-hez"
+
+#. Description of the plugin
+#: gls-shipping-for-woocommerce.php
+msgid "Offical GLS Shipping for WooCommerce plugin"
+msgstr "Hivatalos GLS-szállítás a WooCommerce bővítményhez"
