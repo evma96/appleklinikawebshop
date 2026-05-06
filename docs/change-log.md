@@ -1,0 +1,145 @@
+# Change Log
+
+## Unreleased
+
+- Added Docker-based WordPress, MariaDB, and phpMyAdmin local environment.
+- Added environment example configuration.
+- Added baseline project documentation.
+- Added custom plugin folder structure for future WooCommerce business logic.
+- Added development workflow and quality gate placeholders.
+- Added admin-side used-phone product condition fields.
+- Added component grade fields for body, camera island, and display.
+- Added manual overall grade selection.
+- Added admin-only internal identifier / IMEI field.
+- Changed storage capacity and warranty duration to fixed admin select lists.
+- Added local verification documentation with Docker, WordPress, WooCommerce, and custom plugin checks.
+- Moved custom plugin WooCommerce integration to the `init` lifecycle to avoid early WooCommerce translation loading.
+- Added internal Apple device catalog with initial iPhone model and color seed data.
+- Added `Appleklinika > Device Catalog` admin page.
+- Changed product model and color fields to use catalog-backed select lists.
+- Added model-dependent color filtering in the WooCommerce product editor.
+- Updated seeded iPhone color labels to use Hungarian names with Apple English names in parentheses.
+- Added admin editing for existing device catalog rows.
+- Added admin deletion for device catalog rows with confirmation and nonce protection.
+- Added WooCommerce product editor photo checklist for the recommended 4-photo workflow.
+- Added initial frontend Appleklinika header, public product facts block, and local demo product image gallery.
+- Refined product facts block styling and added a top `Termékek` navigation tab.
+- Downloaded demo product photos into local plugin assets for stable local rendering.
+- Added local Appleklinika logo asset to the frontend header.
+- Added premium-style product page treatment with trust panel, stronger price/CTA styling, and inspection-focused messaging.
+- Removed the custom duplicate frontend header and kept the native WooCommerce/WordPress header.
+- Reduced demo gallery footprint for a cleaner minimalist product layout.
+- Reworked the demo product page into a data-phone-price layout.
+- Added clickable thumbnails, previous/next controls, and a zoom lightbox for the demo gallery.
+- Added lightbox previous/next navigation and sticky desktop purchase card.
+- Refined product data into selection-card style blocks.
+- Synced lightbox navigation with the selected gallery image so the main image stays aligned after zoom browsing.
+- Tightened the mobile product page layout so product facts render as compact cards and the gallery appears sooner.
+- Rebuilt the product page frontend as a static modern ecommerce layout with left gallery and right purchase/options panel.
+- Replaced static demo product values with dynamic WooCommerce product data, product gallery images, stock status, real add-to-cart template, and Appleklinika product meta fields.
+- Reduced product page component sizing and added a `Termékek` item to the WordPress navigation block.
+- Documented the future direction for option cards to navigate between separate unique products.
+- Added and activated the first custom Appleklinika storefront theme layer.
+- Added the first homepage structure with hero, real WooCommerce product grid, real WooCommerce category grid, trust section, header, and footer.
+- Added a compact storefront design system and applied tighter sizing to the homepage and product page.
+- Added the functional UX gate: every storefront section must be checked as real functionality versus visual-only UI.
+- Added product gallery arrows, thumbnail switching, and lightbox navigation using real WooCommerce product images.
+- Added functional header product search and WooCommerce cart count.
+- Added AJAX add-to-cart feedback and cart count refresh on the product page.
+- Added automatic editable WordPress information pages for contact, shipping, terms, privacy, warranty, and returns.
+- Changed footer links to resolve to real WordPress pages instead of static placeholder URLs.
+- Removed duplicate single-product output by rendering WooCommerce product tabs once inside the custom product information section.
+- Tightened the global compact storefront sizing across header, homepage, listing, product, cart, checkout, account, footer, and information pages.
+- Added a WooCommerce single product template override that keeps the Appleklinika custom layout and prevents the default WooCommerce product layout from rendering underneath it.
+- Tightened the product gallery sizing and thumbnail row so images keep their aspect ratio in a controlled compact container.
+- Changed the product page desktop layout to three columns: product data cards, image gallery, and buying panel.
+- Added a block theme `single-product.html` template with the `appleklinika_single_product` shortcode to prevent fallback rendering through default product content.
+- Replaced the left product data cards with a Rejoy-style interactive configuration panel for color, storage, condition, battery, and compact info cards.
+- Added admin-side battery option metadata for standard, new aftermarket, and new factory battery states.
+- Added selector logic that can navigate between matching WooCommerce products with the same Apple model meta and calculate real price differences.
+- Added an admin-only local selector demo product seeder for real WooCommerce option navigation testing.
+- Refined the left product selector panel styling with tighter Rejoy-style option cards, compact grids, clearer selected states, and smaller image/meta treatment.
+- Fixed selector click state synchronization so the clicked option receives the active state before image updates or product navigation.
+- Reworked product selector click handling to use scoped selector groups for color, storage, condition, and battery options so one group cannot reset or overwrite another group.
+- Changed product option selector clicks to stay on the current page instead of navigating immediately, preventing reload stutter, card reordering, and first-card selection jumps.
+- Expanded the admin-only selector seeder into a full iPhone 13 Pro local test matrix with featured images.
+- Added smooth client-side product switching for selector combinations so title, price, gallery, stock, URL, and add-to-cart product ID update without a full page reload.
+- Changed the selector matrix so battery replacement is no longer a product variant; it is now an optional paid cart extra.
+- Updated the local selector seeder to generate iPhone 13 Pro test products by color, storage, and grade with clearer price differences.
+- Removed sticky positioning from the center product gallery so it stays fixed in the page flow while scrolling.
+- Fixed selector checkmark positioning so selected-state icons sit in the top-right corner without overlapping text or prices.
+- Added compact WooCommerce shop product cards with fixed image ratio, key meta, consistent sizing, and real product detail links.
+- Added a basic functional shop filter bar for brand, model, storage, condition, and price range.
+- Changed internal information links to stable WordPress query URLs so footer/header links open real editable pages in the local environment.
+- Refined featured products to use the same compact card style as the shop grid and replaced shop filter dropdowns with modern pill-style controls.
+- Added a manual UI QA checklist and documented the requirement to update it after every frontend or UI change.
+- Reworked the storefront header into a simplified Rejoy-style two-row layout with logo, centered search, account/cart actions, Apple category navigation, and scroll-aware visibility.
+- Rebuilt the shop filter UI into a left-side collapsible panel for type, price, storage, color, and SIM filters using real WooCommerce product meta where available.
+- Removed outdated shop filter fields from the custom filter UI and kept product listing cards in a compact four/two/one-column responsive grid.
+- Tightened WooCommerce product card sizing with fixed image height, two-line title clamp, controlled meta height, and bottom-aligned `Megnézem` buttons.
+- Added a real WooCommerce admin SIM configuration field saved as `_appleklinika_sim_config` and connected it to product cards, product info, shop filters, and local selector demo products.
+- Refined the header grid so desktop layout uses logo, wide search, and account/cart actions in one row with compact Apple category navigation below.
+- Polished shop product card typography and product option cards so price differences, color thumbnails, labels, and selected check icons align cleanly without awkward wrapping.
+- Fixed the WooCommerce block product-card title clipping by targeting the actual block product template markup and keeping `Megnézem` buttons aligned under compact card content.
+- Tightened single-product selector card grids so storage, condition, battery, and color cards keep readable labels, clean price differences, and separated selected-state check icons.
+- Added a minimal global design-system cleanup for shared typography, spacing, card, button, and price CSS rules without changing WooCommerce behavior.
+- Tightened the storefront header layout so logo, centered search, and account/cart actions align within the main container without changing WooCommerce or shop behavior.
+- Fixed the header breakpoint so the desktop/tablet `logo | search | actions` grid remains active until 768px, with the search centered and capped at 800px.
+- Changed the header mobile breakpoint so the stacked layout starts below 640px, keeping `logo | search | actions` active from 640px upward.
+- Changed the narrow header layout to keep account/cart actions in a compact right column while the larger logo and search stay on the left.
+- Changed the desktop header to match the real storefront screenshot: logo and search on the left, with Fiókom/Kosár stacked in a right-side action column.
+- Refined product page option selector card CSS so labels, price differences, color thumbnails, and selected check icons align consistently without changing selector logic.
+- Tightened the product selector card internals with fixed label and price zones, equal-height grid behavior, and consistent top-right selected icons.
+- Relaxed color option label truncation so color names can wrap naturally within their card without changing selector behavior.
+- Tightened WooCommerce shop product card internals with smaller typography, image area, meta spacing, price size, and bottom-aligned compact buttons without changing grid behavior.
+- Tightened the WooCommerce shop top area spacing and constrained product-card action buttons so they stay inside card content without changing filters, header, or shop functionality.
+- Re-aligned the desktop header into a single-row ecommerce layout with logo, dominant search, and grouped account/cart actions.
+- Refined the desktop header right-side action group so Fiókom and Kosár align as one horizontal flex group with consistent button height and cart badge placement.
+- Increased the desktop header logo size and tightened the Kosár button internals so text and badge share one centered baseline.
+- Centered the desktop Kosár label independently from the green cart badge so the button aligns visually with Fiókom.
+- Locked the desktop Kosár label to the exact center of its button and moved the green cart badge to the top-right corner.
+- Polished shop product card spacing, typography, image sizing, shadows, and button alignment for a more compact premium desktop grid.
+- Added subtle premium hover states for product cards, primary buttons, WooCommerce buttons, and the category navigation.
+- Standardized hover and interaction transition timing across cards, buttons, filters, and category navigation for smoother desktop UI feedback.
+- Standardized storefront price formatting to remove unnecessary decimals and display clean space-separated values such as `379 990 Ft`.
+- Applied a final visual cleanup pass to align card/filter radii, shop grid gaps, WooCommerce button centering, and form field spacing.
+- Stabilized product card image areas so shop grid images share a fixed centered frame with consistent object-fit behavior.
+- Changed the desktop header action area back to a right-aligned vertical Fiókom/Kosár stack with equal-width buttons.
+- Compacted the desktop header action stack by reducing button height, width, internal padding, and vertical gap for better right-side proportions.
+- Reduced the desktop header Fiókom/Kosár vertical gap further so the right-side action stack reads as one compact control group.
+- Added canonical editable WordPress footer pages for ÁSZF, Adatvédelem, Szállítás, Kapcsolat, Garancia, and Visszaküldés with realistic placeholder content and working footer links.
+- Preserved admin editability for footer information pages by only creating missing canonical pages or migrating legacy slugs, not overwriting existing canonical page content on every load.
+- Fixed duplicated page headings on editable footer information pages by hiding the first content heading when it directly follows the WordPress page title.
+- Added a reusable `ak-info-page` layout for footer information pages with a larger title, centered content wrapper, intro treatment, and clean content blocks.
+- Enhanced the reusable footer information page layout with clearer heading hierarchy, softer section spacing, divider styling, improved paragraph rhythm, and subtle quote/highlight boxes.
+- Added a compact trust block to footer information pages with warranty, shipping, return, and support reassurance cards.
+- Added a dedicated Contact page panel with phone, email, placeholder address, a simple nonce-protected WordPress contact form, and a clean map placeholder.
+- Polished the WooCommerce cart page with cleaner product row spacing, compact product images, aligned quantity/price/remove controls, and a stronger cart totals panel.
+- Added a desktop two-column WooCommerce block cart layout with a clean left-side product list and sticky right-side order summary.
+- Corrected the desktop cart grid so the WooCommerce block sidebar uses a readable 30% summary column instead of collapsing into a narrow mobile-like panel.
+- Replaced the visible cart page with a custom Appleklinika cart renderer powered by real WooCommerce cart data for products, quantities, prices, coupons, shipping, discounts, totals, remove links, and checkout URL.
+- Routed the cart page through the WordPress content filter so the editable WooCommerce cart block is replaced by the custom dynamic Appleklinika cart layout at render time.
+- Refined the custom cart visual direction with floating glass-like cards, softer page background, and Apple Klinika brand-red checkout/coupon/remove accents.
+- Changed the desktop cart order summary from sticky to fixed positioning so it remains visible while the cart item list scrolls.
+- Bumped the storefront asset version and reinforced the desktop cart summary fixed rule above 900px so browsers load the corrected fixed positioning instead of cached cart CSS.
+- Reverted the desktop cart summary fixed positioning so the order summary stays inside the normal two-column cart layout and scrolls with the cart page again.
+- Replaced the cart item quantity field presentation with a compact minus/value/plus control while keeping the WooCommerce quantity input and cart update flow intact.
+- Removed the separate cart item remove button from the custom cart item controls, leaving quantity reduction to zero plus cart update as the removal path.
+- Refined the left cart area so each cart item and the cart update action use the same floating card style with consistent radius, border, shadow, padding, and spacing.
+- Removed the oversized cart update action frame and shifted the floating premium emphasis back to the full cart item cards.
+- Strengthened the full cart item card elevation with layered shadows so the whole added product block reads as floating.
+- Added the same subtle hover movement pattern to full cart item cards so they lift like premium storefront product cards.
+- Added matching premium hover movement to the cart checkout CTA and continue-shopping link.
+- Refined the cart coupon field to match the compact premium reference with a rounded inline input and brand-red OK button.
+- Polished the WooCommerce Blocks checkout page visually with floating white cards, rounded premium inputs, a cart-like order summary, styled notices, and brand-red checkout CTAs without changing checkout logic.
+- Reinforced WooCommerce Blocks checkout input styling so text fields keep the same rounded premium border treatment as select fields.
+- Refined the cart order summary card with cleaner row alignment, tighter spacing, stronger total hierarchy, and a full-width checkout CTA without changing cart calculations.
+- Rebuilt the cart order summary card into a simpler row-based summary with subtotal, shipping, coupon, divider, total, and checkout CTA using live WooCommerce values.
+- Reworked the cart order summary card spacing and alignment so it top-aligns with the cart, uses a stronger premium card shell, and groups subtotal/shipping/coupon/total into a cleaner internal rhythm.
+- Rebuilt the WooCommerce Blocks checkout order summary sidebar as one premium card instead of separate floating internal blocks, with compact product rows, coupon row, totals, and CTA alignment.
+- Tightened the WooCommerce Blocks checkout sidebar override so the sidebar itself is the only white card and internal order summary/totals wrappers render as flat, aligned rows.
+- Compact-reset the WooCommerce Blocks checkout order summary product rows so they show a 56px image, product title, and final price only, with hidden long metadata/savings badges in the checkout sidebar.
+- Split the checkout sidebar compact overrides into a checkout-only stylesheet and restored the main storefront CSS asset version so the cart page is not forced onto newly refreshed CSS by a checkout-only change.
+- Removed the cart-only order summary override so the cart page returns to the previous approved visual state controlled by the main storefront stylesheet.
+- Restored the cart page visuals toward the approved screenshot with the main storefront stylesheet: wider two-column cart layout, larger white shell cards, separated floating cart item rows, and the previous right-side summary rhythm.
+- Added a high-specificity desktop cart restoration layer targeting the custom `.ak-cart-*` markup directly so the approved screenshot layout applies even when the local cart URL renders through `?page_id=8`.
