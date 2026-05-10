@@ -15,7 +15,7 @@ add_action('wp_enqueue_scripts', static function (): void {
         'appleklinika-theme',
         get_stylesheet_directory_uri() . '/assets/css/frontend.css',
         [],
-        '0.1.65'
+        '0.1.79'
     );
 
     if (function_exists('is_checkout') && is_checkout()) {
@@ -116,13 +116,105 @@ add_filter('woocommerce_add_to_cart_fragments', static function (array $fragment
 });
 
 add_action('woocommerce_before_shop_loop', 'appleklinika_render_shop_filters', 5);
-add_action('woocommerce_after_shop_loop_item_title', 'appleklinika_render_loop_product_meta', 6);
-add_filter('woocommerce_loop_add_to_cart_link', 'appleklinika_loop_view_product_link', 10, 2);
+add_action('woocommerce_before_shop_loop', 'appleklinika_render_active_filter_chips', 6);
 add_action('pre_get_posts', 'appleklinika_apply_shop_filters');
+add_action('wp', 'appleklinika_customize_shop_loop_cards');
+add_filter('render_block', 'appleklinika_remove_duplicate_shop_product_blocks', 20, 3);
+add_filter('render_block_woocommerce/product-image', 'appleklinika_remove_duplicate_shop_product_block', 100, 3);
+add_filter('render_block_woocommerce/product-price', 'appleklinika_remove_duplicate_shop_product_block', 100, 3);
+add_filter('render_block_woocommerce/product-button', 'appleklinika_remove_duplicate_shop_product_block', 100, 3);
+add_filter('render_block_core/post-title', 'appleklinika_remove_duplicate_shop_product_title_block', 100, 3);
 
 function appleklinika_format_plain_price(float $amount): string
 {
     return number_format($amount, 0, '', ' ') . ' Ft';
+}
+
+function appleklinika_remove_duplicate_shop_product_blocks(string $blockContent, array $block, ?WP_Block $instance = null): string
+{
+    if (! appleklinika_is_shop_archive_context()) {
+        return $blockContent;
+    }
+
+    $blockName = (string) ($block['blockName'] ?? '');
+    $duplicateProductBlocks = [
+        'woocommerce/product-image',
+        'woocommerce/product-price',
+        'woocommerce/product-button',
+    ];
+
+    if (in_array($blockName, $duplicateProductBlocks, true) && appleklinika_is_shop_product_block_context($block, $instance)) {
+        return '';
+    }
+
+    if ($blockName === 'core/post-title' && appleklinika_is_shop_product_title_block($block, $instance)) {
+        return '';
+    }
+
+    return $blockContent;
+}
+
+function appleklinika_remove_duplicate_shop_product_block(string $blockContent, array $block, ?WP_Block $instance = null): string
+{
+    if (! appleklinika_is_shop_archive_context()) {
+        return $blockContent;
+    }
+
+    return appleklinika_is_shop_product_block_context($block, $instance) ? '' : $blockContent;
+}
+
+function appleklinika_remove_duplicate_shop_product_title_block(string $blockContent, array $block, ?WP_Block $instance = null): string
+{
+    if (! appleklinika_is_shop_archive_context()) {
+        return $blockContent;
+    }
+
+    return appleklinika_is_shop_product_title_block($block, $instance) ? '' : $blockContent;
+}
+
+function appleklinika_is_shop_archive_context(): bool
+{
+    if (function_exists('is_shop') && is_shop()) {
+        return true;
+    }
+
+    if (function_exists('is_product_taxonomy') && is_product_taxonomy()) {
+        return true;
+    }
+
+    if (is_post_type_archive('product')) {
+        return true;
+    }
+
+    return get_query_var('post_type') === 'product' || ($_GET['post_type'] ?? '') === 'product';
+}
+
+function appleklinika_is_shop_product_title_block(array $block, ?WP_Block $instance): bool
+{
+    if (appleklinika_is_shop_product_block_context($block, $instance)) {
+        return true;
+    }
+
+    return (bool) ($block['attrs']['isLink'] ?? false);
+}
+
+function appleklinika_is_shop_product_block_context(array $block, ?WP_Block $instance): bool
+{
+    $context = $instance instanceof WP_Block ? $instance->context : [];
+
+    if (($context['postType'] ?? '') === 'product') {
+        return true;
+    }
+
+    if (isset($context['postId']) && get_post_type((int) $context['postId']) === 'product') {
+        return true;
+    }
+
+    if (($context['query']['postType'] ?? '') === 'product') {
+        return true;
+    }
+
+    return (bool) ($block['attrs']['isDescendentOfQueryLoop'] ?? false);
 }
 
 function appleklinika_body_classes(array $classes): array
@@ -178,7 +270,7 @@ function appleklinika_render_cart_page(): void
     }
     ?>
     <section class="ak-cart-layout" aria-label="Kosár tartalma">
-        <form class="ak-cart-card ak-cart-items-card" action="<?php echo esc_url(appleklinika_cart_url()); ?>" method="post">
+        <form id="ak-cart-form" class="ak-cart-card ak-cart-items-card" action="<?php echo esc_url(appleklinika_cart_url()); ?>" method="post">
             <div class="ak-cart-card__head">
                 <h1>Kosár</h1>
                 <p>Rendelésed áttekintése</p>
@@ -311,7 +403,6 @@ function appleklinika_cart_item_meta(int $productId, array $cartItem): array
 function appleklinika_render_cart_summary(): void
 {
     $cart = WC()->cart;
-    $discountTotal = (float) $cart->get_discount_total();
     ?>
     <div class="ak-cart-summary__body">
         <div class="ak-cart-summary__rows">
@@ -323,11 +414,23 @@ function appleklinika_render_cart_summary(): void
                 <span>Szállítás</span>
                 <strong><?php echo wp_kses_post($cart->get_cart_shipping_total()); ?></strong>
             </div>
-            <div class="ak-cart-summary__row">
-                <span>Kupon</span>
-                <strong>-<?php echo wp_kses_post(wc_price($discountTotal)); ?></strong>
-            </div>
         </div>
+
+        <?php if (wc_coupons_enabled()) : ?>
+            <div class="ak-cart-coupon">
+                <label for="ak-cart-coupon-code">Kuponkód</label>
+                <div>
+                    <input
+                        id="ak-cart-coupon-code"
+                        type="text"
+                        name="coupon_code"
+                        form="ak-cart-form"
+                        placeholder="Kuponkód"
+                    >
+                    <button type="submit" name="apply_coupon" value="Kupon alkalmazása" form="ak-cart-form">OK</button>
+                </div>
+            </div>
+        <?php endif; ?>
 
         <div class="ak-cart-summary__total">
             <span>Végösszeg</span>
@@ -336,6 +439,7 @@ function appleklinika_render_cart_summary(): void
     </div>
 
     <a class="ak-cart-checkout" href="<?php echo esc_url(wc_get_checkout_url()); ?>">Tovább a pénztárhoz</a>
+    <a class="ak-cart-continue" href="<?php echo esc_url(appleklinika_shop_url()); ?>">Vásárlás folytatása</a>
     <?php
 }
 
@@ -765,6 +869,7 @@ function appleklinika_render_featured_products(): void
             appleklinika_grade_label((string) get_post_meta($product->get_id(), '_appleklinika_overall_grade', true)),
         ]))) . '</div>';
         echo '<div class="ak-product-card__price">' . wp_kses_post($product->get_price_html()) . '</div>';
+        appleklinika_render_loop_product_savings_for_product($product);
         echo '<span class="ak-product-card__stock">' . esc_html(appleklinika_stock_label($product)) . '</span>';
         echo '<a class="ak-product-card__button" href="' . esc_url(get_permalink($product->get_id())) . '">Megnézem</a>';
         echo '</div>';
@@ -776,7 +881,7 @@ function appleklinika_render_featured_products(): void
 
 function appleklinika_render_shop_filters(): void
 {
-    if (! is_shop() && ! is_product_taxonomy()) {
+    if (! appleklinika_is_shop_archive_context()) {
         return;
     }
 
@@ -846,6 +951,49 @@ function appleklinika_render_shop_filters(): void
             <input type="hidden" name="<?php echo esc_attr((string) $key); ?>" value="<?php echo esc_attr((string) wp_unslash($value)); ?>">
         <?php endforeach; ?>
     </form>
+    <?php
+}
+
+function appleklinika_render_active_filter_chips(): void
+{
+    if (! appleklinika_is_shop_archive_context()) {
+        return;
+    }
+
+    $chips = [];
+    $filterLabels = [
+        'ak_model' => '_appleklinika_device_model',
+        'ak_storage' => '_appleklinika_storage_capacity',
+        'ak_color' => '_appleklinika_color',
+        'ak_sim' => '_appleklinika_sim_config',
+    ];
+
+    foreach ($filterLabels as $queryKey => $metaKey) {
+        foreach (appleklinika_query_values($queryKey) as $value) {
+            $chips[] = appleklinika_filter_label($metaKey, $value);
+        }
+    }
+
+    $minPrice = appleklinika_query_value('ak_min_price');
+    $maxPrice = appleklinika_query_value('ak_max_price');
+
+    if ($minPrice !== '' || $maxPrice !== '') {
+        $chips[] = trim(
+            ($minPrice !== '' ? appleklinika_format_plain_price((float) $minPrice) : '') .
+            ' - ' .
+            ($maxPrice !== '' ? appleklinika_format_plain_price((float) $maxPrice) : '')
+        );
+    }
+
+    if ($chips === []) {
+        return;
+    }
+    ?>
+    <nav class="ak-active-filter-chips" aria-label="Aktív szűrők">
+        <?php foreach ($chips as $chip) : ?>
+            <span><?php echo esc_html($chip); ?></span>
+        <?php endforeach; ?>
+    </nav>
     <?php
 }
 
@@ -1191,6 +1339,114 @@ function appleklinika_render_loop_product_meta(): void
     }
 
     echo '<div class="ak-loop-meta">' . esc_html(implode(' · ', $bits)) . '</div>';
+}
+
+function appleklinika_customize_shop_loop_cards(): void
+{
+    if (! (is_shop() || is_product_taxonomy())) {
+        return;
+    }
+
+    remove_action('woocommerce_before_shop_loop_item', 'woocommerce_template_loop_product_link_open', 10);
+    remove_action('woocommerce_before_shop_loop_item_title', 'woocommerce_show_product_loop_sale_flash', 10);
+    remove_action('woocommerce_before_shop_loop_item_title', 'woocommerce_template_loop_product_thumbnail', 10);
+    remove_action('woocommerce_shop_loop_item_title', 'woocommerce_template_loop_product_title', 10);
+    remove_action('woocommerce_after_shop_loop_item_title', 'woocommerce_template_loop_rating', 5);
+    remove_action('woocommerce_after_shop_loop_item_title', 'woocommerce_template_loop_price', 10);
+    remove_action('woocommerce_after_shop_loop_item', 'woocommerce_template_loop_product_link_close', 5);
+    remove_action('woocommerce_after_shop_loop_item', 'woocommerce_template_loop_add_to_cart', 10);
+
+    add_filter('woocommerce_post_class', 'appleklinika_shop_product_card_class', 10, 2);
+    add_action('woocommerce_before_shop_loop_item', 'appleklinika_render_shop_product_card', 10);
+}
+
+/**
+ * @param array<int, string> $classes
+ * @param mixed $product
+ * @return array<int, string>
+ */
+function appleklinika_shop_product_card_class(array $classes, $product): array
+{
+    if ($product instanceof WC_Product && (is_shop() || is_product_taxonomy())) {
+        $classes[] = 'ak-product-card';
+    }
+
+    return array_values(array_unique($classes));
+}
+
+function appleklinika_render_shop_product_card(): void
+{
+    global $product;
+
+    if (! $product instanceof WC_Product) {
+        return;
+    }
+
+    $productId = $product->get_id();
+    $productUrl = get_permalink($productId);
+    $meta = array_filter([
+        appleklinika_storage_label((string) get_post_meta($productId, '_appleklinika_storage_capacity', true)),
+        appleklinika_grade_label((string) get_post_meta($productId, '_appleklinika_overall_grade', true)),
+        appleklinika_sim_label((string) get_post_meta($productId, '_appleklinika_sim_config', true)),
+        appleklinika_battery_label((string) get_post_meta($productId, '_appleklinika_battery_health', true)),
+    ]);
+    ?>
+    <a class="ak-product-card__inner" href="<?php echo esc_url($productUrl); ?>" aria-label="<?php echo esc_attr($product->get_name()); ?>">
+        <?php if ($product->is_on_sale()) : ?>
+            <span class="ak-product-card__badge">AKCIÓ</span>
+        <?php endif; ?>
+
+        <div class="ak-product-card__image">
+            <?php echo wp_kses_post($product->get_image('woocommerce_thumbnail')); ?>
+        </div>
+
+        <div class="ak-product-card__content">
+            <h3 class="ak-product-card__title"><?php echo esc_html($product->get_name()); ?></h3>
+
+            <?php if ($meta !== []) : ?>
+                <div class="ak-product-card__meta"><?php echo esc_html(implode(' · ', $meta)); ?></div>
+            <?php endif; ?>
+
+            <div class="ak-product-card__price">
+                <?php if ($product->is_on_sale() && $product->get_regular_price() !== '') : ?>
+                    <span class="ak-product-card__old-price"><?php echo wp_kses_post(wc_price((float) $product->get_regular_price())); ?></span>
+                <?php endif; ?>
+                <span class="ak-product-card__current-price"><?php echo wp_kses_post(wc_price((float) $product->get_price())); ?></span>
+            </div>
+
+            <?php appleklinika_render_loop_product_savings_for_product($product, 'ak-product-card__savings'); ?>
+
+            <span class="ak-product-card__cta">Megnézem</span>
+        </div>
+    </a>
+    <?php
+}
+
+function appleklinika_render_loop_product_savings(): void
+{
+    global $product;
+
+    if (! $product instanceof WC_Product) {
+        return;
+    }
+
+    appleklinika_render_loop_product_savings_for_product($product);
+}
+
+function appleklinika_render_loop_product_savings_for_product(WC_Product $product, string $className = 'ak-loop-savings'): void
+{
+    if (! $product->is_on_sale()) {
+        return;
+    }
+
+    $regularPrice = (float) $product->get_regular_price();
+    $currentPrice = (float) $product->get_price();
+
+    if ($regularPrice <= 0 || $currentPrice <= 0 || $regularPrice <= $currentPrice) {
+        return;
+    }
+
+    echo '<div class="' . esc_attr($className) . '">' . esc_html(appleklinika_format_plain_price($regularPrice - $currentPrice)) . ' megtakarítás</div>';
 }
 
 function appleklinika_loop_view_product_link(string $html, WC_Product $product): string
