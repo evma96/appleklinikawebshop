@@ -118,6 +118,24 @@
 - Added a desktop two-column WooCommerce block cart layout with a clean left-side product list and sticky right-side order summary.
 - Corrected the desktop cart grid so the WooCommerce block sidebar uses a readable 30% summary column instead of collapsing into a narrow mobile-like panel.
 - Replaced the visible cart page with a custom Appleklinika cart renderer powered by real WooCommerce cart data for products, quantities, prices, coupons, shipping, discounts, totals, remove links, and checkout URL.
+- Changed shop filters to use Apple Klinika red accents, added a real meta-backed `Állapot` filter from `_appleklinika_overall_grade`, kept SIM at the bottom of the filter sidebar, and hid default EU `Fizikai + eSIM` SIM text from product card meta while preserving special SIM values.
+- Polished active shop filter chips with subtle hover feedback and real per-chip removal links that remove only the selected filter from the current WooCommerce archive URL.
+- Refined the shop archive sort dropdown styling and limited the catalog ordering choices to default, price ascending, price descending, and a real WooCommerce sale-first ordering option.
+- Replaced the visible shop archive sort select with a custom Appleklinika dropdown that keeps the real WooCommerce ordering select in the form and submits the selected ordering value.
+- Fixed the custom shop sort dropdown closed state so the option panel is hidden until the user opens it.
+- Replaced the shop product card plain meta line with real product-meta chips for storage, grade, special battery option, special SIM configuration, and battery health with a horizontal iPhone-style battery icon.
+- Refined the shop product card battery chip with a slimmer iPhone-style horizontal battery icon and tighter alignment with neighboring meta chips.
+- Fixed product card meta chip row height so wrapped battery chips are not cropped on cards where chips flow onto a second line.
+- Removed fixed clipping from the shop product card meta chip area so cards with more chips can expand the meta row instead of cutting off lower chips.
+- Updated the shop product card battery chip icon to a closer iPhone-style status battery shape with a white body, dark outline, inner fill, and small right cap.
+- Replaced the CSS pseudo-element battery marker with an inline SVG iPhone-style battery status icon for a more accurate product card Akku chip.
+- Redrew the product card Akku chip SVG to match the provided iPhone battery reference more closely, including the white rounded body, dark outline, and small right-side cap.
+- Corrected the product card Akku chip icon from an outlined battery to the reference-style filled dark iPhone battery body with a white inner charge shape.
+- Replaced the product card Akku chip marker with the exact requested 18x10 inline SVG battery icon structure.
+- Adjusted the product card Akku chip inline SVG toward the provided iPhone status battery reference with a 20x11 slim outline, light inner body, and tiny right cap.
+- Replaced the product card Akku chip icon with the exact requested 20x11 filled iPhone-style inline SVG.
+- Removed CSS color control from the product card Akku SVG so the icon uses only fixed inline `fill="#ffffff"` and `stroke="#1f2937"` values.
+- Filled the product card Akku SVG charge bar with fixed dark color so the battery no longer appears empty on the light chip background.
 - Routed the cart page through the WordPress content filter so the editable WooCommerce cart block is replaced by the custom dynamic Appleklinika cart layout at render time.
 - Refined the custom cart visual direction with floating glass-like cards, softer page background, and Apple Klinika brand-red checkout/coupon/remove accents.
 - Changed the desktop cart order summary from sticky to fixed positioning so it remains visible while the cart item list scrolls.

@@ -40,6 +40,89 @@
     });
   });
 
+  document.querySelectorAll('.woocommerce-ordering').forEach(function (form) {
+    var select = form.querySelector('select.orderby');
+
+    if (!select || form.querySelector('.ak-sort-dropdown')) {
+      return;
+    }
+
+    var wrapper = document.createElement('div');
+    var button = document.createElement('button');
+    var list = document.createElement('div');
+    var selectedOption = select.options[select.selectedIndex];
+
+    wrapper.className = 'ak-sort-dropdown';
+    button.className = 'ak-sort-dropdown__button';
+    button.type = 'button';
+    button.setAttribute('aria-haspopup', 'listbox');
+    button.setAttribute('aria-expanded', 'false');
+    button.textContent = selectedOption ? selectedOption.textContent : '';
+
+    list.className = 'ak-sort-dropdown__list';
+    list.setAttribute('role', 'listbox');
+    list.hidden = true;
+
+    Array.prototype.forEach.call(select.options, function (option) {
+      var item = document.createElement('button');
+
+      item.className = 'ak-sort-dropdown__option';
+      item.type = 'button';
+      item.setAttribute('role', 'option');
+      item.setAttribute('data-value', option.value);
+      item.setAttribute('aria-selected', option.selected ? 'true' : 'false');
+      item.textContent = option.textContent;
+
+      item.addEventListener('click', function () {
+        select.value = option.value;
+        button.textContent = option.textContent;
+        closeSortDropdown();
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+        form.submit();
+      });
+
+      list.appendChild(item);
+    });
+
+    function closeSortDropdown() {
+      wrapper.classList.remove('is-open');
+      button.setAttribute('aria-expanded', 'false');
+      list.hidden = true;
+    }
+
+    function openSortDropdown() {
+      wrapper.classList.add('is-open');
+      button.setAttribute('aria-expanded', 'true');
+      list.hidden = false;
+    }
+
+    button.addEventListener('click', function () {
+      if (wrapper.classList.contains('is-open')) {
+        closeSortDropdown();
+      } else {
+        openSortDropdown();
+      }
+    });
+
+    wrapper.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') {
+        closeSortDropdown();
+        button.focus();
+      }
+    });
+
+    document.addEventListener('click', function (event) {
+      if (!wrapper.contains(event.target)) {
+        closeSortDropdown();
+      }
+    });
+
+    wrapper.appendChild(button);
+    wrapper.appendChild(list);
+    form.classList.add('ak-sort-enhanced');
+    form.appendChild(wrapper);
+  });
+
   document.querySelectorAll('[data-cart-qty-control]').forEach(function (control) {
     var input = control.querySelector('input[type="number"]');
 

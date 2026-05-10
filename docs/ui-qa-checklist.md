@@ -8,8 +8,8 @@ Status values:
 - `FAIL`: verified in browser and broken.
 - `NOT TESTED`: not verified in browser during this round.
 
-Last run: 2026-05-05
-Scope: Cart visual restoration to the provided approved screenshot.
+Last run: 2026-05-10
+Scope: Shop product card meta chips.
 
 ## 1. Navigation Check
 
@@ -17,7 +17,7 @@ Scope: Cart visual restoration to the provided approved screenshot.
 | --- | --- | --- |
 | Header links work | NOT TESTED | Header was not changed in this round. |
 | Footer links work | NOT TESTED | Footer link targets were not changed in this round. |
-| Product cards open real product pages | NOT TESTED | Product cards were not changed in this round. |
+| Product cards open real product pages | NOT TESTED | Product card links were not changed in this round. |
 | No empty href | NOT TESTED | Footer links were not changed in this round. |
 | No `#` links | NOT TESTED | Footer links were not changed in this round. |
 | No broken URLs | NOT TESTED | Footer links were not changed in this round. |
@@ -38,11 +38,11 @@ Scope: Cart visual restoration to the provided approved screenshot.
 
 | Item | Status | Notes |
 | --- | --- | --- |
-| Product cards are equal size | NOT TESTED | Product cards were not changed in this round. |
-| Images have consistent ratio | NOT TESTED | Product images were not changed in this round. |
-| Filters look modern | NOT TESTED | Filter radius/spacing was slightly aligned; verify no visual regression. |
-| Filters do not look like default browser UI | NOT TESTED | Filter functionality was not changed. |
-| Sorting works if available | NOT TESTED | WooCommerce sorting was not changed in this round. |
+| Product cards are equal size | NOT TESTED | Product card meta changed from one text line to real meta chips; verify equal card height after wrapping. |
+| Images have consistent ratio | NOT TESTED | Product image area was not changed in this round. |
+| Filters look modern | NOT TESTED | Active filter chips now have hover movement, stronger separation, and remove affordances; browser verification still needed. |
+| Filters do not look like default browser UI | NOT TESTED | Filter chip removal links were added without changing sidebar filter controls. |
+| Sorting works if available | NOT TESTED | The native select is visually replaced by a custom dropdown that submits the real WooCommerce ordering form; browser verification still needed for all four options. |
 
 ## 4. Layout Check
 

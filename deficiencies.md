@@ -21,6 +21,8 @@
 - The local selector demo matrix is intentionally broad and can create many WooCommerce products for one model; production inventory needs stricter grouping and stock ownership rules.
 - The custom theme homepage is implemented first; category, cart, checkout, and account pages have shared compact styling but still need dedicated UX passes.
 - The shop listing has a Rejoy-style filter panel, and SIM filtering now uses product meta; production products still need consistent SIM values during admin upload.
+- The shop `Állapot` filter uses `_appleklinika_overall_grade`; production listings depend on admins consistently setting this grade for every used-device product.
+- The shop sale-first ordering uses WooCommerce's product lookup `onsale` flag; after bulk imports or manual database changes, WooCommerce lookup tables may need regeneration for accurate sale ordering.
 - The Apple category navigation currently links into the shop structure, but MacBook, iPad, and Apple Watch catalog/filter behavior still needs real product data and final taxonomy rules.
 - Header links for account/cart pages should be aligned with the final WooCommerce page slugs before production.
 - Information pages are created with editable demo content and need final business/legal copy before production.
