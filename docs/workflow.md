@@ -51,6 +51,27 @@ Use only these statuses:
 
 Fix `FAIL` items before starting unrelated new features.
 
+## DOM/CSS Targeting Gate
+
+When a visual CSS change does not appear in the browser, or when the project owner asks for the "red border test", verify the real DOM target before continuing.
+
+Temporary test rule:
+
+```css
+body.post-type-archive-product .ak-product-card__inner,
+body.woocommerce-shop .ak-product-card__inner {
+  outline: 6px solid #D6001C !important;
+  outline-offset: 4px !important;
+}
+```
+
+Expected result:
+
+- If the red border appears, the selector reaches the visible product card and styling can continue.
+- If the red border does not appear, stop styling and inspect the rendered DOM/classes before editing more CSS.
+
+After verification, remove the temporary rule and bump the CSS asset version.
+
 ## Local Development
 
 Start the stack:
