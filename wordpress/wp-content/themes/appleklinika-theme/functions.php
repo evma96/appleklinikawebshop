@@ -15,7 +15,7 @@ add_action('wp_enqueue_scripts', static function (): void {
         'appleklinika-theme',
         get_stylesheet_directory_uri() . '/assets/css/frontend.css',
         [],
-        '0.1.79'
+        '0.1.98'
     );
 
     if (function_exists('is_checkout') && is_checkout()) {
@@ -31,7 +31,7 @@ add_action('wp_enqueue_scripts', static function (): void {
         'appleklinika-theme',
         get_stylesheet_directory_uri() . '/assets/js/frontend.js',
         [],
-        '0.1.65',
+        '0.1.66',
         true
     );
 });
@@ -119,6 +119,10 @@ add_action('woocommerce_before_shop_loop', 'appleklinika_render_shop_filters', 5
 add_action('woocommerce_before_shop_loop', 'appleklinika_render_active_filter_chips', 6);
 add_action('pre_get_posts', 'appleklinika_apply_shop_filters');
 add_action('wp', 'appleklinika_customize_shop_loop_cards');
+add_filter('woocommerce_catalog_orderby', 'appleklinika_catalog_orderby_options');
+add_filter('woocommerce_default_catalog_orderby_options', 'appleklinika_catalog_orderby_options');
+add_filter('woocommerce_get_catalog_ordering_args', 'appleklinika_catalog_ordering_args', 10, 3);
+add_filter('posts_clauses', 'appleklinika_sale_first_ordering_clauses', 20, 2);
 add_filter('render_block', 'appleklinika_remove_duplicate_shop_product_blocks', 20, 3);
 add_filter('render_block_woocommerce/product-image', 'appleklinika_remove_duplicate_shop_product_block', 100, 3);
 add_filter('render_block_woocommerce/product-price', 'appleklinika_remove_duplicate_shop_product_block', 100, 3);
@@ -905,6 +909,11 @@ function appleklinika_render_shop_filters(): void
             'options' => appleklinika_known_options_with_counts('_appleklinika_storage_capacity', appleklinika_storage_filter_labels()),
             'open' => false,
         ],
+        'ak_condition' => [
+            'label' => 'Állapot',
+            'options' => appleklinika_known_options_with_counts('_appleklinika_overall_grade', appleklinika_condition_filter_labels(), false),
+            'open' => false,
+        ],
         'ak_color' => [
             'label' => 'Szín',
             'options' => appleklinika_meta_options_with_counts('_appleklinika_color', 'Szín'),
@@ -941,13 +950,14 @@ function appleklinika_render_shop_filters(): void
             </div>
         </details>
         <?php appleklinika_render_filter_details('ak_storage', $filters['ak_storage']); ?>
+        <?php appleklinika_render_filter_details('ak_condition', $filters['ak_condition']); ?>
         <?php appleklinika_render_filter_details('ak_color', $filters['ak_color']); ?>
         <?php appleklinika_render_filter_details('ak_sim', $filters['ak_sim']); ?>
         <div class="ak-filter-actions">
             <button type="submit">Szűrés alkalmazása</button>
         </div>
         <?php foreach ($_GET as $key => $value) : ?>
-            <?php if (in_array($key, ['ak_type', 'ak_model', 'ak_storage', 'ak_color', 'ak_sim', 'ak_min_price', 'ak_max_price', 'paged'], true) || is_array($value)) { continue; } ?>
+            <?php if (in_array($key, ['ak_type', 'ak_model', 'ak_storage', 'ak_condition', 'ak_color', 'ak_sim', 'ak_min_price', 'ak_max_price', 'paged'], true) || is_array($value)) { continue; } ?>
             <input type="hidden" name="<?php echo esc_attr((string) $key); ?>" value="<?php echo esc_attr((string) wp_unslash($value)); ?>">
         <?php endforeach; ?>
     </form>
@@ -964,13 +974,17 @@ function appleklinika_render_active_filter_chips(): void
     $filterLabels = [
         'ak_model' => '_appleklinika_device_model',
         'ak_storage' => '_appleklinika_storage_capacity',
+        'ak_condition' => '_appleklinika_overall_grade',
         'ak_color' => '_appleklinika_color',
         'ak_sim' => '_appleklinika_sim_config',
     ];
 
     foreach ($filterLabels as $queryKey => $metaKey) {
         foreach (appleklinika_query_values($queryKey) as $value) {
-            $chips[] = appleklinika_filter_label($metaKey, $value);
+            $chips[] = [
+                'label' => appleklinika_filter_label($metaKey, $value),
+                'url' => appleklinika_filter_chip_remove_url($queryKey, $value),
+            ];
         }
     }
 
@@ -978,11 +992,14 @@ function appleklinika_render_active_filter_chips(): void
     $maxPrice = appleklinika_query_value('ak_max_price');
 
     if ($minPrice !== '' || $maxPrice !== '') {
-        $chips[] = trim(
-            ($minPrice !== '' ? appleklinika_format_plain_price((float) $minPrice) : '') .
-            ' - ' .
-            ($maxPrice !== '' ? appleklinika_format_plain_price((float) $maxPrice) : '')
-        );
+        $chips[] = [
+            'label' => trim(
+                ($minPrice !== '' ? appleklinika_format_plain_price((float) $minPrice) : '') .
+                ' - ' .
+                ($maxPrice !== '' ? appleklinika_format_plain_price((float) $maxPrice) : '')
+            ),
+            'url' => appleklinika_filter_chip_remove_url('ak_price'),
+        ];
     }
 
     if ($chips === []) {
@@ -991,10 +1008,36 @@ function appleklinika_render_active_filter_chips(): void
     ?>
     <nav class="ak-active-filter-chips" aria-label="Aktív szűrők">
         <?php foreach ($chips as $chip) : ?>
-            <span><?php echo esc_html($chip); ?></span>
+            <a href="<?php echo esc_url($chip['url']); ?>" aria-label="<?php echo esc_attr($chip['label'] . ' szűrő eltávolítása'); ?>">
+                <span><?php echo esc_html($chip['label']); ?></span>
+                <span class="ak-filter-chip__remove" aria-hidden="true">×</span>
+            </a>
         <?php endforeach; ?>
     </nav>
     <?php
+}
+
+function appleklinika_filter_chip_remove_url(string $queryKey, string $value = ''): string
+{
+    $url = remove_query_arg('paged');
+
+    if ($queryKey === 'ak_price') {
+        return remove_query_arg(['ak_min_price', 'ak_max_price'], $url);
+    }
+
+    $values = appleklinika_query_values($queryKey);
+    $remainingValues = array_values(array_filter(
+        $values,
+        static fn (string $currentValue): bool => $currentValue !== $value
+    ));
+
+    $url = remove_query_arg($queryKey, $url);
+
+    if ($remainingValues === []) {
+        return $url;
+    }
+
+    return add_query_arg([$queryKey => $remainingValues], $url);
 }
 
 /**
@@ -1140,6 +1183,10 @@ function appleklinika_filter_label(string $metaKey, string $value): string
         return appleklinika_storage_label($value);
     }
 
+    if ($metaKey === '_appleklinika_overall_grade') {
+        return appleklinika_grade_label($value);
+    }
+
     return ucwords(str_replace('_', ' ', $value));
 }
 
@@ -1170,9 +1217,39 @@ function appleklinika_sim_filter_labels(): array
     ];
 }
 
+/**
+ * @return array<string, string>
+ */
+function appleklinika_condition_filter_labels(): array
+{
+    return [
+        'a_plus' => 'A+',
+        'a' => 'A',
+        'b' => 'B',
+        'c' => 'C',
+    ];
+}
+
 function appleklinika_sim_label(string $value): string
 {
     return appleklinika_sim_filter_labels()[$value] ?? ucwords(str_replace('_', ' ', $value));
+}
+
+function appleklinika_product_card_sim_label(string $value): string
+{
+    if ($value === '' || $value === 'physical_esim') {
+        return '';
+    }
+
+    return appleklinika_sim_label($value);
+}
+
+function appleklinika_product_card_battery_option_label(string $value): string
+{
+    return [
+        'aftermarket_new' => 'Új utángy. akku',
+        'factory_new' => 'Új gyári akku',
+    ][$value] ?? '';
 }
 
 function appleklinika_color_label(string $value): string
@@ -1273,6 +1350,7 @@ function appleklinika_apply_shop_filters(WP_Query $query): void
     $map = [
         'ak_model' => '_appleklinika_device_model',
         'ak_storage' => '_appleklinika_storage_capacity',
+        'ak_condition' => '_appleklinika_overall_grade',
         'ak_color' => '_appleklinika_color',
         'ak_sim' => '_appleklinika_sim_config',
     ];
@@ -1319,6 +1397,65 @@ function appleklinika_apply_shop_filters(WP_Query $query): void
     }
 }
 
+/**
+ * @param array<string, string> $options
+ * @return array<string, string>
+ */
+function appleklinika_catalog_orderby_options(array $options): array
+{
+    return [
+        'menu_order' => 'Alapértelmezett rendezés',
+        'price' => 'Ár szerint növekvő',
+        'price-desc' => 'Ár szerint csökkenő',
+        'ak_sale_first' => 'Akciós telefonok elöl',
+    ];
+}
+
+/**
+ * @param array<string, string> $args
+ * @return array<string, string>
+ */
+function appleklinika_catalog_ordering_args(array $args, string $orderby, string $order): array
+{
+    if ($orderby !== 'ak_sale_first') {
+        return $args;
+    }
+
+    return [
+        'orderby' => 'menu_order title',
+        'order' => 'ASC',
+    ];
+}
+
+/**
+ * @param array<string, string> $clauses
+ * @return array<string, string>
+ */
+function appleklinika_sale_first_ordering_clauses(array $clauses, WP_Query $query): array
+{
+    if (is_admin() || ! $query->is_main_query() || ! appleklinika_is_shop_archive_context()) {
+        return $clauses;
+    }
+
+    if (sanitize_key((string) ($_GET['orderby'] ?? '')) !== 'ak_sale_first') {
+        return $clauses;
+    }
+
+    global $wpdb;
+
+    $lookupTable = $wpdb->prefix . 'wc_product_meta_lookup';
+    $join = " LEFT JOIN {$lookupTable} ak_price_lookup ON {$wpdb->posts}.ID = ak_price_lookup.product_id ";
+
+    if (! str_contains($clauses['join'] ?? '', 'ak_price_lookup')) {
+        $clauses['join'] = ($clauses['join'] ?? '') . $join;
+    }
+
+    $existingOrderBy = trim((string) ($clauses['orderby'] ?? ''));
+    $clauses['orderby'] = 'ak_price_lookup.onsale DESC' . ($existingOrderBy !== '' ? ', ' . $existingOrderBy : '');
+
+    return $clauses;
+}
+
 function appleklinika_render_loop_product_meta(): void
 {
     global $product;
@@ -1330,7 +1467,7 @@ function appleklinika_render_loop_product_meta(): void
     $bits = array_filter([
         appleklinika_storage_label((string) get_post_meta($product->get_id(), '_appleklinika_storage_capacity', true)),
         appleklinika_grade_label((string) get_post_meta($product->get_id(), '_appleklinika_overall_grade', true)),
-        appleklinika_sim_label((string) get_post_meta($product->get_id(), '_appleklinika_sim_config', true)),
+        appleklinika_product_card_sim_label((string) get_post_meta($product->get_id(), '_appleklinika_sim_config', true)),
         appleklinika_battery_label((string) get_post_meta($product->get_id(), '_appleklinika_battery_health', true)),
     ]);
 
@@ -1384,12 +1521,7 @@ function appleklinika_render_shop_product_card(): void
 
     $productId = $product->get_id();
     $productUrl = get_permalink($productId);
-    $meta = array_filter([
-        appleklinika_storage_label((string) get_post_meta($productId, '_appleklinika_storage_capacity', true)),
-        appleklinika_grade_label((string) get_post_meta($productId, '_appleklinika_overall_grade', true)),
-        appleklinika_sim_label((string) get_post_meta($productId, '_appleklinika_sim_config', true)),
-        appleklinika_battery_label((string) get_post_meta($productId, '_appleklinika_battery_health', true)),
-    ]);
+    $metaChips = appleklinika_product_card_meta_chips($productId);
     ?>
     <a class="ak-product-card__inner" href="<?php echo esc_url($productUrl); ?>" aria-label="<?php echo esc_attr($product->get_name()); ?>">
         <?php if ($product->is_on_sale()) : ?>
@@ -1403,8 +1535,17 @@ function appleklinika_render_shop_product_card(): void
         <div class="ak-product-card__content">
             <h3 class="ak-product-card__title"><?php echo esc_html($product->get_name()); ?></h3>
 
-            <?php if ($meta !== []) : ?>
-                <div class="ak-product-card__meta"><?php echo esc_html(implode(' · ', $meta)); ?></div>
+            <?php if ($metaChips !== []) : ?>
+                <div class="ak-product-card__meta" aria-label="Termékadatok">
+                    <?php foreach ($metaChips as $chip) : ?>
+                        <span class="ak-product-card__meta-chip ak-product-card__meta-chip--<?php echo esc_attr($chip['type']); ?>">
+                            <?php if ($chip['type'] === 'battery') : ?>
+                                <?php echo appleklinika_battery_status_icon(); ?>
+                            <?php endif; ?>
+                            <span><?php echo esc_html($chip['label']); ?></span>
+                        </span>
+                    <?php endforeach; ?>
+                </div>
             <?php endif; ?>
 
             <div class="ak-product-card__price">
@@ -1420,6 +1561,50 @@ function appleklinika_render_shop_product_card(): void
         </div>
     </a>
     <?php
+}
+
+/**
+ * @return array<int, array{type: string, label: string}>
+ */
+function appleklinika_product_card_meta_chips(int $productId): array
+{
+    $chips = [];
+
+    $storage = appleklinika_storage_label((string) get_post_meta($productId, '_appleklinika_storage_capacity', true));
+    if ($storage !== '') {
+        $chips[] = ['type' => 'storage', 'label' => $storage];
+    }
+
+    $grade = appleklinika_grade_label((string) get_post_meta($productId, '_appleklinika_overall_grade', true));
+    if ($grade !== '') {
+        $chips[] = ['type' => 'grade', 'label' => 'Grade ' . $grade];
+    }
+
+    $batteryOption = appleklinika_product_card_battery_option_label((string) get_post_meta($productId, '_appleklinika_battery_option', true));
+    if ($batteryOption !== '') {
+        $chips[] = ['type' => 'battery-option', 'label' => $batteryOption];
+    }
+
+    $sim = appleklinika_product_card_sim_label((string) get_post_meta($productId, '_appleklinika_sim_config', true));
+    if ($sim !== '') {
+        $chips[] = ['type' => 'sim', 'label' => $sim];
+    }
+
+    $battery = appleklinika_battery_label((string) get_post_meta($productId, '_appleklinika_battery_health', true));
+    if ($battery !== '') {
+        $chips[] = ['type' => 'battery', 'label' => $battery];
+    }
+
+    return $chips;
+}
+
+function appleklinika_battery_status_icon(): string
+{
+    return '<svg class="ak-battery-icon" width="20" height="11" viewBox="0 0 20 11" aria-hidden="true" focusable="false">'
+        . '<rect x="1" y="1.5" width="15.5" height="8" rx="2.2" fill="#ffffff" stroke="#1f2937" stroke-width="1.8"/>'
+        . '<rect x="3.2" y="3.4" width="10.8" height="4.2" rx="1.2" fill="#1f2937"/>'
+        . '<rect x="17.2" y="4" width="1.8" height="3" rx="0.8" fill="#1f2937"/>'
+        . '</svg>';
 }
 
 function appleklinika_render_loop_product_savings(): void
