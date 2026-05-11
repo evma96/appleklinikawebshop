@@ -6,6 +6,89 @@
     return String(Math.round(Number(value) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' Ft';
   }
 
+  var wishlistConfig = window.appleklinikaWishlist || {};
+
+  function setWishlistButtonState(button, isFavorite) {
+    button.classList.toggle('is-active', isFavorite);
+    button.setAttribute('aria-pressed', isFavorite ? 'true' : 'false');
+    button.setAttribute('aria-label', isFavorite ? 'Eltávolítás a kedvencekből' : 'Hozzáadás a kedvencekhez');
+  }
+
+  function removeWishlistAccountItem(productId) {
+    document.querySelectorAll('[data-wishlist-item="' + productId + '"]').forEach(function (item) {
+      item.remove();
+    });
+  }
+
+  function initWishlistButtons() {
+    var initialIds = wishlistConfig.productIds || [];
+    var activeIds = initialIds.map(function (productId) {
+      return Number(productId);
+    });
+
+    document.querySelectorAll('.ak-wishlist-button[data-product-id]').forEach(function (button) {
+      var productId = Number(button.getAttribute('data-product-id'));
+
+      if (!productId) {
+        return;
+      }
+
+      setWishlistButtonState(button, activeIds.indexOf(productId) !== -1 || button.classList.contains('is-active'));
+
+      button.addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (!wishlistConfig.isLoggedIn) {
+          if (wishlistConfig.loginUrl) {
+            window.location.href = wishlistConfig.loginUrl;
+          }
+
+          return;
+        }
+
+        if (!wishlistConfig.ajaxUrl || !wishlistConfig.nonce) {
+          return;
+        }
+
+        button.disabled = true;
+
+        var body = new window.URLSearchParams();
+        body.append('action', 'appleklinika_toggle_wishlist');
+        body.append('nonce', wishlistConfig.nonce);
+        body.append('product_id', String(productId));
+
+        window.fetch(wishlistConfig.ajaxUrl, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: body.toString()
+        })
+          .then(function (response) {
+            return response.json();
+          })
+          .then(function (payload) {
+            if (!payload || !payload.success || !payload.data) {
+              return;
+            }
+
+            document.querySelectorAll('.ak-wishlist-button[data-product-id="' + productId + '"]').forEach(function (matchingButton) {
+              setWishlistButtonState(matchingButton, Boolean(payload.data.isFavorite));
+            });
+
+            if (!payload.data.isFavorite) {
+              removeWishlistAccountItem(productId);
+            }
+          })
+          .finally(function () {
+            button.disabled = false;
+          });
+      });
+    });
+  }
+
   function updatePriceFilter(filter) {
     var minInput = filter.querySelector('[data-price-min]');
     var maxInput = filter.querySelector('[data-price-max]');
@@ -39,6 +122,8 @@
       updatePriceFilter(filter);
     });
   });
+
+  initWishlistButtons();
 
   document.querySelectorAll('.woocommerce-ordering').forEach(function (form) {
     var select = form.querySelector('select.orderby');
