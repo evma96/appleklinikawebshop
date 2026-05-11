@@ -123,6 +123,12 @@ The `Appleklinika Inventory` plugin adds used-phone product fields in the WooCom
 - Accessories.
 - Short device description.
 - Internal identifier / IMEI for admins only.
+
+The custom theme also adds a functional `Kedvelt termékek` wishlist flow:
+
+- Logged-in users save favorite product IDs in WordPress user meta.
+- Logged-out users are sent to the WooCommerce account/login page instead of saving guest favorites.
+- The WooCommerce account area includes a `Kedvelt termékek` section that lists saved products from real WooCommerce data.
 - Body grade.
 - Camera island grade.
 - Display grade.

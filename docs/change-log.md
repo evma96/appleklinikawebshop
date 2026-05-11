@@ -136,6 +136,15 @@
 - Replaced the product card Akku chip icon with the exact requested 20x11 filled iPhone-style inline SVG.
 - Removed CSS color control from the product card Akku SVG so the icon uses only fixed inline `fill="#ffffff"` and `stroke="#1f2937"` values.
 - Filled the product card Akku SVG charge bar with fixed dark color so the battery no longer appears empty on the light chip background.
+- Replaced the shop product card `AKCIÓ` label with a top-right brand-red savings badge and aligned old/current prices on one row.
+- Removed the duplicated savings line from shop product cards and made the top-right savings badge smaller and contained within the card.
+- Adjusted the shop product card savings badge to sit on the upper-right edge with a reference-like red pill shape.
+- Reverted sale-card image spacing so the savings badge no longer changes product image positioning.
+- Moved the shop product card savings badge upward into the card's top whitespace without changing product image positioning.
+- Repositioned the shop product card savings badge against the card's own top-right padding area so it no longer depends on the inner product link positioning or moves the product image.
+- Moved sale product labels into a normal top badge row with `AKCIÓ` on the left and the real savings amount on the right, removing absolute badge positioning from the image area.
+- Added a functional Kedvencek wishlist system with product-card heart buttons, logged-in user meta storage, AJAX toggling, and a WooCommerce account endpoint for saved products.
+- Scoped the Kedvencek wishlist to logged-in users only because the local storefront is behind Coming Soon for logged-out users; logged-out clicks now route to the WooCommerce account/login page instead of using guest localStorage.
 - Routed the cart page through the WordPress content filter so the editable WooCommerce cart block is replaced by the custom dynamic Appleklinika cart layout at render time.
 - Refined the custom cart visual direction with floating glass-like cards, softer page background, and Apple Klinika brand-red checkout/coupon/remove accents.
 - Changed the desktop cart order summary from sticky to fixed positioning so it remains visible while the cart item list scrolls.

@@ -37,6 +37,7 @@
 - Browser-level storefront checks can be blocked by coming-soon mode when the tester is not in a logged-in WordPress session.
 - The global design system cleanup is a first pass; header-specific and product-selector-specific visual fixes were intentionally left for separate focused iterations.
 - The cart page now renders through a custom dynamic theme layout, but quantity updates, remove links, coupon submission, and checkout navigation still need a hands-on browser interaction pass.
+- The Kedvencek wishlist is intentionally logged-in-only while the storefront is behind Coming Soon for logged-out users; guest wishlist storage is not implemented.
 
 ## Deferred Improvements
 
@@ -55,6 +56,7 @@
 - Decide how smooth selector switching should behave when a requested color/storage/grade combination is unavailable in real stock.
 - Decide the final pricing logic for new aftermarket and new factory battery options.
 - Decide whether local demo seed tools should be removed, hidden behind an environment flag, or kept for staging only before production launch.
+- Decide later whether production should support guest wishlist storage, login-required notices, or account import after login/registration.
 
 ## Risks
 

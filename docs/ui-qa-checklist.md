@@ -8,8 +8,8 @@ Status values:
 - `FAIL`: verified in browser and broken.
 - `NOT TESTED`: not verified in browser during this round.
 
-Last run: 2026-05-10
-Scope: Shop product card meta chips.
+Last run: 2026-05-11
+Scope: Shop product card savings badge position.
 
 ## 1. Navigation Check
 
@@ -17,7 +17,7 @@ Scope: Shop product card meta chips.
 | --- | --- | --- |
 | Header links work | NOT TESTED | Header was not changed in this round. |
 | Footer links work | NOT TESTED | Footer link targets were not changed in this round. |
-| Product cards open real product pages | NOT TESTED | Product card links were not changed in this round. |
+| Product cards open real product pages | NOT TESTED | Product card links should still open products; wishlist click must not trigger navigation. Browser verification is needed. |
 | No empty href | NOT TESTED | Footer links were not changed in this round. |
 | No `#` links | NOT TESTED | Footer links were not changed in this round. |
 | No broken URLs | NOT TESTED | Footer links were not changed in this round. |
@@ -38,11 +38,13 @@ Scope: Shop product card meta chips.
 
 | Item | Status | Notes |
 | --- | --- | --- |
-| Product cards are equal size | NOT TESTED | Product card meta changed from one text line to real meta chips; verify equal card height after wrapping. |
+| Product cards are equal size | NOT TESTED | Wishlist button was added as an overlay without changing card data/layout; verify equal card height at desktop width. |
+| Product card wishlist toggle works | NOT TESTED | Heart button should toggle without opening the product page for logged-in users and save to user meta. Logged-out users should be sent to the account/login page. |
 | Images have consistent ratio | NOT TESTED | Product image area was not changed in this round. |
-| Filters look modern | NOT TESTED | Active filter chips now have hover movement, stronger separation, and remove affordances; browser verification still needed. |
+| Savings badge does not overlap product image | NOT TESTED | Sale cards now render a dedicated top badge row above the image; verify visually at desktop width. |
+| Filters look modern | NOT TESTED | Filters were not changed in this round. |
 | Filters do not look like default browser UI | NOT TESTED | Filter chip removal links were added without changing sidebar filter controls. |
-| Sorting works if available | NOT TESTED | The native select is visually replaced by a custom dropdown that submits the real WooCommerce ordering form; browser verification still needed for all four options. |
+| Sorting works if available | NOT TESTED | Sorting was not changed in this round. |
 
 ## 4. Layout Check
 
