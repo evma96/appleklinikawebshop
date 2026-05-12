@@ -1,12 +1,13 @@
 # Appleklinika Webshop
 
-Production-oriented WooCommerce webshop foundation for selling used smartphones.
+Production-oriented WooCommerce webshop foundation for selling used Apple devices.
 
 ## Business Model
 
-- Each phone is a unique WooCommerce product.
+- Each used device is a unique WooCommerce product.
 - Products do not use variations for individual devices.
-- Each product will later store device-specific attributes such as battery health, storage capacity, color, cosmetic condition, warranty duration, accessories, and internal IMEI.
+- Each product stores device-specific attributes such as battery health, storage capacity, color, cosmetic condition, warranty duration, accessories, and internal IMEI.
+- iPhone, iPad, MacBook, and Apple Watch listings reuse the same WooCommerce product-card system, but category-specific chips and filters come from their own product meta.
 - Internal IMEI is admin-only data and must never be exposed on the frontend.
 
 ## Architecture Direction
@@ -111,14 +112,20 @@ Persistent data is stored in Docker volumes:
 
 This is the project bootstrap with the first admin-side WooCommerce customization.
 
-The `Appleklinika Inventory` plugin adds used-phone product fields in the WooCommerce product editor:
+The `Appleklinika Inventory` plugin adds used-device product fields in the WooCommerce product editor:
 
+- Device type for category-specific storefront chips and filters.
+- Category-specific admin field visibility: after selecting iPhone, iPad, MacBook, or Apple Watch, the product editor only shows the matching option fields for that device family.
 - Apple model from the internal device catalog.
+- Apple model choices are filtered by the selected device type.
 - Battery health percentage.
 - Battery option for standard, new aftermarket, or new factory battery selection.
 - Storage capacity as a fixed admin select list.
 - Color from the internal device catalog.
 - SIM configuration as a fixed admin select list.
+- iPad connectivity is limited to Wi-Fi and Wi-Fi + Cellular.
+- MacBook display size, Apple Silicon chip family, RAM, storage, and color.
+- Apple Watch connectivity is limited to GPS and GPS + Cellular; case size, case material, and color options are filtered by the selected Watch model, including 42 mm and 46 mm sizes where applicable.
 - Warranty duration as a fixed admin select list.
 - Accessories.
 - Short device description.
@@ -149,7 +156,7 @@ The plugin also adds an admin catalog page:
 Appleklinika > Device Catalog
 ```
 
-The first catalog seed focuses on iPhone models from 2018 onward. Color labels use Hungarian names with Apple English names in parentheses. The catalog is designed so iPad, Mac, Apple Watch, AirPods, and accessories can be added later.
+The catalog seed includes iPhone models from 2018 onward, iPad models from 2019 onward, Apple Silicon MacBook models, and Apple Watch models from SE 2 / Series 8 onward. Color labels use Hungarian names with Apple English names in parentheses. Apple Watch admin options also include model-specific case size, case material, connectivity, and color pairings. The catalog is still designed so AirPods and accessories can be added later.
 
 Existing catalog rows can be edited or deleted directly from the admin catalog table.
 
@@ -167,7 +174,13 @@ The frontend currently includes:
 - Product add-to-cart updates the real WooCommerce cart count and displays success feedback.
 - The WooCommerce shop/listing page has a compact product grid with equal-height cards, product images, key meta, prices, and real product detail links.
 - Storefront prices are formatted without unnecessary decimals, using space-separated thousands such as `379 990 Ft`.
-- The shop page includes a left-side collapsible filter panel for type/model, price, storage, color, and SIM options, using WooCommerce product meta.
+- The shop page includes a left-side collapsible filter panel using WooCommerce product meta.
+- iPhone keeps the approved filters for type/model, price, storage, condition, color, and SIM.
+- iPad uses model, price, storage, color, connectivity, and condition filters.
+- MacBook uses model, price, screen size, chip, RAM, storage, color, and condition filters.
+- Apple Watch uses model, price, case size, case material/color, connectivity, strap, and condition filters.
+
+Product cards intentionally stay compact: non-iPhone archive cards only show storage, grade, an optional real battery-health chip, and a Cellular chip only when an iPad or Apple Watch product has cellular connectivity.
 - The header uses a simplified two-row storefront layout with logo, centered search, account/cart actions, and Apple-focused category navigation.
 - Color, storage, condition, battery health, and warranty values come from product meta fields when available.
 - SIM configuration comes from product meta and can appear in shop card meta, product info cards, and shop filtering.
@@ -187,7 +200,7 @@ Internal identifier / IMEI remains admin-only and is not rendered on the fronten
 
 ## Local Selector Demo Products
 
-For local verification, an admin-only development seeder can create a full iPhone 13 Pro selector matrix as real WooCommerce products.
+For local verification, an admin-only development seeder can create a full iPhone 13 Pro selector matrix and a small iPad/MacBook/Apple Watch test set as real WooCommerce products.
 
 The current local matrix includes:
 
@@ -196,6 +209,9 @@ The current local matrix includes:
 - 4 grade options.
 - SIM configuration values are assigned across the local matrix.
 - Battery replacement options are tested as add-on extras, not separate products.
+- 3 iPad demo products covering storage, color, Wi-Fi / Cellular, grade, battery, and sale/non-sale pricing.
+- 3 MacBook demo products covering screen size, chip, RAM, storage, color, grade, cycle count, and sale/non-sale pricing.
+- 3 Apple Watch demo products covering case size, material, GPS / Cellular, strap, grade, battery, and sale/non-sale pricing.
 - One featured image per generated product, rotated from local demo assets.
 
 Open this while logged in as an admin:

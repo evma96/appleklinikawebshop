@@ -40,7 +40,7 @@ add_action('init', static function (): void {
     $selectorDemoProductsSeeder = new Appleklinika\Inventory\Infrastructure\WordPress\SelectorDemoProductsSeeder($repository);
     $selectorDemoProductsSeeder->register();
 
-    $saveHandler = new Appleklinika\Inventory\Application\ProductCondition\SaveProductConditionHandler($repository);
+    $saveHandler = new Appleklinika\Inventory\Application\ProductCondition\SaveProductConditionHandler($repository, $deviceCatalogRepository);
     $adminFields = new Appleklinika\Inventory\Interfaces\Admin\ProductConditionFields($saveHandler, $repository, $deviceCatalogRepository);
     $adminFields->register();
 

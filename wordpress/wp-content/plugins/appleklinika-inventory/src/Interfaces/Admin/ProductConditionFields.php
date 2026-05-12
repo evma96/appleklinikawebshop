@@ -41,9 +41,24 @@ final class ProductConditionFields
         echo '<div class="options_group">';
 
         woocommerce_wp_select([
+            'id' => 'appleklinika_device_type',
+            'label' => 'Készüléktípus',
+            'options' => [
+                '' => 'Automatikus / nincs megadva',
+                'iphone' => 'iPhone',
+                'ipad' => 'iPad',
+                'macbook' => 'MacBook',
+                'apple_watch' => 'Apple Watch',
+            ],
+            'description' => 'A webshop szűrői és termékkártya chipjei ezt használják kategóriafüggő megjelenítéshez.',
+            'value' => $this->repository->get($post->ID, 'device_type'),
+        ]);
+
+        woocommerce_wp_select([
             'id' => 'appleklinika_device_model',
             'label' => 'Apple modell',
             'options' => $this->deviceCatalogRepository->modelOptions(),
+            'wrapper_class' => 'appleklinika-device-field',
             'value' => $this->repository->get($post->ID, 'device_model'),
         ]);
 
@@ -56,6 +71,7 @@ final class ProductConditionFields
                 'max' => '100',
                 'step' => '1',
             ],
+            'wrapper_class' => 'appleklinika-device-field',
             'value' => $this->repository->get($post->ID, 'battery_health'),
         ]);
 
@@ -66,6 +82,10 @@ final class ProductConditionFields
                 'standard' => 'Standard',
                 'aftermarket_new' => 'Új utángyártott akkumulátor',
                 'factory_new' => 'Új gyári akkumulátor',
+            ],
+            'wrapper_class' => 'appleklinika-device-field',
+            'custom_attributes' => [
+                'data-ak-device-types' => 'iphone',
             ],
             'value' => $this->repository->get($post->ID, 'battery_option') ?: 'standard',
         ]);
@@ -81,6 +101,12 @@ final class ProductConditionFields
                 '512_gb' => '512 GB',
                 '1_tb' => '1 TB',
                 '2_tb' => '2 TB',
+                '4_tb' => '4 TB',
+                '8_tb' => '8 TB',
+            ],
+            'wrapper_class' => 'appleklinika-device-field',
+            'custom_attributes' => [
+                'data-ak-device-types' => 'iphone ipad macbook',
             ],
             'value' => $this->repository->get($post->ID, 'storage_capacity'),
         ]);
@@ -89,9 +115,12 @@ final class ProductConditionFields
             'id' => 'appleklinika_color',
             'label' => 'Szín',
             'options' => $this->deviceCatalogRepository->colorOptions(),
+            'wrapper_class' => 'appleklinika-device-field',
+            'custom_attributes' => [
+                'data-ak-device-types' => 'iphone ipad macbook apple_watch',
+            ],
             'value' => $this->repository->get($post->ID, 'color'),
         ]);
-        $this->renderModelColorScript($post->ID);
 
         woocommerce_wp_select([
             'id' => 'appleklinika_sim_config',
@@ -102,8 +131,144 @@ final class ProductConditionFields
                 'physical_esim' => 'Fizikai + eSIM',
                 'dual_physical' => 'Dual fizikai',
             ],
+            'wrapper_class' => 'appleklinika-device-field',
+            'custom_attributes' => [
+                'data-ak-device-types' => 'iphone',
+            ],
             'value' => $this->repository->get($post->ID, 'sim_config'),
         ]);
+
+        woocommerce_wp_select([
+            'id' => 'appleklinika_connectivity',
+            'label' => 'Kapcsolat / hálózat',
+            'options' => [
+                '' => 'Nincs megadva',
+                'wifi' => 'Wi-Fi',
+                'wifi_cellular' => 'Wi-Fi + Cellular',
+                'gps' => 'GPS',
+                'gps_cellular' => 'GPS + Cellular',
+            ],
+            'wrapper_class' => 'appleklinika-device-field',
+            'custom_attributes' => [
+                'data-ak-device-types' => 'ipad apple_watch',
+            ],
+            'value' => $this->repository->get($post->ID, 'connectivity'),
+        ]);
+
+        woocommerce_wp_select([
+            'id' => 'appleklinika_screen_size',
+            'label' => 'Kijelzőméret',
+            'options' => [
+                '' => 'Nincs megadva',
+                '13_inch' => '13"',
+                '14_inch' => '14"',
+                '15_inch' => '15"',
+                '16_inch' => '16"',
+            ],
+            'wrapper_class' => 'appleklinika-device-field',
+            'custom_attributes' => [
+                'data-ak-device-types' => 'macbook',
+            ],
+            'value' => $this->repository->get($post->ID, 'screen_size'),
+        ]);
+
+        woocommerce_wp_select([
+            'id' => 'appleklinika_processor_chip',
+            'label' => 'Chip',
+            'options' => [
+                '' => 'Nincs megadva',
+                'm1' => 'M1',
+                'm1_pro' => 'M1 Pro',
+                'm1_max' => 'M1 Max',
+                'm2' => 'M2',
+                'm2_pro' => 'M2 Pro',
+                'm2_max' => 'M2 Max',
+                'm3' => 'M3',
+                'm3_pro' => 'M3 Pro',
+                'm3_max' => 'M3 Max',
+                'm4' => 'M4',
+                'm4_pro' => 'M4 Pro',
+                'm4_max' => 'M4 Max',
+                'm5' => 'M5',
+                'm5_pro' => 'M5 Pro',
+                'm5_max' => 'M5 Max',
+            ],
+            'wrapper_class' => 'appleklinika-device-field',
+            'custom_attributes' => [
+                'data-ak-device-types' => 'macbook',
+            ],
+            'value' => $this->repository->get($post->ID, 'processor_chip'),
+        ]);
+
+        woocommerce_wp_select([
+            'id' => 'appleklinika_ram_size',
+            'label' => 'RAM',
+            'options' => [
+                '' => 'Nincs megadva',
+                '8_gb' => '8 GB',
+                '16_gb' => '16 GB',
+                '18_gb' => '18 GB',
+                '24_gb' => '24 GB',
+                '32_gb' => '32 GB',
+                '36_gb' => '36 GB',
+                '48_gb' => '48 GB',
+                '64_gb' => '64 GB',
+                '96_gb' => '96 GB',
+                '128_gb' => '128 GB',
+            ],
+            'wrapper_class' => 'appleklinika-device-field',
+            'custom_attributes' => [
+                'data-ak-device-types' => 'macbook',
+            ],
+            'value' => $this->repository->get($post->ID, 'ram_size'),
+        ]);
+
+        woocommerce_wp_select([
+            'id' => 'appleklinika_case_size',
+            'label' => 'Apple Watch tokméret',
+            'options' => [
+                '' => 'Nincs megadva',
+                '40_mm' => '40 mm',
+                '41_mm' => '41 mm',
+                '42_mm' => '42 mm',
+                '44_mm' => '44 mm',
+                '45_mm' => '45 mm',
+                '46_mm' => '46 mm',
+                '49_mm' => '49 mm',
+            ],
+            'wrapper_class' => 'appleklinika-device-field',
+            'custom_attributes' => [
+                'data-ak-device-types' => 'apple_watch',
+            ],
+            'value' => $this->repository->get($post->ID, 'case_size'),
+        ]);
+
+        woocommerce_wp_select([
+            'id' => 'appleklinika_case_material',
+            'label' => 'Apple Watch tok anyaga / színe',
+            'options' => [
+                '' => 'Nincs megadva',
+                'aluminium' => 'Alumínium',
+                'stainless_steel' => 'Rozsdamentes acél',
+                'titanium' => 'Titán',
+            ],
+            'wrapper_class' => 'appleklinika-device-field',
+            'custom_attributes' => [
+                'data-ak-device-types' => 'apple_watch',
+            ],
+            'value' => $this->repository->get($post->ID, 'case_material'),
+        ]);
+
+        woocommerce_wp_text_input([
+            'id' => 'appleklinika_strap',
+            'label' => 'Szíj',
+            'wrapper_class' => 'appleklinika-device-field',
+            'custom_attributes' => [
+                'data-ak-device-types' => 'apple_watch',
+            ],
+            'value' => $this->repository->get($post->ID, 'strap'),
+        ]);
+        $this->renderDeviceTypeScript($post->ID);
 
         woocommerce_wp_select([
             'id' => 'appleklinika_warranty_duration',
@@ -161,12 +326,20 @@ final class ProductConditionFields
         }
 
         $this->saveHandler->handle(new SaveProductConditionCommand($productId, [
+            'device_type' => $this->postedValue('appleklinika_device_type'),
             'device_model' => $this->postedValue('appleklinika_device_model'),
             'battery_health' => $this->postedValue('appleklinika_battery_health'),
             'battery_option' => $this->postedValue('appleklinika_battery_option', 'standard'),
             'storage_capacity' => $this->postedValue('appleklinika_storage_capacity'),
             'color' => $this->postedValue('appleklinika_color'),
             'sim_config' => $this->postedValue('appleklinika_sim_config'),
+            'connectivity' => $this->postedValue('appleklinika_connectivity'),
+            'screen_size' => $this->postedValue('appleklinika_screen_size'),
+            'processor_chip' => $this->postedValue('appleklinika_processor_chip'),
+            'ram_size' => $this->postedValue('appleklinika_ram_size'),
+            'case_size' => $this->postedValue('appleklinika_case_size'),
+            'case_material' => $this->postedValue('appleklinika_case_material'),
+            'strap' => $this->postedValue('appleklinika_strap'),
             'warranty_duration' => $this->postedValue('appleklinika_warranty_duration'),
             'accessories' => $this->postedValue('appleklinika_accessories'),
             'short_device_description' => $this->postedValue('appleklinika_short_device_description'),
@@ -193,33 +366,137 @@ final class ProductConditionFields
         return isset($_POST[$key]) ? (string) wp_unslash($_POST[$key]) : $default;
     }
 
-    private function renderModelColorScript(int $productId): void
+    private function renderDeviceTypeScript(int $productId): void
     {
         $catalog = [];
 
         foreach ($this->deviceCatalogRepository->all() as $device) {
-            $catalog[$device['key']] = $device['colors'];
+            $catalog[$device['key']] = [
+                'name' => $device['name'],
+                'type' => $device['type'],
+                'colors' => $device['colors'],
+            ];
         }
 
-        echo '<script>';
-        echo '(function(){';
-        echo 'const catalog=' . wp_json_encode($catalog) . ';';
-        echo 'const selectedColor=' . wp_json_encode($this->repository->get($productId, 'color')) . ';';
-        echo 'const modelSelect=document.getElementById("appleklinika_device_model");';
-        echo 'const colorSelect=document.getElementById("appleklinika_color");';
-        echo 'if(!modelSelect||!colorSelect){return;}';
-        echo 'function option(value,label){const item=document.createElement("option");item.value=value;item.textContent=label;return item;}';
-        echo 'function refreshColors(){';
-        echo 'const current=colorSelect.value||selectedColor;';
-        echo 'const colors=catalog[modelSelect.value]||{};';
-        echo 'colorSelect.innerHTML="";';
-        echo 'colorSelect.appendChild(option("","Válassz színt"));';
-        echo 'Object.keys(colors).forEach(function(key){const item=option(key,colors[key]);if(key===current){item.selected=true;}colorSelect.appendChild(item);});';
-        echo 'if(current&&colors[current]===undefined){const item=option(current,current);item.selected=true;colorSelect.appendChild(item);}';
-        echo '}';
-        echo 'modelSelect.addEventListener("change",refreshColors);';
-        echo 'refreshColors();';
-        echo '})();';
-        echo '</script>';
+        $catalogJson = wp_json_encode($catalog);
+        $watchOptionsJson = wp_json_encode($this->deviceCatalogRepository->watchOptionsByModel());
+        $selectedJson = wp_json_encode([
+            'model' => $this->repository->get($productId, 'device_model'),
+            'color' => $this->repository->get($productId, 'color'),
+            'connectivity' => $this->repository->get($productId, 'connectivity'),
+            'caseSize' => $this->repository->get($productId, 'case_size'),
+            'caseMaterial' => $this->repository->get($productId, 'case_material'),
+        ]);
+
+        echo <<<HTML
+<script>
+(function(){
+const catalog={$catalogJson};
+const watchOptions={$watchOptionsJson};
+const selected={$selectedJson};
+const typeSelect=document.getElementById("appleklinika_device_type");
+const modelSelect=document.getElementById("appleklinika_device_model");
+const colorSelect=document.getElementById("appleklinika_color");
+const connectivitySelect=document.getElementById("appleklinika_connectivity");
+const caseSizeSelect=document.getElementById("appleklinika_case_size");
+const caseMaterialSelect=document.getElementById("appleklinika_case_material");
+if(!typeSelect||!modelSelect||!colorSelect){return;}
+function normalizeType(type){return {iphone:"iphone",ipad:"ipad",mac:"macbook",macbook:"macbook",watch:"apple_watch",apple_watch:"apple_watch"}[type]||type||"";}
+function selectedType(){return normalizeType(typeSelect.value);}
+function option(value,label){const item=document.createElement("option");item.value=value;item.textContent=label;return item;}
+function deviceMatchesType(device,type){return !type||normalizeType(device.type)===type;}
+function optionLabels(select){const labels={};if(!select){return labels;}Array.from(select.options).forEach(function(item){labels[item.value]=item.textContent;});return labels;}
+const labels={
+  connectivity: optionLabels(connectivitySelect),
+  caseSize: optionLabels(caseSizeSelect),
+  caseMaterial: optionLabels(caseMaterialSelect)
+};
+function unique(values){return Array.from(new Set((values||[]).filter(Boolean)));}
+function currentWatchRule(){return watchOptions[modelSelect.value]||null;}
+function watchColorsForRule(rule, material){
+  if(!rule||!rule.colors_by_material){return null;}
+  if(material&&rule.colors_by_material[material]){return unique(rule.colors_by_material[material]);}
+  return unique(Object.keys(rule.colors_by_material).reduce(function(all,key){return all.concat(rule.colors_by_material[key]||[]);},[]));
+}
+function setFilteredOptions(select, labelMap, allowed, currentValue, placeholderLabel, autoSelectSingle){
+  if(!select){return;}
+  const current=select.value||currentValue||"";
+  const values=unique(allowed);
+  select.innerHTML="";
+  select.appendChild(option("",placeholderLabel));
+  values.forEach(function(value){if(labelMap[value]===undefined){return;}select.appendChild(option(value,labelMap[value]));});
+  if(values.indexOf(current)!==-1){select.value=current;}
+  else if(autoSelectSingle&&values.length===1){select.value=values[0];}
+  else{select.value="";}
+}
+function refreshDeviceFields(){
+  const type=selectedType();
+  document.querySelectorAll(".appleklinika-device-field").forEach(function(row){
+    const control=row.querySelector("[data-ak-device-types]");
+    const allowed=(control&&control.dataset.akDeviceTypes?control.dataset.akDeviceTypes.split(/\\s+/):[]);
+    const visible=!type||allowed.length===0||allowed.indexOf(type)!==-1;
+    row.style.display=visible?"":"none";
+  });
+}
+function refreshModels(){
+  const type=selectedType();
+  const current=modelSelect.value||selected.model;
+  modelSelect.innerHTML="";
+  modelSelect.appendChild(option("","Válassz modellt"));
+  Object.keys(catalog).forEach(function(key){const device=catalog[key];if(!deviceMatchesType(device,type)){return;}const item=option(key,device.name);if(key===current){item.selected=true;}modelSelect.appendChild(item);});
+  if(current&&catalog[current]&&(!type||deviceMatchesType(catalog[current],type))&&modelSelect.value!==current){const item=option(current,catalog[current].name||current);item.selected=true;modelSelect.appendChild(item);}
+}
+function refreshConnectivity(){
+  const type=selectedType();
+  if(type==="ipad"){setFilteredOptions(connectivitySelect,labels.connectivity,["wifi","wifi_cellular"],selected.connectivity,"Nincs megadva",false);return;}
+  if(type==="apple_watch"){
+    const rule=currentWatchRule();
+    setFilteredOptions(connectivitySelect,labels.connectivity,(rule&&rule.connectivity)||["gps","gps_cellular"],selected.connectivity,"Nincs megadva",true);
+    return;
+  }
+  setFilteredOptions(connectivitySelect,labels.connectivity,[],"","Nincs megadva",false);
+}
+function refreshWatchFields(){
+  if(selectedType()!=="apple_watch"){
+    setFilteredOptions(caseSizeSelect,labels.caseSize,[],"","Nincs megadva",false);
+    setFilteredOptions(caseMaterialSelect,labels.caseMaterial,[],"","Nincs megadva",false);
+    return;
+  }
+  const rule=currentWatchRule();
+  setFilteredOptions(caseSizeSelect,labels.caseSize,(rule&&rule.case_sizes)||["40_mm","41_mm","42_mm","44_mm","45_mm","46_mm","49_mm"],selected.caseSize,"Nincs megadva",true);
+  setFilteredOptions(caseMaterialSelect,labels.caseMaterial,(rule&&rule.case_materials)||["aluminium","stainless_steel","titanium"],selected.caseMaterial,"Nincs megadva",true);
+}
+function refreshColors(){
+  const current=colorSelect.value||selected.color;
+  const model=modelSelect.value;
+  let colors=(catalog[model]&&catalog[model].colors)||{};
+  if(selectedType()==="apple_watch"){
+    const allowedWatchColors=watchColorsForRule(currentWatchRule(),caseMaterialSelect?caseMaterialSelect.value:"");
+    if(allowedWatchColors){
+      colors=allowedWatchColors.reduce(function(filtered,key){
+        if(catalog[model]&&catalog[model].colors&&catalog[model].colors[key]!==undefined){filtered[key]=catalog[model].colors[key];}
+        return filtered;
+      },{});
+    }
+  }
+  colorSelect.innerHTML="";
+  colorSelect.appendChild(option("","Válassz színt"));
+  Object.keys(colors).forEach(function(key){const item=option(key,colors[key]);if(key===current){item.selected=true;}colorSelect.appendChild(item);});
+  if(current&&colors[current]===undefined){colorSelect.value="";}
+}
+function refreshAdminProductFields(){
+  refreshDeviceFields();
+  refreshModels();
+  refreshConnectivity();
+  refreshWatchFields();
+  refreshColors();
+}
+typeSelect.addEventListener("change",function(){refreshAdminProductFields();});
+modelSelect.addEventListener("change",function(){refreshConnectivity();refreshWatchFields();refreshColors();});
+if(caseMaterialSelect){caseMaterialSelect.addEventListener("change",refreshColors);}
+refreshAdminProductFields();
+})();
+</script>
+HTML;
     }
 }

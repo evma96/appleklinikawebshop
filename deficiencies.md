@@ -5,7 +5,7 @@
 - Confirm the exact public wording and visual examples for grade explanations.
 - Confirm whether accessories should become checkboxes later.
 - Confirm the exact official Hungarian marketing names for all Apple colors.
-- Confirm when to expand the catalog beyond iPhone to iPad, Mac, Apple Watch, AirPods, and accessories.
+- Confirm when to expand the catalog beyond iPhone, iPad, MacBook, and Apple Watch to AirPods and accessories.
 - Confirm the preferred production VPS provider and deployment style later.
 - Define how separate products should be grouped in production so color/storage/grade cards switch only between the intended inventory items.
 - Confirm whether the current same-model grouping is enough for production, or whether a dedicated model group / SKU group meta field is needed.
@@ -23,7 +23,8 @@
 - The shop listing has a Rejoy-style filter panel, and SIM filtering now uses product meta; production products still need consistent SIM values during admin upload.
 - The shop `Állapot` filter uses `_appleklinika_overall_grade`; production listings depend on admins consistently setting this grade for every used-device product.
 - The shop sale-first ordering uses WooCommerce's product lookup `onsale` flag; after bulk imports or manual database changes, WooCommerce lookup tables may need regeneration for accurate sale ordering.
-- The Apple category navigation currently links into the shop structure, but MacBook, iPad, and Apple Watch catalog/filter behavior still needs real product data and final taxonomy rules.
+- The Apple category navigation links into category-specific shop views for iPhone, iPad, MacBook, and Apple Watch. Production still needs final taxonomy rules for AirPods and accessories.
+- iPad, MacBook, and Apple Watch local demo products currently reuse existing local demo image assets; production needs real category-specific product photos.
 - Header links for account/cart pages should be aligned with the final WooCommerce page slugs before production.
 - Information pages are created with editable demo content and need final business/legal copy before production.
 - Product listing, cart, checkout, and account pages still need the functional UX gate audit.
@@ -50,7 +51,8 @@
 - Polish frontend product attribute display for the final theme.
 - Add public grade explanation page with images.
 - Add fixed option list for accessories if needed.
-- Add iPad, Mac, Apple Watch, AirPods, and accessory catalog seed data.
+- Add AirPods and accessory catalog seed data.
+- Replace local iPad, MacBook, and Apple Watch demo image fixtures with category-specific demo assets when available.
 - Decide whether the 4-photo workflow should be enforced before publishing a product.
 - Decide whether selector grouping should use only Apple model or a stricter dedicated inventory group.
 - Decide how smooth selector switching should behave when a requested color/storage/grade combination is unavailable in real stock.
@@ -65,7 +67,7 @@
 - Internal IMEI handling must be designed carefully to avoid frontend exposure.
 - WooCommerce data modeling must avoid product variation complexity for unique phones.
 - Manual overall grade selection depends on consistent admin judgment.
-- Model-dependent color filtering relies on admin JavaScript and should receive browser-level regression testing later.
+- Device-type field visibility and model-dependent option filtering rely on admin JavaScript; the current local browser pass verified iPhone, iPad, MacBook, Apple Watch visibility, iPad/Watch connectivity restrictions, and Apple Watch model-specific case size/material/color pairing, but this should be included in regression testing before launch.
 - Photo quality and angle consistency still depend on the admin uploader.
 - The current local logo asset came from the provided Facebook image and should be replaced with final production brand artwork if a higher-resolution source exists.
 - Product page trust text is first-pass business copy and should be reviewed before production.
@@ -83,6 +85,6 @@
 - What validation rules are required for battery health, warranty duration, and IMEI?
 - Should grade explanations be managed as editable WordPress content or hardcoded design content?
 - Should the next step be real PHP test tooling or better admin input fields?
-- Which Apple product family should be added after iPhone?
+- Which Apple product family should be added after iPad, MacBook, and Apple Watch: AirPods, accessories, or another device line?
 - Should production catalog deletion become archive-only after real products depend on catalog values?
 - Who owns the final legal text for ÁSZF, privacy, warranty, shipping, and returns pages?

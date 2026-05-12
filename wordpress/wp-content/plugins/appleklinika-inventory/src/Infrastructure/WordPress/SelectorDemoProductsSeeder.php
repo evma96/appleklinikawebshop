@@ -84,22 +84,43 @@ final class SelectorDemoProductsSeeder
             $product->save();
         }
 
-        $this->repository->save($productId, [
-            'device_model' => 'iphone_13_pro',
-            'storage_capacity' => $productData['storage_capacity'],
-            'color' => $productData['color'],
-            'sim_config' => $productData['sim_config'],
-            'battery_health' => $productData['battery_health'],
-            'battery_option' => 'standard',
-            'warranty_duration' => $productData['warranty_duration'],
-            'accessories' => $productData['accessories'],
-            'short_device_description' => $productData['short_description'],
-            'internal_identifier' => $productData['internal_identifier'],
-            'body_grade' => $productData['overall_grade'],
-            'camera_island_grade' => $productData['overall_grade'],
-            'display_grade' => $productData['overall_grade'],
-            'overall_grade' => $productData['overall_grade'],
-        ]);
+        if (! empty($productData['category_slug']) && ! empty($productData['category_name'])) {
+            $categoryId = $this->ensureProductCategory($productData['category_slug'], $productData['category_name']);
+            if ($categoryId > 0) {
+                $product->set_category_ids([$categoryId]);
+                $product->save();
+            }
+        }
+
+        $saveData = [
+            'device_model' => $productData['device_model'] ?? 'iphone_13_pro',
+            'storage_capacity' => $productData['storage_capacity'] ?? '',
+            'color' => $productData['color'] ?? '',
+            'sim_config' => $productData['sim_config'] ?? '',
+            'connectivity' => $productData['connectivity'] ?? '',
+            'screen_size' => $productData['screen_size'] ?? '',
+            'processor_chip' => $productData['processor_chip'] ?? '',
+            'ram_size' => $productData['ram_size'] ?? '',
+            'case_size' => $productData['case_size'] ?? '',
+            'case_material' => $productData['case_material'] ?? '',
+            'strap' => $productData['strap'] ?? '',
+            'battery_health' => $productData['battery_health'] ?? '',
+            'battery_option' => $productData['battery_option'] ?? 'standard',
+            'warranty_duration' => $productData['warranty_duration'] ?? '12_months',
+            'accessories' => $productData['accessories'] ?? '',
+            'short_device_description' => $productData['short_description'] ?? '',
+            'internal_identifier' => $productData['internal_identifier'] ?? '',
+            'body_grade' => $productData['overall_grade'] ?? '',
+            'camera_island_grade' => $productData['overall_grade'] ?? '',
+            'display_grade' => $productData['overall_grade'] ?? '',
+            'overall_grade' => $productData['overall_grade'] ?? '',
+        ];
+
+        if (isset($productData['device_type'])) {
+            $saveData['device_type'] = $productData['device_type'];
+        }
+
+        $this->repository->save($productId, $saveData);
 
         return $productId;
     }
@@ -160,7 +181,249 @@ final class SelectorDemoProductsSeeder
             }
         }
 
-        return $products;
+        return array_merge($products, $this->ipadDemoProducts(), $this->macbookDemoProducts(), $this->watchDemoProducts());
+    }
+
+    /**
+     * @return array<int, array<string, string>>
+     */
+    private function ipadDemoProducts(): array
+    {
+        return [
+            [
+                'sku' => 'ak-demo-ipad-air-5-64gb-blue-wifi-a',
+                'name' => 'Demo - iPad Air 5 64 GB Kék Wi-Fi A',
+                'regular_price' => '219990',
+                'sale_price' => '199990',
+                'device_type' => 'ipad',
+                'device_model' => 'ipad_air_5th_generation',
+                'storage_capacity' => '64_gb',
+                'color' => 'blue',
+                'connectivity' => 'wifi',
+                'battery_health' => '94',
+                'warranty_duration' => '12_months',
+                'accessories' => 'Töltőkábel',
+                'overall_grade' => 'a',
+                'internal_identifier' => 'AK-DEMO-IPAD-001',
+                'image' => 'iphone-13-pro-2.jpg',
+                'category_slug' => 'ipad',
+                'category_name' => 'iPad',
+                'short_description' => 'Valós WooCommerce iPad demo termék kategória-specifikus chipekhez és szűrőkhöz.',
+                'description' => 'Helyi iPad demo termék a tárhely, szín, kapcsolat, állapot és akkumulátor szűrők teszteléséhez.',
+            ],
+            [
+                'sku' => 'ak-demo-ipad-air-5-256gb-starlight-cellular-b',
+                'name' => 'Demo - iPad Air 5 256 GB Csillagfény Cellular B',
+                'regular_price' => '259990',
+                'sale_price' => '',
+                'device_type' => 'ipad',
+                'device_model' => 'ipad_air_5th_generation',
+                'storage_capacity' => '256_gb',
+                'color' => 'starlight',
+                'connectivity' => 'wifi_cellular',
+                'battery_health' => '89',
+                'warranty_duration' => '12_months',
+                'accessories' => 'Töltőkábel, SIM tű',
+                'overall_grade' => 'b',
+                'internal_identifier' => 'AK-DEMO-IPAD-002',
+                'image' => 'iphone-13-pro-3.jpg',
+                'category_slug' => 'ipad',
+                'category_name' => 'iPad',
+                'short_description' => 'Valós WooCommerce iPad demo termék mobilhálózatos változattal.',
+                'description' => 'Helyi iPad demo termék a Wi-Fi + Cellular kapcsolat és állapot filter teszteléséhez.',
+            ],
+            [
+                'sku' => 'ak-demo-ipad-pro-11-m2-512gb-space-gray-cellular-a-plus',
+                'name' => 'Demo - iPad Pro 11 M2 512 GB Asztroszürke Cellular A+',
+                'regular_price' => '419990',
+                'sale_price' => '379990',
+                'device_type' => 'ipad',
+                'device_model' => 'ipad_pro_11_inch_m2',
+                'storage_capacity' => '512_gb',
+                'color' => 'space_gray',
+                'connectivity' => 'wifi_cellular',
+                'battery_health' => '97',
+                'warranty_duration' => '24_months',
+                'accessories' => 'Töltőkábel, SIM tű',
+                'overall_grade' => 'a_plus',
+                'internal_identifier' => 'AK-DEMO-IPAD-003',
+                'image' => 'iphone-13-pro-4.jpg',
+                'category_slug' => 'ipad',
+                'category_name' => 'iPad',
+                'short_description' => 'Valós WooCommerce iPad Pro demo termék akciós árral.',
+                'description' => 'Helyi iPad Pro demo termék a Pro modell, nagy tárhely és akciós kártya teszteléséhez.',
+            ],
+        ];
+    }
+
+    /**
+     * @return array<int, array<string, string>>
+     */
+    private function macbookDemoProducts(): array
+    {
+        return [
+            [
+                'sku' => 'ak-demo-macbook-air-m2-13-8gb-256gb-starlight-a',
+                'name' => 'Demo - MacBook Air M2 13" 8 GB 256 GB Csillagfény A',
+                'regular_price' => '389990',
+                'sale_price' => '349990',
+                'device_type' => 'macbook',
+                'device_model' => 'macbook_air_13_inch_m2',
+                'screen_size' => '13_inch',
+                'processor_chip' => 'm2',
+                'ram_size' => '8_gb',
+                'storage_capacity' => '256_gb',
+                'color' => 'starlight',
+                'warranty_duration' => '12_months',
+                'accessories' => 'USB-C töltő, kábel',
+                'overall_grade' => 'a',
+                'internal_identifier' => 'AK-DEMO-MAC-001',
+                'image' => 'iphone-13-pro-1.jpg',
+                'category_slug' => 'macbook',
+                'category_name' => 'MacBook',
+                'short_description' => 'Valós WooCommerce MacBook demo termék RAM, chip és kijelző filterhez.',
+                'description' => 'Helyi MacBook demo termék a MacBook-specifikus chipek és szűrők teszteléséhez.',
+            ],
+            [
+                'sku' => 'ak-demo-macbook-pro-14-m3-16gb-512gb-space-black-a-plus',
+                'name' => 'Demo - MacBook Pro 14" M3 Pro 16 GB 512 GB Asztrofekete A+',
+                'regular_price' => '689990',
+                'sale_price' => '',
+                'device_type' => 'macbook',
+                'device_model' => 'macbook_pro_14_inch_m3',
+                'screen_size' => '14_inch',
+                'processor_chip' => 'm3_pro',
+                'ram_size' => '16_gb',
+                'storage_capacity' => '512_gb',
+                'color' => 'space_black',
+                'warranty_duration' => '24_months',
+                'accessories' => 'USB-C töltő, kábel, doboz',
+                'overall_grade' => 'a_plus',
+                'internal_identifier' => 'AK-DEMO-MAC-002',
+                'image' => 'iphone-13-pro-2.jpg',
+                'category_slug' => 'macbook',
+                'category_name' => 'MacBook',
+                'short_description' => 'Valós WooCommerce MacBook Pro demo termék nem akciós árral.',
+                'description' => 'Helyi MacBook Pro demo termék az M3 Pro, RAM és kijelzőméret szűrés ellenőrzéséhez.',
+            ],
+            [
+                'sku' => 'ak-demo-macbook-pro-16-m3-32gb-1tb-silver-b',
+                'name' => 'Demo - MacBook Pro 16" M3 Max 32 GB 1 TB Ezüst B',
+                'regular_price' => '879990',
+                'sale_price' => '819990',
+                'device_type' => 'macbook',
+                'device_model' => 'macbook_pro_16_inch_m3_max',
+                'screen_size' => '16_inch',
+                'processor_chip' => 'm3_max',
+                'ram_size' => '32_gb',
+                'storage_capacity' => '1_tb',
+                'color' => 'silver',
+                'warranty_duration' => '12_months',
+                'accessories' => 'USB-C töltő, kábel',
+                'overall_grade' => 'b',
+                'internal_identifier' => 'AK-DEMO-MAC-003',
+                'image' => 'iphone-13-pro-3.jpg',
+                'category_slug' => 'macbook',
+                'category_name' => 'MacBook',
+                'short_description' => 'Valós WooCommerce MacBook Pro demo termék nagy tárhellyel.',
+                'description' => 'Helyi MacBook Pro demo termék a nagy RAM, nagy tárhely és M Max szűrés teszteléséhez.',
+            ],
+        ];
+    }
+
+    /**
+     * @return array<int, array<string, string>>
+     */
+    private function watchDemoProducts(): array
+    {
+        return [
+            [
+                'sku' => 'ak-demo-watch-series-9-45mm-aluminium-midnight-gps-a',
+                'name' => 'Demo - Apple Watch Series 9 45 mm Alumínium Éjfekete GPS A',
+                'regular_price' => '139990',
+                'sale_price' => '124990',
+                'device_type' => 'apple_watch',
+                'device_model' => 'apple_watch_series_9',
+                'case_size' => '45_mm',
+                'case_material' => 'aluminium',
+                'color' => 'midnight',
+                'connectivity' => 'gps',
+                'strap' => 'Sport szíj',
+                'battery_health' => '92',
+                'warranty_duration' => '12_months',
+                'accessories' => 'Töltőkábel, sport szíj',
+                'overall_grade' => 'a',
+                'internal_identifier' => 'AK-DEMO-WATCH-001',
+                'image' => 'iphone-13-pro-4.jpg',
+                'category_slug' => 'apple-watch',
+                'category_name' => 'Apple Watch',
+                'short_description' => 'Valós WooCommerce Apple Watch demo termék GPS kapcsolattal.',
+                'description' => 'Helyi Apple Watch demo termék a tokméret, kapcsolat, szíj és akku chipek teszteléséhez.',
+            ],
+            [
+                'sku' => 'ak-demo-watch-series-8-41mm-steel-silver-cellular-b',
+                'name' => 'Demo - Apple Watch Series 8 41 mm Acél Ezüst Cellular B',
+                'regular_price' => '169990',
+                'sale_price' => '',
+                'device_type' => 'apple_watch',
+                'device_model' => 'apple_watch_series_8',
+                'case_size' => '41_mm',
+                'case_material' => 'stainless_steel',
+                'color' => 'silver',
+                'connectivity' => 'gps_cellular',
+                'strap' => 'Milánói szíj',
+                'battery_health' => '86',
+                'warranty_duration' => '12_months',
+                'accessories' => 'Töltőkábel, milánói szíj',
+                'overall_grade' => 'b',
+                'internal_identifier' => 'AK-DEMO-WATCH-002',
+                'image' => 'iphone-13-pro-1.jpg',
+                'category_slug' => 'apple-watch',
+                'category_name' => 'Apple Watch',
+                'short_description' => 'Valós WooCommerce Apple Watch demo termék Cellular kapcsolattal.',
+                'description' => 'Helyi Apple Watch demo termék GPS + Cellular kapcsolat és acél tok teszteléséhez.',
+            ],
+            [
+                'sku' => 'ak-demo-watch-ultra-2-49mm-titanium-cellular-a-plus',
+                'name' => 'Demo - Apple Watch Ultra 2 49 mm Titán Cellular A+',
+                'regular_price' => '269990',
+                'sale_price' => '239990',
+                'device_type' => 'apple_watch',
+                'device_model' => 'apple_watch_ultra_2',
+                'case_size' => '49_mm',
+                'case_material' => 'titanium',
+                'color' => 'natural_titanium',
+                'connectivity' => 'gps_cellular',
+                'strap' => 'Trail szíj',
+                'battery_health' => '95',
+                'warranty_duration' => '24_months',
+                'accessories' => 'Töltőkábel, trail szíj',
+                'overall_grade' => 'a_plus',
+                'internal_identifier' => 'AK-DEMO-WATCH-003',
+                'image' => 'iphone-13-pro-2.jpg',
+                'category_slug' => 'apple-watch',
+                'category_name' => 'Apple Watch',
+                'short_description' => 'Valós WooCommerce Apple Watch Ultra demo termék.',
+                'description' => 'Helyi Apple Watch Ultra demo termék a titán tok, 49 mm tokméret és akciós ár teszteléséhez.',
+            ],
+        ];
+    }
+
+    private function ensureProductCategory(string $slug, string $name): int
+    {
+        $term = get_term_by('slug', $slug, 'product_cat');
+
+        if ($term instanceof \WP_Term) {
+            return (int) $term->term_id;
+        }
+
+        $created = wp_insert_term($name, 'product_cat', ['slug' => $slug]);
+
+        if (is_wp_error($created) || ! isset($created['term_id'])) {
+            return 0;
+        }
+
+        return (int) $created['term_id'];
     }
 
     private function simConfigFor(string $storageKey, string $colorKey, string $gradeKey): string
