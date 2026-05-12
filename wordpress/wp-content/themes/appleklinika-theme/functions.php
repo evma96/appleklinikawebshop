@@ -15,7 +15,7 @@ add_action('wp_enqueue_scripts', static function (): void {
         'appleklinika-theme',
         get_stylesheet_directory_uri() . '/assets/css/frontend.css',
         [],
-        '0.1.135'
+        '0.1.137'
     );
 
     if (function_exists('is_checkout') && is_checkout()) {
