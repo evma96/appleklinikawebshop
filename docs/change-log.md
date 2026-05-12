@@ -145,6 +145,17 @@
 - Moved sale product labels into a normal top badge row with `AKCIÓ` on the left and the real savings amount on the right, removing absolute badge positioning from the image area.
 - Added a functional Kedvencek wishlist system with product-card heart buttons, logged-in user meta storage, AJAX toggling, and a WooCommerce account endpoint for saved products.
 - Scoped the Kedvencek wishlist to logged-in users only because the local storefront is behind Coming Soon for logged-out users; logged-out clicks now route to the WooCommerce account/login page instead of using guest localStorage.
+- Extended the approved shop product-card and filter system beyond iPhone with category-specific real WooCommerce meta for iPad, MacBook, and Apple Watch products.
+- Added WooCommerce admin fields for device type, iPad/Watch connectivity, MacBook display size, chip, RAM and cycle count, plus Apple Watch case size, case material, and strap.
+- Connected the WooCommerce product editor device type selector to the admin field visibility rules so iPhone, iPad, MacBook, and Apple Watch uploads only show their own relevant option fields.
+- Filtered the WooCommerce product editor Apple model dropdown by selected device type while keeping model-dependent color options intact.
+- Expanded the admin device catalog with iPad models from 2019 onward, Apple Silicon MacBook Air/Pro models from M1 onward, and Apple Watch models from SE 2 / Series 8 onward.
+- Added MacBook Pro chip options for Pro/Max Apple Silicon families, expanded MacBook RAM and high-storage options, added Apple Watch 42 mm and 46 mm case sizes, and removed the MacBook battery cycle field from the product editor.
+- Added idempotent local demo WooCommerce products for iPad, MacBook, and Apple Watch to verify category-specific chips, filters, sale states, and optional battery data.
+- Restricted the product editor connectivity options by device family so iPad only shows Wi-Fi / Wi-Fi + Cellular and Apple Watch only shows GPS / GPS + Cellular.
+- Added Apple Watch model-dependent admin option filtering so case size, case material, and color choices follow the selected Watch model, for example Ultra models only expose 49 mm titanium options.
+- Connected the top Apple category navigation to the `ak_type` shop views, added active nav state, and contained the shop archive layout flow so short category grids no longer let the footer overlap the filter sidebar.
+- Simplified non-iPhone archive product-card chips to storage, grade, optional real battery health, and cellular-only connection chips while removing Akku % and Ciklus archive filters.
 - Routed the cart page through the WordPress content filter so the editable WooCommerce cart block is replaced by the custom dynamic Appleklinika cart layout at render time.
 - Refined the custom cart visual direction with floating glass-like cards, softer page background, and Apple Klinika brand-red checkout/coupon/remove accents.
 - Changed the desktop cart order summary from sticky to fixed positioning so it remains visible while the cart item list scrolls.

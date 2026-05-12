@@ -43,14 +43,14 @@ Controllers, hook callbacks, and admin screens may coordinate work, but they mus
 The first admin customization is implemented through:
 
 - `Domain/DeviceCatalog/DeviceType.php`: allowed Apple product families.
-- `Infrastructure/WordPress/DeviceCatalogRepository.php`: internal device catalog storage and default iPhone seed data.
+- `Infrastructure/WordPress/DeviceCatalogRepository.php`: internal device catalog storage and default iPhone, iPad, MacBook, and Apple Watch seed data, including Apple Watch model-specific case size, case material, connectivity, and color pairings.
 - `Interfaces/Admin/DeviceCatalogPage.php`: admin page for viewing, adding, editing, and deleting catalog entries.
 - `Domain/ProductCondition/Grade.php`: allowed grade values.
 - `Application/ProductCondition/SaveProductConditionCommand.php`: input command for saving product condition data.
 - `Application/ProductCondition/SaveProductConditionHandler.php`: sanitization and use case orchestration.
 - `Infrastructure/WordPress/WooProductConditionRepository.php`: WordPress post meta persistence.
-- `Infrastructure/WordPress/SelectorDemoProductsSeeder.php`: admin-only local development seeder for a full iPhone 13 Pro WooCommerce selector test matrix.
-- `Interfaces/Admin/ProductConditionFields.php`: WooCommerce admin field rendering and save hooks.
+- `Infrastructure/WordPress/SelectorDemoProductsSeeder.php`: admin-only local development seeder for a full iPhone 13 Pro WooCommerce selector test matrix plus small iPad, MacBook, and Apple Watch category fixtures.
+- `Interfaces/Admin/ProductConditionFields.php`: WooCommerce admin field rendering and save hooks, including device-type field visibility and model-dependent option filtering for catalog-backed selects.
 - `Interfaces/Admin/ProductPhotoGuidance.php`: admin-side product photo checklist for the 4-photo upload workflow.
 - `Interfaces/Frontend/ProductFrontendDisplay.php`: WooCommerce-hooked product purchase layout using the actual product object, product images, real add-to-cart template, and Appleklinika product meta fields.
 - The product layout removes default WooCommerce single-product summary/tabs/related hooks and renders the WooCommerce product tabs once inside the custom styled product information section.

@@ -34,10 +34,12 @@ The first behavior that should receive unit coverage is grade validation:
 
 Device catalog behavior should later receive coverage for:
 
-- Default iPhone model seed data.
+- Default iPhone, iPad, MacBook, and Apple Watch model seed data.
 - Hungarian color labels.
 - Admin-added custom models.
 - Product save behavior preserving selected model and color values.
+- iPad and Apple Watch connectivity restrictions.
+- Apple Watch model-specific case size, case material, and color pairings.
 
 Product selector behavior should receive browser-level regression coverage for:
 
@@ -51,8 +53,9 @@ Shop/listing behavior should receive browser-level regression coverage for:
 
 - Footer and header information links open real WordPress pages and never use empty or `#` hrefs.
 - Product cards link to real WooCommerce product pages.
-- Shop filters narrow the WooCommerce product query by storage, condition, model, and price range.
-- SIM filtering uses the `_appleklinika_sim_config` product meta field instead of frontend-only placeholder data.
+- Shop filters narrow the WooCommerce product query by category-specific model, storage, condition, price, color, connection, and hardware metadata.
+- iPhone SIM filtering uses the `_appleklinika_sim_config` product meta field instead of frontend-only placeholder data.
+- iPad, MacBook, and Apple Watch category filters only show data-backed filters relevant to that product family.
 - Product cards keep equal visual height and fixed image ratio across desktop, tablet, and mobile layouts.
 
 After every frontend or UI implementation, `docs/ui-qa-checklist.md` must be updated with manual browser QA results. Items must stay `NOT TESTED` unless they were actually verified in the browser.
