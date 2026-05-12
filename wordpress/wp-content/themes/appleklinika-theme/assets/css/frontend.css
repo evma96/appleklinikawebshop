@@ -306,13 +306,23 @@ body.ak-header-hidden .ak-site-header {
 
 @media (min-width: 1200px) {
   .ak-header-top {
-    grid-template-columns: 255px minmax(720px, 800px) 255px;
-    column-gap: 5px;
-    justify-content: space-between;
+    --ak-header-gap: clamp(44px, 3.4vw, 50px);
+    grid-template-columns: 180px minmax(520px, 800px) 230px;
+    column-gap: var(--ak-header-gap);
+    justify-content: center;
+  }
+
+  .ak-header-logo {
+    justify-self: start;
+  }
+
+  .ak-product-search {
+    justify-self: stretch;
+    margin: 0;
   }
 
   .ak-header-actions {
-    justify-self: center;
+    justify-self: start;
   }
 }
 
