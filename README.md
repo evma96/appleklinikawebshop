@@ -179,9 +179,10 @@ The frontend currently includes:
 - iPad uses model, price, storage, color, connectivity, and condition filters.
 - MacBook uses model, price, screen size, chip, RAM, storage, color, and condition filters.
 - Apple Watch uses model, price, case size, case material/color, connectivity, strap, and condition filters.
+- The WooCommerce Blocks checkout includes a real company purchase option (`Cégként vásárolok`) with company name and tax number fields saved to order meta and reused from logged-in user meta when available.
 
 Product cards intentionally stay compact: non-iPhone archive cards only show storage, grade, an optional real battery-health chip, and a Cellular chip only when an iPad or Apple Watch product has cellular connectivity.
-- The header uses a simplified two-row storefront layout with logo, centered search, account/cart actions, and Apple-focused category navigation.
+- The header uses a simplified two-row storefront layout with logo, centered search, account/cart actions, and Apple-focused category navigation on storefront/shop views.
 - Color, storage, condition, battery health, and warranty values come from product meta fields when available.
 - SIM configuration comes from product meta and can appear in shop card meta, product info cards, and shop filtering.
 - Color, storage, and condition selector cards are built from matching WooCommerce products with the same Apple model meta when available.

@@ -178,6 +178,7 @@
 - Tightened the WooCommerce Blocks checkout sidebar override so the sidebar itself is the only white card and internal order summary/totals wrappers render as flat, aligned rows.
 - Compact-reset the WooCommerce Blocks checkout order summary product rows so they show a 56px image, product title, and final price only, with hidden long metadata/savings badges in the checkout sidebar.
 - Split the checkout sidebar compact overrides into a checkout-only stylesheet and restored the main storefront CSS asset version so the cart page is not forced onto newly refreshed CSS by a checkout-only change.
+- Added a WooCommerce Blocks-compatible `Cégként vásárolok` checkout option with conditional company name and tax number fields, order meta persistence, logged-in user meta reuse, and checkout-only form polish.
 - Removed the cart-only order summary override so the cart page returns to the previous approved visual state controlled by the main storefront stylesheet.
 - Restored the cart page visuals toward the approved screenshot with the main storefront stylesheet: wider two-column cart layout, larger white shell cards, separated floating cart item rows, and the previous right-side summary rhythm.
 - Added a high-specificity desktop cart restoration layer targeting the custom `.ak-cart-*` markup directly so the approved screenshot layout applies even when the local cart URL renders through `?page_id=8`.
