@@ -15,7 +15,7 @@ add_action('wp_enqueue_scripts', static function (): void {
         'appleklinika-theme',
         get_stylesheet_directory_uri() . '/assets/css/frontend.css',
         [],
-        '0.1.137'
+        '0.1.158'
     );
 
     if (function_exists('is_checkout') && is_checkout()) {
@@ -31,7 +31,7 @@ add_action('wp_enqueue_scripts', static function (): void {
         'appleklinika-theme',
         get_stylesheet_directory_uri() . '/assets/js/frontend.js',
         [],
-        '0.1.67',
+        '0.1.69',
         true
     );
 
@@ -53,10 +53,18 @@ add_filter('wc_get_price_decimals', '__return_zero');
 add_filter('wc_get_price_thousand_separator', static fn (): string => ' ');
 add_filter('wc_get_price_decimal_separator', static fn (): string => ',');
 add_filter('woocommerce_price_format', static fn (): string => '%2$s %1$s');
+add_filter('gettext', 'appleklinika_checkout_text_translations', 10, 3);
 add_filter('body_class', 'appleklinika_body_classes');
 add_filter('the_content', 'appleklinika_replace_cart_page_content', 9);
 add_filter('woocommerce_account_menu_items', 'appleklinika_add_wishlist_account_menu_item');
 add_action('woocommerce_account_kedvelt-termekek_endpoint', 'appleklinika_render_wishlist_account_endpoint');
+add_action('init', 'appleklinika_register_company_checkout_fields', 20);
+add_action('woocommerce_blocks_validate_location_order_fields', 'appleklinika_validate_company_checkout_fields', 10, 3);
+add_action('woocommerce_store_api_checkout_update_order_from_request', 'appleklinika_persist_company_checkout_fields', 10, 2);
+add_action('woocommerce_admin_order_data_after_billing_address', 'appleklinika_render_company_order_admin_meta');
+add_filter('woocommerce_get_default_value_for_appleklinika/company_purchase', 'appleklinika_company_checkout_default_value', 10, 3);
+add_filter('woocommerce_get_default_value_for_appleklinika/company_name', 'appleklinika_company_checkout_default_value', 10, 3);
+add_filter('woocommerce_get_default_value_for_appleklinika/tax_number', 'appleklinika_company_checkout_default_value', 10, 3);
 add_action('after_switch_theme', static function (): void {
     appleklinika_register_wishlist_account_endpoint();
     flush_rewrite_rules();
@@ -235,6 +243,19 @@ function appleklinika_is_shop_product_block_context(array $block, ?WP_Block $ins
     }
 
     return (bool) ($block['attrs']['isDescendentOfQueryLoop'] ?? false);
+}
+
+function appleklinika_checkout_text_translations(string $translation, string $text, string $domain): string
+{
+    if (! function_exists('is_checkout') || ! is_checkout()) {
+        return $translation;
+    }
+
+    if ($domain === 'woocommerce' && $text === 'Additional order information') {
+        return 'Céges adatok';
+    }
+
+    return $translation;
 }
 
 function appleklinika_body_classes(array $classes): array
@@ -633,6 +654,11 @@ function appleklinika_render_header_actions(): void
     <?php
 }
 
+function appleklinika_should_show_category_nav(): bool
+{
+    return is_front_page() || appleklinika_is_shop_archive_context();
+}
+
 function appleklinika_render_header(): void
 {
     $categoryLinks = [
@@ -656,16 +682,18 @@ function appleklinika_render_header(): void
             </form>
             <?php appleklinika_render_header_actions(); ?>
         </div>
-        <nav class="ak-category-nav" aria-label="Apple termékkategóriák">
-            <?php foreach ($categoryLinks as $categoryType => $categoryLabel) : ?>
-                <?php $isActive = appleklinika_is_shop_archive_context() && $activeCategory === $categoryType; ?>
-                <a
-                    class="<?php echo $isActive ? 'is-active' : ''; ?>"
-                    href="<?php echo esc_url(appleklinika_shop_type_url($categoryType)); ?>"
-                    <?php echo $isActive ? 'aria-current="page"' : ''; ?>
-                ><?php echo esc_html($categoryLabel); ?></a>
-            <?php endforeach; ?>
-        </nav>
+        <?php if (appleklinika_should_show_category_nav()) : ?>
+            <nav class="ak-category-nav" aria-label="Apple termékkategóriák">
+                <?php foreach ($categoryLinks as $categoryType => $categoryLabel) : ?>
+                    <?php $isActive = appleklinika_is_shop_archive_context() && $activeCategory === $categoryType; ?>
+                    <a
+                        class="<?php echo $isActive ? 'is-active' : ''; ?>"
+                        href="<?php echo esc_url(appleklinika_shop_type_url($categoryType)); ?>"
+                        <?php echo $isActive ? 'aria-current="page"' : ''; ?>
+                    ><?php echo esc_html($categoryLabel); ?></a>
+                <?php endforeach; ?>
+            </nav>
+        <?php endif; ?>
     </div>
     <?php
 }
@@ -2521,5 +2549,225 @@ function appleklinika_render_wishlist_account_endpoint(): void
             </div>
         <?php endif; ?>
     </section>
+    <?php
+}
+
+function appleklinika_register_company_checkout_fields(): void
+{
+    static $registered = false;
+
+    if ($registered) {
+        return;
+    }
+
+    if (! function_exists('woocommerce_register_additional_checkout_field')) {
+        return;
+    }
+
+    $fields = [
+        [
+            'id' => 'appleklinika/company_purchase',
+            'label' => 'Cégként vásárolok',
+            'optionalLabel' => 'Cégként vásárolok',
+            'location' => 'order',
+            'type' => 'checkbox',
+            'required' => false,
+            'sanitize_callback' => 'appleklinika_sanitize_checkout_checkbox',
+            'show_in_order_confirmation' => false,
+        ],
+        [
+            'id' => 'appleklinika/company_name',
+            'label' => 'Cégnév',
+            'optionalLabel' => 'Cégnév',
+            'location' => 'order',
+            'type' => 'text',
+            'required' => false,
+            'attributes' => [
+                'autocomplete' => 'organization',
+            ],
+            'sanitize_callback' => 'appleklinika_sanitize_checkout_text_field',
+            'show_in_order_confirmation' => true,
+        ],
+        [
+            'id' => 'appleklinika/tax_number',
+            'label' => 'Adószám',
+            'optionalLabel' => 'Adószám',
+            'location' => 'order',
+            'type' => 'text',
+            'required' => false,
+            'attributes' => [
+                'autocomplete' => 'off',
+            ],
+            'sanitize_callback' => 'appleklinika_sanitize_checkout_text_field',
+            'show_in_order_confirmation' => true,
+        ],
+    ];
+
+    foreach ($fields as $field) {
+        woocommerce_register_additional_checkout_field($field);
+    }
+
+    $registered = true;
+}
+
+/**
+ * @param mixed $value
+ * @param array<string, mixed> $field
+ */
+function appleklinika_sanitize_checkout_checkbox($value, array $field = []): bool
+{
+    return appleklinika_checkout_company_enabled($value);
+}
+
+/**
+ * @param mixed $value
+ * @param array<string, mixed> $field
+ */
+function appleklinika_sanitize_checkout_text_field($value, array $field = []): string
+{
+    return sanitize_text_field((string) $value);
+}
+
+/**
+ * @param mixed $value
+ */
+function appleklinika_checkout_company_enabled($value): bool
+{
+    if (is_bool($value)) {
+        return $value;
+    }
+
+    return in_array(strtolower((string) $value), ['1', 'true', 'yes', 'on'], true);
+}
+
+/**
+ * @param array<string, mixed> $fields
+ */
+function appleklinika_validate_company_checkout_fields(WP_Error $errors, array $fields, string $group): void
+{
+    if ($group !== 'other') {
+        return;
+    }
+
+    if (! appleklinika_checkout_company_enabled($fields['appleklinika/company_purchase'] ?? false)) {
+        return;
+    }
+
+    $companyName = trim((string) ($fields['appleklinika/company_name'] ?? ''));
+    $taxNumber = trim((string) ($fields['appleklinika/tax_number'] ?? ''));
+
+    if ($companyName === '') {
+        $errors->add(
+            'appleklinika_company_name_required',
+            'Cégnév megadása kötelező, ha cégként vásárolsz.',
+            ['key' => 'appleklinika/company_name']
+        );
+    }
+
+    if ($taxNumber === '') {
+        $errors->add(
+            'appleklinika_tax_number_required',
+            'Adószám megadása kötelező, ha cégként vásárolsz.',
+            ['key' => 'appleklinika/tax_number']
+        );
+    }
+}
+
+function appleklinika_company_checkout_default_value($value, string $group, WC_Data $wcObject)
+{
+    if ($value !== null || $group !== 'other' || ! $wcObject instanceof WC_Customer) {
+        return $value;
+    }
+
+    $currentFilter = current_filter();
+    $metaKey = str_replace('woocommerce_get_default_value_for_appleklinika/', 'appleklinika_', $currentFilter);
+
+    if ($metaKey === 'appleklinika/company_purchase') {
+        $metaKey = 'appleklinika_company_purchase';
+    }
+
+    $savedValue = $wcObject->get_meta($metaKey, true);
+
+    return $savedValue === '' ? null : $savedValue;
+}
+
+function appleklinika_persist_company_checkout_fields(WC_Order $order, WP_REST_Request $request): void
+{
+    $additionalFields = (array) $request->get_param('additional_fields');
+    $companyPurchase = appleklinika_checkout_company_enabled($additionalFields['appleklinika/company_purchase'] ?? false);
+    $companyName = sanitize_text_field((string) ($additionalFields['appleklinika/company_name'] ?? ''));
+    $taxNumber = sanitize_text_field((string) ($additionalFields['appleklinika/tax_number'] ?? ''));
+
+    if (! $companyPurchase) {
+        appleklinika_clear_company_checkout_meta($order);
+        appleklinika_clear_company_checkout_user_meta($order);
+        return;
+    }
+
+    $order->update_meta_data('appleklinika_company_purchase', '1');
+    $order->update_meta_data('appleklinika_company_name', $companyName);
+    $order->update_meta_data('appleklinika_tax_number', $taxNumber);
+    $order->update_meta_data('_wc_other/appleklinika/company_purchase', '1');
+    $order->update_meta_data('_wc_other/appleklinika/company_name', $companyName);
+    $order->update_meta_data('_wc_other/appleklinika/tax_number', $taxNumber);
+
+    $userId = $order->get_user_id() ?: get_current_user_id();
+
+    if ($userId > 0) {
+        update_user_meta($userId, 'appleklinika_company_purchase', '1');
+        update_user_meta($userId, 'appleklinika_company_name', $companyName);
+        update_user_meta($userId, 'appleklinika_tax_number', $taxNumber);
+    }
+}
+
+function appleklinika_clear_company_checkout_meta(WC_Order $order): void
+{
+    foreach ([
+        'appleklinika_company_purchase',
+        'appleklinika_company_name',
+        'appleklinika_tax_number',
+        '_wc_other/appleklinika/company_purchase',
+        '_wc_other/appleklinika/company_name',
+        '_wc_other/appleklinika/tax_number',
+    ] as $metaKey) {
+        $order->delete_meta_data($metaKey);
+    }
+}
+
+function appleklinika_clear_company_checkout_user_meta(WC_Order $order): void
+{
+    $userId = $order->get_user_id() ?: get_current_user_id();
+
+    if ($userId <= 0) {
+        return;
+    }
+
+    delete_user_meta($userId, 'appleklinika_company_purchase');
+    delete_user_meta($userId, 'appleklinika_company_name');
+    delete_user_meta($userId, 'appleklinika_tax_number');
+}
+
+function appleklinika_render_company_order_admin_meta(WC_Order $order): void
+{
+    if (! appleklinika_checkout_company_enabled($order->get_meta('appleklinika_company_purchase', true))) {
+        return;
+    }
+
+    $companyName = (string) $order->get_meta('appleklinika_company_name', true);
+    $taxNumber = (string) $order->get_meta('appleklinika_tax_number', true);
+
+    if ($companyName === '' && $taxNumber === '') {
+        return;
+    }
+    ?>
+    <div class="appleklinika-order-company-meta">
+        <h3>Céges vásárlás</h3>
+        <?php if ($companyName !== '') : ?>
+            <p><strong>Cégnév:</strong> <?php echo esc_html($companyName); ?></p>
+        <?php endif; ?>
+        <?php if ($taxNumber !== '') : ?>
+            <p><strong>Adószám:</strong> <?php echo esc_html($taxNumber); ?></p>
+        <?php endif; ?>
+    </div>
     <?php
 }

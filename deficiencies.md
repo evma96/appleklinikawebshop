@@ -78,6 +78,7 @@
 - Footer information page trust-block copy is intentionally simple bootstrap text and should be reviewed against final shipping, warranty, and returns policies before production.
 - Contact page phone number, address, and map are placeholders; final business contact data and mail delivery settings must be confirmed before production.
 - The custom cart layout depends on WooCommerce cart hooks and form handling staying compatible with future WooCommerce updates, so it should be regression-tested after WooCommerce upgrades.
+- The company purchase checkout fields are saved as WooCommerce order/user meta only; final invoice plugin integration and any official invoice field mapping still need a separate audit after the chosen invoicing workflow is installed.
 
 ## Next Iteration Questions
 

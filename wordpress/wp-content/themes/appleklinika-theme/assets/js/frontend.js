@@ -89,6 +89,122 @@
     });
   }
 
+  function normalizeText(value) {
+    return String(value || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function checkoutFieldByLabel(labelText) {
+    var labels = Array.prototype.slice.call(document.querySelectorAll('body.woocommerce-checkout label'));
+
+    for (var i = 0; i < labels.length; i += 1) {
+      var label = labels[i];
+      var text = normalizeText(label.textContent);
+
+      if (text.indexOf(labelText) === -1) {
+        continue;
+      }
+
+      var input = label.getAttribute('for') ? document.getElementById(label.getAttribute('for')) : null;
+
+      if (!input) {
+        input = label.closest('div, p, span') ? label.closest('div, p, span').querySelector('input') : null;
+      }
+
+      if (!input) {
+        continue;
+      }
+
+      return {
+        input: input,
+        wrapper: input.closest('.wc-block-components-text-input, .wc-block-components-checkbox, .wc-block-components-form-field, .components-base-control, div')
+      };
+    }
+
+    return null;
+  }
+
+  function dispatchCheckoutFieldUpdate(input) {
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  function initCompanyCheckoutFields() {
+    if (!document.body.classList.contains('woocommerce-checkout')) {
+      return;
+    }
+
+    var previousEnabled = null;
+
+    function syncCompanyCheckoutHeading() {
+      Array.prototype.slice.call(document.querySelectorAll('body.woocommerce-checkout h2, body.woocommerce-checkout [role="group"] > div')).forEach(function (element) {
+        if (normalizeText(element.textContent) === 'Additional order information') {
+          element.textContent = 'Céges adatok';
+        }
+      });
+    }
+
+    function syncCompanyCheckoutFields() {
+      syncCompanyCheckoutHeading();
+
+      var purchaseField = checkoutFieldByLabel('Cégként vásárolok');
+      var companyField = checkoutFieldByLabel('Cégnév');
+      var taxField = checkoutFieldByLabel('Adószám');
+
+      if (!purchaseField || !companyField || !taxField) {
+        return false;
+      }
+
+      var enabled = Boolean(purchaseField.input.checked);
+      var hiddenChanged = previousEnabled !== enabled;
+
+      if (purchaseField.wrapper) {
+        purchaseField.wrapper.classList.add('ak-checkout-company-toggle');
+      }
+
+      [companyField, taxField].forEach(function (field) {
+        if (!field.wrapper) {
+          return;
+        }
+
+        field.wrapper.classList.add('ak-checkout-company-field');
+        field.wrapper.classList.toggle('is-hidden', !enabled);
+        field.wrapper.setAttribute('aria-hidden', enabled ? 'false' : 'true');
+      });
+
+      if (!enabled && hiddenChanged) {
+        [companyField.input, taxField.input].forEach(function (input) {
+          if (input.value !== '') {
+            input.value = '';
+            dispatchCheckoutFieldUpdate(input);
+          }
+        });
+      }
+
+      previousEnabled = enabled;
+
+      return true;
+    }
+
+    document.addEventListener('change', function (event) {
+      var purchaseField = checkoutFieldByLabel('Cégként vásárolok');
+
+      if (purchaseField && event.target === purchaseField.input) {
+        syncCompanyCheckoutFields();
+      }
+    });
+
+    syncCompanyCheckoutFields();
+
+    var observer = new MutationObserver(function () {
+      syncCompanyCheckoutFields();
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+  }
+
   function updatePriceFilter(filter) {
     var minInput = filter.querySelector('[data-price-min]');
     var maxInput = filter.querySelector('[data-price-max]');
@@ -124,6 +240,7 @@
   });
 
   initWishlistButtons();
+  initCompanyCheckoutFields();
 
   document.querySelectorAll('.woocommerce-ordering').forEach(function (form) {
     var select = form.querySelector('select.orderby');
