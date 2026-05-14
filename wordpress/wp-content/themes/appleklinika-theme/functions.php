@@ -15,7 +15,7 @@ add_action('wp_enqueue_scripts', static function (): void {
         'appleklinika-theme',
         get_stylesheet_directory_uri() . '/assets/css/frontend.css',
         [],
-        '0.1.162'
+        '0.1.163'
     );
 
     if (function_exists('is_checkout') && is_checkout()) {
@@ -23,7 +23,7 @@ add_action('wp_enqueue_scripts', static function (): void {
             'appleklinika-checkout-sidebar',
             get_stylesheet_directory_uri() . '/assets/css/checkout-sidebar.css',
             ['appleklinika-theme'],
-            '0.1.0'
+            '0.1.6'
         );
     }
 

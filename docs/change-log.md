@@ -183,6 +183,8 @@
 - Stabilized the WooCommerce Blocks checkout multi-step shell so stepper connector lines no longer cross labels, duplicate return-to-cart controls are hidden, and the final summary step has a cleaner terms/back/order-action layout without moving checkout internals.
 - Updated the WooCommerce Blocks checkout multi-step shell so the live order summary stays visible as the right column on shipping/billing, shipping/payment, and final summary steps.
 - Assigned the WooCommerce Blocks `#billing-fields` section to the shipping/billing checkout step only, so billing address fields no longer appear on the shipping/payment or final summary steps.
+- Polished the WooCommerce Blocks checkout order summary sidebar with a more compact card, smaller product rows, anchored quantity badges, tighter coupon/totals rows, and restrained final total typography without touching the cart summary.
+- Hardened the checkout-only order summary compact layer in `checkout-sidebar.css` after a scoped outline test confirmed the visible Woo Blocks sidebar, product rows, images, quantity badges, and totals wrappers were targeted.
 - Removed the cart-only order summary override so the cart page returns to the previous approved visual state controlled by the main storefront stylesheet.
 - Restored the cart page visuals toward the approved screenshot with the main storefront stylesheet: wider two-column cart layout, larger white shell cards, separated floating cart item rows, and the previous right-side summary rhythm.
 - Added a high-specificity desktop cart restoration layer targeting the custom `.ak-cart-*` markup directly so the approved screenshot layout applies even when the local cart URL renders through `?page_id=8`.
