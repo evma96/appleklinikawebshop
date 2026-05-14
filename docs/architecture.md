@@ -72,6 +72,7 @@ The overall grade is intentionally selected manually in the admin workflow.
 - `functions.php`: marks canonical footer information pages with the `ak-info-page` body class, marks the Contact page with `ak-contact-page`, renders the `appleklinika_info_trust_block` shortcode, and renders the Contact page panel/form through `appleklinika_contact_panel` so these page-specific layouts stay isolated from WooCommerce product, cart, and checkout pages.
 - `functions.php`: replaces the rendered WooCommerce cart page content with the custom Appleklinika cart layout, using the live WooCommerce cart object for item rows, quantity fields, remove links, coupons, shipping, discounts, totals, and checkout URL while leaving WooCommerce cart processing intact.
 - `functions.php`: also adds the shop filter bar, loop product meta, and compact product-card call-to-action behavior on WooCommerce listing pages.
+- `assets/js/frontend.js`: adds checkout-only progressive behavior around WooCommerce Blocks, including company purchase field visibility and a multi-step shell that controls visibility through CSS classes without moving or cloning Blocks-managed checkout fields while keeping the live order summary visible on each checkout step.
 - `assets/css/frontend.css`: contains the first shared storefront styling layer.
 
 ## Design System
