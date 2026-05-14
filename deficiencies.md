@@ -79,6 +79,7 @@
 - Contact page phone number, address, and map are placeholders; final business contact data and mail delivery settings must be confirmed before production.
 - The custom cart layout depends on WooCommerce cart hooks and form handling staying compatible with future WooCommerce updates, so it should be regression-tested after WooCommerce upgrades.
 - The company purchase checkout fields are saved as WooCommerce order/user meta only; final invoice plugin integration and any official invoice field mapping still need a separate audit after the chosen invoicing workflow is installed.
+- The checkout multi-step shell deliberately hides non-active WooCommerce Blocks form sections without moving or unmounting them, while keeping the live order summary visible; it still needs a full regression pass after GLS shipping and Barion payment plugins are installed because those plugins may add their own fields inside the shipping and payment sections.
 
 ## Next Iteration Questions
 

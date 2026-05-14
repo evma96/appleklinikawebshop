@@ -128,6 +128,10 @@
     input.dispatchEvent(new Event('change', { bubbles: true }));
   }
 
+  function cartUrl() {
+    return wishlistConfig.cartUrl || '/';
+  }
+
   function initCompanyCheckoutFields() {
     if (!document.body.classList.contains('woocommerce-checkout')) {
       return;
@@ -205,6 +209,273 @@
     });
   }
 
+  function initCheckoutStepper() {
+    if (!document.body.classList.contains('woocommerce-checkout')) {
+      return;
+    }
+
+    var activeStep = 2;
+    var syncFrame = null;
+    var stepLabels = {
+      1: 'Kosár',
+      2: 'Szállítás és számlázás',
+      3: 'Szállítási mód és fizetés',
+      4: 'Összegzés'
+    };
+
+    function closestCheckoutStep(selector) {
+      var element = document.querySelector(selector);
+
+      if (!element) {
+        return null;
+      }
+
+      return element.closest('.wc-block-components-checkout-step') || element;
+    }
+
+    function uniqueElements(elements) {
+      return elements.filter(function (element, index) {
+        return element && elements.indexOf(element) === index;
+      });
+    }
+
+    function checkoutStepTargets() {
+      var companyToggle = document.querySelector('.ak-checkout-company-toggle');
+      var companyStep = companyToggle ? companyToggle.closest('.wc-block-components-checkout-step') : null;
+      var orderSummary = document.querySelector('.wc-block-components-sidebar');
+
+      return {
+        2: uniqueElements([
+          closestCheckoutStep('#contact-fields'),
+          closestCheckoutStep('#shipping-fields'),
+          closestCheckoutStep('#billing-fields'),
+          companyStep,
+          closestCheckoutStep('.wc-block-checkout__add-note')
+        ]),
+        3: uniqueElements([
+          closestCheckoutStep('#shipping-option'),
+          closestCheckoutStep('#payment-method')
+        ]),
+        4: uniqueElements([
+          document.querySelector('.wc-block-checkout__terms'),
+          document.querySelector('.wc-block-components-checkout-place-order-button')
+        ]),
+        persistent: uniqueElements([
+          orderSummary
+        ])
+      };
+    }
+
+    function setActiveStep(step) {
+      activeStep = Math.max(2, Math.min(4, Number(step) || 2));
+      syncCheckoutStepper();
+    }
+
+    function createStepper(checkoutBlock) {
+      var existingStepper = document.querySelector('.ak-checkout-stepper');
+
+      if (existingStepper) {
+        return existingStepper;
+      }
+
+      var stepper = document.createElement('nav');
+      var list = document.createElement('ol');
+
+      stepper.className = 'ak-checkout-stepper';
+      stepper.setAttribute('aria-label', 'Pénztár folyamat');
+
+      Object.keys(stepLabels).forEach(function (stepKey) {
+        var step = Number(stepKey);
+        var item = document.createElement('li');
+        var control = step === 1 ? document.createElement('a') : document.createElement('button');
+        var marker = document.createElement('span');
+        var label = document.createElement('span');
+
+        item.className = 'ak-checkout-stepper__item';
+        item.setAttribute('data-step-item', String(step));
+        control.className = 'ak-checkout-stepper__control';
+        marker.className = 'ak-checkout-stepper__marker';
+        label.className = 'ak-checkout-stepper__label';
+        marker.textContent = step === 1 ? '✓' : String(step);
+        label.textContent = stepLabels[step];
+
+        if (step === 1) {
+          control.href = cartUrl();
+        } else {
+          control.type = 'button';
+          control.setAttribute('data-checkout-step-trigger', String(step));
+          control.addEventListener('click', function () {
+            setActiveStep(step);
+          });
+        }
+
+        control.appendChild(marker);
+        control.appendChild(label);
+        item.appendChild(control);
+        list.appendChild(item);
+      });
+
+      stepper.appendChild(list);
+      checkoutBlock.parentNode.insertBefore(stepper, checkoutBlock);
+
+      return stepper;
+    }
+
+    function createNavigationControls(targets) {
+      if (!document.querySelector('[data-checkout-step-controls="2"]')) {
+        var step2Target = targets[2][targets[2].length - 1] || targets[2][0];
+
+        if (step2Target && step2Target.parentNode) {
+          var step2Controls = document.createElement('div');
+          var cartLink = document.createElement('a');
+          var nextPayment = document.createElement('button');
+
+          step2Controls.className = 'ak-checkout-step-controls';
+          step2Controls.setAttribute('data-checkout-step-controls', '2');
+          cartLink.className = 'ak-checkout-step-controls__link';
+          cartLink.href = cartUrl();
+          cartLink.textContent = 'Vissza a kosárhoz';
+          nextPayment.className = 'ak-checkout-step-controls__button';
+          nextPayment.type = 'button';
+          nextPayment.textContent = 'Tovább a szállítás és fizetéshez';
+          nextPayment.addEventListener('click', function () {
+            setActiveStep(3);
+          });
+          step2Controls.appendChild(cartLink);
+          step2Controls.appendChild(nextPayment);
+          step2Target.parentNode.insertBefore(step2Controls, step2Target.nextSibling);
+        }
+      }
+
+      if (!document.querySelector('[data-checkout-step-controls="3"]')) {
+        var step3Target = targets[3][targets[3].length - 1] || targets[3][0];
+
+        if (step3Target && step3Target.parentNode) {
+          var step3Controls = document.createElement('div');
+          var backDetails = document.createElement('button');
+          var nextSummary = document.createElement('button');
+
+          step3Controls.className = 'ak-checkout-step-controls';
+          step3Controls.setAttribute('data-checkout-step-controls', '3');
+          backDetails.className = 'ak-checkout-step-controls__link';
+          backDetails.type = 'button';
+          backDetails.textContent = 'Vissza az adatokhoz';
+          backDetails.addEventListener('click', function () {
+            setActiveStep(2);
+          });
+          nextSummary.className = 'ak-checkout-step-controls__button';
+          nextSummary.type = 'button';
+          nextSummary.textContent = 'Tovább az összegzéshez';
+          nextSummary.addEventListener('click', function () {
+            setActiveStep(4);
+          });
+          step3Controls.appendChild(backDetails);
+          step3Controls.appendChild(nextSummary);
+          step3Target.parentNode.insertBefore(step3Controls, step3Target.nextSibling);
+        }
+      }
+
+      if (!document.querySelector('[data-checkout-step-controls="4"]')) {
+        var placeOrder = document.querySelector('.wc-block-components-checkout-place-order-button');
+
+        if (placeOrder && placeOrder.parentNode) {
+          var step4Controls = document.createElement('div');
+          var backPayment = document.createElement('button');
+
+          step4Controls.className = 'ak-checkout-step-controls ak-checkout-step-controls--summary';
+          step4Controls.setAttribute('data-checkout-step-controls', '4');
+          backPayment.className = 'ak-checkout-step-controls__link';
+          backPayment.type = 'button';
+          backPayment.textContent = 'Vissza a szállítás és fizetéshez';
+          backPayment.addEventListener('click', function () {
+            setActiveStep(3);
+          });
+          step4Controls.appendChild(backPayment);
+          placeOrder.parentNode.insertBefore(step4Controls, placeOrder);
+        }
+      }
+    }
+
+    function syncCheckoutStepper() {
+      var checkoutBlock = document.querySelector('.wp-block-woocommerce-checkout');
+
+      if (!checkoutBlock) {
+        return false;
+      }
+
+      var stepper = createStepper(checkoutBlock);
+      var targets = checkoutStepTargets();
+      var allTargets = uniqueElements(targets[2].concat(targets[3]).concat(targets[4]));
+
+      createNavigationControls(targets);
+      document.body.classList.add('ak-checkout-multistep');
+      document.body.classList.remove('ak-checkout-step-2', 'ak-checkout-step-3', 'ak-checkout-step-4');
+      document.body.classList.add('ak-checkout-step-' + activeStep);
+      document.body.setAttribute('data-ak-checkout-step', String(activeStep));
+
+      allTargets.forEach(function (target) {
+        var visible = targets[activeStep].indexOf(target) !== -1;
+
+        target.classList.add('ak-checkout-step-section');
+        target.classList.toggle('ak-checkout-step-hidden', !visible);
+        target.setAttribute('aria-hidden', visible ? 'false' : 'true');
+      });
+
+      targets.persistent.forEach(function (target) {
+        target.classList.add('ak-checkout-step-persistent-summary');
+        target.classList.remove('ak-checkout-step-hidden');
+        target.setAttribute('aria-hidden', 'false');
+      });
+
+      document.querySelectorAll('.ak-checkout-step-controls').forEach(function (controls) {
+        var visible = controls.getAttribute('data-checkout-step-controls') === String(activeStep);
+
+        controls.classList.toggle('ak-checkout-step-hidden', !visible);
+        controls.setAttribute('aria-hidden', visible ? 'false' : 'true');
+      });
+
+      stepper.querySelectorAll('[data-step-item]').forEach(function (item) {
+        var step = Number(item.getAttribute('data-step-item'));
+        var isActive = step === activeStep;
+        var isComplete = step < activeStep;
+        var control = item.querySelector('.ak-checkout-stepper__control');
+
+        item.classList.toggle('is-active', isActive);
+        item.classList.toggle('is-complete', isComplete);
+        item.classList.toggle('is-pending', step > activeStep);
+
+        if (control) {
+          if (isActive) {
+            control.setAttribute('aria-current', 'step');
+          } else {
+            control.removeAttribute('aria-current');
+          }
+        }
+      });
+
+      return true;
+    }
+
+    function scheduleCheckoutStepperSync() {
+      if (syncFrame !== null) {
+        return;
+      }
+
+      syncFrame = window.requestAnimationFrame(function () {
+        syncFrame = null;
+        syncCheckoutStepper();
+      });
+    }
+
+    syncCheckoutStepper();
+
+    var observer = new MutationObserver(scheduleCheckoutStepperSync);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+  }
+
   function updatePriceFilter(filter) {
     var minInput = filter.querySelector('[data-price-min]');
     var maxInput = filter.querySelector('[data-price-max]');
@@ -241,6 +512,7 @@
 
   initWishlistButtons();
   initCompanyCheckoutFields();
+  initCheckoutStepper();
 
   document.querySelectorAll('.woocommerce-ordering').forEach(function (form) {
     var select = form.querySelector('select.orderby');

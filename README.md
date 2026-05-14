@@ -180,6 +180,7 @@ The frontend currently includes:
 - MacBook uses model, price, screen size, chip, RAM, storage, color, and condition filters.
 - Apple Watch uses model, price, case size, case material/color, connectivity, strap, and condition filters.
 - The WooCommerce Blocks checkout includes a real company purchase option (`Cégként vásárolok`) with company name and tax number fields saved to order meta and reused from logged-in user meta when available.
+- The WooCommerce Blocks checkout uses a Phase 1 multi-step shell that keeps the original Blocks DOM mounted, shows only the current logical checkout step, keeps the live order summary visible on each step, links the completed cart step back to the real cart page, and leaves the real place-order button as the only order-submitting control.
 
 Product cards intentionally stay compact: non-iPhone archive cards only show storage, grade, an optional real battery-health chip, and a Cellular chip only when an iPad or Apple Watch product has cellular connectivity.
 - The header uses a simplified two-row storefront layout with logo, centered search, account/cart actions, and Apple-focused category navigation on storefront/shop views.

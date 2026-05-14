@@ -179,6 +179,10 @@
 - Compact-reset the WooCommerce Blocks checkout order summary product rows so they show a 56px image, product title, and final price only, with hidden long metadata/savings badges in the checkout sidebar.
 - Split the checkout sidebar compact overrides into a checkout-only stylesheet and restored the main storefront CSS asset version so the cart page is not forced onto newly refreshed CSS by a checkout-only change.
 - Added a WooCommerce Blocks-compatible `Cégként vásárolok` checkout option with conditional company name and tax number fields, order meta persistence, logged-in user meta reuse, and checkout-only form polish.
+- Added a WooCommerce Blocks-safe checkout multi-step shell for cart, shipping/billing, shipping/payment, and summary progress while keeping the original Blocks sections mounted and the real WooCommerce order button as the only submit control.
+- Stabilized the WooCommerce Blocks checkout multi-step shell so stepper connector lines no longer cross labels, duplicate return-to-cart controls are hidden, and the final summary step has a cleaner terms/back/order-action layout without moving checkout internals.
+- Updated the WooCommerce Blocks checkout multi-step shell so the live order summary stays visible as the right column on shipping/billing, shipping/payment, and final summary steps.
+- Assigned the WooCommerce Blocks `#billing-fields` section to the shipping/billing checkout step only, so billing address fields no longer appear on the shipping/payment or final summary steps.
 - Removed the cart-only order summary override so the cart page returns to the previous approved visual state controlled by the main storefront stylesheet.
 - Restored the cart page visuals toward the approved screenshot with the main storefront stylesheet: wider two-column cart layout, larger white shell cards, separated floating cart item rows, and the previous right-side summary rhythm.
 - Added a high-specificity desktop cart restoration layer targeting the custom `.ak-cart-*` markup directly so the approved screenshot layout applies even when the local cart URL renders through `?page_id=8`.

@@ -8,8 +8,8 @@ Status values:
 - `FAIL`: verified in browser and broken.
 - `NOT TESTED`: not verified in browser during this round.
 
-Last run: 2026-05-12
-Scope: Strictly scoped header top polish.
+Last run: 2026-05-13
+Scope: WooCommerce Blocks checkout multi-step shell stabilization.
 
 ## 1. Navigation Check
 
@@ -83,8 +83,16 @@ Scope: Strictly scoped header top polish.
 | Cart page opens | NOT TESTED | A direct `.ak-cart-*` desktop restoration layer was added; verify the full cart page visually against the reference image at desktop width. |
 | Quantity update works | NOT TESTED | Cart item/update area visuals changed only; quantity control functionality was not retested in this pass. |
 | Remove item works | NOT TESTED | Separate remove links were intentionally removed from the custom cart UI; removal now depends on setting quantity to zero and updating the cart. |
-| Checkout page opens | NOT TESTED | Checkout sidebar product rows were changed with CSS only; browser verification is still needed at desktop width. |
-| WooCommerce fields are not broken | NOT TESTED | Checkout form fields, shipping, payment, notices, terms, and order submit were not changed. |
+| Checkout page opens | PASS | Browser QA opened `/?page_id=9` and confirmed the WooCommerce Blocks checkout renders with the new `ak-checkout-stepper`. |
+| Checkout multi-step shell starts on step 2 | PASS | Browser QA confirmed `data-ak-checkout-step="2"` by default, with contact, shipping address, and order note visible while shipping/payment sections remain mounted but hidden. |
+| Checkout step 3 shows real shipping/payment sections | PASS | Browser QA clicked `Tovább a szállítás és fizetéshez` and confirmed `#shipping-option` and `#payment-method` become visible without cloning or removing the Woo Blocks sections. |
+| Checkout order summary remains visible | PASS | Browser QA confirmed the real WooCommerce order summary sidebar stays visible on steps 2, 3, and 4 without duplicating the summary. |
+| Checkout step 4 shows real terms and order button | PASS | Browser QA clicked `Tovább az összegzéshez` and confirmed the terms area and original `Megrendelés` button are visible on the final step. |
+| Checkout billing address step mapping | PASS | Browser QA confirmed the WooCommerce Blocks `#billing-fields` section is visible only on step 2 when billing differs from shipping, and remains mounted but hidden on steps 3 and 4. |
+| Checkout back controls work | PASS | Browser QA clicked `Vissza a szállítás és fizetéshez` and confirmed the checkout returns to step 3 without navigation or order submission. |
+| Checkout duplicate back links are not visible | PASS | Browser QA confirmed the default WooCommerce return-to-cart element still exists but is hidden during the multi-step shell; only the custom step back action is visible. |
+| Checkout stepper scope test completed | PASS | Temporary red outlines were applied only to the checkout stepper/layout/sidebar/order controls, with zero shop card, filter, account, or cart wrapper matches; the debug outlines were removed before finishing. |
+| WooCommerce fields are not broken | PASS | Browser QA confirmed checkout field sections remain present in the DOM; the stepper only toggles visibility classes and does not unmount WooCommerce Blocks fields. |
 
 ## 6. WooCommerce Admin Check
 

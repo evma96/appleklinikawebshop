@@ -15,7 +15,7 @@ add_action('wp_enqueue_scripts', static function (): void {
         'appleklinika-theme',
         get_stylesheet_directory_uri() . '/assets/css/frontend.css',
         [],
-        '0.1.158'
+        '0.1.162'
     );
 
     if (function_exists('is_checkout') && is_checkout()) {
@@ -31,7 +31,7 @@ add_action('wp_enqueue_scripts', static function (): void {
         'appleklinika-theme',
         get_stylesheet_directory_uri() . '/assets/js/frontend.js',
         [],
-        '0.1.69',
+        '0.1.72',
         true
     );
 
@@ -40,6 +40,7 @@ add_action('wp_enqueue_scripts', static function (): void {
         'nonce' => wp_create_nonce('appleklinika_wishlist'),
         'isLoggedIn' => is_user_logged_in(),
         'loginUrl' => appleklinika_account_url(),
+        'cartUrl' => function_exists('wc_get_cart_url') ? wc_get_cart_url() : home_url('/'),
         'productIds' => is_user_logged_in() ? appleklinika_get_wishlist_product_ids(get_current_user_id()) : [],
     ]);
 });
