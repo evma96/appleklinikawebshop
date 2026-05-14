@@ -23,7 +23,7 @@ add_action('wp_enqueue_scripts', static function (): void {
             'appleklinika-checkout-sidebar',
             get_stylesheet_directory_uri() . '/assets/css/checkout-sidebar.css',
             ['appleklinika-theme'],
-            '0.1.13'
+            '0.1.14'
         );
     }
 
@@ -556,6 +556,9 @@ function appleklinika_render_checkout_summary_item(array $cartItem, WC_Cart $car
                     <?php echo esc_html($product->get_name()); ?>
                 <?php endif; ?>
             </h3>
+        </div>
+
+        <div class="ak-checkout-summary__item-aside">
             <div class="ak-checkout-summary__item-price"><?php echo wp_kses_post($linePrice); ?></div>
         </div>
     </article>
