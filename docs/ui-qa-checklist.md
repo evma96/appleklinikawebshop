@@ -8,8 +8,8 @@ Status values:
 - `FAIL`: verified in browser and broken.
 - `NOT TESTED`: not verified in browser during this round.
 
-Last run: 2026-05-13
-Scope: WooCommerce Blocks checkout multi-step shell stabilization.
+Last run: 2026-05-14
+Scope: WooCommerce Blocks checkout company tax number masking.
 
 ## 1. Navigation Check
 
@@ -80,6 +80,12 @@ Scope: WooCommerce Blocks checkout multi-step shell stabilization.
 
 | Item | Status | Notes |
 | --- | --- | --- |
+| Company tax number formats while typing | PASS | Browser QA confirmed the checkout `Adószám` input formats numeric text as `12345678-1-23` and strips non-digit characters before re-inserting the two hyphens. |
+| Company tax number has no overlapping placeholder | PASS | The checkout JS removes the rendered placeholder from the tax number input and keeps the Woo label/value display clear. |
+| Company tax number validation remains server-side | PASS | PHP registration keeps supported `pattern`/`title` hints only, while `appleklinika_validate_company_checkout_fields()` still enforces `^\d{8}-\d-\d{2}$`. |
+
+| Item | Status | Notes |
+| --- | --- | --- |
 | Cart page opens | NOT TESTED | A direct `.ak-cart-*` desktop restoration layer was added; verify the full cart page visually against the reference image at desktop width. |
 | Quantity update works | NOT TESTED | Cart item/update area visuals changed only; quantity control functionality was not retested in this pass. |
 | Remove item works | NOT TESTED | Separate remove links were intentionally removed from the custom cart UI; removal now depends on setting quantity to zero and updating the cart. |
@@ -89,6 +95,8 @@ Scope: WooCommerce Blocks checkout multi-step shell stabilization.
 | Checkout order summary remains visible | PASS | Browser QA confirmed the real WooCommerce order summary sidebar stays visible on steps 2, 3, and 4 without duplicating the summary. |
 | Checkout order summary visual polish | PASS | Browser QA confirmed the checkout sidebar remains visible on steps 2, 3, and 4 after compact summary styling, with no `.ak-cart-summary` selector present on checkout. |
 | Checkout summary hard scope test | PASS | Temporary red/blue/green/purple/orange outlines hit only the checkout sidebar, product rows, product images, quantity badges, and totals wrappers; the debug outlines were removed before finishing. |
+| Checkout company fields scope test | PASS | Temporary outlines hit only the Step 2 `Cégként vásárolok`, `Cégnév`, and `Adószám` wrappers; Step 3 and Step 4 had no visible company-field matches. |
+| Checkout company tax number constraints | PASS | Browser QA confirmed `Adószám` receives `maxlength="13"`, the `\d{8}-\d-\d{2}` pattern, and required state only while company purchase is enabled. |
 | Checkout step 4 shows real terms and order button | PASS | Browser QA clicked `Tovább az összegzéshez` and confirmed the terms area and original `Megrendelés` button are visible on the final step. |
 | Checkout billing address step mapping | PASS | Browser QA confirmed the WooCommerce Blocks `#billing-fields` section is visible only on step 2 when billing differs from shipping, and remains mounted but hidden on steps 3 and 4. |
 | Checkout back controls work | PASS | Browser QA clicked `Vissza a szállítás és fizetéshez` and confirmed the checkout returns to step 3 without navigation or order submission. |

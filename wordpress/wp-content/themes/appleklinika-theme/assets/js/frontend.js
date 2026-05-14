@@ -128,6 +128,18 @@
     input.dispatchEvent(new Event('change', { bubbles: true }));
   }
 
+  function setCheckoutFieldValue(input, value) {
+    var valueDescriptor = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value');
+
+    if (valueDescriptor && typeof valueDescriptor.set === 'function') {
+      valueDescriptor.set.call(input, value);
+    } else {
+      input.value = value;
+    }
+
+    dispatchCheckoutFieldUpdate(input);
+  }
+
   function cartUrl() {
     return wishlistConfig.cartUrl || '/';
   }
@@ -138,6 +150,62 @@
     }
 
     var previousEnabled = null;
+    var taxPattern = '\\d{8}-\\d-\\d{2}';
+
+    function taxNumberDigits(value) {
+      return String(value || '').replace(/\D/g, '').slice(0, 11);
+    }
+
+    function formatTaxNumber(value) {
+      var digits = taxNumberDigits(value);
+      var firstBlock = digits.slice(0, 8);
+      var middleBlock = digits.slice(8, 9);
+      var lastBlock = digits.slice(9, 11);
+
+      if (digits.length <= 8) {
+        return firstBlock;
+      }
+
+      if (digits.length <= 9) {
+        return firstBlock + '-' + middleBlock;
+      }
+
+      return firstBlock + '-' + middleBlock + '-' + lastBlock;
+    }
+
+    function prepareTaxNumberInput(input) {
+      input.maxLength = 13;
+      input.setAttribute('inputmode', 'numeric');
+      input.setAttribute('pattern', taxPattern);
+      input.removeAttribute('placeholder');
+      input.setAttribute('title', 'Példa: 12345678-1-23');
+      input.setAttribute('autocomplete', 'off');
+
+      var preparedValue = formatTaxNumber(input.value);
+
+      if (input.value !== preparedValue) {
+        setCheckoutFieldValue(input, preparedValue);
+      }
+
+      if (input.dataset.akTaxNumberBound === '1') {
+        return;
+      }
+
+      input.dataset.akTaxNumberBound = '1';
+
+      input.addEventListener('input', function () {
+        var normalized = formatTaxNumber(input.value);
+
+        if (input.value !== normalized) {
+          setCheckoutFieldValue(input, normalized);
+        }
+      });
+    }
+
+    function syncRequiredState(field, required) {
+      field.input.required = required;
+      field.input.setAttribute('aria-required', required ? 'true' : 'false');
+    }
 
     function syncCompanyCheckoutHeading() {
       Array.prototype.slice.call(document.querySelectorAll('body.woocommerce-checkout h2, body.woocommerce-checkout [role="group"] > div')).forEach(function (element) {
@@ -165,6 +233,10 @@
         purchaseField.wrapper.classList.add('ak-checkout-company-toggle');
       }
 
+      prepareTaxNumberInput(taxField.input);
+      syncRequiredState(companyField, enabled);
+      syncRequiredState(taxField, enabled);
+
       [companyField, taxField].forEach(function (field) {
         if (!field.wrapper) {
           return;
@@ -178,8 +250,7 @@
       if (!enabled && hiddenChanged) {
         [companyField.input, taxField.input].forEach(function (input) {
           if (input.value !== '') {
-            input.value = '';
-            dispatchCheckoutFieldUpdate(input);
+            setCheckoutFieldValue(input, '');
           }
         });
       }
@@ -203,6 +274,66 @@
       syncCompanyCheckoutFields();
     });
 
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+  }
+
+  function initCheckoutSummary() {
+    if (!document.body.classList.contains('woocommerce-checkout')) {
+      return;
+    }
+
+    var config = window.appleklinikaCheckoutSummary || {};
+
+    if (!config.html) {
+      return;
+    }
+
+    var syncFrame = null;
+
+    function syncCheckoutSummary() {
+      var defaultSummary = document.querySelector('body.woocommerce-checkout .wc-block-components-sidebar');
+
+      if (!defaultSummary || !defaultSummary.parentNode) {
+        return false;
+      }
+
+      var slot = document.querySelector('body.woocommerce-checkout .ak-checkout-summary-slot');
+
+      if (!slot) {
+        slot = document.createElement('div');
+        slot.className = 'ak-checkout-summary-slot ak-checkout-step-persistent-summary';
+        defaultSummary.parentNode.insertBefore(slot, defaultSummary.nextSibling);
+      }
+
+      if (!slot.querySelector('.ak-checkout-summary')) {
+        slot.innerHTML = config.html;
+      }
+
+      defaultSummary.classList.add('ak-checkout-default-summary-hidden');
+      defaultSummary.setAttribute('aria-hidden', 'true');
+      slot.classList.remove('ak-checkout-step-hidden');
+      slot.setAttribute('aria-hidden', 'false');
+
+      return true;
+    }
+
+    function scheduleCheckoutSummarySync() {
+      if (syncFrame !== null) {
+        return;
+      }
+
+      syncFrame = window.requestAnimationFrame(function () {
+        syncFrame = null;
+        syncCheckoutSummary();
+      });
+    }
+
+    syncCheckoutSummary();
+
+    var observer = new MutationObserver(scheduleCheckoutSummarySync);
     observer.observe(document.body, {
       childList: true,
       subtree: true
@@ -512,6 +643,7 @@
 
   initWishlistButtons();
   initCompanyCheckoutFields();
+  initCheckoutSummary();
   initCheckoutStepper();
 
   document.querySelectorAll('.woocommerce-ordering').forEach(function (form) {

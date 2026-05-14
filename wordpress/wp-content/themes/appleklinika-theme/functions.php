@@ -15,7 +15,7 @@ add_action('wp_enqueue_scripts', static function (): void {
         'appleklinika-theme',
         get_stylesheet_directory_uri() . '/assets/css/frontend.css',
         [],
-        '0.1.163'
+        '0.1.166'
     );
 
     if (function_exists('is_checkout') && is_checkout()) {
@@ -23,7 +23,7 @@ add_action('wp_enqueue_scripts', static function (): void {
             'appleklinika-checkout-sidebar',
             get_stylesheet_directory_uri() . '/assets/css/checkout-sidebar.css',
             ['appleklinika-theme'],
-            '0.1.6'
+            '0.1.13'
         );
     }
 
@@ -31,7 +31,7 @@ add_action('wp_enqueue_scripts', static function (): void {
         'appleklinika-theme',
         get_stylesheet_directory_uri() . '/assets/js/frontend.js',
         [],
-        '0.1.72',
+        '0.1.76',
         true
     );
 
@@ -43,6 +43,13 @@ add_action('wp_enqueue_scripts', static function (): void {
         'cartUrl' => function_exists('wc_get_cart_url') ? wc_get_cart_url() : home_url('/'),
         'productIds' => is_user_logged_in() ? appleklinika_get_wishlist_product_ids(get_current_user_id()) : [],
     ]);
+
+    if (function_exists('is_checkout') && is_checkout()) {
+        wp_localize_script('appleklinika-theme', 'appleklinikaCheckoutSummary', [
+            'html' => appleklinika_checkout_summary_markup(),
+            'isStaticSnapshot' => true,
+        ]);
+    }
 });
 
 add_action('init', 'appleklinika_ensure_info_pages');
@@ -482,6 +489,128 @@ function appleklinika_render_cart_summary(): void
 
     <a class="ak-cart-checkout" href="<?php echo esc_url(wc_get_checkout_url()); ?>">Tovább a pénztárhoz</a>
     <a class="ak-cart-continue" href="<?php echo esc_url(appleklinika_shop_url()); ?>">Vásárlás folytatása</a>
+    <?php
+}
+
+function appleklinika_checkout_summary_markup(): string
+{
+    if (! function_exists('WC') || ! (WC()->cart instanceof WC_Cart)) {
+        return '';
+    }
+
+    ob_start();
+    appleklinika_render_checkout_summary(WC()->cart);
+
+    return (string) ob_get_clean();
+}
+
+function appleklinika_render_checkout_summary(WC_Cart $cart): void
+{
+    ?>
+    <aside class="ak-checkout-summary" aria-label="Rendelés összesítő">
+        <h2 class="ak-checkout-summary__title">Rendelés összesítő</h2>
+
+        <?php if ($cart->is_empty()) : ?>
+            <p class="ak-checkout-summary__empty">A kosarad jelenleg üres.</p>
+        <?php else : ?>
+            <div class="ak-checkout-summary__items">
+                <?php foreach ($cart->get_cart() as $cartItem) : ?>
+                    <?php appleklinika_render_checkout_summary_item($cartItem, $cart); ?>
+                <?php endforeach; ?>
+            </div>
+
+            <?php appleklinika_render_checkout_summary_coupons($cart); ?>
+            <?php appleklinika_render_checkout_summary_totals($cart); ?>
+        <?php endif; ?>
+    </aside>
+    <?php
+}
+
+/**
+ * @param array<string, mixed> $cartItem
+ */
+function appleklinika_render_checkout_summary_item(array $cartItem, WC_Cart $cart): void
+{
+    $product = $cartItem['data'] ?? null;
+    $quantity = (int) ($cartItem['quantity'] ?? 0);
+
+    if (! $product instanceof WC_Product || ! $product->exists() || $quantity <= 0) {
+        return;
+    }
+
+    $productId = (int) ($cartItem['product_id'] ?? $product->get_id());
+    $permalink = $product->is_visible() ? get_permalink($productId) : '';
+    $linePrice = $cart->get_product_subtotal($product, $quantity);
+    ?>
+    <article class="ak-checkout-summary__item">
+        <div class="ak-checkout-summary__thumb">
+            <?php echo wp_kses_post($product->get_image('woocommerce_thumbnail', ['class' => 'ak-checkout-summary__image'])); ?>
+            <span class="ak-checkout-summary__qty"><?php echo esc_html((string) $quantity); ?></span>
+        </div>
+
+        <div class="ak-checkout-summary__item-body">
+            <h3 class="ak-checkout-summary__item-title">
+                <?php if ($permalink !== '') : ?>
+                    <a href="<?php echo esc_url($permalink); ?>"><?php echo esc_html($product->get_name()); ?></a>
+                <?php else : ?>
+                    <?php echo esc_html($product->get_name()); ?>
+                <?php endif; ?>
+            </h3>
+            <div class="ak-checkout-summary__item-price"><?php echo wp_kses_post($linePrice); ?></div>
+        </div>
+    </article>
+    <?php
+}
+
+function appleklinika_render_checkout_summary_coupons(WC_Cart $cart): void
+{
+    $coupons = $cart->get_coupons();
+
+    if ($coupons === []) {
+        return;
+    }
+    ?>
+    <div class="ak-checkout-summary__coupons" aria-label="Kuponok">
+        <?php foreach ($coupons as $code => $coupon) : ?>
+            <?php
+            $discount = (float) $cart->get_coupon_discount_amount((string) $code, $cart->display_cart_ex_tax);
+            ?>
+            <div class="ak-checkout-summary__row">
+                <span><?php echo esc_html(sprintf('Kupon: %s', wc_format_coupon_code((string) $code))); ?></span>
+                <strong><?php echo wp_kses_post('-' . wc_price($discount)); ?></strong>
+            </div>
+        <?php endforeach; ?>
+    </div>
+    <?php
+}
+
+function appleklinika_render_checkout_summary_totals(WC_Cart $cart): void
+{
+    $discountTotal = (float) $cart->get_discount_total();
+    ?>
+    <div class="ak-checkout-summary__totals">
+        <div class="ak-checkout-summary__row">
+            <span>Részösszeg</span>
+            <strong><?php echo wp_kses_post($cart->get_cart_subtotal()); ?></strong>
+        </div>
+
+        <?php if ($discountTotal > 0) : ?>
+            <div class="ak-checkout-summary__row">
+                <span>Kedvezmény</span>
+                <strong><?php echo wp_kses_post('-' . wc_price($discountTotal)); ?></strong>
+            </div>
+        <?php endif; ?>
+
+        <div class="ak-checkout-summary__row">
+            <span>Szállítás</span>
+            <strong><?php echo wp_kses_post($cart->get_cart_shipping_total()); ?></strong>
+        </div>
+
+        <div class="ak-checkout-summary__row ak-checkout-summary__row--total">
+            <span>Összeg</span>
+            <strong><?php echo wp_kses_post($cart->get_total()); ?></strong>
+        </div>
+    </div>
     <?php
 }
 
@@ -2598,8 +2727,10 @@ function appleklinika_register_company_checkout_fields(): void
             'required' => false,
             'attributes' => [
                 'autocomplete' => 'off',
+                'pattern' => '\d{8}-\d-\d{2}',
+                'title' => 'Példa: 12345678-1-23',
             ],
-            'sanitize_callback' => 'appleklinika_sanitize_checkout_text_field',
+            'sanitize_callback' => 'appleklinika_sanitize_checkout_tax_number',
             'show_in_order_confirmation' => true,
         ],
     ];
@@ -2631,6 +2762,22 @@ function appleklinika_sanitize_checkout_text_field($value, array $field = []): s
 
 /**
  * @param mixed $value
+ * @param array<string, mixed> $field
+ */
+function appleklinika_sanitize_checkout_tax_number($value, array $field = []): string
+{
+    $taxNumber = preg_replace('/[^\d-]/', '', sanitize_text_field((string) $value));
+
+    return substr((string) $taxNumber, 0, 13);
+}
+
+function appleklinika_valid_hungarian_tax_number(string $taxNumber): bool
+{
+    return preg_match('/^\d{8}-\d-\d{2}$/', $taxNumber) === 1;
+}
+
+/**
+ * @param mixed $value
  */
 function appleklinika_checkout_company_enabled($value): bool
 {
@@ -2654,8 +2801,8 @@ function appleklinika_validate_company_checkout_fields(WP_Error $errors, array $
         return;
     }
 
-    $companyName = trim((string) ($fields['appleklinika/company_name'] ?? ''));
-    $taxNumber = trim((string) ($fields['appleklinika/tax_number'] ?? ''));
+    $companyName = trim(appleklinika_sanitize_checkout_text_field($fields['appleklinika/company_name'] ?? ''));
+    $taxNumber = trim(appleklinika_sanitize_checkout_tax_number($fields['appleklinika/tax_number'] ?? ''));
 
     if ($companyName === '') {
         $errors->add(
@@ -2669,6 +2816,12 @@ function appleklinika_validate_company_checkout_fields(WP_Error $errors, array $
         $errors->add(
             'appleklinika_tax_number_required',
             'Adószám megadása kötelező, ha cégként vásárolsz.',
+            ['key' => 'appleklinika/tax_number']
+        );
+    } elseif (! appleklinika_valid_hungarian_tax_number($taxNumber)) {
+        $errors->add(
+            'appleklinika_tax_number_invalid',
+            'Az adószám formátuma hibás. Példa: 12345678-1-23',
             ['key' => 'appleklinika/tax_number']
         );
     }
@@ -2697,7 +2850,7 @@ function appleklinika_persist_company_checkout_fields(WC_Order $order, WP_REST_R
     $additionalFields = (array) $request->get_param('additional_fields');
     $companyPurchase = appleklinika_checkout_company_enabled($additionalFields['appleklinika/company_purchase'] ?? false);
     $companyName = sanitize_text_field((string) ($additionalFields['appleklinika/company_name'] ?? ''));
-    $taxNumber = sanitize_text_field((string) ($additionalFields['appleklinika/tax_number'] ?? ''));
+    $taxNumber = appleklinika_sanitize_checkout_tax_number($additionalFields['appleklinika/tax_number'] ?? '');
 
     if (! $companyPurchase) {
         appleklinika_clear_company_checkout_meta($order);
