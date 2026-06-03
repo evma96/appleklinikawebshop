@@ -8,8 +8,8 @@ Status values:
 - `FAIL`: verified in browser and broken.
 - `NOT TESTED`: not verified in browser during this round.
 
-Last run: 2026-05-14
-Scope: WooCommerce Blocks checkout company tax number masking.
+Last run: 2026-05-15
+Scope: Homepage product card shared renderer verification.
 
 ## 1. Navigation Check
 
@@ -33,6 +33,18 @@ Scope: WooCommerce Blocks checkout company tax number masking.
 | Account and cart are visually grouped | PASS | The isolated `.ak-header-actions` desktop rules now keep the two buttons stacked, slightly wider, and more intentional without touching search/logo layout rules. |
 | Cart count badge is aligned and dynamic | PASS | Browser QA confirmed the existing `.ak-cart-count` remains visible inside the Kosár link and keeps the dynamic cart number. |
 | Active category state remains functional | PASS | Category nav remains link-based; hover/active accent is now scoped to `.ak-category-nav a` and uses Apple Klinika red. |
+
+## Homepage Check
+
+| Item | Status | Notes |
+| --- | --- | --- |
+| Piros keretes scope test completed | PASS | Desktop browser QA confirmed the temporary outlines hit one homepage product card inner wrapper and one iPhone shop product card inner wrapper. The outlines were removed before finishing. |
+| Hero renders real homepage shell | PASS | Browser QA confirmed one `.ak-home` wrapper and one `.ak-home .ak-hero` wrapper on the homepage. |
+| Trust tiles render expected count | PASS | Browser QA confirmed four `.ak-home-trust-tile` cards. The copy is centralized in `appleklinika_homepage_trust_tiles()`. |
+| Product sections use real WooCommerce products | PASS | Browser QA confirmed twelve homepage product cards from live WooCommerce product queries. The homepage now renders the same `.ak-product-card` internal markup as the approved shop archive cards. |
+| Homepage scale is compacted | PASS | Desktop browser QA confirmed the hero height, trust tile grid, product card height, product media area, hero heading, section heading, and card title sizes are reduced after the density pass, with no debug outlines left. |
+| Category shortcuts use real shop links | PASS | Browser QA confirmed four `.ak-home-category-card` links for iPhone, MacBook, iPad, and Apple Watch. |
+| Shop archive product cards unchanged | PASS | Browser QA compared the homepage and iPhone shop cards and confirmed the same shared `.ak-product-card` internal structure/classes are used while shop archive CSS remains the source of truth. |
 
 ## 2. Product Page Check
 
