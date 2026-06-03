@@ -162,15 +162,15 @@ Existing catalog rows can be edited or deleted directly from the admin catalog t
 
 The frontend currently includes:
 
-- A custom Appleklinika storefront theme with the first homepage implementation.
-- A homepage hero, real WooCommerce featured product grid, real WooCommerce product category grid, trust section, and structured footer.
+- A custom Appleklinika storefront theme with a premium homepage implementation.
+- A homepage hero, centrally editable trust/info tiles, real WooCommerce sale-first product showcase, real WooCommerce featured/latest product sections rendered through the same approved shop product-card component, real category shortcuts, and structured footer.
 - A modern ecommerce product page structure powered by the actual WooCommerce product object.
 - A three-column desktop product page with Rejoy-style Appleklinika configuration selectors, WooCommerce image gallery, and a right-side purchase panel.
 - A right-side purchase panel with WooCommerce stock status, product title, product price, sale savings, Appleklinika meta-based option cards, real WooCommerce add-to-cart form, stock note, and trust cards.
 - Product gallery thumbnails, previous/next controls, and lightbox navigation use real WooCommerce product images.
 - The product page uses a theme-level WooCommerce single product template override so the custom Appleklinika layout is the only product layout rendered.
 - The block theme product template uses the `appleklinika_single_product` shortcode to avoid fallback rendering through default WooCommerce product content.
-- The header includes real product search and a WooCommerce cart count.
+- The header includes real product search, account/cart action buttons with functional icons, and a WooCommerce cart count.
 - Product add-to-cart updates the real WooCommerce cart count and displays success feedback.
 - The WooCommerce shop/listing page has a compact product grid with equal-height cards, product images, key meta, prices, and real product detail links.
 - Storefront prices are formatted without unnecessary decimals, using space-separated thousands such as `379 990 Ft`.

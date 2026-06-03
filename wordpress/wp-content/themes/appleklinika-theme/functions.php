@@ -15,7 +15,7 @@ add_action('wp_enqueue_scripts', static function (): void {
         'appleklinika-theme',
         get_stylesheet_directory_uri() . '/assets/css/frontend.css',
         [],
-        '0.1.166'
+        '0.1.178'
     );
 
     if (function_exists('is_checkout') && is_checkout()) {
@@ -23,7 +23,7 @@ add_action('wp_enqueue_scripts', static function (): void {
             'appleklinika-checkout-sidebar',
             get_stylesheet_directory_uri() . '/assets/css/checkout-sidebar.css',
             ['appleklinika-theme'],
-            '0.1.14'
+            '0.1.18'
         );
     }
 
@@ -31,7 +31,7 @@ add_action('wp_enqueue_scripts', static function (): void {
         'appleklinika-theme',
         get_stylesheet_directory_uri() . '/assets/js/frontend.js',
         [],
-        '0.1.76',
+        '0.1.79',
         true
     );
 
@@ -70,9 +70,13 @@ add_action('init', 'appleklinika_register_company_checkout_fields', 20);
 add_action('woocommerce_blocks_validate_location_order_fields', 'appleklinika_validate_company_checkout_fields', 10, 3);
 add_action('woocommerce_store_api_checkout_update_order_from_request', 'appleklinika_persist_company_checkout_fields', 10, 2);
 add_action('woocommerce_admin_order_data_after_billing_address', 'appleklinika_render_company_order_admin_meta');
+add_filter('woocommerce_get_country_locale_default', 'appleklinika_checkout_default_locale_overrides');
+add_filter('woocommerce_get_country_locale', 'appleklinika_checkout_country_locale_overrides');
 add_filter('woocommerce_get_default_value_for_appleklinika/company_purchase', 'appleklinika_company_checkout_default_value', 10, 3);
 add_filter('woocommerce_get_default_value_for_appleklinika/company_name', 'appleklinika_company_checkout_default_value', 10, 3);
 add_filter('woocommerce_get_default_value_for_appleklinika/tax_number', 'appleklinika_company_checkout_default_value', 10, 3);
+add_filter('woocommerce_order_formatted_billing_address', 'appleklinika_append_checkout_address_details_to_formatted_address', 10, 2);
+add_filter('woocommerce_order_formatted_shipping_address', 'appleklinika_append_checkout_address_details_to_formatted_address', 10, 2);
 add_action('after_switch_theme', static function (): void {
     appleklinika_register_wishlist_account_endpoint();
     flush_rewrite_rules();
@@ -781,10 +785,37 @@ function appleklinika_render_header_actions(): void
 {
     ?>
     <div class="ak-header-actions">
-        <a class="ak-header-pill" href="<?php echo esc_url(appleklinika_account_url()); ?>">Fiókom</a>
+        <a class="ak-header-pill ak-account-link" href="<?php echo esc_url(appleklinika_account_url()); ?>">
+            <?php appleklinika_render_header_icon('account'); ?>
+            <span class="ak-header-pill__label">Fiókom</span>
+        </a>
         <?php appleklinika_render_cart_link(); ?>
     </div>
     <?php
+}
+
+function appleklinika_render_header_icon(string $icon): void
+{
+    if ($icon === 'account') {
+        ?>
+        <span class="ak-header-pill__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M12 12.25c2.2 0 4-1.8 4-4.02 0-2.2-1.8-3.98-4-3.98S8 6.03 8 8.23c0 2.22 1.8 4.02 4 4.02Zm0 2.05c-3.22 0-6.05 1.65-7.6 4.13-.42.68.06 1.57.86 1.57h13.48c.8 0 1.28-.89.86-1.57-1.55-2.48-4.38-4.13-7.6-4.13Z" fill="currentColor"/>
+            </svg>
+        </span>
+        <?php
+        return;
+    }
+
+    if ($icon === 'cart') {
+        ?>
+        <span class="ak-header-pill__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M7.2 8.1h9.6l-.78 8.38a2 2 0 0 1-1.99 1.82H9.97a2 2 0 0 1-1.99-1.82L7.2 8.1Zm2.3-1.6a2.5 2.5 0 0 1 5 0v1.1h-1.6V6.5a.9.9 0 0 0-1.8 0v1.1H9.5V6.5ZM6.02 6.9a.8.8 0 0 0-.79.87l.84 8.86a3.92 3.92 0 0 0 3.9 3.57h4.06a3.92 3.92 0 0 0 3.9-3.57l.84-8.86a.8.8 0 0 0-.79-.87H6.02Z" fill="currentColor"/>
+            </svg>
+        </span>
+        <?php
+    }
 }
 
 function appleklinika_should_show_category_nav(): bool
@@ -968,6 +999,7 @@ function appleklinika_render_cart_link(): void
     $count = function_exists('WC') && WC()->cart ? WC()->cart->get_cart_contents_count() : 0;
     ?>
     <a class="ak-header-pill ak-cart-link" href="<?php echo esc_url(appleklinika_cart_url()); ?>">
+        <?php appleklinika_render_header_icon('cart'); ?>
         <span class="ak-cart-label">Kosár</span>
         <span class="ak-cart-count"><?php echo esc_html((string) $count); ?></span>
     </a>
@@ -976,99 +1008,278 @@ function appleklinika_render_cart_link(): void
 
 function appleklinika_render_homepage(): void
 {
+    $trustTiles = appleklinika_homepage_trust_tiles();
     ?>
     <main class="ak-home" id="wp--skip-link--target">
         <section class="ak-hero" aria-label="Appleklinika webshop">
             <div class="ak-hero__content">
                 <span class="ak-kicker">Ellenőrzött használt Apple készülékek</span>
-                <h1>Használt iPhone-ok tiszta adatokkal, garanciával.</h1>
-                <p>Válogass olyan készülékek között, ahol az állapot, tárhely, szín, akkumulátor és garancia egyértelműen látható.</p>
+                <h1>Ellenőrzött használt Apple készülékek, garanciával.</h1>
+                <p>Átlátható állapot, valós termékadatok és szegedi háttér. Válogass iPhone, MacBook, iPad és Apple Watch készülékeink között.</p>
                 <div class="ak-hero__actions">
-                    <a class="ak-button ak-button--primary" href="<?php echo esc_url(appleklinika_shop_url()); ?>">Termékek megtekintése</a>
-                    <a class="ak-button ak-button--secondary" href="<?php echo esc_url(appleklinika_info_page_url('kapcsolat')); ?>">Kapcsolat</a>
+                    <a class="ak-button ak-button--primary" href="<?php echo esc_url(appleklinika_shop_url()); ?>">Termékek megtekintése <span aria-hidden="true">→</span></a>
+                    <a class="ak-button ak-button--secondary" href="<?php echo esc_url(appleklinika_info_page_url('kapcsolat')); ?>">Kapcsolat <span aria-hidden="true">→</span></a>
                 </div>
             </div>
-            <div class="ak-hero__panel" aria-label="Vásárlási előnyök">
-                <div><strong>Garancia</strong><span>Termékenként feltüntetve</span></div>
-                <div><strong>Állapot</strong><span>Kézzel ellenőrzött grade</span></div>
-                <div><strong>Átvétel</strong><span>Szegeden vagy szállítással</span></div>
+            <div class="ak-hero__tiles" aria-label="Vásárlási előnyök">
+                <?php foreach ($trustTiles as $tile) : ?>
+                    <article class="ak-home-trust-tile">
+                        <span class="ak-home-trust-tile__icon" aria-hidden="true"><?php echo esc_html($tile['icon']); ?></span>
+                        <h2><?php echo esc_html($tile['title']); ?></h2>
+                        <p><?php echo esc_html($tile['text']); ?></p>
+                    </article>
+                <?php endforeach; ?>
             </div>
         </section>
 
-        <section class="ak-section" aria-labelledby="ak-featured-products">
-            <div class="ak-section__head">
-                <h2 id="ak-featured-products">Kiemelt termékek</h2>
+        <section class="ak-home-showcase" aria-labelledby="ak-home-showcase-title">
+            <div class="ak-home-section-head">
+                <span class="ak-kicker">Akciós és friss készülékek</span>
+                <div>
+                    <h2 id="ak-home-showcase-title">Kiemelt Apple ajánlatok</h2>
+                    <p>Valós WooCommerce termékekből épül: először az akciós készülékek, ha pedig nincs elég, a legfrissebb termékek jelennek meg.</p>
+                </div>
                 <a href="<?php echo esc_url(appleklinika_shop_url()); ?>">Összes termék</a>
             </div>
-            <?php appleklinika_render_featured_products(); ?>
+            <?php appleklinika_render_homepage_product_section('sale', 4, 'ak-home-products--showcase'); ?>
         </section>
 
-        <section class="ak-section" aria-labelledby="ak-categories">
-            <div class="ak-section__head">
-                <h2 id="ak-categories">Kategóriák</h2>
+        <section class="ak-home-range" aria-labelledby="ak-home-range-title">
+            <div class="ak-home-section-head ak-home-section-head--range">
+                <span class="ak-kicker">Kínálat</span>
+                <div>
+                    <h2 id="ak-home-range-title">Fedezd fel a kínálatot</h2>
+                    <p>A lenti blokkok szintén élő WooCommerce lekérdezésekből dolgoznak, nem kézzel felvett látványelemek.</p>
+                </div>
+                <nav class="ak-home-range-tabs" aria-label="Kínálat szűrési hivatkozások">
+                    <a href="#ak-home-popular-products" aria-current="true">Népszerű ajánlatok</a>
+                    <a href="#ak-home-special-products">Kiemelt ajánlatok</a>
+                </nav>
             </div>
-            <?php appleklinika_render_product_categories(); ?>
+
+            <div class="ak-home-range-panels">
+                <section class="ak-home-range-panel" id="ak-home-popular-products" aria-labelledby="ak-home-popular-title">
+                    <div class="ak-home-range-panel__head">
+                        <h3 id="ak-home-popular-title">Népszerű ajánlatok</h3>
+                        <a href="<?php echo esc_url(appleklinika_shop_url()); ?>">Shop megnyitása</a>
+                    </div>
+                    <?php appleklinika_render_homepage_product_section('featured', 4, 'ak-home-products--compact'); ?>
+                </section>
+
+                <section class="ak-home-range-panel" id="ak-home-special-products" aria-labelledby="ak-home-special-title">
+                    <div class="ak-home-range-panel__head">
+                        <h3 id="ak-home-special-title">Kiemelt ajánlatok</h3>
+                        <a href="<?php echo esc_url(appleklinika_shop_url()); ?>">Összes ajánlat</a>
+                    </div>
+                    <?php appleklinika_render_homepage_product_section('sale', 4, 'ak-home-products--compact'); ?>
+                </section>
+            </div>
         </section>
 
-        <section class="ak-trust" aria-labelledby="ak-trust-title">
-            <div>
-                <span class="ak-kicker">Miért Appleklinika?</span>
-                <h2 id="ak-trust-title">Használt készülék vásárlás, felesleges bizonytalanság nélkül.</h2>
+        <section class="ak-home-categories" aria-labelledby="ak-home-categories-title">
+            <div class="ak-home-section-head">
+                <span class="ak-kicker">Gyors elérés</span>
+                <div>
+                    <h2 id="ak-home-categories-title">Kategóriák</h2>
+                    <p>Válaszd ki a készülékcsaládot, és a megfelelő shop nézetre viszünk.</p>
+                </div>
             </div>
-            <div class="ak-trust__grid">
-                <article><strong>Ellenőrzött adatok</strong><span>A fontos készülékadatok termékszinten kezelhetők.</span></article>
-                <article><strong>Átlátható állapot</strong><span>A grade és az akkumulátoradat nem elrejtett technikai részlet.</span></article>
-                <article><strong>Garancia</strong><span>A garanciaidő minden készüléknél külön megadható.</span></article>
-                <article><strong>Szegedi háttér</strong><span>Nem névtelen piactér, hanem lokális szaküzlet logika.</span></article>
-            </div>
+            <?php appleklinika_render_homepage_category_shortcuts(); ?>
         </section>
     </main>
     <?php
 }
 
+/**
+ * @return array<int, array{icon: string, title: string, text: string}>
+ */
+function appleklinika_homepage_trust_tiles(): array
+{
+    return [
+        [
+            'icon' => '✓',
+            'title' => 'Ellenőrzött adatok',
+            'text' => 'Állapot, tárhely, szín és garancia termékszinten kezelve.',
+        ],
+        [
+            'icon' => '◆',
+            'title' => 'Garancia',
+            'text' => 'A garanciaidő nem eldugott apróbetű, hanem látható termékadat.',
+        ],
+        [
+            'icon' => '◎',
+            'title' => 'Átlátható állapot',
+            'text' => 'Grade, akkumulátoradat és készülékleírás egy helyen.',
+        ],
+        [
+            'icon' => '⌂',
+            'title' => 'Szegedi háttér',
+            'text' => 'Lokális szaküzlet logika, nem névtelen piactér hangulat.',
+        ],
+    ];
+}
+
+/**
+ * @return array<int, array{label: string, type: string, text: string}>
+ */
+function appleklinika_homepage_category_shortcuts(): array
+{
+    return [
+        [
+            'label' => 'iPhone',
+            'type' => 'iphone',
+            'text' => 'Ellenőrzött iPhone készülékek, látható állapottal.',
+        ],
+        [
+            'label' => 'MacBook',
+            'type' => 'macbook',
+            'text' => 'Használt MacBook modellek valós készülékadatokkal.',
+        ],
+        [
+            'label' => 'iPad',
+            'type' => 'ipad',
+            'text' => 'iPad készülékek Wi‑Fi és cellular adatokkal.',
+        ],
+        [
+            'label' => 'Apple Watch',
+            'type' => 'apple_watch',
+            'text' => 'Órák méret, házanyag és állapot szerint rendezve.',
+        ],
+    ];
+}
+
 function appleklinika_render_featured_products(): void
+{
+    appleklinika_render_homepage_product_section('featured', 4);
+}
+
+function appleklinika_render_homepage_product_section(string $source, int $limit, string $className = ''): void
 {
     if (! function_exists('wc_get_products')) {
         echo '<p class="ak-empty">A WooCommerce még nem érhető el.</p>';
         return;
     }
 
-    $products = wc_get_products([
-        'status' => 'publish',
-        'limit' => 4,
-        'orderby' => 'date',
-        'order' => 'DESC',
-    ]);
+    $products = appleklinika_homepage_products($source, $limit);
 
     if ($products === []) {
         echo '<p class="ak-empty">Még nincs megjeleníthető termék.</p>';
         return;
     }
 
-    echo '<div class="ak-product-grid">';
+    $classes = trim('ak-home-products wc-block-product-template ' . $className);
+    echo '<div class="ak-home-products-shell woocommerce">';
+    echo '<ul class="' . esc_attr($classes) . '">';
 
     foreach ($products as $product) {
         if (! $product instanceof WC_Product) {
             continue;
         }
 
-        echo '<article class="ak-product-card">';
-        echo '<a class="ak-product-card__image" href="' . esc_url(get_permalink($product->get_id())) . '">' . wp_kses_post($product->get_image('woocommerce_thumbnail')) . '</a>';
-        echo '<div class="ak-product-card__body">';
-        echo '<h3><a href="' . esc_url(get_permalink($product->get_id())) . '">' . esc_html($product->get_name()) . '</a></h3>';
-        echo '<div class="ak-loop-meta">' . esc_html(implode(' · ', array_filter([
-            appleklinika_storage_label((string) get_post_meta($product->get_id(), '_appleklinika_storage_capacity', true)),
-            appleklinika_grade_label((string) get_post_meta($product->get_id(), '_appleklinika_overall_grade', true)),
-        ]))) . '</div>';
-        echo '<div class="ak-product-card__price">' . wp_kses_post($product->get_price_html()) . '</div>';
-        appleklinika_render_loop_product_savings_for_product($product);
-        echo '<span class="ak-product-card__stock">' . esc_html(appleklinika_stock_label($product)) . '</span>';
-        echo '<a class="ak-product-card__button" href="' . esc_url(get_permalink($product->get_id())) . '">Megnézem</a>';
-        echo '</div>';
-        echo '</article>';
+        echo '<li class="' . esc_attr(implode(' ', appleklinika_product_card_container_classes($product))) . '">';
+        appleklinika_render_product_card($product, 'home');
+        echo '</li>';
     }
 
+    echo '</ul>';
     echo '</div>';
+}
+
+/**
+ * @return array<int, string>
+ */
+function appleklinika_product_card_container_classes(WC_Product $product): array
+{
+    if (function_exists('wc_get_product_class')) {
+        $classes = wc_get_product_class(['wc-block-product'], $product);
+    } else {
+        $classes = ['product', 'wc-block-product', 'post-' . $product->get_id()];
+    }
+
+    $classes[] = 'wc-block-product';
+
+    return array_values(array_unique(array_filter($classes)));
+}
+
+/**
+ * @return array<int, WC_Product>
+ */
+function appleklinika_homepage_products(string $source, int $limit): array
+{
+    if ($source === 'sale') {
+        $saleIds = function_exists('wc_get_product_ids_on_sale') ? array_values(array_filter(array_map('absint', wc_get_product_ids_on_sale()))) : [];
+
+        if ($saleIds !== []) {
+            $saleProducts = wc_get_products([
+                'status' => 'publish',
+                'limit' => $limit,
+                'include' => array_slice($saleIds, 0, $limit),
+                'orderby' => 'include',
+            ]);
+
+            if (count($saleProducts) >= $limit) {
+                return $saleProducts;
+            }
+
+            $usedIds = array_map(static fn (WC_Product $product): int => $product->get_id(), array_filter($saleProducts, static fn ($product): bool => $product instanceof WC_Product));
+            return array_slice(array_merge($saleProducts, appleklinika_homepage_latest_products($limit - count($saleProducts), $usedIds)), 0, $limit);
+        }
+
+        return appleklinika_homepage_latest_products($limit);
+    }
+
+    if ($source === 'featured') {
+        $featuredProducts = wc_get_products([
+            'status' => 'publish',
+            'limit' => $limit,
+            'featured' => true,
+            'orderby' => 'date',
+            'order' => 'DESC',
+        ]);
+
+        if (count($featuredProducts) >= $limit) {
+            return $featuredProducts;
+        }
+
+        $usedIds = array_map(static fn (WC_Product $product): int => $product->get_id(), array_filter($featuredProducts, static fn ($product): bool => $product instanceof WC_Product));
+        return array_slice(array_merge($featuredProducts, appleklinika_homepage_latest_products($limit - count($featuredProducts), $usedIds)), 0, $limit);
+    }
+
+    return appleklinika_homepage_latest_products($limit);
+}
+
+/**
+ * @param array<int, int> $excludeIds
+ * @return array<int, WC_Product>
+ */
+function appleklinika_homepage_latest_products(int $limit, array $excludeIds = []): array
+{
+    if ($limit <= 0) {
+        return [];
+    }
+
+    return wc_get_products([
+        'status' => 'publish',
+        'limit' => $limit,
+        'exclude' => $excludeIds,
+        'orderby' => 'date',
+        'order' => 'DESC',
+    ]);
+}
+
+function appleklinika_render_homepage_category_shortcuts(): void
+{
+    ?>
+    <div class="ak-home-category-grid">
+        <?php foreach (appleklinika_homepage_category_shortcuts() as $category) : ?>
+            <a class="ak-home-category-card" href="<?php echo esc_url(appleklinika_shop_type_url($category['type'])); ?>">
+                <span class="ak-home-category-card__mark" aria-hidden="true"><?php echo esc_html(substr($category['label'], 0, 1)); ?></span>
+                <strong><?php echo esc_html($category['label']); ?></strong>
+                <span><?php echo esc_html($category['text']); ?></span>
+            </a>
+        <?php endforeach; ?>
+    </div>
+    <?php
 }
 
 function appleklinika_render_shop_filters(): void
@@ -2124,6 +2335,11 @@ function appleklinika_render_shop_product_card(): void
         return;
     }
 
+    appleklinika_render_product_card($product, 'shop');
+}
+
+function appleklinika_render_product_card(WC_Product $product, string $context = 'shop'): void
+{
     $productId = $product->get_id();
     $productUrl = get_permalink($productId);
     $metaChips = appleklinika_product_card_meta_chips($productId);
@@ -2697,7 +2913,7 @@ function appleklinika_register_company_checkout_fields(): void
         return;
     }
 
-    $fields = [
+    $fields = array_merge(appleklinika_checkout_address_detail_fields(), [
         [
             'id' => 'appleklinika/company_purchase',
             'label' => 'Cégként vásárolok',
@@ -2736,13 +2952,62 @@ function appleklinika_register_company_checkout_fields(): void
             'sanitize_callback' => 'appleklinika_sanitize_checkout_tax_number',
             'show_in_order_confirmation' => true,
         ],
-    ];
+    ]);
 
     foreach ($fields as $field) {
         woocommerce_register_additional_checkout_field($field);
     }
 
     $registered = true;
+}
+
+/**
+ * @return array<int, array<string, mixed>>
+ */
+function appleklinika_checkout_address_detail_fields(): array
+{
+    return [
+        [
+            'id' => 'appleklinika/house_number',
+            'label' => 'Házszám',
+            'optionalLabel' => 'Házszám',
+            'location' => 'address',
+            'type' => 'text',
+            'required' => false,
+            'sanitize_callback' => 'appleklinika_sanitize_checkout_text_field',
+            'show_in_order_confirmation' => true,
+        ],
+        [
+            'id' => 'appleklinika/floor',
+            'label' => 'Emelet',
+            'optionalLabel' => 'Emelet',
+            'location' => 'address',
+            'type' => 'text',
+            'required' => false,
+            'sanitize_callback' => 'appleklinika_sanitize_checkout_text_field',
+            'show_in_order_confirmation' => true,
+        ],
+        [
+            'id' => 'appleklinika/staircase',
+            'label' => 'Lépcsőház',
+            'optionalLabel' => 'Lépcsőház',
+            'location' => 'address',
+            'type' => 'text',
+            'required' => false,
+            'sanitize_callback' => 'appleklinika_sanitize_checkout_text_field',
+            'show_in_order_confirmation' => true,
+        ],
+        [
+            'id' => 'appleklinika/door',
+            'label' => 'Ajtó',
+            'optionalLabel' => 'Ajtó',
+            'location' => 'address',
+            'type' => 'text',
+            'required' => false,
+            'sanitize_callback' => 'appleklinika_sanitize_checkout_text_field',
+            'show_in_order_confirmation' => true,
+        ],
+    ];
 }
 
 /**
@@ -2777,6 +3042,49 @@ function appleklinika_sanitize_checkout_tax_number($value, array $field = []): s
 function appleklinika_valid_hungarian_tax_number(string $taxNumber): bool
 {
     return preg_match('/^\d{8}-\d-\d{2}$/', $taxNumber) === 1;
+}
+
+/**
+ * @param array<string, array<string, mixed>> $locale
+ * @return array<string, array<string, mixed>>
+ */
+function appleklinika_checkout_default_locale_overrides(array $locale): array
+{
+    if (isset($locale['phone'])) {
+        $locale['phone']['required'] = true;
+        $locale['phone']['hidden'] = false;
+        $locale['phone']['label'] = 'Telefonszám';
+        $locale['phone']['optionalLabel'] = 'Telefonszám';
+    }
+
+    return $locale;
+}
+
+/**
+ * @param array<string, array<string, array<string, mixed>>> $locale
+ * @return array<string, array<string, array<string, mixed>>>
+ */
+function appleklinika_checkout_country_locale_overrides(array $locale): array
+{
+    $locale['HU']['state'] = array_merge(
+        $locale['HU']['state'] ?? [],
+        [
+            'required' => false,
+            'hidden' => true,
+        ]
+    );
+
+    $locale['HU']['phone'] = array_merge(
+        $locale['HU']['phone'] ?? [],
+        [
+            'required' => true,
+            'hidden' => false,
+            'label' => 'Telefonszám',
+            'optionalLabel' => 'Telefonszám',
+        ]
+    );
+
+    return $locale;
 }
 
 /**
@@ -2927,4 +3235,43 @@ function appleklinika_render_company_order_admin_meta(WC_Order $order): void
         <?php endif; ?>
     </div>
     <?php
+}
+
+/**
+ * @param array<string, string> $address
+ * @return array<string, string>
+ */
+function appleklinika_append_checkout_address_details_to_formatted_address(array $address, WC_Order $order): array
+{
+    $group = current_filter() === 'woocommerce_order_formatted_billing_address' ? 'billing' : 'shipping';
+    $details = appleklinika_checkout_address_detail_display_value($order, $group);
+
+    if ($details === '') {
+        return $address;
+    }
+
+    $address['address_2'] = trim(implode(', ', array_filter([
+        $address['address_2'] ?? '',
+        $details,
+    ])));
+
+    return $address;
+}
+
+function appleklinika_checkout_address_detail_display_value(WC_Order $order, string $group): string
+{
+    $prefix = $group === 'billing' ? '_wc_billing/' : '_wc_shipping/';
+    $parts = [];
+
+    foreach (appleklinika_checkout_address_detail_fields() as $field) {
+        $fieldId = (string) ($field['id'] ?? '');
+        $label = (string) ($field['label'] ?? '');
+        $value = trim((string) $order->get_meta($prefix . $fieldId, true));
+
+        if ($value !== '') {
+            $parts[] = $label . ': ' . $value;
+        }
+    }
+
+    return implode(', ', $parts);
 }

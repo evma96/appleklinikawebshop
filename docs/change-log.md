@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Rewired homepage product sections to reuse the same shared WooCommerce product-card renderer and `.ak-product-card` markup as the approved shop archive cards.
+- Tuned the homepage desktop scale and density so the hero, trust tiles, product cards, and homepage sections keep the same design direction with more compact spacing.
+- Redesigned the homepage shell with a premium Appleklinika hero, centralized trust/info tiles, real WooCommerce sale-first and featured/latest product sections, real category shortcuts, and scoped account/cart header icons.
 - Added Docker-based WordPress, MariaDB, and phpMyAdmin local environment.
 - Added environment example configuration.
 - Added baseline project documentation.
@@ -191,3 +194,5 @@
 - Removed the cart-only order summary override so the cart page returns to the previous approved visual state controlled by the main storefront stylesheet.
 - Restored the cart page visuals toward the approved screenshot with the main storefront stylesheet: wider two-column cart layout, larger white shell cards, separated floating cart item rows, and the previous right-side summary rhythm.
 - Added a high-specificity desktop cart restoration layer targeting the custom `.ak-cart-*` markup directly so the approved screenshot layout applies even when the local cart URL renders through `?page_id=8`.
+- Added WooCommerce Blocks checkout address detail fields for house number, floor, staircase, and door, placed them under the main address field for shipping and billing, and kept company purchase fields inside the billing address section.
+- Refined the WooCommerce Blocks billing address form so personal name fields align as a two-column row, company mode visually swaps in company name and tax number, and billing phone stays proportional while preserving Woo-compatible hidden name values.
