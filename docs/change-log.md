@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Added `Settings > Apple Klinika homepage` controls for the homepage `Kiemelt Apple ajánlatok` product IDs and display limit, with real WooCommerce featured/sale/latest fallbacks.
 - Rewired homepage product sections to reuse the same shared WooCommerce product-card renderer and `.ak-product-card` markup as the approved shop archive cards.
 - Tuned the homepage desktop scale and density so the hero, trust tiles, product cards, and homepage sections keep the same design direction with more compact spacing.
 - Redesigned the homepage shell with a premium Appleklinika hero, centralized trust/info tiles, real WooCommerce sale-first and featured/latest product sections, real category shortcuts, and scoped account/cart header icons.
@@ -196,3 +197,4 @@
 - Added a high-specificity desktop cart restoration layer targeting the custom `.ak-cart-*` markup directly so the approved screenshot layout applies even when the local cart URL renders through `?page_id=8`.
 - Added WooCommerce Blocks checkout address detail fields for house number, floor, staircase, and door, placed them under the main address field for shipping and billing, and kept company purchase fields inside the billing address section.
 - Refined the WooCommerce Blocks billing address form so personal name fields align as a two-column row, company mode visually swaps in company name and tax number, and billing phone stays proportional while preserving Woo-compatible hidden name values.
+- Simplified the homepage into one hero, one sale-first featured product section, category shortcuts, and a compact trust section while keeping product cards on the shared shop card renderer.
