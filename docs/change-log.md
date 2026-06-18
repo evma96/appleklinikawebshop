@@ -5,6 +5,7 @@
 - Tightened homepage desktop proportions across the hero, featured products, category shortcuts, and trust sections with `.ak-home`-scoped spacing and grid overrides.
 - Re-centered the homepage `Kiemelt Apple ajánlatok` section header and product grid so the shared product cards use the available width without inheriting shop archive filter spacing.
 - Reduced homepage featured product card white space with `.ak-home`-scoped grid/card height overrides while leaving the shared shop archive product-card styling untouched.
+- Matched the homepage `Kiemelt Apple ajánlatok` product grid width and gap to the approved shop archive card proportions without changing shared product-card internals.
 - Added `Settings > Apple Klinika homepage` controls for the homepage `Kiemelt Apple ajánlatok` product IDs and display limit, with real WooCommerce featured/sale/latest fallbacks.
 - Rewired homepage product sections to reuse the same shared WooCommerce product-card renderer and `.ak-product-card` markup as the approved shop archive cards.
 - Tuned the homepage desktop scale and density so the hero, trust tiles, product cards, and homepage sections keep the same design direction with more compact spacing.
