@@ -89,27 +89,27 @@ msgctxt "Color name"
 msgid "Base"
 msgstr "Alap"
 
-#: functions.php:84
+#: functions.php:80
 msgid "Checkmark"
 msgstr "Jelölőnégyzet"
 
-#: functions.php:113
+#: functions.php:108
 msgid "Pages"
 msgstr "Oldalak"
 
-#: functions.php:114
+#: functions.php:109
 msgid "A collection of full page layouts."
 msgstr "Teli oldalas elrendezések gyűjteménye."
 
-#: functions.php:121
+#: functions.php:116
 msgid "Post formats"
 msgstr "Bejegyzés formátumok"
 
-#: functions.php:122
+#: functions.php:117
 msgid "A collection of post format patterns."
 msgstr "A bejegyzésformátum-sablonok gyűjteménye."
 
-#: functions.php:142
+#: functions.php:136
 msgctxt "Label for the block binding placeholder in the editor"
 msgid "Post format name"
 msgstr "Bejegyzés formátum neve"
