@@ -4948,6 +4948,10 @@ body.woocommerce-cart .wc-block-components-totals-coupon__button {
   margin-left: auto;
 }
 
+.ak-home .ak-home-showcase .ak-home-products-shell {
+  width: min(100%, 860px);
+}
+
 .ak-home .ak-home-showcase .ak-home-section-head {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
@@ -4991,9 +4995,9 @@ body.woocommerce-cart .wc-block-components-totals-coupon__button {
   width: 100%;
   margin: 0;
   align-items: start;
-  grid-template-columns: repeat(3, minmax(280px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   grid-auto-rows: auto;
-  gap: 24px;
+  gap: 28px;
 }
 
 .ak-home .ak-home-products-shell.woocommerce .ak-home-products.wc-block-product-template li.wc-block-product {
