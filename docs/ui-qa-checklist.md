@@ -8,7 +8,7 @@ Status values:
 - `FAIL`: verified in browser and broken.
 - `NOT TESTED`: not verified in browser during this round.
 
-Last run: 2026-05-15
+Last run: 2026-06-17
 Scope: Homepage product card shared renderer verification.
 
 ## 1. Navigation Check
@@ -44,7 +44,11 @@ Scope: Homepage product card shared renderer verification.
 | Product sections use real WooCommerce products | NOT TESTED | The homepage now supports admin-selected product IDs with WooCommerce featured/sale/latest fallbacks; needs a fresh browser/admin pass after the settings change. |
 | Homepage featured product admin controls save | NOT TESTED | Verify `Settings > Apple Klinika homepage` saves comma-separated product IDs and the 1-12 display limit. |
 | Homepage selected products preserve order | NOT TESTED | Verify manually selected product IDs render first, in admin order, using the shared shop card markup. |
-| Homepage scale is compacted | PASS | Desktop browser QA confirmed the hero height, trust tile grid, product card height, product media area, hero heading, section heading, and card title sizes are reduced after the density pass, with no debug outlines left. |
+| Homepage featured product section uses full layout width | NOT TESTED | Verify the `Kiemelt Apple ajánlatok` header and grid are aligned together, the grid no longer inherits shop archive filter spacing, and cards remain the shared shop card component. |
+| Homepage featured cards use shop Woo Blocks card context | PASS | Browser QA confirmed homepage and iPhone shop both render `UL.wc-block-product-template...`, `LI.wc-block-product`, and the shared `A.ak-product-card__inner`; no `.ak-home .ak-product-card__...` internal override remains in the loaded CSS. |
+| Homepage and shop card DOM identity | PASS | Browser QA confirmed the homepage featured card and iPhone shop card both render `A.ak-product-card__inner` followed by direct `BUTTON.ak-wishlist-button`, with no injected `<p>` or `<br>` wrappers and identical `ak-product-card__content` children. |
+| Homepage desktop density feels balanced | NOT TESTED | Verify hero, featured products, category shortcuts, and trust sections feel roughly 20-30% tighter without changing shop archive product cards. |
+| Homepage scale is compacted | NOT TESTED | Needs a fresh desktop browser pass after the latest `.ak-home` density tuning. |
 | Category shortcuts use real shop links | PASS | Browser QA confirmed four `.ak-home-category-card` links for iPhone, MacBook, iPad, and Apple Watch. |
 | Shop archive product cards unchanged | PASS | Browser QA compared the homepage and iPhone shop cards and confirmed the same shared `.ak-product-card` internal structure/classes are used while shop archive CSS remains the source of truth. |
 

@@ -19,7 +19,7 @@
 - Battery replacement extra prices are development defaults until final business pricing rules exist.
 - Selector demo products are local development fixtures and must not be treated as production inventory.
 - The local selector demo matrix is intentionally broad and can create many WooCommerce products for one model; production inventory needs stricter grouping and stock ownership rules.
-- The custom theme homepage now has a premium shell with centralized trust tile and category shortcut copy in theme render functions, admin-configurable featured product IDs/count, and homepage product sections reuse the approved shared shop product-card renderer; production may still need an admin-editable content control for the non-product homepage text blocks.
+- The custom theme homepage now has a premium shell with centralized trust tile and category shortcut copy in theme render functions, admin-configurable featured product IDs/count, a dynamic homepage block that avoids shortcode paragraph wrapping, and homepage product sections reuse the approved shared shop product-card renderer; production may still need an admin-editable content control for the non-product homepage text blocks.
 - Category, cart, checkout, and account pages have shared compact styling, and the checkout company tax number field now masks numeric input as `12345678-1-23` while still relying on server-side validation.
 - The shop listing has a Rejoy-style filter panel, and SIM filtering now uses product meta; production products still need consistent SIM values during admin upload.
 - The shop `Állapot` filter uses `_appleklinika_overall_grade`; production listings depend on admins consistently setting this grade for every used-device product.

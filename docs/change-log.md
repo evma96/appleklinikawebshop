@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Tightened homepage desktop proportions across the hero, featured products, category shortcuts, and trust sections with `.ak-home`-scoped spacing and grid overrides.
+- Re-centered the homepage `Kiemelt Apple ajánlatok` section header and product grid so the shared product cards use the available width without inheriting shop archive filter spacing.
+- Reduced homepage featured product card white space with `.ak-home`-scoped grid/card height overrides while leaving the shared shop archive product-card styling untouched.
 - Added `Settings > Apple Klinika homepage` controls for the homepage `Kiemelt Apple ajánlatok` product IDs and display limit, with real WooCommerce featured/sale/latest fallbacks.
 - Rewired homepage product sections to reuse the same shared WooCommerce product-card renderer and `.ak-product-card` markup as the approved shop archive cards.
 - Tuned the homepage desktop scale and density so the hero, trust tiles, product cards, and homepage sections keep the same design direction with more compact spacing.
@@ -198,3 +201,5 @@
 - Added WooCommerce Blocks checkout address detail fields for house number, floor, staircase, and door, placed them under the main address field for shipping and billing, and kept company purchase fields inside the billing address section.
 - Refined the WooCommerce Blocks billing address form so personal name fields align as a two-column row, company mode visually swaps in company name and tax number, and billing phone stays proportional while preserving Woo-compatible hidden name values.
 - Simplified the homepage into one hero, one sale-first featured product section, category shortcuts, and a compact trust section while keeping product cards on the shared shop card renderer.
+- Aligned homepage featured products with the approved shop Woo Blocks product-card context, keeping the shared `appleklinika_render_product_card()` output and removing homepage-only internal card overrides.
+- Replaced the homepage shortcode template output with a dynamic `appleklinika/homepage` block so WordPress no longer inserts paragraph or line-break wrappers into featured product cards; homepage and shop cards now share the same direct card/wishlist DOM structure.
