@@ -15,7 +15,7 @@ add_action('wp_enqueue_scripts', static function (): void {
         'appleklinika-theme',
         get_stylesheet_directory_uri() . '/assets/css/frontend.css',
         [],
-        '0.1.180'
+        '0.1.190'
     );
 
     if (function_exists('is_checkout') && is_checkout()) {
@@ -31,7 +31,7 @@ add_action('wp_enqueue_scripts', static function (): void {
         'appleklinika-theme',
         get_stylesheet_directory_uri() . '/assets/js/frontend.js',
         [],
-        '0.1.79',
+        '0.1.80',
         true
     );
 
@@ -53,6 +53,7 @@ add_action('wp_enqueue_scripts', static function (): void {
 });
 
 add_action('init', 'appleklinika_ensure_info_pages');
+add_action('init', 'appleklinika_register_homepage_block');
 add_action('init', 'appleklinika_register_wishlist_account_endpoint');
 add_action('admin_post_nopriv_appleklinika_contact_submit', 'appleklinika_handle_contact_submit');
 add_action('admin_post_appleklinika_contact_submit', 'appleklinika_handle_contact_submit');
@@ -90,6 +91,18 @@ add_shortcode('appleklinika_homepage', static function (): string {
 
     return (string) ob_get_clean();
 });
+
+function appleklinika_register_homepage_block(): void
+{
+    register_block_type('appleklinika/homepage', [
+        'render_callback' => static function (): string {
+            ob_start();
+            appleklinika_render_homepage();
+
+            return (string) ob_get_clean();
+        },
+    ]);
+}
 
 add_shortcode('appleklinika_header_actions', static function (): string {
     ob_start();
@@ -1299,7 +1312,7 @@ function appleklinika_render_homepage_product_section(string $source, int $limit
         return;
     }
 
-    $classes = trim('ak-home-products wc-block-product-template ' . $className);
+    $classes = trim('ak-home-products wc-block-product-template__responsive columns-3 wc-block-product-template wp-block-woocommerce-product-template is-layout-flow wp-block-woocommerce-product-template-is-layout-flow ' . $className);
     echo '<div class="ak-home-products-shell woocommerce">';
     echo '<ul class="' . esc_attr($classes) . '">';
 
@@ -2557,44 +2570,44 @@ function appleklinika_render_product_card(WC_Product $product, string $context =
     $productUrl = get_permalink($productId);
     $metaChips = appleklinika_product_card_meta_chips($productId);
     $savings = appleklinika_product_savings_amount($product);
-    ?>
-    <a class="ak-product-card__inner" href="<?php echo esc_url($productUrl); ?>" aria-label="<?php echo esc_attr($product->get_name()); ?>">
-        <?php if ($savings > 0) : ?>
-            <span class="ak-product-card__badge">- <?php echo esc_html(appleklinika_format_plain_price($savings)); ?></span>
-        <?php endif; ?>
 
-        <div class="ak-product-card__image">
-            <?php echo wp_kses_post($product->get_image('woocommerce_thumbnail')); ?>
-        </div>
+    $html = '<a class="ak-product-card__inner" href="' . esc_url($productUrl) . '" aria-label="' . esc_attr($product->get_name()) . '">';
 
-        <div class="ak-product-card__content">
-            <h3 class="ak-product-card__title"><?php echo esc_html($product->get_name()); ?></h3>
+    if ($savings > 0) {
+        $html .= '<span class="ak-product-card__badge">- ' . esc_html(appleklinika_format_plain_price($savings)) . '</span>';
+    }
 
-            <?php if ($metaChips !== []) : ?>
-                <div class="ak-product-card__meta" aria-label="Termékadatok">
-                    <?php foreach ($metaChips as $chip) : ?>
-                        <span class="ak-product-card__meta-chip ak-product-card__meta-chip--<?php echo esc_attr($chip['type']); ?>">
-                            <?php if ($chip['type'] === 'battery') : ?>
-                                <?php echo appleklinika_battery_status_icon(); ?>
-                            <?php endif; ?>
-                            <span><?php echo esc_html($chip['label']); ?></span>
-                        </span>
-                    <?php endforeach; ?>
-                </div>
-            <?php endif; ?>
+    $html .= '<div class="ak-product-card__image">' . wp_kses_post($product->get_image('woocommerce_thumbnail')) . '</div>';
+    $html .= '<div class="ak-product-card__content">';
+    $html .= '<h3 class="ak-product-card__title">' . esc_html($product->get_name()) . '</h3>';
 
-            <div class="ak-product-card__price">
-                <?php if ($product->is_on_sale() && $product->get_regular_price() !== '') : ?>
-                    <span class="ak-product-card__old-price"><?php echo wp_kses_post(wc_price((float) $product->get_regular_price())); ?></span>
-                <?php endif; ?>
-                <span class="ak-product-card__current-price"><?php echo wp_kses_post(wc_price((float) $product->get_price())); ?></span>
-            </div>
+    if ($metaChips !== []) {
+        $html .= '<div class="ak-product-card__meta" aria-label="Termékadatok">';
 
-            <span class="ak-product-card__cta">Megnézem</span>
-        </div>
-    </a>
-    <?php appleklinika_render_wishlist_button($productId); ?>
-    <?php
+        foreach ($metaChips as $chip) {
+            $html .= '<span class="ak-product-card__meta-chip ak-product-card__meta-chip--' . esc_attr($chip['type']) . '">';
+
+            if ($chip['type'] === 'battery') {
+                $html .= appleklinika_battery_status_icon();
+            }
+
+            $html .= '<span>' . esc_html($chip['label']) . '</span></span>';
+        }
+
+        $html .= '</div>';
+    }
+
+    $html .= '<div class="ak-product-card__price">';
+
+    if ($product->is_on_sale() && $product->get_regular_price() !== '') {
+        $html .= '<span class="ak-product-card__old-price">' . wp_kses_post(wc_price((float) $product->get_regular_price())) . '</span>';
+    }
+
+    $html .= '<span class="ak-product-card__current-price">' . wp_kses_post(wc_price((float) $product->get_price())) . '</span>';
+    $html .= '</div><span class="ak-product-card__cta">Megnézem</span></div></a>';
+
+    echo $html;
+    appleklinika_render_wishlist_button($productId);
 }
 
 function appleklinika_render_wishlist_button(int $productId, string $className = ''): void
@@ -2602,19 +2615,10 @@ function appleklinika_render_wishlist_button(int $productId, string $className =
     $isFavorite = is_user_logged_in() && in_array($productId, appleklinika_get_wishlist_product_ids(get_current_user_id()), true);
     $classes = trim('ak-wishlist-button ' . $className . ($isFavorite ? ' is-active' : ''));
     $label = $isFavorite ? 'Eltávolítás a kedvencekből' : 'Hozzáadás a kedvencekhez';
-    ?>
-    <button
-        type="button"
-        class="<?php echo esc_attr($classes); ?>"
-        data-product-id="<?php echo esc_attr((string) $productId); ?>"
-        aria-pressed="<?php echo $isFavorite ? 'true' : 'false'; ?>"
-        aria-label="<?php echo esc_attr($label); ?>"
-    >
-        <svg class="ak-wishlist-button__icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path d="M12 20.4s-7.2-4.5-9.4-9A5.2 5.2 0 0 1 12 6.2a5.2 5.2 0 0 1 9.4 5.2c-2.2 4.5-9.4 9-9.4 9Z" />
-        </svg>
-    </button>
-    <?php
+
+    echo '<button type="button" class="' . esc_attr($classes) . '" data-product-id="' . esc_attr((string) $productId) . '" aria-pressed="' . ($isFavorite ? 'true' : 'false') . '" aria-label="' . esc_attr($label) . '">'
+        . '<svg class="ak-wishlist-button__icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 20.4s-7.2-4.5-9.4-9A5.2 5.2 0 0 1 12 6.2a5.2 5.2 0 0 1 9.4 5.2c-2.2 4.5-9.4 9-9.4 9Z" /></svg>'
+        . '</button>';
 }
 
 function appleklinika_wishlist_meta_key(): string

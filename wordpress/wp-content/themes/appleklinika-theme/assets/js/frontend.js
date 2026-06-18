@@ -497,6 +497,8 @@
       }
 
       var billingForm = billingSection.querySelector('.wc-block-components-address-form') || billingSection;
+      var firstNameField = checkoutAddressInputField(billingForm, 'first_name');
+      var lastNameField = checkoutAddressInputField(billingForm, 'last_name');
       var slot = billingSection.querySelector('.ak-checkout-company-billing-slot');
 
       if (!slot) {
@@ -512,9 +514,45 @@
         }
       }
 
-      [purchaseField.wrapper, companyField.wrapper, taxField.wrapper].forEach(function (wrapper) {
-        if (wrapper && wrapper.parentNode !== slot) {
-          slot.appendChild(wrapper);
+      var identitySlot = slot.querySelector('.ak-checkout-billing-identity-slot');
+
+      if (!identitySlot) {
+        identitySlot = document.createElement('div');
+        identitySlot.className = 'ak-checkout-billing-identity-slot';
+        slot.appendChild(identitySlot);
+      }
+
+      var personalRow = identitySlot.querySelector('.ak-checkout-billing-personal-row');
+
+      if (!personalRow) {
+        personalRow = document.createElement('div');
+        personalRow.className = 'ak-checkout-billing-personal-row';
+        identitySlot.appendChild(personalRow);
+      }
+
+      var companyRow = identitySlot.querySelector('.ak-checkout-billing-company-row');
+
+      if (!companyRow) {
+        companyRow = document.createElement('div');
+        companyRow.className = 'ak-checkout-billing-company-row';
+        identitySlot.appendChild(companyRow);
+      }
+
+      if (purchaseField.wrapper && purchaseField.wrapper.parentNode !== slot) {
+        slot.insertBefore(purchaseField.wrapper, identitySlot);
+      } else if (purchaseField.wrapper && purchaseField.wrapper.nextElementSibling !== identitySlot) {
+        slot.insertBefore(purchaseField.wrapper, identitySlot);
+      }
+
+      [firstNameField, lastNameField].forEach(function (field) {
+        if (field && field.wrapper && field.wrapper.parentNode !== personalRow) {
+          personalRow.appendChild(field.wrapper);
+        }
+      });
+
+      [companyField.wrapper, taxField.wrapper].forEach(function (wrapper) {
+        if (wrapper && wrapper.parentNode !== companyRow) {
+          companyRow.appendChild(wrapper);
         }
       });
 
@@ -523,8 +561,15 @@
         purchaseField.wrapper.setAttribute('aria-hidden', 'false');
       }
 
-      slot.classList.toggle('is-company-enabled', Boolean(purchaseField.input.checked));
-      billingSection.classList.toggle('ak-checkout-company-mode', Boolean(purchaseField.input.checked));
+      var enabled = Boolean(purchaseField.input.checked);
+
+      slot.classList.toggle('is-company-enabled', enabled);
+      identitySlot.classList.toggle('is-company-enabled', enabled);
+      personalRow.classList.toggle('is-hidden', enabled);
+      personalRow.setAttribute('aria-hidden', enabled ? 'true' : 'false');
+      companyRow.classList.toggle('is-hidden', !enabled);
+      companyRow.setAttribute('aria-hidden', enabled ? 'false' : 'true');
+      billingSection.classList.toggle('ak-checkout-company-mode', enabled);
       bindBillingCompanyNameSync(billingSection, companyField);
       syncBillingFormLayout(billingSection, companyField);
 
