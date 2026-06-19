@@ -8,14 +8,14 @@ Status values:
 - `FAIL`: verified in browser and broken.
 - `NOT TESTED`: not verified in browser during this round.
 
-Last run: 2026-06-17
-Scope: Homepage product card shared renderer verification.
+Last run: 2026-06-18
+Scope: Global logo baseline verification.
 
 ## 1. Navigation Check
 
 | Item | Status | Notes |
 | --- | --- | --- |
-| Header links work | PASS | Browser QA confirmed the header still exposes the logo, search, Fiókom, Kosár, and category nav links after the strictly scoped header polish. |
+| Header links work | PASS | Browser QA confirmed normal pages still expose the logo, search, Fiókom, Kosár, and category nav where intended; checkout now uses a focused logo header without full webshop navigation. |
 | Footer links work | NOT TESTED | Footer link targets were not changed in this round. |
 | Product cards open real product pages | NOT TESTED | Product card links were not clicked in this pass. |
 | No empty href | NOT TESTED | Footer links were not changed in this round. |
@@ -26,8 +26,8 @@ Scope: Homepage product card shared renderer verification.
 
 | Item | Status | Notes |
 | --- | --- | --- |
-| Piros keretes scope test completed | PASS | Temporary red outlines were applied only to `.ak-header-logo`, `.ak-header-actions`, and `.ak-category-nav`, then removed before final styling. |
-| Logo remains functional | PASS | Browser QA confirmed the logo link is still visible; CSS now enlarges the desktop logo through `.ak-header-logo img` only. |
+| Piros keretes scope test completed | PASS | Temporary red outlines were applied only to `.ak-header-logo` / `.ak-checkout-header__logo` on homepage, shop, cart, account, and checkout, then removed before finishing. |
+| Logo remains functional | PASS | Browser QA measured the desktop logo at `255x76` and `x=66.05, y=61.25` on homepage, shop category views, cart, account, and the focused checkout header. |
 | Search remains functional | NOT TESTED | The search form remains visible and its CSS was not changed; no search query was submitted in this pass. |
 | Account and cart links remain functional | PASS | Browser QA confirmed Fiókom and Kosár remain inside the existing `.ak-header-actions` wrapper. |
 | Account and cart are visually grouped | PASS | The isolated `.ak-header-actions` desktop rules now keep the two buttons stacked, slightly wider, and more intentional without touching search/logo layout rules. |
@@ -47,9 +47,9 @@ Scope: Homepage product card shared renderer verification.
 | Homepage featured product section uses shop card proportions | PASS | Browser QA measured the homepage featured grid at 860px with three 268px cards and 28px gaps, matching the approved iPhone shop archive card width/gap while keeping the shared card internals untouched. |
 | Homepage featured cards use shop Woo Blocks card context | PASS | Browser QA confirmed homepage and iPhone shop both render `UL.wc-block-product-template...`, `LI.wc-block-product`, and the shared `A.ak-product-card__inner`; no `.ak-home .ak-product-card__...` internal override remains in the loaded CSS. |
 | Homepage and shop card DOM identity | PASS | Browser QA confirmed the homepage featured card and iPhone shop card both render `A.ak-product-card__inner` followed by direct `BUTTON.ak-wishlist-button`, with no injected `<p>` or `<br>` wrappers and identical `ak-product-card__content` children. |
-| Homepage desktop density feels balanced | NOT TESTED | Verify hero, featured products, category shortcuts, and trust sections feel roughly 20-30% tighter without changing shop archive product cards. |
+| Homepage desktop density feels balanced | NOT TESTED | Verify hero, featured products, and trust sections feel compact without changing shop archive product cards. |
 | Homepage scale is compacted | NOT TESTED | Needs a fresh desktop browser pass after the latest `.ak-home` density tuning. |
-| Category shortcuts use real shop links | PASS | Browser QA confirmed four `.ak-home-category-card` links for iPhone, MacBook, iPad, and Apple Watch. |
+| Homepage category shortcuts removed | PASS | The homepage no longer renders the `Gyors elérés` / `Kategóriák` section; header category navigation and `ak_type` shop URLs remain separate. |
 | Shop archive product cards unchanged | PASS | Browser QA compared the homepage and iPhone shop cards and confirmed the same shared `.ak-product-card` internal structure/classes are used while shop archive CSS remains the source of truth. |
 
 ## 2. Product Page Check

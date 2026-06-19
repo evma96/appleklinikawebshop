@@ -163,7 +163,7 @@ Existing catalog rows can be edited or deleted directly from the admin catalog t
 The frontend currently includes:
 
 - A custom Appleklinika storefront theme with a premium homepage implementation.
-- A homepage hero, centrally managed trust/info tiles, an admin-configurable `Kiemelt Apple ajánlatok` product showcase, real WooCommerce fallback product queries, real category shortcuts, and structured footer.
+- A homepage hero, centrally managed trust/info tiles, an admin-configurable `Kiemelt Apple ajánlatok` product showcase, real WooCommerce fallback product queries, and structured footer.
 - Homepage featured products are controlled in `Settings > Apple Klinika homepage` with an ordered comma-separated WooCommerce product ID list and a 1-12 product count limit.
 - A modern ecommerce product page structure powered by the actual WooCommerce product object.
 - A three-column desktop product page with Rejoy-style Appleklinika configuration selectors, WooCommerce image gallery, and a right-side purchase panel.
