@@ -8,8 +8,8 @@ Status values:
 - `FAIL`: verified in browser and broken.
 - `NOT TESTED`: not verified in browser during this round.
 
-Last run: 2026-06-18
-Scope: Global logo baseline verification.
+Last run: 2026-06-19
+Scope: Single product Leonardo-style layout verification.
 
 ## 1. Navigation Check
 
@@ -56,13 +56,14 @@ Scope: Global logo baseline verification.
 
 | Item | Status | Notes |
 | --- | --- | --- |
-| No duplicated product layout | NOT TESTED | Not part of this UI change. |
-| Gallery works | NOT TESTED | Not part of this UI change. |
-| Thumbnails work | NOT TESTED | Not part of this UI change. |
-| Selectors work | NOT TESTED | Not part of this UI change. |
-| Selected state stays on clicked option | NOT TESTED | Not part of this UI change. |
-| Check icon does not overlap text | PASS | Browser QA showed the selected color check icon still top-right while color names wrap without ellipsis. |
-| Add to cart works | NOT TESTED | Not part of this UI change. |
+| Piros keretes scope test completed | PASS | Temporary red outlines hit only the single product wrapper, gallery, buy panel, options wrapper, product details grid, and related-products panel; the outlines were removed before finishing. |
+| No duplicated product layout | PASS | Browser QA confirmed one `.appleklinika-product-shell` renders on the tested product URL with the default WooCommerce summary hidden. |
+| Gallery works | NOT TESTED | The tested product had one real WooCommerce image, so image switching could not be meaningfully tested in this pass. |
+| Thumbnails work | NOT TESTED | The tested product had one real WooCommerce image and one thumbnail. Verify with a product that has multiple gallery images. |
+| Selectors work | NOT TESTED | Selector UI remains rendered from real same-model WooCommerce products, but option switching was not clicked in this pass. |
+| Selected state stays on clicked option | NOT TESTED | Option switching was not clicked in this pass. |
+| Product information panels render real data | PASS | Browser QA confirmed the custom product shell, options section, details grid, review panel, and four real related-product cards render on the tested product page. |
+| Add to cart works | PASS | Browser QA clicked the real WooCommerce add-to-cart button, saw no console errors, and the header cart count remained present after the click. |
 
 ## 3. Shop / Listing Page Check
 

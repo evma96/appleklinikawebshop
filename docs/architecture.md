@@ -52,8 +52,8 @@ The first admin customization is implemented through:
 - `Infrastructure/WordPress/SelectorDemoProductsSeeder.php`: admin-only local development seeder for a full iPhone 13 Pro WooCommerce selector test matrix plus small iPad, MacBook, and Apple Watch category fixtures.
 - `Interfaces/Admin/ProductConditionFields.php`: WooCommerce admin field rendering and save hooks, including device-type field visibility and model-dependent option filtering for catalog-backed selects.
 - `Interfaces/Admin/ProductPhotoGuidance.php`: admin-side product photo checklist for the 4-photo upload workflow.
-- `Interfaces/Frontend/ProductFrontendDisplay.php`: WooCommerce-hooked product purchase layout using the actual product object, product images, real add-to-cart template, and Appleklinika product meta fields.
-- The product layout removes default WooCommerce single-product summary/tabs/related hooks and renders the WooCommerce product tabs once inside the custom styled product information section.
+- `Interfaces/Frontend/ProductFrontendDisplay.php`: WooCommerce-hooked single product layout using the actual product object, product images, real add-to-cart template, reviews, related products, and Appleklinika product meta fields.
+- The product layout removes default WooCommerce single-product summary/tabs/related hooks and renders custom Appleklinika description, specs, review, and related-product panels from real WooCommerce data instead of duplicating the default WooCommerce output.
 - The frontend configuration panel builds color, storage, and condition cards from published WooCommerce products with the same Apple model meta when available.
 - Selector cards are backed by matching unique WooCommerce products. When a full color/storage/grade combination exists, the frontend updates the visible product title, price, gallery, stock status, URL, and add-to-cart product ID without a full page reload.
 - Battery replacement is handled as an optional cart add-on extra that adjusts price and order/cart metadata, not as a separate unique product.

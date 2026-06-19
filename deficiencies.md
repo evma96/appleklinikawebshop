@@ -16,6 +16,9 @@
 - Custom product fields are editable in admin and selected values render on the product page; selector cards can switch matching same-model products without a full page reload when a complete color/storage/grade combination exists.
 - Product selector controls currently group by Apple model meta, but richer grouping rules still need real inventory examples.
 - The product page currently embeds the same-model selector matrix in the page for smooth local switching; this should become a narrower query or endpoint before large production inventory.
+- The single product FAQ section is intentionally not rendered until there is an editable FAQ/content source; fake product FAQs should not be added directly to the frontend.
+- Single product trust block copy is centralized in `ProductFrontendDisplay::productTrustBlocks()` for this pass, but should move to an admin-backed editable source before production if policy wording changes often.
+- Sparse WooCommerce products may render fewer single product information panels because description, attribute, review, and related-product sections are intentionally backed by real available product data only.
 - Battery replacement extra prices are development defaults until final business pricing rules exist.
 - Selector demo products are local development fixtures and must not be treated as production inventory.
 - The local selector demo matrix is intentionally broad and can create many WooCommerce products for one model; production inventory needs stricter grouping and stock ownership rules.

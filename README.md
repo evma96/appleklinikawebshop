@@ -165,10 +165,11 @@ The frontend currently includes:
 - A custom Appleklinika storefront theme with a premium homepage implementation.
 - A homepage hero, centrally managed trust/info tiles, an admin-configurable `Kiemelt Apple ajánlatok` product showcase, real WooCommerce fallback product queries, and structured footer.
 - Homepage featured products are controlled in `Settings > Apple Klinika homepage` with an ordered comma-separated WooCommerce product ID list and a 1-12 product count limit.
-- A modern ecommerce product page structure powered by the actual WooCommerce product object.
-- A three-column desktop product page with Rejoy-style Appleklinika configuration selectors, WooCommerce image gallery, and a right-side purchase panel.
-- A right-side purchase panel with WooCommerce stock status, product title, product price, sale savings, Appleklinika meta-based option cards, real WooCommerce add-to-cart form, stock note, and trust cards.
+- A Leonardo-inspired single product page structure powered by the actual WooCommerce product object.
+- A desktop product page with a large real WooCommerce gallery, sticky right-side buy panel, separate Apple Klinika trust row, real configuration selectors, and product information panels.
+- A right-side purchase panel with WooCommerce stock status, product title, short description, product price, sale savings, real WooCommerce add-to-cart form, add-to-cart feedback, and stock note.
 - Product gallery thumbnails, previous/next controls, and lightbox navigation use real WooCommerce product images.
+- Single product description, specs, reviews, and related products render from real WooCommerce product data, product attributes/meta, WooCommerce reviews, and WooCommerce related/same-model products.
 - The product page uses a theme-level WooCommerce single product template override so the custom Appleklinika layout is the only product layout rendered.
 - The block theme product template uses the `appleklinika_single_product` shortcode to avoid fallback rendering through default WooCommerce product content.
 - The header includes real product search, account/cart action buttons with functional icons, and a WooCommerce cart count.
@@ -195,7 +196,7 @@ Product cards intentionally stay compact: non-iPhone archive cards only show sto
 - Footer information links point to those real WordPress pages instead of dead static URLs.
 - Footer information pages use a shared `ak-info-page` layout with centered readable content, intro styling, clean list blocks, and a compact trust block.
 - The Contact page adds a dedicated contact panel with phone, email, address, a simple WordPress-handled form, and a map placeholder.
-- WooCommerce product tabs are rendered once inside the styled product information section to avoid duplicate product content.
+- Custom single product information panels render real WooCommerce descriptions, product attributes/meta, reviews, and related products while default WooCommerce tabs/related output are removed to avoid duplicate product content.
 - A `Termékek` navigation item is injected into the active WordPress navigation block and links to the WooCommerce shop page.
 - Color/storage/grade selection is modeled as separate unique WooCommerce products instead of WooCommerce variations.
 
