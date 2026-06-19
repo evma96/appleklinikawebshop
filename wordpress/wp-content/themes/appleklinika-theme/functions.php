@@ -15,7 +15,7 @@ add_action('wp_enqueue_scripts', static function (): void {
         'appleklinika-theme',
         get_stylesheet_directory_uri() . '/assets/css/frontend.css',
         [],
-        '0.1.191'
+        '0.1.195'
     );
 
     if (function_exists('is_checkout') && is_checkout()) {
@@ -66,9 +66,11 @@ add_filter('wc_get_price_decimal_separator', static fn (): string => ',');
 add_filter('woocommerce_price_format', static fn (): string => '%2$s %1$s');
 add_filter('gettext', 'appleklinika_checkout_text_translations', 10, 3);
 add_filter('body_class', 'appleklinika_body_classes');
+add_filter('render_block_core/site-title', 'appleklinika_render_checkout_site_title_logo', 10, 2);
 add_filter('the_content', 'appleklinika_replace_cart_page_content', 9);
 add_filter('woocommerce_account_menu_items', 'appleklinika_add_wishlist_account_menu_item');
 add_action('woocommerce_account_kedvelt-termekek_endpoint', 'appleklinika_render_wishlist_account_endpoint');
+add_action('template_redirect', 'appleklinika_redirect_account_downloads_endpoint');
 add_action('init', 'appleklinika_register_company_checkout_fields', 20);
 add_action('woocommerce_blocks_validate_location_order_fields', 'appleklinika_validate_company_checkout_fields', 10, 3);
 add_action('woocommerce_store_api_checkout_update_order_from_request', 'appleklinika_persist_company_checkout_fields', 10, 2);
@@ -1020,6 +1022,28 @@ function appleklinika_render_header(): void
     <?php
 }
 
+function appleklinika_render_checkout_site_title_logo(string $blockContent, array $block): string
+{
+    if (! function_exists('is_checkout') || ! is_checkout()) {
+        return $blockContent;
+    }
+
+    $logoUrl = plugins_url('appleklinika-inventory/assets/brand/appleklinika-logo.jpg');
+
+    ob_start();
+    ?>
+    <div class="ak-checkout-header-inner">
+        <a class="ak-header-logo ak-checkout-header__logo" href="<?php echo esc_url(home_url('/')); ?>" aria-label="Appleklinika kezdőlap">
+            <img src="<?php echo esc_url($logoUrl); ?>" alt="Appleklinika">
+        </a>
+        <span class="ak-checkout-header__label">Biztonságos pénztár</span>
+        <a class="ak-checkout-header__back" href="<?php echo esc_url(appleklinika_cart_url()); ?>">Vissza a kosárhoz</a>
+    </div>
+    <?php
+
+    return (string) ob_get_clean();
+}
+
 function appleklinika_ensure_info_pages(): void
 {
     foreach (appleklinika_info_pages() as $slug => $page) {
@@ -1202,17 +1226,6 @@ function appleklinika_render_homepage(): void
             <?php appleklinika_render_homepage_product_section('home_featured', appleklinika_home_featured_product_limit(), 'ak-home-products--showcase'); ?>
         </section>
 
-        <section class="ak-home-categories" aria-labelledby="ak-home-categories-title">
-            <div class="ak-home-section-head">
-                <span class="ak-kicker">Gyors elérés</span>
-                <div>
-                    <h2 id="ak-home-categories-title">Kategóriák</h2>
-                    <p>Válaszd ki a készülékcsaládot, és a megfelelő shop nézetre viszünk.</p>
-                </div>
-            </div>
-            <?php appleklinika_render_homepage_category_shortcuts(); ?>
-        </section>
-
         <section class="ak-home-trust" aria-labelledby="ak-home-trust-title">
             <div class="ak-home-section-head">
                 <span class="ak-kicker">Miért Apple Klinika?</span>
@@ -1260,35 +1273,6 @@ function appleklinika_homepage_trust_tiles(): array
             'icon' => '⌂',
             'title' => 'Szegedi háttér',
             'text' => 'Lokális szaküzlet logika, nem névtelen piactér hangulat.',
-        ],
-    ];
-}
-
-/**
- * @return array<int, array{label: string, type: string, text: string}>
- */
-function appleklinika_homepage_category_shortcuts(): array
-{
-    return [
-        [
-            'label' => 'iPhone',
-            'type' => 'iphone',
-            'text' => 'Ellenőrzött iPhone készülékek, látható állapottal.',
-        ],
-        [
-            'label' => 'MacBook',
-            'type' => 'macbook',
-            'text' => 'Használt MacBook modellek valós készülékadatokkal.',
-        ],
-        [
-            'label' => 'iPad',
-            'type' => 'ipad',
-            'text' => 'iPad készülékek Wi‑Fi és cellular adatokkal.',
-        ],
-        [
-            'label' => 'Apple Watch',
-            'type' => 'apple_watch',
-            'text' => 'Órák méret, házanyag és állapot szerint rendezve.',
         ],
     ];
 }
@@ -1491,21 +1475,6 @@ function appleklinika_homepage_latest_products(int $limit, array $excludeIds = [
         'orderby' => 'date',
         'order' => 'DESC',
     ]);
-}
-
-function appleklinika_render_homepage_category_shortcuts(): void
-{
-    ?>
-    <div class="ak-home-category-grid">
-        <?php foreach (appleklinika_homepage_category_shortcuts() as $category) : ?>
-            <a class="ak-home-category-card" href="<?php echo esc_url(appleklinika_shop_type_url($category['type'])); ?>">
-                <span class="ak-home-category-card__mark" aria-hidden="true"><?php echo esc_html(substr($category['label'], 0, 1)); ?></span>
-                <strong><?php echo esc_html($category['label']); ?></strong>
-                <span><?php echo esc_html($category['text']); ?></span>
-            </a>
-        <?php endforeach; ?>
-    </div>
-    <?php
 }
 
 function appleklinika_render_shop_filters(): void
@@ -3054,6 +3023,8 @@ function appleklinika_register_wishlist_account_endpoint(): void
  */
 function appleklinika_add_wishlist_account_menu_item(array $items): array
 {
+    unset($items['downloads']);
+
     $wishlistItem = ['kedvelt-termekek' => 'Kedvelt termékek'];
 
     if (! isset($items['customer-logout'])) {
@@ -3070,6 +3041,22 @@ function appleklinika_add_wishlist_account_menu_item(array $items): array
     }
 
     return $updatedItems;
+}
+
+function appleklinika_redirect_account_downloads_endpoint(): void
+{
+    if (
+        ! function_exists('is_account_page')
+        || ! function_exists('is_wc_endpoint_url')
+        || ! function_exists('wc_get_account_endpoint_url')
+        || ! is_account_page()
+        || ! is_wc_endpoint_url('downloads')
+    ) {
+        return;
+    }
+
+    wp_safe_redirect(wc_get_account_endpoint_url('dashboard'));
+    exit;
 }
 
 function appleklinika_render_wishlist_account_endpoint(): void
