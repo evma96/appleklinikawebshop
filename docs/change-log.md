@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Rebuilt the single product page into a Leonardo-inspired Apple Klinika layout with a large real WooCommerce gallery, sticky buy panel, separate trust row, configuration selectors, product data panels, WooCommerce reviews, and real related products.
 - Removed the homepage `Kategóriák` shortcut section from the rendered homepage and removed the WooCommerce `Letöltések` item from the My Account navigation with a dashboard redirect for direct downloads endpoint access.
 - Normalized the Apple Klinika logo visual baseline across homepage, shop category views, cart, and account pages, and added a focused checkout logo header without restoring the full webshop navigation on checkout.
 - Tightened homepage desktop proportions across the hero, featured products, category shortcuts, and trust sections with `.ak-home`-scoped spacing and grid overrides.
