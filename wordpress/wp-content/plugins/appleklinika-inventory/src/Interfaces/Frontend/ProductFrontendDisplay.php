@@ -66,86 +66,87 @@ final class ProductFrontendDisplay
         }
 
         echo '<style>
-            body.single-product main,body.single-product .ak-single-product-page{max-width:1360px;margin:0 auto;padding:32px 24px 72px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#111820}
+            body.single-product main,body.single-product .ak-single-product-page{max-width:1360px;margin:0 auto;padding:30px 24px 72px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#111820}
             body.single-product div.product{display:block}
             body.single-product .summary.entry-summary{display:none}
             body.single-product main .woocommerce-breadcrumb,body.single-product main .woocommerce-notices-wrapper{display:none}
             .appleklinika-product-shell,.appleklinika-product-shell *{box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-            .appleklinika-product-shell{display:grid;gap:42px}
+            .appleklinika-product-shell{display:grid;gap:36px}
             .appleklinika-product-shell button{font-family:inherit}
-            .appleklinika-product-hero{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(360px,.72fr);gap:56px;align-items:start}
+            .appleklinika-product-hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(390px,420px);gap:42px;align-items:start}
             .appleklinika-product-gallery{min-width:0}
-            .appleklinika-product-gallery__stage{position:relative;display:flex;align-items:center;justify-content:center;min-height:560px;border:1px solid #eef1f5;border-radius:28px;background:linear-gradient(180deg,#fff 0%,#f8fafc 100%);overflow:hidden;box-shadow:0 28px 68px rgba(15,23,42,.08)}
-            .appleklinika-product-gallery__stage img{display:block;width:auto;max-width:86%;height:auto;max-height:520px;object-fit:contain;transition:transform .22s ease}
-            .appleklinika-product-gallery__stage:hover img{transform:translateY(-3px) scale(1.01)}
+            .appleklinika-product-gallery__stage{position:relative;display:flex;align-items:center;justify-content:center;min-height:520px;border:1px solid #e7edf5;border-radius:24px;background:radial-gradient(circle at 50% 42%,#fff 0%,#f8fafc 58%,#eef2f7 100%);overflow:hidden;box-shadow:0 24px 58px rgba(15,23,42,.085)}
+            .appleklinika-product-gallery__stage img{display:block;width:auto;max-width:94%;height:auto;max-height:492px;object-fit:contain;filter:drop-shadow(0 18px 30px rgba(15,23,42,.13));transition:transform .22s ease}
+            .appleklinika-product-gallery__stage:hover img{transform:translateY(-4px) scale(1.018)}
             .appleklinika-product-gallery__nav,.appleklinika-product-gallery__zoom{position:absolute;border:0;cursor:pointer}
             .appleklinika-product-gallery__nav{top:50%;transform:translateY(-50%);display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.92);color:#151b24;font-size:26px;font-weight:850;box-shadow:0 10px 28px rgba(17,24,32,.14)}
             .appleklinika-product-gallery__nav--prev{left:18px}
             .appleklinika-product-gallery__nav--next{right:18px}
             .appleklinika-product-gallery__zoom{right:18px;bottom:18px;min-height:38px;padding:0 14px;border-radius:999px;background:#151b24;color:#fff;font-size:13px;font-weight:800;box-shadow:0 10px 24px rgba(17,24,32,.18)}
-            .appleklinika-product-gallery__thumbs{display:flex;justify-content:center;gap:14px;margin-top:22px;overflow-x:auto;padding:4px 2px 8px}
-            .appleklinika-product-gallery__thumb{flex:0 0 84px;border:1px solid #e2e8f0;border-radius:18px;background:#fff;padding:9px;cursor:pointer;box-shadow:0 8px 20px rgba(15,23,42,.06);transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease}
+            .appleklinika-product-gallery__thumbs{display:flex;justify-content:center;gap:12px;margin-top:18px;overflow-x:auto;padding:4px 2px 6px}
+            .appleklinika-product-gallery__thumb{flex:0 0 76px;border:1px solid #e2e8f0;border-radius:16px;background:#fff;padding:8px;cursor:pointer;box-shadow:0 8px 20px rgba(15,23,42,.055);transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease}
             .appleklinika-product-gallery__thumb:hover{transform:translateY(-2px)}
             .appleklinika-product-gallery__thumb.is-selected{border-color:#d6001c;box-shadow:0 0 0 3px rgba(214,0,28,.12),0 12px 28px rgba(15,23,42,.08)}
             .appleklinika-product-gallery__thumb img{display:block;width:100%;aspect-ratio:1/1;object-fit:contain;border-radius:12px;background:#f8fafc}
-            .appleklinika-buy-panel{position:sticky;top:24px;display:grid;gap:18px;padding:32px;border:1px solid #e5e7eb;border-radius:28px;background:#fff;box-shadow:0 28px 70px rgba(15,23,42,.1)}
+            .appleklinika-buy-panel{position:sticky;top:24px;display:grid;gap:16px;padding:30px;border:1px solid #e5e7eb;border-radius:24px;background:#fff;box-shadow:0 26px 64px rgba(15,23,42,.105)}
             .admin-bar .appleklinika-buy-panel{top:56px}
             .appleklinika-stock-badge{display:inline-flex;width:max-content;align-items:center;padding:7px 12px;border-radius:999px;background:#fef2f2;color:#b91c1c;font-size:13px;font-weight:850}
             .appleklinika-stock-badge--out{background:#fff7ed;color:#c2410c}
-            .appleklinika-buy-panel h1{margin:0;font-size:34px!important;line-height:1.08!important;letter-spacing:0;color:#111820;font-weight:850}
+            .appleklinika-buy-panel h1{margin:0;font-size:32px!important;line-height:1.08!important;letter-spacing:0;color:#111820;font-weight:850}
             .appleklinika-product-lead{margin:0;color:#667085;font-size:15px;line-height:1.55;font-weight:650}
             .appleklinika-price-stack{display:grid;gap:7px;margin:0}
             .appleklinika-price-stack__old{display:block;color:#8a94a6;font-size:16px;font-weight:800;text-decoration:line-through}
-            .appleklinika-price-stack__current{display:block;color:#d6001c;font-size:42px;line-height:1;font-weight:900;letter-spacing:0}
+            .appleklinika-price-stack__current{display:block;color:#d6001c;font-size:44px;line-height:1;font-weight:900;letter-spacing:0}
             .appleklinika-price-stack__current .amount{color:inherit;font-size:inherit;font-weight:inherit}
             .appleklinika-price-stack__saving{display:inline-flex;width:max-content;padding:5px 10px;border-radius:999px;background:#fef2f2;color:#b91c1c;font-size:13px;font-weight:850}
             .appleklinika-cart-area{display:grid;gap:10px;margin-top:2px}
-            .appleklinika-cart-area form.cart{display:grid;grid-template-columns:132px minmax(0,1fr);gap:12px;align-items:center;margin:0}
+            .appleklinika-cart-area form.cart{display:grid!important;grid-template-columns:128px minmax(0,1fr);gap:12px;align-items:center;margin:0!important}
             .appleklinika-cart-area .quantity{display:flex;align-items:center}
-            .appleklinika-cart-area .quantity input{width:100%;height:54px;border:1px solid #d9e1ea;border-radius:16px;background:#fff;color:#111820;font-size:16px;font-weight:750;text-align:center}
-            .appleklinika-cart-area .single_add_to_cart_button{width:100%;min-height:54px;border:0;border-radius:999px;background:#d6001c!important;color:#fff!important;font-size:16px;font-weight:900;box-shadow:0 16px 34px rgba(214,0,28,.24);transition:transform .18s ease,box-shadow .18s ease,background .18s ease}
-            .appleklinika-cart-area .single_add_to_cart_button:hover{transform:translateY(-1px);background:#b80018!important;box-shadow:0 18px 38px rgba(214,0,28,.3)}
+            body.single-product .appleklinika-buy-panel .appleklinika-cart-area .quantity input{width:100%!important;height:54px!important;border:1px solid #d9e1ea!important;border-radius:16px!important;background:#fff!important;color:#111820!important;font-size:16px!important;font-weight:750!important;text-align:center!important}
+            body.single-product .appleklinika-buy-panel .appleklinika-cart-area .single_add_to_cart_button{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:100%!important;min-height:54px!important;padding:0 22px!important;border:0!important;border-radius:999px!important;background:#d6001c!important;color:#fff!important;font-size:16px!important;font-weight:900!important;line-height:1!important;box-shadow:0 16px 34px rgba(214,0,28,.24)!important;transition:transform .18s ease,box-shadow .18s ease,background .18s ease!important}
+            body.single-product .appleklinika-buy-panel .appleklinika-cart-area .single_add_to_cart_button:hover{transform:translateY(-1px);background:#b80018!important;box-shadow:0 18px 38px rgba(214,0,28,.3)!important}
             .appleklinika-cart-area .stock{display:none}
             .appleklinika-add-feedback{display:none;padding:11px 12px;border-radius:14px;background:#f0fdf4;color:#166534;font-size:13px;font-weight:800}
             .appleklinika-add-feedback.is-visible{display:block}
-            .appleklinika-delivery-note{margin:0;padding:14px 16px;border:1px solid #edf0f4;border-radius:18px;background:#fafafa;color:#6d7789;font-size:14px;line-height:1.45}
+            .appleklinika-delivery-note{margin:0;padding:13px 15px;border:1px solid #edf0f4;border-radius:16px;background:#fafafa;color:#6d7789;font-size:14px;line-height:1.45}
             .appleklinika-delivery-note strong{color:#1f2735}
             .appleklinika-delivery-note span{color:#166534;font-weight:850}
             .appleklinika-trust-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-            .appleklinika-trust-card{display:flex;align-items:center;gap:10px;min-height:62px;border:1px solid #eceff3;border-radius:18px;background:#fff;padding:12px;box-shadow:0 8px 22px rgba(15,23,42,.05)}
+            .appleklinika-trust-card{display:flex;align-items:center;gap:11px;min-height:68px;border:1px solid #eceff3;border-radius:18px;background:#fff;padding:12px 14px;box-shadow:0 10px 24px rgba(15,23,42,.055)}
             .appleklinika-trust-card__icon{display:flex;flex:0 0 34px;align-items:center;justify-content:center;width:34px;height:34px;border-radius:12px;background:#fef2f2;color:#d6001c;font-weight:950}
             .appleklinika-trust-card strong{display:block;color:#293243;font-size:13px;line-height:1.2;font-weight:850}
             .appleklinika-trust-card span{display:block;margin-top:3px;color:#6d7789;font-size:12px;line-height:1.25;font-weight:650}
-            .appleklinika-product-assurance{padding:4px 0}
+            .appleklinika-product-assurance{padding:0}
             .appleklinika-product-assurance .appleklinika-trust-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
             .appleklinika-buy-panel > p:empty{display:none!important;margin:0!important}
-            .appleklinika-product-data{display:grid;gap:18px;padding:26px;border:1px solid #e5e7eb;border-radius:28px;background:#fff;box-shadow:0 20px 56px rgba(15,23,42,.07)}
-            .appleklinika-section-heading{display:grid;gap:4px}
-            .appleklinika-section-kicker{color:#d6001c;font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
-            .appleklinika-section-title{margin:0;color:#111820;font-size:24px;line-height:1.18;font-weight:850}
-            .appleklinika-section-text{margin:0;color:#667085;font-size:14px;line-height:1.55;font-weight:650}
-            .appleklinika-config-group{display:grid;gap:10px}
-            .appleklinika-config-group__title{margin:0;color:#313a4a;font-size:14px;line-height:1.2;font-weight:850}
+            .appleklinika-product-data{display:grid;gap:14px;padding:22px;border:1px solid #e6ebf2;border-radius:24px;background:#fff;box-shadow:0 18px 46px rgba(15,23,42,.065)}
+            .appleklinika-section-heading{display:grid;gap:5px;padding-bottom:2px}
+            .appleklinika-section-heading > p:empty{display:none!important;margin:0!important}
+            .appleklinika-section-kicker{color:#d6001c;font-size:11px;font-weight:900;letter-spacing:.09em;text-transform:uppercase}
+            .appleklinika-section-title{margin:0;color:#111820;font-size:22px;line-height:1.15;font-weight:850}
+            .appleklinika-section-text{max-width:680px;margin:0;color:#667085;font-size:13px;line-height:1.45;font-weight:650}
+            .appleklinika-config-group{display:grid;gap:8px}
+            .appleklinika-config-group__title{margin:0;color:#313a4a;font-size:12.5px;line-height:1.2;font-weight:850}
             .appleklinika-config-group__title span{font-weight:950}
-            .appleklinika-config-grid,.appleklinika-config-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:stretch}
-            .appleklinika-config-card{position:relative;display:flex;min-height:88px;height:100%;padding:14px 38px 14px 14px;border:1.5px solid #d8e0eb;border-radius:18px;background:#fff;color:#2e3746;text-align:left;text-decoration:none;cursor:pointer;box-shadow:0 8px 20px rgba(17,24,32,.04);transition:border-color .16s ease,box-shadow .16s ease,background .16s ease,transform .16s ease}
+            .appleklinika-config-grid,.appleklinika-config-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-items:stretch}
+            .appleklinika-config-card{position:relative;display:flex;min-height:68px;height:100%;padding:10px 32px 10px 10px;border:1.5px solid #dbe3ee;border-radius:15px;background:#fff;color:#2e3746;text-align:left;text-decoration:none;cursor:pointer;box-shadow:0 7px 18px rgba(17,24,32,.035);transition:border-color .16s ease,box-shadow .16s ease,background .16s ease,transform .16s ease}
             .appleklinika-config-card:hover{transform:translateY(-1px);border-color:#f3a1ad;background:#fffafa}
-            .appleklinika-config-card.is-selected,.appleklinika-config-card.is-active{border-color:#d6001c;background:#fff5f6;box-shadow:0 0 0 3px rgba(214,0,28,.1),0 10px 24px rgba(17,24,32,.05)}
-            .appleklinika-config-card.is-selected:after,.appleklinika-config-card.is-active:after{content:"✓";position:absolute;top:12px;right:12px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#d6001c;color:#fff;font-size:12px;line-height:1;font-weight:950}
-            .appleklinika-config-card__image{flex:0 0 54px;width:54px;height:54px;object-fit:contain;border-radius:13px;background:#f7f8fa}
-            .appleklinika-config-card__content{display:flex;min-width:0;flex:1;height:100%;flex-direction:column;justify-content:flex-start;gap:7px}
-            .appleklinika-config-card__label{display:-webkit-box;min-height:36px;overflow:hidden;color:#263242;font-size:14px;line-height:1.25;font-weight:850;-webkit-box-orient:vertical;-webkit-line-clamp:2}
-            .appleklinika-config-card__meta{display:block;overflow:hidden;max-width:100%;margin-top:auto;color:#667085;font-size:12px;line-height:1.2;font-weight:800;white-space:nowrap;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
-            .appleklinika-config-card__badge{position:absolute;right:8px;top:-8px;padding:3px 7px;border-radius:999px;background:#d6001c;color:#fff;font-size:10px;font-weight:900}
-            .appleklinika-config-card--color{align-items:center;gap:12px}
+            .appleklinika-config-card.is-selected,.appleklinika-config-card.is-active{border-color:#d6001c;background:#fff6f7;box-shadow:0 0 0 2px rgba(214,0,28,.09),0 9px 22px rgba(17,24,32,.045)}
+            .appleklinika-config-card.is-selected:after,.appleklinika-config-card.is-active:after{content:"✓";position:absolute;top:10px;right:10px;width:18px;height:18px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#d6001c;color:#fff;font-size:11px;line-height:1;font-weight:950}
+            .appleklinika-config-card__image{display:block;align-self:center;flex:0 0 44px;width:44px;height:44px;object-fit:contain;border-radius:11px;background:#f7f8fa}
+            .appleklinika-config-card__content{display:flex;min-width:0;flex:1;height:100%;flex-direction:column;justify-content:flex-start;gap:4px}
+            .appleklinika-config-card__label{display:-webkit-box;min-height:29px;overflow:hidden;color:#263242;font-size:12.5px;line-height:1.18;font-weight:850;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+            .appleklinika-config-card__meta{display:block;overflow:hidden;max-width:100%;margin-top:auto;color:#697386;font-size:11px;line-height:1.2;font-weight:800;white-space:nowrap;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+            .appleklinika-config-card__badge{position:absolute;right:7px;top:-7px;padding:3px 7px;border-radius:999px;background:#d6001c;color:#fff;font-size:9px;font-weight:900}
+            .appleklinika-config-card--color{align-items:center;gap:10px}
             .appleklinika-config-card--color .appleklinika-config-card__content{justify-content:center}
             .appleklinika-config-card--color .appleklinika-config-card__label{display:block;min-height:auto;max-height:38px;white-space:normal;-webkit-line-clamp:initial;-webkit-box-orient:initial}
             .appleklinika-config-card--pill .appleklinika-config-card__content{align-items:flex-start}
             .appleklinika-config-card--wide{grid-column:auto}
-            .appleklinika-config-info{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
-            .appleklinika-info-card{display:grid;gap:3px;padding:12px;border:1px solid #e1e7ef;border-radius:16px;background:#fafafa}
-            .appleklinika-info-card span{color:#6b7585;font-size:11px;font-weight:750}
-            .appleklinika-info-card strong{color:#18202b;font-size:13px;line-height:1.25}
+            .appleklinika-config-info{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+            .appleklinika-info-card{display:grid;min-height:50px;gap:3px;padding:9px 10px;border:1px solid #e3e9f1;border-radius:14px;background:#fbfcfd}
+            .appleklinika-info-card span{color:#6b7585;font-size:10.5px;font-weight:750}
+            .appleklinika-info-card strong{color:#18202b;font-size:12.5px;line-height:1.22}
             .appleklinika-product-content-grid{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:32px;align-items:start}
             .appleklinika-product-main-info{display:grid;gap:18px}
             .appleklinika-product-panel{padding:26px;border:1px solid #e5e7eb;border-radius:26px;background:#fff;box-shadow:0 18px 48px rgba(15,23,42,.06)}
@@ -817,7 +818,7 @@ final class ProductFrontendDisplay
         echo '<div class="appleklinika-section-heading">';
         echo '<span class="appleklinika-section-kicker">Konfiguráció</span>';
         echo '<h2 class="appleklinika-section-title">Válaszd ki a készülékedet</h2>';
-        echo '<p class="appleklinika-section-text">Az elérhető opciók a tényleges WooCommerce termékekből és Apple Klinika termékadatokból épülnek.</p>';
+        echo '<p class="appleklinika-section-text">Csak az aktuális készletben elérhető, valós termékadatokból választhatsz.</p>';
         echo '</div>';
         $this->renderColorSelector($product, $relatedProducts, $modelKey, $color, $fallbackImage);
         $this->renderStorageSelector($product, $relatedProducts, $currentPrice, $storage);
