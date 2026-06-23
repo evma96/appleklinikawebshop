@@ -66,37 +66,37 @@ final class ProductFrontendDisplay
         }
 
         echo '<style>
-            body.single-product main,body.single-product .ak-single-product-page{max-width:1360px;margin:0 auto;padding:30px 24px 72px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#111820}
+            body.single-product main,body.single-product .ak-single-product-page{max-width:1360px;margin:0 auto;padding:24px 24px 68px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#111820}
             body.single-product div.product{display:block}
             body.single-product .summary.entry-summary{display:none}
             body.single-product main .woocommerce-breadcrumb,body.single-product main .woocommerce-notices-wrapper{display:none}
             .appleklinika-product-shell,.appleklinika-product-shell *{box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-            .appleklinika-product-shell{display:grid;gap:36px}
+            .appleklinika-product-shell{display:grid;gap:28px}
             .appleklinika-product-shell button{font-family:inherit}
-            .appleklinika-product-hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(390px,420px);gap:42px;align-items:start}
+            .appleklinika-product-hero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(380px,410px);gap:34px;align-items:start}
             .appleklinika-product-gallery{min-width:0}
-            .appleklinika-product-gallery__stage{position:relative;display:flex;align-items:center;justify-content:center;min-height:520px;border:1px solid #e7edf5;border-radius:24px;background:radial-gradient(circle at 50% 42%,#fff 0%,#f8fafc 58%,#eef2f7 100%);overflow:hidden;box-shadow:0 24px 58px rgba(15,23,42,.085)}
-            .appleklinika-product-gallery__stage img{display:block;width:auto;max-width:94%;height:auto;max-height:492px;object-fit:contain;filter:drop-shadow(0 18px 30px rgba(15,23,42,.13));transition:transform .22s ease}
+            .appleklinika-product-gallery__stage{position:relative;display:flex;align-items:center;justify-content:center;min-height:468px;border:1px solid #e7edf5;border-radius:22px;background:radial-gradient(circle at 50% 42%,#fff 0%,#f8fafc 58%,#eef2f7 100%);overflow:hidden;box-shadow:0 22px 52px rgba(15,23,42,.08)}
+            .appleklinika-product-gallery__stage img{display:block;width:auto;max-width:94%;height:auto;max-height:442px;object-fit:contain;filter:drop-shadow(0 18px 30px rgba(15,23,42,.13));transition:transform .22s ease}
             .appleklinika-product-gallery__stage:hover img{transform:translateY(-4px) scale(1.018)}
             .appleklinika-product-gallery__nav,.appleklinika-product-gallery__zoom{position:absolute;border:0;cursor:pointer}
             .appleklinika-product-gallery__nav{top:50%;transform:translateY(-50%);display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.92);color:#151b24;font-size:26px;font-weight:850;box-shadow:0 10px 28px rgba(17,24,32,.14)}
             .appleklinika-product-gallery__nav--prev{left:18px}
             .appleklinika-product-gallery__nav--next{right:18px}
             .appleklinika-product-gallery__zoom{right:18px;bottom:18px;min-height:38px;padding:0 14px;border-radius:999px;background:#151b24;color:#fff;font-size:13px;font-weight:800;box-shadow:0 10px 24px rgba(17,24,32,.18)}
-            .appleklinika-product-gallery__thumbs{display:flex;justify-content:center;gap:12px;margin-top:18px;overflow-x:auto;padding:4px 2px 6px}
-            .appleklinika-product-gallery__thumb{flex:0 0 76px;border:1px solid #e2e8f0;border-radius:16px;background:#fff;padding:8px;cursor:pointer;box-shadow:0 8px 20px rgba(15,23,42,.055);transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease}
+            .appleklinika-product-gallery__thumbs{display:flex;justify-content:center;gap:10px;margin-top:14px;overflow-x:auto;padding:3px 2px 5px}
+            .appleklinika-product-gallery__thumb{flex:0 0 68px;border:1px solid #e2e8f0;border-radius:15px;background:#fff;padding:7px;cursor:pointer;box-shadow:0 8px 18px rgba(15,23,42,.052);transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease}
             .appleklinika-product-gallery__thumb:hover{transform:translateY(-2px)}
             .appleklinika-product-gallery__thumb.is-selected{border-color:#d6001c;box-shadow:0 0 0 3px rgba(214,0,28,.12),0 12px 28px rgba(15,23,42,.08)}
             .appleklinika-product-gallery__thumb img{display:block;width:100%;aspect-ratio:1/1;object-fit:contain;border-radius:12px;background:#f8fafc}
-            .appleklinika-buy-panel{position:sticky;top:24px;display:grid;gap:16px;padding:30px;border:1px solid #e5e7eb;border-radius:24px;background:#fff;box-shadow:0 26px 64px rgba(15,23,42,.105)}
+            .appleklinika-buy-panel{position:sticky;top:24px;display:grid;gap:13px;padding:26px;border:1px solid #e5e7eb;border-radius:22px;background:#fff;box-shadow:0 24px 58px rgba(15,23,42,.1)}
             .admin-bar .appleklinika-buy-panel{top:56px}
             .appleklinika-stock-badge{display:inline-flex;width:max-content;align-items:center;padding:7px 12px;border-radius:999px;background:#fef2f2;color:#b91c1c;font-size:13px;font-weight:850}
             .appleklinika-stock-badge--out{background:#fff7ed;color:#c2410c}
-            .appleklinika-buy-panel h1{margin:0;font-size:32px!important;line-height:1.08!important;letter-spacing:0;color:#111820;font-weight:850}
-            .appleklinika-product-lead{margin:0;color:#667085;font-size:15px;line-height:1.55;font-weight:650}
-            .appleklinika-price-stack{display:grid;gap:7px;margin:0}
+            .appleklinika-buy-panel h1{margin:0;font-size:30px!important;line-height:1.08!important;letter-spacing:0;color:#111820;font-weight:850}
+            .appleklinika-product-lead{margin:0;color:#667085;font-size:14px;line-height:1.48;font-weight:650}
+            .appleklinika-price-stack{display:grid;gap:6px;margin:2px 0}
             .appleklinika-price-stack__old{display:block;color:#8a94a6;font-size:16px;font-weight:800;text-decoration:line-through}
-            .appleklinika-price-stack__current{display:block;color:#d6001c;font-size:44px;line-height:1;font-weight:900;letter-spacing:0}
+            .appleklinika-price-stack__current{display:block;color:#d6001c;font-size:42px;line-height:1;font-weight:900;letter-spacing:0}
             .appleklinika-price-stack__current .amount{color:inherit;font-size:inherit;font-weight:inherit}
             .appleklinika-price-stack__saving{display:inline-flex;width:max-content;padding:5px 10px;border-radius:999px;background:#fef2f2;color:#b91c1c;font-size:13px;font-weight:850}
             .appleklinika-cart-area{display:grid;gap:10px;margin-top:2px}
@@ -108,17 +108,38 @@ final class ProductFrontendDisplay
             .appleklinika-cart-area .stock{display:none}
             .appleklinika-add-feedback{display:none;padding:11px 12px;border-radius:14px;background:#f0fdf4;color:#166534;font-size:13px;font-weight:800}
             .appleklinika-add-feedback.is-visible{display:block}
-            .appleklinika-delivery-note{margin:0;padding:13px 15px;border:1px solid #edf0f4;border-radius:16px;background:#fafafa;color:#6d7789;font-size:14px;line-height:1.45}
+            .appleklinika-delivery-note{margin:0;padding:12px 14px;border:1px solid #edf0f4;border-radius:15px;background:#fafafa;color:#6d7789;font-size:13px;line-height:1.4}
             .appleklinika-delivery-note strong{color:#1f2735}
             .appleklinika-delivery-note span{color:#166534;font-weight:850}
-            .appleklinika-trust-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-            .appleklinika-trust-card{display:flex;align-items:center;gap:11px;min-height:68px;border:1px solid #eceff3;border-radius:18px;background:#fff;padding:12px 14px;box-shadow:0 10px 24px rgba(15,23,42,.055)}
-            .appleklinika-trust-card__icon{display:flex;flex:0 0 34px;align-items:center;justify-content:center;width:34px;height:34px;border-radius:12px;background:#fef2f2;color:#d6001c;font-weight:950}
-            .appleklinika-trust-card strong{display:block;color:#293243;font-size:13px;line-height:1.2;font-weight:850}
+            .appleklinika-trust-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+            .appleklinika-trust-card{display:flex;align-items:center;gap:10px;min-height:62px;border:1px solid #eceff3;border-radius:17px;background:#fff;padding:11px 13px;box-shadow:0 9px 22px rgba(15,23,42,.052)}
+            .appleklinika-trust-card__icon{display:flex;flex:0 0 32px;align-items:center;justify-content:center;width:32px;height:32px;border-radius:11px;background:#fef2f2;color:#d6001c;font-weight:950}
+            .appleklinika-trust-card strong{display:block;color:#293243;font-size:12.5px;line-height:1.2;font-weight:850}
             .appleklinika-trust-card span{display:block;margin-top:3px;color:#6d7789;font-size:12px;line-height:1.25;font-weight:650}
             .appleklinika-product-assurance{padding:0}
             .appleklinika-product-assurance .appleklinika-trust-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
             .appleklinika-buy-panel > p:empty{display:none!important;margin:0!important}
+            .appleklinika-product-below-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(280px,.84fr);gap:22px;align-items:start}
+            .appleklinika-below-panel{display:grid;gap:16px;min-width:0;padding:20px;border:1px solid #e6ebf2;border-radius:24px;background:#fff;box-shadow:0 18px 46px rgba(15,23,42,.06)}
+            .appleklinika-below-panel__heading{display:grid;gap:5px}
+            .appleklinika-below-panel__heading h2{margin:0;color:#111820;font-size:21px;line-height:1.16;font-weight:850}
+            .appleklinika-below-panel__heading p{margin:0;color:#667085;font-size:13px;line-height:1.45;font-weight:650}
+            .appleklinika-below-panel .appleklinika-section-kicker{font-size:10.5px}
+            .appleklinika-below-panel .appleklinika-config-group{gap:7px}
+            .appleklinika-below-panel .appleklinika-config-grid,.appleklinika-below-panel .appleklinika-config-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+            .appleklinika-below-panel .appleklinika-color-swatch-grid{grid-template-columns:repeat(auto-fit,minmax(72px,1fr));max-width:none}
+            .appleklinika-below-panel .appleklinika-config-card{min-height:58px;padding:9px 28px 9px 10px;border-radius:14px}
+            .appleklinika-below-panel .appleklinika-config-card__label{min-height:auto;font-size:12px;line-height:1.18}
+            .appleklinika-below-panel .appleklinika-config-card__meta{font-size:10.5px}
+            .appleklinika-below-panel .appleklinika-config-card--color{min-height:76px;padding:9px 7px 8px}
+            .appleklinika-below-panel .appleklinika-color-swatch{width:34px;height:34px}
+            .appleklinika-below-panel .appleklinika-config-card--color.is-selected:after,.appleklinika-below-panel .appleklinika-config-card--color.is-active:after{right:calc(50% - 25px);width:15px;height:15px;font-size:9px}
+            .appleklinika-below-panel .appleklinika-config-info{grid-template-columns:1fr;gap:8px}
+            .appleklinika-below-panel--support .appleklinika-trust-grid{grid-template-columns:1fr}
+            .appleklinika-compact-spec-table{display:grid;border-top:1px solid #eef1f5}
+            .appleklinika-compact-spec-row{display:grid;grid-template-columns:minmax(92px,.45fr) minmax(0,1fr);gap:10px;padding:10px 0;border-bottom:1px solid #eef1f5}
+            .appleklinika-compact-spec-row span{color:#667085;font-size:12px;font-weight:750}
+            .appleklinika-compact-spec-row strong{color:#18202b;font-size:12.5px;line-height:1.25;font-weight:850}
             .appleklinika-product-data{display:grid;gap:14px;padding:22px;border:1px solid #e6ebf2;border-radius:24px;background:#fff;box-shadow:0 18px 46px rgba(15,23,42,.065)}
             .appleklinika-section-heading{display:grid;gap:5px;padding-bottom:2px}
             .appleklinika-section-heading > p:empty{display:none!important;margin:0!important}
@@ -133,14 +154,24 @@ final class ProductFrontendDisplay
             .appleklinika-config-card:hover{transform:translateY(-1px);border-color:#f3a1ad;background:#fffafa}
             .appleklinika-config-card.is-selected,.appleklinika-config-card.is-active{border-color:#d6001c;background:#fff6f7;box-shadow:0 0 0 2px rgba(214,0,28,.09),0 9px 22px rgba(17,24,32,.045)}
             .appleklinika-config-card.is-selected:after,.appleklinika-config-card.is-active:after{content:"✓";position:absolute;top:10px;right:10px;width:18px;height:18px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#d6001c;color:#fff;font-size:11px;line-height:1;font-weight:950}
+            .appleklinika-config-card.is-unavailable,.appleklinika-config-card:disabled{opacity:.44;border-color:#d7dde7;background:#f8fafc;color:#8a94a6;cursor:not-allowed;box-shadow:none}
+            .appleklinika-config-card.is-unavailable:hover,.appleklinika-config-card:disabled:hover{transform:none;border-color:#d7dde7;background:#f8fafc;box-shadow:none}
+            .appleklinika-config-card.is-unavailable:after,.appleklinika-config-card:disabled:after{display:none}
             .appleklinika-config-card__image{display:block;align-self:center;flex:0 0 44px;width:44px;height:44px;object-fit:contain;border-radius:11px;background:#f7f8fa}
             .appleklinika-config-card__content{display:flex;min-width:0;flex:1;height:100%;flex-direction:column;justify-content:flex-start;gap:4px}
             .appleklinika-config-card__label{display:-webkit-box;min-height:29px;overflow:hidden;color:#263242;font-size:12.5px;line-height:1.18;font-weight:850;-webkit-box-orient:vertical;-webkit-line-clamp:2}
             .appleklinika-config-card__meta{display:block;overflow:hidden;max-width:100%;margin-top:auto;color:#697386;font-size:11px;line-height:1.2;font-weight:800;white-space:nowrap;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
             .appleklinika-config-card__badge{position:absolute;right:7px;top:-7px;padding:3px 7px;border-radius:999px;background:#d6001c;color:#fff;font-size:9px;font-weight:900}
             .appleklinika-config-card--color{align-items:center;gap:10px}
+            .appleklinika-color-swatch-grid{grid-template-columns:repeat(auto-fit,minmax(96px,1fr));max-width:640px}
+            .appleklinika-config-card--color{display:grid;justify-items:center;align-content:start;min-height:86px;padding:10px 8px 9px;border-radius:16px;gap:7px}
             .appleklinika-config-card--color .appleklinika-config-card__content{justify-content:center}
-            .appleklinika-config-card--color .appleklinika-config-card__label{display:block;min-height:auto;max-height:38px;white-space:normal;-webkit-line-clamp:initial;-webkit-box-orient:initial}
+            .appleklinika-config-card--color .appleklinika-config-card__content{align-items:center;width:100%;height:auto}
+            .appleklinika-config-card--color .appleklinika-config-card__label{display:block;min-height:auto;max-height:32px;text-align:center;white-space:normal;-webkit-line-clamp:initial;-webkit-box-orient:initial}
+            .appleklinika-color-swatch{display:block;width:40px;height:40px;border:1px solid var(--appleklinika-swatch-border,#cbd5e1);border-radius:50%;background:var(--appleklinika-swatch,#e5e7eb);box-shadow:inset 0 0 0 1px rgba(255,255,255,.45),0 7px 16px rgba(15,23,42,.08)}
+            .appleklinika-color-swatch--unknown{background:linear-gradient(135deg,#f8fafc,#d8dee8)}
+            .appleklinika-config-card--color.is-selected .appleklinika-color-swatch,.appleklinika-config-card--color.is-active .appleklinika-color-swatch{box-shadow:0 0 0 3px #fff,0 0 0 5px #d6001c,inset 0 0 0 1px rgba(255,255,255,.45),0 9px 18px rgba(214,0,28,.16)}
+            .appleklinika-config-card--color.is-selected:after,.appleklinika-config-card--color.is-active:after{top:8px;right:calc(50% - 29px);width:16px;height:16px;font-size:10px}
             .appleklinika-config-card--pill .appleklinika-config-card__content{align-items:flex-start}
             .appleklinika-config-card--wide{grid-column:auto}
             .appleklinika-config-info{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
@@ -179,7 +210,7 @@ final class ProductFrontendDisplay
             .appleklinika-lightbox__nav{top:50%;transform:translateY(-50%);display:flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:50%;font-size:28px}
             .appleklinika-lightbox__nav--prev{left:16px}
             .appleklinika-lightbox__nav--next{right:16px}
-            @media (max-width:1100px){body.single-product main{padding:24px 18px 56px}.appleklinika-product-hero,.appleklinika-product-content-grid{grid-template-columns:1fr}.appleklinika-buy-panel,.appleklinika-related-panel{position:static}.appleklinika-product-gallery__stage{min-height:460px}.appleklinika-product-gallery__stage img{max-height:420px}.appleklinika-product-assurance .appleklinika-trust-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.appleklinika-config-grid,.appleklinika-config-row{grid-template-columns:repeat(2,minmax(0,1fr))}.appleklinika-config-info{grid-template-columns:repeat(2,minmax(0,1fr))}}
+            @media (max-width:1100px){body.single-product main{padding:24px 18px 56px}.appleklinika-product-hero,.appleklinika-product-below-hero,.appleklinika-product-content-grid{grid-template-columns:1fr}.appleklinika-buy-panel,.appleklinika-related-panel{position:static}.appleklinika-product-gallery__stage{min-height:460px}.appleklinika-product-gallery__stage img{max-height:420px}.appleklinika-product-assurance .appleklinika-trust-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.appleklinika-config-grid,.appleklinika-config-row{grid-template-columns:repeat(2,minmax(0,1fr))}.appleklinika-config-info{grid-template-columns:repeat(2,minmax(0,1fr))}}
             @media (max-width:640px){body.single-product main{padding:16px 12px 42px}.appleklinika-product-shell{gap:26px}.appleklinika-product-hero{gap:22px}.appleklinika-product-gallery__stage{min-height:0;aspect-ratio:4/3;border-radius:22px}.appleklinika-product-gallery__stage img{max-width:86%;max-height:86%}.appleklinika-product-gallery__thumbs{justify-content:flex-start;gap:8px;margin-top:12px}.appleklinika-product-gallery__thumb{flex-basis:60px;padding:6px;border-radius:14px}.appleklinika-product-gallery__nav{width:34px;height:34px;font-size:22px}.appleklinika-product-gallery__nav--prev{left:10px}.appleklinika-product-gallery__nav--next{right:10px}.appleklinika-product-gallery__zoom{right:10px;bottom:10px;min-height:34px}.appleklinika-buy-panel,.appleklinika-product-data,.appleklinika-product-panel{padding:20px;border-radius:22px}.appleklinika-buy-panel h1{font-size:27px!important}.appleklinika-price-stack__current{font-size:34px}.appleklinika-cart-area form.cart{grid-template-columns:1fr}.appleklinika-config-grid,.appleklinika-config-row,.appleklinika-config-info,.appleklinika-trust-grid{grid-template-columns:1fr}.appleklinika-spec-row{grid-template-columns:1fr;gap:4px}.appleklinika-lightbox__nav{width:36px;height:36px}.appleklinika-lightbox__nav--prev{left:8px}.appleklinika-lightbox__nav--next{right:8px}}
         </style>';
     }
@@ -326,6 +357,7 @@ final class ProductFrontendDisplay
 
                 const selectorDataNode = document.getElementById("appleklinika-product-selector-data");
                 const selectorProducts = selectorDataNode ? JSON.parse(selectorDataNode.textContent || "[]") : [];
+                const productBackedSelectorGroups = ["color", "storage", "condition"];
 
                 function selectedSelectorValues() {
                     const values = {};
@@ -337,6 +369,58 @@ final class ProductFrontendDisplay
                     });
 
                     return values;
+                }
+
+                function hasAvailableProductForOption(groupName, optionValue, selectedValues) {
+                    if (productBackedSelectorGroups.indexOf(groupName) === -1) {
+                        return true;
+                    }
+
+                    return selectorProducts.some(function (product) {
+                        if (!product.values || product.values[groupName] !== optionValue) {
+                            return false;
+                        }
+
+                        return productBackedSelectorGroups.every(function (otherGroup) {
+                            if (otherGroup === groupName) {
+                                return true;
+                            }
+
+                            return !selectedValues[otherGroup] || product.values[otherGroup] === selectedValues[otherGroup];
+                        });
+                    });
+                }
+
+                function setOptionAvailability(option, available) {
+                    option.disabled = !available;
+                    option.classList.toggle("is-unavailable", !available);
+                    option.setAttribute("aria-disabled", available ? "false" : "true");
+                    if (available) {
+                        option.removeAttribute("tabindex");
+                    } else {
+                        option.setAttribute("tabindex", "-1");
+                    }
+                }
+
+                function updateSelectorAvailability() {
+                    if (!selectorProducts.length) {
+                        return;
+                    }
+
+                    const selectedValues = selectedSelectorValues();
+
+                    document.querySelectorAll("[data-selector-group]").forEach(function (group) {
+                        const groupName = group.dataset.selectorGroup || "";
+
+                        if (productBackedSelectorGroups.indexOf(groupName) === -1) {
+                            return;
+                        }
+
+                        group.querySelectorAll("[data-selector-option]").forEach(function (option) {
+                            const optionValue = option.dataset.optionValue || "";
+                            setOptionAvailability(option, hasAvailableProductForOption(groupName, optionValue, selectedValues));
+                        });
+                    });
                 }
 
                 function findMatchingProduct(values) {
@@ -409,6 +493,7 @@ final class ProductFrontendDisplay
                     if (window.history && product.url) {
                         window.history.replaceState({ productId: product.id }, "", product.url);
                     }
+                    updateSelectorAvailability();
                 }
 
                 function selectedBatteryExtra() {
@@ -455,6 +540,7 @@ final class ProductFrontendDisplay
                     group.addEventListener("click", function (event) {
                         const option = event.target.closest("[data-selector-option]");
                         if (!option || !group.contains(option)) return;
+                        if (option.disabled || option.getAttribute("aria-disabled") === "true") return;
                         const options = Array.from(group.querySelectorAll("[data-selector-option]"));
                         options.forEach(function (item) {
                             item.classList.remove("is-selected", "is-active");
@@ -477,6 +563,7 @@ final class ProductFrontendDisplay
 
                         if (group.dataset.selectorGroup === "battery") {
                             updateBatteryExtra();
+                            updateSelectorAvailability();
                             return;
                         }
 
@@ -484,6 +571,7 @@ final class ProductFrontendDisplay
                     });
                 });
 
+                updateSelectorAvailability();
                 updateBatteryExtra();
             });
         </script>';
@@ -513,10 +601,7 @@ final class ProductFrontendDisplay
         $this->renderProductGallery($images);
         $this->renderBuyPanel($product, $productId);
         echo '</div>';
-        echo '<section class="appleklinika-product-assurance" aria-label="Apple Klinika vásárlási biztosítékok">';
-        $this->renderTrustCards($productId);
-        echo '</section>';
-        $this->renderConfigurationPanel($product, $productId, $firstImage, $relatedProducts);
+        $this->renderBelowHeroProductArea($product, $productId, $firstImage, $relatedProducts);
         $this->renderProductInformation($product, $productId, $relatedProducts);
         echo '</section>';
         echo '<div class="appleklinika-lightbox" data-appleklinika-lightbox role="dialog" aria-modal="true" aria-label="Nagyított termékkép">';
@@ -579,13 +664,15 @@ final class ProductFrontendDisplay
      */
     private function renderProductInformation(\WC_Product $product, int $productId, array $relatedProducts): void
     {
-        echo '<section class="appleklinika-product-content-grid" aria-label="Termék részletei">';
-        echo '<div class="appleklinika-product-main-info">';
+        echo '<section class="ak-single-product__details appleklinika-product-content-grid" aria-label="Termék részletei">';
+        echo '<div class="ak-single-product__details-main appleklinika-product-main-info">';
         $this->renderProductDescriptionPanel($product);
         $this->renderProductSpecsPanel($product, $productId);
         $this->renderReviewsPanel($product);
         echo '</div>';
+        echo '<div class="ak-single-product__details-side appleklinika-product-side-info">';
         $this->renderSimilarProductsPanel($product, $relatedProducts);
+        echo '</div>';
         echo '</section>';
     }
 
@@ -609,7 +696,9 @@ final class ProductFrontendDisplay
 
     private function renderProductSpecsPanel(\WC_Product $product, int $productId): void
     {
-        $rows = $this->productSpecRows($product, $productId);
+        $rows = array_values(array_filter($this->productSpecRows($product, $productId), static function (array $row): bool {
+            return $row['label'] !== 'Tartozékok';
+        }));
 
         if ($rows === []) {
             return;
@@ -703,7 +792,7 @@ final class ProductFrontendDisplay
             return;
         }
 
-        echo '<aside class="appleklinika-product-panel appleklinika-related-panel" aria-label="Hasonló termékek">';
+        echo '<aside class="ak-single-product__related appleklinika-product-panel appleklinika-related-panel" aria-label="Hasonló termékek">';
         echo '<h2>Hasonló termékek</h2>';
         echo '<div class="appleklinika-related-list">';
 
@@ -799,7 +888,7 @@ final class ProductFrontendDisplay
      * @param array<int, \WC_Product> $relatedProducts
      * @param array{url: string, srcset: string, html: string} $fallbackImage
      */
-    private function renderConfigurationPanel(\WC_Product $product, int $productId, array $fallbackImage, array $relatedProducts): void
+    private function renderBelowHeroProductArea(\WC_Product $product, int $productId, array $fallbackImage, array $relatedProducts): void
     {
         $currentPrice = $this->numericPrice($product);
         $modelKey = $this->conditionRepository->get($productId, 'device_model');
@@ -814,19 +903,66 @@ final class ProductFrontendDisplay
         $accessories = $this->conditionRepository->get($productId, 'accessories');
         $simConfig = $this->simConfigLabel($this->conditionRepository->get($productId, 'sim_config'));
 
-        echo '<aside class="appleklinika-product-data" aria-label="Termékválasztó opciók">';
-        echo '<div class="appleklinika-section-heading">';
-        echo '<span class="appleklinika-section-kicker">Konfiguráció</span>';
-        echo '<h2 class="appleklinika-section-title">Válaszd ki a készülékedet</h2>';
-        echo '<p class="appleklinika-section-text">Csak az aktuális készletben elérhető, valós termékadatokból választhatsz.</p>';
-        echo '</div>';
-        $this->renderColorSelector($product, $relatedProducts, $modelKey, $color, $fallbackImage);
-        $this->renderStorageSelector($product, $relatedProducts, $currentPrice, $storage);
-        $this->renderConditionSelector($product, $relatedProducts, $currentPrice, $condition);
-        $this->renderBatterySelector($battery);
-        $this->renderCompactInfoCards($warranty, $accessories, $this->stockLabel($product), $simConfig);
+        echo '<section class="ak-single-product__below-hero appleklinika-product-below-hero" aria-label="Készülék opciók és termékinformációk">';
 
-        echo '</aside>';
+        echo '<div class="ak-single-product__options appleklinika-below-panel appleklinika-below-panel--device">';
+        echo '<div class="appleklinika-below-panel__heading">';
+        echo '<span class="appleklinika-section-kicker">Állapot és megjelenés</span>';
+        echo '<h2>Készülék kiválasztása</h2>';
+        echo '<p>Csak az aktuális készletben elérhető, valós termékadatokból választhatsz.</p>';
+        echo '</div>';
+        $this->renderConditionSelector($product, $relatedProducts, $currentPrice, $condition);
+        $this->renderColorSelector($product, $relatedProducts, $modelKey, $color, $fallbackImage);
+        $this->renderBatterySelector($battery);
+        echo '</div>';
+
+        echo '<div class="appleklinika-below-panel appleklinika-below-panel--technical">';
+        echo '<div class="appleklinika-below-panel__heading">';
+        echo '<span class="appleklinika-section-kicker">Kapacitás és adatok</span>';
+        echo '<h2>Tárhely és műszaki alapok</h2>';
+        echo '<p>A fontos adatok röviden, a részletes termékadatok lentebb maradnak.</p>';
+        echo '</div>';
+        $this->renderStorageSelector($product, $relatedProducts, $currentPrice, $storage);
+        $this->renderCompactProductMeta($product, $productId);
+        $this->renderCompactInfoCards($warranty, $accessories, $this->stockLabel($product), $simConfig);
+        echo '</div>';
+
+        echo '<div class="appleklinika-below-panel appleklinika-below-panel--support">';
+        echo '<div class="appleklinika-below-panel__heading">';
+        echo '<span class="appleklinika-section-kicker">Biztonságos vásárlás</span>';
+        echo '<h2>Apple Klinika garanciák</h2>';
+        echo '<p>Valós termékadatok, ellenőrzött készülék és átlátható vásárlási információk.</p>';
+        echo '</div>';
+        $this->renderTrustCards($productId);
+        echo '</div>';
+
+        echo '</section>';
+    }
+
+    private function renderCompactProductMeta(\WC_Product $product, int $productId): void
+    {
+        $wantedLabels = ['Modell', 'Cikkszám'];
+        $rows = array_values(array_filter($this->productSpecRows($product, $productId), static function (array $row) use ($wantedLabels): bool {
+            return in_array($row['label'], $wantedLabels, true);
+        }));
+
+        if ($rows === []) {
+            return;
+        }
+
+        echo '<section class="appleklinika-config-group" aria-label="Rövid termékadatok">';
+        echo '<h2 class="appleklinika-config-group__title">Rövid termékadatok</h2>';
+        echo '<div class="appleklinika-compact-spec-table">';
+
+        foreach ($rows as $row) {
+            echo '<div class="appleklinika-compact-spec-row">';
+            echo '<span>' . esc_html($row['label']) . '</span>';
+            echo '<strong>' . esc_html($row['value']) . '</strong>';
+            echo '</div>';
+        }
+
+        echo '</div>';
+        echo '</section>';
     }
 
     /**
@@ -851,6 +987,7 @@ final class ProductFrontendDisplay
                 'url' => $product->get_id() === $currentProduct->get_id() ? '' : get_permalink($product->get_id()),
                 'selected' => $product->get_id() === $currentProduct->get_id(),
                 'image' => $image,
+                'swatch' => $this->productColorSwatch($colorKey, $this->colorLabel($modelKey, $colorKey)),
                 'meta' => '',
             ];
         }
@@ -862,11 +999,12 @@ final class ProductFrontendDisplay
                 'url' => '',
                 'selected' => true,
                 'image' => $fallbackImage,
+                'swatch' => $this->productColorSwatch('current', $selectedLabel),
                 'meta' => '',
             ];
         }
 
-        $this->renderSelectorGroup('color', 'Szín', $selectedLabel, $items, 'appleklinika-config-grid', true);
+        $this->renderSelectorGroup('color', 'Szín', $selectedLabel, $items, 'appleklinika-config-grid appleklinika-color-swatch-grid', true);
     }
 
     /**
@@ -914,34 +1052,15 @@ final class ProductFrontendDisplay
                 continue;
             }
 
-                $items[$gradeKey] = [
-                    'value' => $gradeKey,
-                    'label' => $this->gradeLabel($gradeKey),
-                    'url' => $product->get_id() === $currentProduct->get_id() ? '' : get_permalink($product->get_id()),
-                    'selected' => $product->get_id() === $currentProduct->get_id(),
-                    'meta' => $this->priceDifferenceLabel($this->numericPrice($product) - $currentPrice),
-                    'popular' => $gradeKey === Grade::A,
-                    'image' => $this->productImages($product)[0] ?? null,
-                ];
-        }
-
-        if (count($items) < 2) {
-            $currentGrade = $this->conditionRepository->get($currentProduct->get_id(), 'overall_grade');
-
-            foreach (Grade::options() as $gradeKey => $label) {
-                if (isset($items[$gradeKey])) {
-                    continue;
-                }
-
-                $items[$gradeKey] = [
-                    'value' => $gradeKey,
-                    'label' => $label,
-                    'url' => '',
-                    'selected' => $gradeKey === $currentGrade,
-                    'meta' => '',
-                    'popular' => $gradeKey === Grade::A,
-                ];
-            }
+            $items[$gradeKey] = [
+                'value' => $gradeKey,
+                'label' => $this->gradeLabel($gradeKey),
+                'url' => $product->get_id() === $currentProduct->get_id() ? '' : get_permalink($product->get_id()),
+                'selected' => $product->get_id() === $currentProduct->get_id(),
+                'meta' => $this->priceDifferenceLabel($this->numericPrice($product) - $currentPrice),
+                'popular' => $gradeKey === Grade::A,
+                'image' => $this->productImages($product)[0] ?? null,
+            ];
         }
 
         $this->renderSelectorGroup('condition', 'Esztétikai állapot', $selectedLabel, $items, 'appleklinika-config-grid', false);
@@ -981,12 +1100,26 @@ final class ProductFrontendDisplay
 
     private function renderCompactInfoCards(string $warranty, string $accessories, string $stock, string $simConfig): void
     {
+        $cards = array_values(array_filter([
+            ['label' => 'Garancia', 'value' => $warranty],
+            ['label' => 'SIM', 'value' => $simConfig],
+            ['label' => 'Tartozékok', 'value' => $accessories],
+            ['label' => 'Készlet', 'value' => $stock],
+        ], static function (array $card): bool {
+            return trim($card['value']) !== '';
+        }));
+
+        if ($cards === []) {
+            return;
+        }
+
         echo '<section class="appleklinika-config-group" aria-label="Kiegészítő információk">';
         echo '<div class="appleklinika-config-info">';
-        $this->renderInfoCard('Garancia', $warranty);
-        $this->renderInfoCard('SIM', $simConfig);
-        $this->renderInfoCard('Tartozékok', $accessories);
-        $this->renderInfoCard('Készlet', $stock);
+
+        foreach ($cards as $card) {
+            $this->renderInfoCard($card['label'], $card['value']);
+        }
+
         echo '</div>';
         echo '</section>';
     }
@@ -1023,7 +1156,11 @@ final class ProductFrontendDisplay
             $extraPrice = (string) ($item['extra_price'] ?? 0);
             echo '<button class="' . esc_attr($class) . '" type="button" data-selector-option data-appleklinika-config-option data-option-value="' . esc_attr($optionValue) . '" data-option-label="' . esc_attr((string) $item['label']) . '" data-image-url="' . esc_url($optionImage) . '" data-option-image="' . esc_url($optionImage) . '" data-product-url="' . esc_url((string) ($item['url'] ?? '')) . '" data-extra-price="' . esc_attr($extraPrice) . '" aria-pressed="' . (! empty($item['selected']) ? 'true' : 'false') . '">';
 
-            if ($withImage && isset($item['image']) && is_array($item['image'])) {
+            if ($withImage && isset($item['swatch']) && is_array($item['swatch'])) {
+                $swatchClass = ! empty($item['swatch']['known']) ? 'appleklinika-color-swatch' : 'appleklinika-color-swatch appleklinika-color-swatch--unknown';
+                $swatchStyle = '--appleklinika-swatch:' . (string) $item['swatch']['background'] . ';--appleklinika-swatch-border:' . (string) $item['swatch']['border'] . ';';
+                echo '<span class="' . esc_attr($swatchClass) . '" style="' . esc_attr($swatchStyle) . '" aria-hidden="true"></span>';
+            } elseif ($withImage && isset($item['image']) && is_array($item['image'])) {
                 echo '<img class="appleklinika-config-card__image" src="' . esc_url((string) $item['image']['url']) . '" alt="">';
             }
 
@@ -1485,6 +1622,55 @@ final class ProductFrontendDisplay
         }
 
         return $color;
+    }
+
+    /**
+     * @return array{background: string, border: string, known: bool}
+     */
+    private function productColorSwatch(string $color, string $label): array
+    {
+        $map = $this->productColorSwatchMap();
+        $candidates = array_filter([
+            $color,
+            str_replace('-', '_', sanitize_title($color)),
+            str_replace('-', '_', sanitize_title($label)),
+        ]);
+
+        foreach ($candidates as $candidate) {
+            if (isset($map[$candidate])) {
+                return $map[$candidate] + ['known' => true];
+            }
+        }
+
+        return [
+            'background' => '#e5e7eb',
+            'border' => '#cbd5e1',
+            'known' => false,
+        ];
+    }
+
+    /**
+     * @return array<string, array{background: string, border: string}>
+     */
+    private function productColorSwatchMap(): array
+    {
+        return [
+            'alpine_green' => ['background' => '#5f7167', 'border' => '#48584f'],
+            'graphite' => ['background' => '#3d4046', 'border' => '#24272c'],
+            'silver' => ['background' => '#f2f3f5', 'border' => '#c8d0da'],
+            'gold' => ['background' => '#ead7b8', 'border' => '#c8aa78'],
+            'sierra_blue' => ['background' => '#9aa9b8', 'border' => '#788898'],
+            'midnight' => ['background' => '#1f2937', 'border' => '#111827'],
+            'space_gray' => ['background' => '#62666f', 'border' => '#4b4f57'],
+            'black' => ['background' => '#151515', 'border' => '#0b0b0b'],
+            'white' => ['background' => '#f8fafc', 'border' => '#d7dee8'],
+            'red' => ['background' => '#bf1d2d', 'border' => '#9f1522'],
+            'blue' => ['background' => '#4f6f9f', 'border' => '#39567f'],
+            'green' => ['background' => '#687d66', 'border' => '#516450'],
+            'purple' => ['background' => '#b8a9d9', 'border' => '#9485b9'],
+            'pink' => ['background' => '#f3c4cf', 'border' => '#d99aaa'],
+            'yellow' => ['background' => '#f4d76a', 'border' => '#d1b34a'],
+        ];
     }
 
     private function storageLabel(string $storage): string
