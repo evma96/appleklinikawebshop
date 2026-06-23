@@ -88,8 +88,8 @@ final class ProductFrontendDisplay
             .appleklinika-product-gallery__thumb:hover{transform:translateY(-2px)}
             .appleklinika-product-gallery__thumb.is-selected{border-color:#d6001c;box-shadow:0 0 0 3px rgba(214,0,28,.12),0 12px 28px rgba(15,23,42,.08)}
             .appleklinika-product-gallery__thumb img{display:block;width:100%;aspect-ratio:1/1;object-fit:contain;border-radius:12px;background:#f8fafc}
-            .appleklinika-buy-panel{position:sticky;top:24px;display:grid;gap:13px;padding:26px;border:1px solid #e5e7eb;border-radius:22px;background:#fff;box-shadow:0 24px 58px rgba(15,23,42,.1)}
-            .admin-bar .appleklinika-buy-panel{top:56px}
+            .appleklinika-buy-panel{position:static;top:auto;display:grid;gap:13px;padding:26px;border:1px solid #e5e7eb;border-radius:22px;background:#fff;box-shadow:0 24px 58px rgba(15,23,42,.1)}
+            .admin-bar .appleklinika-buy-panel{top:auto}
             .appleklinika-stock-badge{display:inline-flex;width:max-content;align-items:center;padding:7px 12px;border-radius:999px;background:#fef2f2;color:#b91c1c;font-size:13px;font-weight:850}
             .appleklinika-stock-badge--out{background:#fff7ed;color:#c2410c}
             .appleklinika-buy-panel h1{margin:0;font-size:30px!important;line-height:1.08!important;letter-spacing:0;color:#111820;font-weight:850}
@@ -119,8 +119,8 @@ final class ProductFrontendDisplay
             .appleklinika-product-assurance{padding:0}
             .appleklinika-product-assurance .appleklinika-trust-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
             .appleklinika-buy-panel > p:empty{display:none!important;margin:0!important}
-            .appleklinika-product-below-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(280px,.84fr);gap:22px;align-items:start}
-            .appleklinika-below-panel{display:grid;gap:16px;min-width:0;padding:20px;border:1px solid #e6ebf2;border-radius:24px;background:#fff;box-shadow:0 18px 46px rgba(15,23,42,.06)}
+            .appleklinika-product-below-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(280px,.84fr);gap:22px;align-items:stretch}
+            .appleklinika-below-panel{display:grid;align-content:start;gap:16px;min-width:0;height:100%;padding:20px;border:1px solid #e6ebf2;border-radius:24px;background:#fff;box-shadow:0 18px 46px rgba(15,23,42,.06)}
             .appleklinika-below-panel__heading{display:grid;gap:5px}
             .appleklinika-below-panel__heading h2{margin:0;color:#111820;font-size:21px;line-height:1.16;font-weight:850}
             .appleklinika-below-panel__heading p{margin:0;color:#667085;font-size:13px;line-height:1.45;font-weight:650}
@@ -133,9 +133,14 @@ final class ProductFrontendDisplay
             .appleklinika-below-panel .appleklinika-config-card__meta{font-size:10.5px}
             .appleklinika-below-panel .appleklinika-config-card--color{min-height:76px;padding:9px 7px 8px}
             .appleklinika-below-panel .appleklinika-color-swatch{width:34px;height:34px}
+            .appleklinika-below-panel .appleklinika-config-card--color .appleklinika-config-card__label{max-height:none;font-size:11.5px;line-height:1.18;overflow:visible}
             .appleklinika-below-panel .appleklinika-config-card--color.is-selected:after,.appleklinika-below-panel .appleklinika-config-card--color.is-active:after{right:calc(50% - 25px);width:15px;height:15px;font-size:9px}
             .appleklinika-below-panel .appleklinika-config-info{grid-template-columns:1fr;gap:8px}
             .appleklinika-below-panel--support .appleklinika-trust-grid{grid-template-columns:1fr}
+            .appleklinika-below-panel--support .appleklinika-trust-card{min-height:58px;padding:10px 12px}
+            .appleklinika-below-panel--support .appleklinika-trust-card__icon{width:30px;height:30px;flex-basis:30px}
+            .appleklinika-below-panel--support .appleklinika-trust-card strong{font-size:12.5px}
+            .appleklinika-below-panel--support .appleklinika-trust-card span{font-size:11.5px}
             .appleklinika-compact-spec-table{display:grid;border-top:1px solid #eef1f5}
             .appleklinika-compact-spec-row{display:grid;grid-template-columns:minmax(92px,.45fr) minmax(0,1fr);gap:10px;padding:10px 0;border-bottom:1px solid #eef1f5}
             .appleklinika-compact-spec-row span{color:#667085;font-size:12px;font-weight:750}
@@ -167,7 +172,7 @@ final class ProductFrontendDisplay
             .appleklinika-config-card--color{display:grid;justify-items:center;align-content:start;min-height:86px;padding:10px 8px 9px;border-radius:16px;gap:7px}
             .appleklinika-config-card--color .appleklinika-config-card__content{justify-content:center}
             .appleklinika-config-card--color .appleklinika-config-card__content{align-items:center;width:100%;height:auto}
-            .appleklinika-config-card--color .appleklinika-config-card__label{display:block;min-height:auto;max-height:32px;text-align:center;white-space:normal;-webkit-line-clamp:initial;-webkit-box-orient:initial}
+            .appleklinika-config-card--color .appleklinika-config-card__label{display:block;min-height:auto;max-height:none;text-align:center;white-space:normal;overflow:visible;-webkit-line-clamp:initial;-webkit-box-orient:initial}
             .appleklinika-color-swatch{display:block;width:40px;height:40px;border:1px solid var(--appleklinika-swatch-border,#cbd5e1);border-radius:50%;background:var(--appleklinika-swatch,#e5e7eb);box-shadow:inset 0 0 0 1px rgba(255,255,255,.45),0 7px 16px rgba(15,23,42,.08)}
             .appleklinika-color-swatch--unknown{background:linear-gradient(135deg,#f8fafc,#d8dee8)}
             .appleklinika-config-card--color.is-selected .appleklinika-color-swatch,.appleklinika-config-card--color.is-active .appleklinika-color-swatch{box-shadow:0 0 0 3px #fff,0 0 0 5px #d6001c,inset 0 0 0 1px rgba(255,255,255,.45),0 9px 18px rgba(214,0,28,.16)}
@@ -646,7 +651,7 @@ final class ProductFrontendDisplay
 
     private function renderBuyPanel(\WC_Product $product, int $productId): void
     {
-        echo '<aside class="appleklinika-buy-panel" aria-label="Vásárlási panel">';
+        echo '<aside class="appleklinika-buy-panel ak-single-product__buybox" aria-label="Vásárlási panel">';
         echo '<span class="' . esc_attr($this->stockBadgeClass($product)) . '" data-appleklinika-stock-badge>' . esc_html($this->stockLabel($product)) . '</span>';
         echo '<h1 data-appleklinika-product-title>' . esc_html($product->get_name()) . '</h1>';
 
@@ -734,7 +739,7 @@ final class ProductFrontendDisplay
         $rows = [
             ['label' => 'Modell', 'value' => $this->modelLabel($modelKey)],
             ['label' => 'Tárhely', 'value' => $this->storageLabel($this->conditionRepository->get($productId, 'storage_capacity'))],
-            ['label' => 'Szín', 'value' => $this->colorLabel($modelKey, $this->conditionRepository->get($productId, 'color'))],
+            ['label' => 'Szín', 'value' => $this->colorDisplayLabel($modelKey, $this->conditionRepository->get($productId, 'color'))],
             ['label' => 'Állapot', 'value' => $this->gradeLabel($this->conditionRepository->get($productId, 'overall_grade'))],
             ['label' => 'Akkumulátor', 'value' => $this->batteryText($productId)],
             ['label' => 'Garancia', 'value' => $this->warrantyLabel($this->conditionRepository->get($productId, 'warranty_duration'))],
@@ -905,7 +910,7 @@ final class ProductFrontendDisplay
     {
         $currentPrice = $this->numericPrice($product);
         $modelKey = $this->conditionRepository->get($productId, 'device_model');
-        $color = $this->colorLabel(
+        $color = $this->colorDisplayLabel(
             $modelKey,
             $this->conditionRepository->get($productId, 'color')
         );
@@ -940,11 +945,13 @@ final class ProductFrontendDisplay
         $this->renderCompactInfoCards($warranty, $accessories, $this->stockLabel($product), $simConfig);
         echo '</div>';
 
-        echo '<div class="appleklinika-below-panel appleklinika-below-panel--support">';
+        $infoPanel = $this->productInfoPanelContent($productId);
+
+        echo '<div class="appleklinika-below-panel appleklinika-below-panel--support ak-single-product__info-panel">';
         echo '<div class="appleklinika-below-panel__heading">';
-        echo '<span class="appleklinika-section-kicker">Biztonságos vásárlás</span>';
-        echo '<h2>Apple Klinika garanciák</h2>';
-        echo '<p>Valós termékadatok, ellenőrzött készülék és átlátható vásárlási információk.</p>';
+        echo '<span class="appleklinika-section-kicker">' . esc_html($infoPanel['kicker']) . '</span>';
+        echo '<h2>' . esc_html($infoPanel['title']) . '</h2>';
+        echo '<p>' . esc_html($infoPanel['intro']) . '</p>';
         echo '</div>';
         $this->renderTrustCards($productId);
         echo '</div>';
@@ -996,7 +1003,7 @@ final class ProductFrontendDisplay
             $image = $this->productImages($product)[0] ?? $fallbackImage;
             $items[$colorKey] = [
                 'value' => $colorKey,
-                'label' => $this->colorLabel($modelKey, $colorKey),
+                'label' => $this->colorDisplayLabel($modelKey, $colorKey),
                 'url' => $product->get_id() === $currentProduct->get_id() ? '' : get_permalink($product->get_id()),
                 'selected' => $product->get_id() === $currentProduct->get_id(),
                 'image' => $image,
@@ -1379,7 +1386,7 @@ final class ProductFrontendDisplay
      */
     private function renderProductOptions(int $productId, array $image): void
     {
-        $color = $this->colorLabel(
+        $color = $this->colorDisplayLabel(
             $this->conditionRepository->get($productId, 'device_model'),
             $this->conditionRepository->get($productId, 'color')
         );
@@ -1430,7 +1437,7 @@ final class ProductFrontendDisplay
     {
         echo '<div class="appleklinika-trust-grid" data-appleklinika-trust>';
 
-        foreach ($this->productTrustBlocks($productId) as $block) {
+        foreach ($this->productInfoPanelContent($productId)['items'] as $block) {
             echo '<div class="appleklinika-trust-card">';
             echo '<span class="appleklinika-trust-card__icon">' . esc_html($block['icon']) . '</span>';
             echo '<div><strong>' . esc_html($block['title']) . '</strong><span>' . esc_html($block['text']) . '</span></div>';
@@ -1441,40 +1448,49 @@ final class ProductFrontendDisplay
     }
 
     /**
-     * Central product-page trust copy. Replace this later with an admin-backed content source if the policy text changes.
+     * Central product-page trust copy. This can be replaced or extended later with an admin-backed content source.
      *
-     * @return array<int, array{icon: string, title: string, text: string}>
+     * @return array{kicker: string, title: string, intro: string, items: array<int, array{icon: string, title: string, text: string}>}
      */
-    private function productTrustBlocks(int $productId): array
+    private function productInfoPanelContent(int $productId): array
     {
         $warranty = $this->warrantyLabel($this->conditionRepository->get($productId, 'warranty_duration'));
-        $blocks = [];
+        $items = [];
 
         if ($warranty !== '') {
-            $blocks[] = [
+            $items[] = [
                 'icon' => '1',
                 'title' => $warranty . ' garancia',
                 'text' => 'Termékadatok alapján',
             ];
         }
 
-        $blocks[] = [
+        $items[] = [
             'icon' => '✓',
             'title' => 'Ellenőrzött készülék',
             'text' => 'Apple Klinika állapotadatokkal',
         ];
-        $blocks[] = [
+        $items[] = [
             'icon' => '↺',
             'title' => 'Visszaküldés',
             'text' => 'A visszaküldési tájékoztató szerint',
         ];
-        $blocks[] = [
+        $items[] = [
             'icon' => '•',
-            'title' => 'Valós termékfotók',
-            'text' => 'A feltöltött WooCommerce galériából',
+            'title' => 'Átlátható adatok',
+            'text' => 'Valós termékadatok egy helyen',
         ];
 
-        return array_slice($blocks, 0, 4);
+        $content = [
+            'kicker' => 'Biztonságos vásárlás',
+            'title' => 'Apple Klinika garanciák',
+            'intro' => 'Valós termékadatok, ellenőrzött készülékek és átlátható vásárlási információk.',
+            'items' => array_slice($items, 0, 4),
+        ];
+
+        $filtered = apply_filters('appleklinika_single_product_info_panel_content', $content, $productId);
+
+        return is_array($filtered) ? array_merge($content, $filtered) : $content;
     }
 
     /**
@@ -1637,6 +1653,83 @@ final class ProductFrontendDisplay
         return $color;
     }
 
+    private function colorDisplayLabel(string $model, string $color): string
+    {
+        if ($color === '') {
+            return '';
+        }
+
+        $rawLabel = trim($this->colorLabel($model, $color));
+
+        if ($rawLabel === '') {
+            return $color;
+        }
+
+        if (preg_match('/^\(PRODUCT\)\s*RED$/i', $rawLabel) === 1) {
+            return '(PRODUCT)RED';
+        }
+
+        if (preg_match('/\(([^)]+)\)\s*$/u', $rawLabel, $matches) === 1) {
+            return trim((string) $matches[1]);
+        }
+
+        $labelMap = $this->colorDisplayLabelMap();
+        $labelKey = str_replace('-', '_', sanitize_title($rawLabel));
+
+        return $labelMap[$color] ?? $labelMap[$labelKey] ?? $rawLabel;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function colorDisplayLabelMap(): array
+    {
+        return [
+            'alpine_green' => 'Alpine Green',
+            'black' => 'Black',
+            'black_titanium' => 'Black Titanium',
+            'blue' => 'Blue',
+            'blue_titanium' => 'Blue Titanium',
+            'cloud_white' => 'Cloud White',
+            'coral' => 'Coral',
+            'cosmic_orange' => 'Cosmic Orange',
+            'deep_blue' => 'Deep Blue',
+            'deep_purple' => 'Deep Purple',
+            'desert_titanium' => 'Desert Titanium',
+            'gold' => 'Gold',
+            'gold_titanium' => 'Gold Titanium',
+            'graphite' => 'Graphite',
+            'green' => 'Green',
+            'jet_black' => 'Jet Black',
+            'lavender' => 'Lavender',
+            'light_gold' => 'Light Gold',
+            'midnight' => 'Midnight',
+            'midnight_green' => 'Midnight Green',
+            'mist_blue' => 'Mist Blue',
+            'natural_titanium' => 'Natural Titanium',
+            'pacific_blue' => 'Pacific Blue',
+            'pink' => 'Pink',
+            'product_red' => '(PRODUCT)RED',
+            'purple' => 'Purple',
+            'red' => 'Red',
+            'rose_gold' => 'Rose Gold',
+            'sage' => 'Sage',
+            'sierra_blue' => 'Sierra Blue',
+            'silver' => 'Silver',
+            'sky_blue' => 'Sky Blue',
+            'slate_titanium' => 'Slate Titanium',
+            'soft_pink' => 'Soft Pink',
+            'space_black' => 'Space Black',
+            'space_gray' => 'Space Gray',
+            'starlight' => 'Starlight',
+            'teal' => 'Teal',
+            'ultramarine' => 'Ultramarine',
+            'white' => 'White',
+            'white_titanium' => 'White Titanium',
+            'yellow' => 'Yellow',
+        ];
+    }
+
     /**
      * @return array{background: string, border: string, known: bool}
      */
@@ -1672,17 +1765,42 @@ final class ProductFrontendDisplay
             'graphite' => ['background' => '#3d4046', 'border' => '#24272c'],
             'silver' => ['background' => '#f2f3f5', 'border' => '#c8d0da'],
             'gold' => ['background' => '#ead7b8', 'border' => '#c8aa78'],
+            'light_gold' => ['background' => '#f0d69a', 'border' => '#cfad68'],
             'sierra_blue' => ['background' => '#9aa9b8', 'border' => '#788898'],
             'midnight' => ['background' => '#1f2937', 'border' => '#111827'],
+            'space_black' => ['background' => '#1b1b1f', 'border' => '#0d0d10'],
             'space_gray' => ['background' => '#62666f', 'border' => '#4b4f57'],
             'black' => ['background' => '#151515', 'border' => '#0b0b0b'],
             'white' => ['background' => '#f8fafc', 'border' => '#d7dee8'],
+            'starlight' => ['background' => '#f3eadf', 'border' => '#d6c6b3'],
             'red' => ['background' => '#bf1d2d', 'border' => '#9f1522'],
+            'product_red' => ['background' => '#bf1d2d', 'border' => '#9f1522'],
             'blue' => ['background' => '#4f6f9f', 'border' => '#39567f'],
+            'sky_blue' => ['background' => '#9fc4df', 'border' => '#77a4c1'],
+            'blue_titanium' => ['background' => '#4d5f73', 'border' => '#344558'],
+            'ultramarine' => ['background' => '#556ec7', 'border' => '#3f52a1'],
+            'mist_blue' => ['background' => '#b9c9d8', 'border' => '#8ea3b5'],
+            'deep_blue' => ['background' => '#223858', 'border' => '#17263d'],
             'green' => ['background' => '#687d66', 'border' => '#516450'],
+            'midnight_green' => ['background' => '#46584d', 'border' => '#334139'],
+            'teal' => ['background' => '#79b4ac', 'border' => '#58938a'],
+            'sage' => ['background' => '#9ba991', 'border' => '#748269'],
             'purple' => ['background' => '#b8a9d9', 'border' => '#9485b9'],
+            'deep_purple' => ['background' => '#594f63', 'border' => '#3f3948'],
+            'lavender' => ['background' => '#c9bee9', 'border' => '#a89bd1'],
             'pink' => ['background' => '#f3c4cf', 'border' => '#d99aaa'],
+            'soft_pink' => ['background' => '#f7cdd7', 'border' => '#dfa9b7'],
+            'rose_gold' => ['background' => '#e7b9a7', 'border' => '#c7937f'],
             'yellow' => ['background' => '#f4d76a', 'border' => '#d1b34a'],
+            'coral' => ['background' => '#ff8a73', 'border' => '#d86855'],
+            'cosmic_orange' => ['background' => '#d36b35', 'border' => '#a94f24'],
+            'black_titanium' => ['background' => '#353638', 'border' => '#202123'],
+            'white_titanium' => ['background' => '#e7e3dc', 'border' => '#c7c0b6'],
+            'natural_titanium' => ['background' => '#b8b2a8', 'border' => '#91897f'],
+            'desert_titanium' => ['background' => '#c9a27f', 'border' => '#a17c5d'],
+            'slate_titanium' => ['background' => '#686b70', 'border' => '#4f5256'],
+            'gold_titanium' => ['background' => '#d7bd8f', 'border' => '#ae956a'],
+            'jet_black' => ['background' => '#050505', 'border' => '#000000'],
         ];
     }
 
