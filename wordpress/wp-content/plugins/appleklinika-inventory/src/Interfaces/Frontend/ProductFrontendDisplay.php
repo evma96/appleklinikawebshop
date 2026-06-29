@@ -10,6 +10,13 @@ use Appleklinika\Inventory\Infrastructure\WordPress\WooProductConditionRepositor
 
 final class ProductFrontendDisplay
 {
+    private const OFFICIAL_SPECS_BY_MODEL_OPTION = 'appleklinika_official_specs_by_model';
+    private const OFFICIAL_SPECS_META_KEY = '_ak_official_specs';
+    private const OFFICIAL_SPECS_SOURCE_URL_META_KEY = '_ak_official_specs_source_url';
+    private const OFFICIAL_SPECS_SOURCE_TITLE_META_KEY = '_ak_official_specs_source_title';
+    private const OFFICIAL_SPECS_FETCHED_AT_META_KEY = '_ak_official_specs_fetched_at';
+    private const OFFICIAL_SPECS_MODEL_KEY_META_KEY = '_ak_official_specs_model_key';
+
     private bool $hasRendered = false;
 
     public function __construct(
@@ -75,9 +82,11 @@ final class ProductFrontendDisplay
             .appleklinika-product-shell button{font-family:inherit}
             .appleklinika-product-hero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(380px,410px);gap:34px;align-items:start}
             .appleklinika-product-gallery{min-width:0}
-            .appleklinika-product-gallery__stage{position:relative;display:flex;align-items:center;justify-content:center;min-height:468px;border:1px solid #e7edf5;border-radius:22px;background:radial-gradient(circle at 50% 42%,#fff 0%,#f8fafc 58%,#eef2f7 100%);overflow:hidden;box-shadow:0 22px 52px rgba(15,23,42,.08)}
-            .appleklinika-product-gallery__stage img{display:block;width:auto;max-width:94%;height:auto;max-height:442px;object-fit:contain;filter:drop-shadow(0 18px 30px rgba(15,23,42,.13));transition:transform .22s ease}
-            .appleklinika-product-gallery__stage:hover img{transform:translateY(-4px) scale(1.018)}
+            .appleklinika-product-gallery__stage{--ak-gallery-zoom-x:50%;--ak-gallery-zoom-y:50%;position:relative;display:flex;align-items:center;justify-content:center;width:min(540px,100%);aspect-ratio:3/4;margin:0 auto;padding:28px 34px;border:1px solid #e7edf5;border-radius:28px;background:radial-gradient(circle at 50% 42%,#fff 0%,#f8fafc 54%,#eef2f7 100%);overflow:hidden;box-shadow:0 22px 52px rgba(15,23,42,.08);cursor:default}
+            .appleklinika-product-gallery__stage.is-object-hover{cursor:zoom-in}
+            .appleklinika-product-gallery__stage img{display:block;width:auto;max-width:84%;height:auto;max-height:90%;object-fit:contain;filter:drop-shadow(0 22px 36px rgba(15,23,42,.15));transform-origin:var(--ak-gallery-zoom-x) var(--ak-gallery-zoom-y);transition:transform .18s ease,transform-origin .04s linear}
+            .appleklinika-product-gallery--phone-portrait .appleklinika-product-gallery__stage img{max-width:86%;max-height:92%}
+            .appleklinika-product-gallery__stage.is-zooming img{transform:scale(2.35)}
             .appleklinika-product-gallery__nav,.appleklinika-product-gallery__zoom{position:absolute;border:0;cursor:pointer}
             .appleklinika-product-gallery__nav{top:50%;transform:translateY(-50%);display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.92);color:#151b24;font-size:26px;font-weight:850;box-shadow:0 10px 28px rgba(17,24,32,.14)}
             .appleklinika-product-gallery__nav--prev{left:18px}
@@ -191,9 +200,21 @@ final class ProductFrontendDisplay
             .ak-single-product__description p:last-child{margin-bottom:0}
             .ak-single-product__description ul,.ak-single-product__description ol{margin:12px 0 0;padding-left:20px;color:#4b5563;font-size:15px;line-height:1.65}
             .ak-single-product__data .appleklinika-spec-table{display:grid;margin-top:8px;border-top:1px solid #eef2f7}
+            .ak-single-product__data .appleklinika-spec-table--official{margin-top:12px;border-top:1px solid #e6ebf2}
             .ak-single-product__data .appleklinika-spec-row{display:grid;grid-template-columns:minmax(132px,.38fr) minmax(0,1fr);gap:18px;align-items:start;padding:14px 0;border-bottom:1px solid #eef2f7}
+            .ak-single-product__data .appleklinika-spec-table--official .appleklinika-spec-row:nth-child(odd){background:#fbfcfe}
+            .ak-single-product__data .appleklinika-spec-table--official .appleklinika-spec-row{padding:13px 12px}
             .ak-single-product__data .appleklinika-spec-row span{color:#6b7585;font-size:13px;font-weight:750}
             .ak-single-product__data .appleklinika-spec-row strong{color:#18202b;font-size:14px;line-height:1.35;font-weight:850}
+            .appleklinika-spec-toggle{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:max-content;margin-top:14px;padding:10px 14px;border:1px solid #f1b8c0;border-radius:999px;background:#fff;color:#d6001c;font-size:13px;font-weight:850;cursor:pointer;transition:background .18s ease,border-color .18s ease,box-shadow .18s ease}
+            .appleklinika-spec-toggle:hover{border-color:#d6001c;background:#fff6f7;box-shadow:0 10px 22px rgba(214,0,28,.08)}
+            .appleklinika-spec-toggle__icon{font-size:14px;line-height:1;transition:transform .18s ease}
+            .appleklinika-spec-toggle[aria-expanded="true"] .appleklinika-spec-toggle__icon{transform:rotate(180deg)}
+            .appleklinika-spec-official[hidden]{display:none!important}
+            .appleklinika-spec-official{display:grid;margin-top:10px}
+            .appleklinika-spec-source{margin:0 0 8px;color:#667085;font-size:12px;line-height:1.45;font-weight:650}
+            .appleklinika-spec-source a{color:#d6001c;font-weight:800;text-decoration:none}
+            .appleklinika-spec-source a:hover{text-decoration:underline}
             .ak-single-product__reviews .appleklinika-review-list{display:grid;gap:12px}
             .ak-single-product__reviews .appleklinika-review-card{padding:15px;border:1px solid #edf1f6;border-radius:16px;background:#fbfcfd}
             .ak-single-product__reviews .appleklinika-review-card strong{display:block;margin-bottom:6px;color:#111820;font-size:14px;line-height:1.25;font-weight:850}
@@ -213,16 +234,30 @@ final class ProductFrontendDisplay
             .ak-single-product__related-price ins{color:#111820;font-size:13.5px;font-weight:900;text-decoration:none}
             .ak-single-product__related-price .amount{color:inherit;font-size:inherit;font-weight:inherit;white-space:nowrap}
             .ak-single-product__related-saving{display:inline-flex;width:max-content;max-width:100%;padding:3px 7px;border-radius:999px;background:#fef2f2;color:#b91c1c;font-size:10.5px;line-height:1.1;font-weight:850}
-            .appleklinika-lightbox{position:fixed;inset:0;z-index:100000;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(10,14,20,.88)}
+            body.ak-single-product-lightbox-lock{overflow:hidden}
+            .appleklinika-lightbox{position:fixed;inset:0;z-index:100000;display:none;align-items:center;justify-content:center;padding:24px}
             .appleklinika-lightbox.is-open{display:flex}
-            .appleklinika-lightbox__image{max-width:min(920px,90vw);max-height:82vh;border-radius:18px;background:#fff;object-fit:contain}
-            .appleklinika-lightbox__close,.appleklinika-lightbox__nav{position:absolute;border:0;border-radius:12px;background:#fff;color:#151b24;font-weight:900;cursor:pointer}
-            .appleklinika-lightbox__close{top:16px;right:16px;min-height:40px;padding:0 14px}
-            .appleklinika-lightbox__nav{top:50%;transform:translateY(-50%);display:flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:50%;font-size:28px}
-            .appleklinika-lightbox__nav--prev{left:16px}
-            .appleklinika-lightbox__nav--next{right:16px}
-            @media (max-width:1100px){body.single-product main{padding:24px 18px 56px}.appleklinika-product-hero,.appleklinika-product-below-hero,.appleklinika-product-content-grid{grid-template-columns:1fr}.appleklinika-buy-panel,.appleklinika-related-panel{position:static}.appleklinika-product-gallery__stage{min-height:460px}.appleklinika-product-gallery__stage img{max-height:420px}.appleklinika-product-assurance .appleklinika-trust-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.appleklinika-config-grid,.appleklinika-config-row{grid-template-columns:repeat(2,minmax(0,1fr))}.appleklinika-config-info{grid-template-columns:repeat(2,minmax(0,1fr))}}
-            @media (max-width:640px){body.single-product main{padding:16px 12px 42px}.appleklinika-product-shell{gap:26px}.appleklinika-product-hero{gap:22px}.appleklinika-product-gallery__stage{min-height:0;aspect-ratio:4/3;border-radius:22px}.appleklinika-product-gallery__stage img{max-width:86%;max-height:86%}.appleklinika-product-gallery__thumbs{justify-content:flex-start;gap:8px;margin-top:12px}.appleklinika-product-gallery__thumb{flex-basis:60px;padding:6px;border-radius:14px}.appleklinika-product-gallery__nav{width:34px;height:34px;font-size:22px}.appleklinika-product-gallery__nav--prev{left:10px}.appleklinika-product-gallery__nav--next{right:10px}.appleklinika-product-gallery__zoom{right:10px;bottom:10px;min-height:34px}.appleklinika-buy-panel,.appleklinika-product-data,.appleklinika-product-panel{padding:20px;border-radius:22px}.appleklinika-buy-panel h1{font-size:27px!important}.appleklinika-price-stack__current{font-size:34px}.appleklinika-cart-area form.cart{grid-template-columns:1fr}.appleklinika-config-grid,.appleklinika-config-row,.appleklinika-config-info,.appleklinika-trust-grid{grid-template-columns:1fr}.appleklinika-spec-row{grid-template-columns:1fr;gap:4px}.appleklinika-lightbox__nav{width:36px;height:36px}.appleklinika-lightbox__nav--prev{left:8px}.appleklinika-lightbox__nav--next{right:8px}}
+            .appleklinika-lightbox__overlay{position:absolute;inset:0;border:0;background:rgba(4,8,15,.82);cursor:zoom-out;backdrop-filter:blur(12px)}
+            .appleklinika-lightbox__dialog{position:relative;z-index:1;display:grid;gap:14px;width:min(780px,calc(100vw - 48px));max-height:calc(100vh - 48px);padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+            .appleklinika-lightbox__stage{position:relative;display:grid;grid-template-columns:40px minmax(0,1fr) 40px;gap:10px;align-items:center}
+            .appleklinika-lightbox__viewport{--ak-lightbox-zoom-x:50%;--ak-lightbox-zoom-y:50%;--ak-lightbox-zoom-scale:1;position:relative;display:flex;align-items:center;justify-content:center;width:100%;max-width:590px;aspect-ratio:3/4;min-height:0;margin:0 auto;border:1px solid rgba(255,255,255,.12);border-radius:30px;background:radial-gradient(circle at 50% 40%,rgba(255,255,255,.16) 0%,rgba(31,41,55,.42) 58%,rgba(8,13,23,.54) 100%);overflow:hidden;cursor:default;box-shadow:0 34px 90px rgba(0,0,0,.42)}
+            .appleklinika-lightbox__viewport.is-object-hover{cursor:zoom-in}
+            .appleklinika-lightbox__viewport.is-zoomed{cursor:crosshair}
+            .appleklinika-lightbox__image{display:block!important;width:auto!important;max-width:min(84%,480px)!important;height:auto!important;max-height:min(86%,660px)!important;object-fit:contain;transform:scale(var(--ak-lightbox-zoom-scale));transform-origin:var(--ak-lightbox-zoom-x) var(--ak-lightbox-zoom-y);transition:transform .2s ease,transform-origin .04s linear;filter:drop-shadow(0 24px 38px rgba(15,23,42,.24))}
+            .appleklinika-lightbox__close,.appleklinika-lightbox__nav,.appleklinika-lightbox__zoom-button{font-weight:900;cursor:pointer}
+            .appleklinika-lightbox__close{position:absolute;top:14px;right:calc(50% - 312px);z-index:4;display:flex;align-items:center;justify-content:center;width:40px;height:40px;border:1px solid rgba(255,255,255,.16);border-radius:50%;background:rgba(8,13,23,.72);color:#fff;font-size:24px;line-height:1;box-shadow:0 16px 34px rgba(0,0,0,.26);backdrop-filter:blur(14px)}
+            .appleklinika-lightbox__nav{display:flex;align-items:center;justify-content:center;width:40px;height:40px;border:1px solid rgba(255,255,255,.16);border-radius:50%;background:rgba(255,255,255,.1);color:#fff;font-size:28px;line-height:1;box-shadow:0 16px 34px rgba(0,0,0,.22);backdrop-filter:blur(14px)}
+            .appleklinika-lightbox__zoom-tools{position:absolute;left:16px;top:16px;z-index:3;display:flex;align-items:center;gap:7px;padding:6px;border-radius:999px;background:rgba(8,13,23,.64);border:1px solid rgba(255,255,255,.16);box-shadow:0 16px 34px rgba(0,0,0,.22);backdrop-filter:blur(14px)}
+            .appleklinika-lightbox__zoom-button{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border:0;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;font-size:17px;line-height:1}
+            .appleklinika-lightbox__zoom-label{min-width:42px;color:#fff;font-size:13px;font-weight:850;text-align:center}
+            .appleklinika-lightbox__nav[hidden],.appleklinika-lightbox__thumbs[hidden]{display:none!important}
+            .appleklinika-lightbox__thumbs{display:flex;justify-content:center;gap:10px;overflow-x:auto;padding:2px 4px 4px}
+            .appleklinika-lightbox__thumb{flex:0 0 64px;border:1px solid rgba(255,255,255,.14);border-radius:15px;background:rgba(255,255,255,.09);padding:6px;cursor:pointer;box-shadow:0 14px 28px rgba(0,0,0,.18);transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease}
+            .appleklinika-lightbox__thumb:hover{transform:translateY(-2px)}
+            .appleklinika-lightbox__thumb.is-selected{border-color:#d6001c;box-shadow:0 0 0 3px rgba(214,0,28,.14),0 12px 26px rgba(15,23,42,.1)}
+            .appleklinika-lightbox__thumb img{display:block;width:100%;aspect-ratio:1/1;object-fit:contain;border-radius:12px;background:rgba(255,255,255,.08)}
+            @media (max-width:1100px){body.single-product main{padding:24px 18px 56px}.appleklinika-product-hero,.appleklinika-product-below-hero,.appleklinika-product-content-grid{grid-template-columns:1fr}.appleklinika-buy-panel,.appleklinika-related-panel{position:static}.appleklinika-product-gallery__stage{width:min(520px,100%);padding:26px 30px}.appleklinika-product-gallery__stage img{max-height:90%}.appleklinika-product-assurance .appleklinika-trust-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.appleklinika-config-grid,.appleklinika-config-row{grid-template-columns:repeat(2,minmax(0,1fr))}.appleklinika-config-info{grid-template-columns:repeat(2,minmax(0,1fr))}}
+            @media (max-width:640px){body.single-product main{padding:16px 12px 42px}.appleklinika-product-shell{gap:26px}.appleklinika-product-hero{gap:22px}.appleklinika-product-gallery__stage{width:100%;aspect-ratio:3/4;padding:24px 18px;border-radius:22px}.appleklinika-product-gallery__stage img{max-width:92%;max-height:92%}.appleklinika-product-gallery__thumbs{justify-content:flex-start;gap:8px;margin-top:12px}.appleklinika-product-gallery__thumb{flex-basis:60px;padding:6px;border-radius:14px}.appleklinika-product-gallery__nav{width:34px;height:34px;font-size:22px}.appleklinika-product-gallery__nav--prev{left:10px}.appleklinika-product-gallery__nav--next{right:10px}.appleklinika-product-gallery__zoom{right:10px;bottom:10px;min-height:34px}.appleklinika-buy-panel,.appleklinika-product-data,.appleklinika-product-panel{padding:20px;border-radius:22px}.appleklinika-buy-panel h1{font-size:27px!important}.appleklinika-price-stack__current{font-size:34px}.appleklinika-cart-area form.cart{grid-template-columns:1fr}.appleklinika-config-grid,.appleklinika-config-row,.appleklinika-config-info,.appleklinika-trust-grid{grid-template-columns:1fr}.appleklinika-spec-row{grid-template-columns:1fr;gap:4px}.appleklinika-lightbox{padding:10px}.appleklinika-lightbox__dialog{width:calc(100vw - 20px);max-height:calc(100vh - 20px);padding:12px;border-radius:24px}.appleklinika-lightbox__stage{grid-template-columns:32px minmax(0,1fr) 32px;gap:6px}.appleklinika-lightbox__viewport{width:100%;max-width:none;aspect-ratio:3/4;border-radius:20px}.appleklinika-lightbox__image{max-width:92%;max-height:90%}.appleklinika-lightbox__nav{width:32px;height:32px;font-size:23px}.appleklinika-lightbox__thumbs{justify-content:flex-start}.appleklinika-lightbox__thumb{flex-basis:58px;padding:6px}.appleklinika-lightbox__close{top:10px;right:10px;width:36px;height:36px}.appleklinika-lightbox__zoom-tools{left:10px;top:10px}.appleklinika-lightbox__zoom-label{min-width:36px}}
         </style>';
     }
 
@@ -245,42 +280,320 @@ final class ProductFrontendDisplay
                     window.jQuery(document.body).on("added_to_cart", showAddFeedback);
                 }
 
+                const canHoverZoom = window.matchMedia && window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+                const imageHitCache = new Map();
+
+                function primaryGallery() {
+                    return document.querySelector(".appleklinika-product-gallery");
+                }
+
+                function galleryThumbs(gallery) {
+                    return gallery ? Array.from(gallery.querySelectorAll("[data-appleklinika-gallery-thumb]")) : [];
+                }
+
+                function normalizedIndex(index, count) {
+                    return count > 0 ? (index + count) % count : 0;
+                }
+
+                function applyThumbToImage(image, thumb) {
+                    if (!image || !thumb) return;
+                    image.src = thumb.dataset.full || "";
+                    if (thumb.dataset.srcset) {
+                        image.srcset = thumb.dataset.srcset;
+                    } else {
+                        image.removeAttribute("srcset");
+                    }
+                    const thumbImage = thumb.querySelector("img");
+                    image.alt = thumbImage ? thumbImage.alt || "" : "";
+                }
+
+                function updateThumbState(thumbs, index) {
+                    thumbs.forEach(function (item, itemIndex) {
+                        item.classList.toggle("is-selected", itemIndex === index);
+                    });
+                }
+
+                function updateLightboxControls(lightbox, imageCount) {
+                    if (!lightbox) return;
+                    const isSingle = imageCount <= 1;
+                    lightbox.querySelectorAll("[data-appleklinika-lightbox-direction]").forEach(function (button) {
+                        button.hidden = isSingle;
+                    });
+                    const thumbStrip = lightbox.querySelector("[data-appleklinika-lightbox-thumbs]");
+                    if (thumbStrip) {
+                        thumbStrip.hidden = isSingle;
+                    }
+                }
+
+                function escapeAttribute(value) {
+                    const entityMap = {"&": "&amp;", "<": "&lt;", ">": "&gt;"};
+                    return String(value || "").replace(/[&<>]/g, function (character) {
+                        return entityMap[character] || character;
+                    }).replace(/"/g, "&quot;");
+                }
+
+                function renderLightboxThumbs(gallery) {
+                    const lightbox = document.querySelector("[data-appleklinika-lightbox]");
+                    const thumbStrip = lightbox ? lightbox.querySelector("[data-appleklinika-lightbox-thumbs]") : null;
+                    const thumbs = galleryThumbs(gallery);
+                    const activeIndex = normalizedIndex(Number(gallery?.dataset.currentIndex || "0"), Math.max(thumbs.length, 1));
+                    if (!lightbox || !thumbStrip) return;
+
+                    thumbStrip.innerHTML = thumbs.map(function (thumb, index) {
+                        const image = thumb.querySelector("img");
+                        const src = thumb.dataset.full || (image ? image.src : "");
+                        const srcset = thumb.dataset.srcset || "";
+                        const alt = image ? image.alt || "" : "";
+                        return "<button class=\"appleklinika-lightbox__thumb" + (index === activeIndex ? " is-selected" : "") + "\" type=\"button\" data-appleklinika-lightbox-thumb data-index=\"" + index + "\" data-full=\"" + escapeAttribute(src) + "\" data-srcset=\"" + escapeAttribute(srcset) + "\" aria-label=\"Nagyított termékkép " + (index + 1) + "\"><img src=\"" + escapeAttribute(src) + "\" alt=\"" + escapeAttribute(alt) + "\"></button>";
+                    }).join("");
+                    updateLightboxControls(lightbox, thumbs.length);
+                }
+
                 function showGalleryImage(gallery, index) {
                     const stageImage = gallery.querySelector("[data-appleklinika-stage-image]");
-                    const thumbs = Array.from(gallery.querySelectorAll("[data-appleklinika-gallery-thumb]"));
-                        if (!stageImage || thumbs.length === 0) return;
-                    const currentIndex = (index + thumbs.length) % thumbs.length;
+                    const thumbs = galleryThumbs(gallery);
+                    if (!stageImage || thumbs.length === 0) return;
+                    const currentIndex = normalizedIndex(index, thumbs.length);
                     gallery.dataset.currentIndex = String(currentIndex);
-                    const selected = thumbs[currentIndex];
-                        stageImage.src = selected.dataset.full;
-                        if (selected.dataset.srcset) {
-                            stageImage.srcset = selected.dataset.srcset;
-                        } else {
-                            stageImage.removeAttribute("srcset");
+                    applyThumbToImage(stageImage, thumbs[currentIndex]);
+                    updateThumbState(thumbs, currentIndex);
+                    const lightbox = document.querySelector("[data-appleklinika-lightbox]");
+                    if (lightbox?.classList.contains("is-open")) {
+                        showLightboxImage(currentIndex, false);
+                    } else {
+                        const lightboxThumbs = lightbox ? Array.from(lightbox.querySelectorAll("[data-appleklinika-lightbox-thumb]")) : [];
+                        updateThumbState(lightboxThumbs, currentIndex);
+                    }
+                }
+
+                function showLightboxImage(index, syncGallery) {
+                    const gallery = primaryGallery();
+                    const lightbox = document.querySelector("[data-appleklinika-lightbox]");
+                    const lightboxImage = lightbox ? lightbox.querySelector("[data-appleklinika-lightbox-image]") : null;
+                    const thumbs = galleryThumbs(gallery);
+                    if (!gallery || !lightbox || !lightboxImage || thumbs.length === 0) return;
+
+                    const currentIndex = normalizedIndex(index, thumbs.length);
+                    lightbox.dataset.currentIndex = String(currentIndex);
+                    applyThumbToImage(lightboxImage, thumbs[currentIndex]);
+                    resetLightboxZoom();
+                    const lightboxThumbs = Array.from(lightbox.querySelectorAll("[data-appleklinika-lightbox-thumb]"));
+                    updateThumbState(lightboxThumbs, currentIndex);
+
+                    if (syncGallery) {
+                        showGalleryImage(gallery, currentIndex);
+                    }
+                }
+
+                function openLightbox(gallery) {
+                    const lightbox = document.querySelector("[data-appleklinika-lightbox]");
+                    if (!lightbox || !gallery) return;
+                    renderLightboxThumbs(gallery);
+                    showLightboxImage(Number(gallery.dataset.currentIndex || "0"), false);
+                    lightbox.classList.add("is-open");
+                    lightbox.setAttribute("aria-hidden", "false");
+                    document.body.classList.add("ak-single-product-lightbox-lock");
+                    lightbox.querySelector(".appleklinika-lightbox__close")?.focus({ preventScroll: true });
+                }
+
+                function closeLightbox() {
+                    const lightbox = document.querySelector("[data-appleklinika-lightbox].is-open");
+                    if (!lightbox) return;
+                    lightbox.classList.remove("is-open");
+                    lightbox.setAttribute("aria-hidden", "true");
+                    document.body.classList.remove("ak-single-product-lightbox-lock");
+                    lightbox.querySelector(".is-zooming")?.classList.remove("is-zooming");
+                    resetLightboxZoom();
+                }
+
+                const lightboxZoomLevels = [1, 2, 3, 4];
+
+                function lightboxViewport() {
+                    return document.querySelector("[data-appleklinika-lightbox-viewport]");
+                }
+
+                function updateLightboxZoomOrigin(viewport, event) {
+                    if (!viewport || !event) return;
+                    const rect = viewport.getBoundingClientRect();
+                    const x = Math.max(0, Math.min(100, ((event.clientX - rect.left) / rect.width) * 100));
+                    const y = Math.max(0, Math.min(100, ((event.clientY - rect.top) / rect.height) * 100));
+                    viewport.style.setProperty("--ak-lightbox-zoom-x", x.toFixed(2) + "%");
+                    viewport.style.setProperty("--ak-lightbox-zoom-y", y.toFixed(2) + "%");
+                }
+
+                function setLightboxZoom(levelIndex, event) {
+                    const viewport = lightboxViewport();
+                    if (!viewport) return;
+                    const clampedIndex = Math.max(0, Math.min(lightboxZoomLevels.length - 1, levelIndex));
+                    const scale = lightboxZoomLevels[clampedIndex];
+                    viewport.dataset.zoomLevel = String(clampedIndex);
+                    viewport.style.setProperty("--ak-lightbox-zoom-scale", String(scale));
+                    viewport.classList.toggle("is-zoomed", scale > 1);
+                    if (event) {
+                        updateLightboxZoomOrigin(viewport, event);
+                    } else {
+                        viewport.style.setProperty("--ak-lightbox-zoom-x", "50%");
+                        viewport.style.setProperty("--ak-lightbox-zoom-y", "50%");
+                    }
+                    const label = document.querySelector("[data-appleklinika-lightbox-zoom-label]");
+                    if (label) {
+                        label.textContent = scale + "×";
+                    }
+                }
+
+                function stepLightboxZoom(direction, event) {
+                    const viewport = lightboxViewport();
+                    if (!viewport) return;
+                    const currentLevel = Number(viewport.dataset.zoomLevel || "0");
+                    const nextLevel = direction > 0 && currentLevel >= lightboxZoomLevels.length - 1 ? 0 : currentLevel + direction;
+                    setLightboxZoom(nextLevel < 0 ? lightboxZoomLevels.length - 1 : nextLevel, event);
+                }
+
+                function resetLightboxZoom() {
+                    setLightboxZoom(0);
+                }
+
+                function pointerPositionInImage(image, event) {
+                    if (!image || !event) return null;
+
+                    const rect = image.getBoundingClientRect();
+
+                    if (rect.width <= 0 || rect.height <= 0) return null;
+                    if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) {
+                        return null;
+                    }
+
+                    return {
+                        x: Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)),
+                        y: Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height)),
+                        rect: rect
+                    };
+                }
+
+                function imageHitData(image) {
+                    if (!image || !image.complete || !image.naturalWidth || !image.naturalHeight) {
+                        return null;
+                    }
+
+                    const source = image.currentSrc || image.src || "";
+                    const cacheKey = source + "|" + image.naturalWidth + "x" + image.naturalHeight;
+
+                    if (imageHitCache.has(cacheKey)) {
+                        return imageHitCache.get(cacheKey);
+                    }
+
+                    try {
+                        const canvas = document.createElement("canvas");
+                        canvas.width = image.naturalWidth;
+                        canvas.height = image.naturalHeight;
+                        const context = canvas.getContext("2d", { willReadFrequently: true });
+
+                        if (!context) {
+                            return null;
                         }
-                        thumbs.forEach(function (item) { item.classList.remove("is-selected"); });
-                        selected.classList.add("is-selected");
+
+                        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+                        const data = {
+                            context: context,
+                            width: canvas.width,
+                            height: canvas.height
+                        };
+
+                        imageHitCache.set(cacheKey, data);
+                        return data;
+                    } catch (error) {
+                        imageHitCache.set(cacheKey, null);
+                        return null;
+                    }
+                }
+
+                function pixelLooksLikeVisibleProduct(pixel) {
+                    if (!pixel || pixel.length < 4) return false;
+
+                    const red = pixel[0];
+                    const green = pixel[1];
+                    const blue = pixel[2];
+                    const alpha = pixel[3];
+                    const max = Math.max(red, green, blue);
+                    const min = Math.min(red, green, blue);
+                    const luminance = (red * 0.2126) + (green * 0.7152) + (blue * 0.0722);
+                    const lowSaturation = (max - min) < 18;
+
+                    if (alpha < 28) {
+                        return false;
+                    }
+
+                    return !(alpha > 230 && luminance > 244 && lowSaturation);
+                }
+
+                function isPointerOverVisibleProductPixel(image, event) {
+                    const position = pointerPositionInImage(image, event);
+
+                    if (!position) {
+                        return false;
+                    }
+
+                    const hitData = imageHitData(image);
+
+                    if (!hitData) {
+                        return true;
+                    }
+
+                    const x = Math.max(0, Math.min(hitData.width - 1, Math.floor(position.x * hitData.width)));
+                    const y = Math.max(0, Math.min(hitData.height - 1, Math.floor(position.y * hitData.height)));
+                    const pixel = hitData.context.getImageData(x, y, 1, 1).data;
+
+                    return pixelLooksLikeVisibleProduct(pixel);
+                }
+
+                function bindHoverZoom(surface, activeClass, xVar, yVar) {
+                    if (!canHoverZoom || !surface) return;
+
+                    function update(event) {
+                        const image = surface.querySelector("[data-appleklinika-stage-image]");
+
+                        if (event.target.closest("button")) {
+                            surface.classList.remove(activeClass, "is-object-hover");
+                            return;
+                        }
+
+                        if (!isPointerOverVisibleProductPixel(image, event)) {
+                            surface.classList.remove(activeClass, "is-object-hover");
+                            surface.style.removeProperty(xVar);
+                            surface.style.removeProperty(yVar);
+                            return;
+                        }
+
+                        const rect = image.getBoundingClientRect();
+                        const x = Math.max(0, Math.min(100, ((event.clientX - rect.left) / rect.width) * 100));
+                        const y = Math.max(0, Math.min(100, ((event.clientY - rect.top) / rect.height) * 100));
+                        surface.style.setProperty(xVar, x.toFixed(2) + "%");
+                        surface.style.setProperty(yVar, y.toFixed(2) + "%");
+                        surface.classList.add(activeClass, "is-object-hover");
+                    }
+
+                    surface.addEventListener("mousemove", update);
+                    surface.addEventListener("mouseleave", function () {
+                        surface.classList.remove(activeClass, "is-object-hover");
+                        surface.style.removeProperty(xVar);
+                        surface.style.removeProperty(yVar);
+                    });
                 }
 
                 document.querySelectorAll(".appleklinika-product-gallery").forEach(function (gallery) {
                     if (gallery.dataset.galleryBound === "1") return;
                     gallery.dataset.galleryBound = "1";
-                    gallery.dataset.currentIndex = "0";
+                    gallery.dataset.currentIndex = gallery.dataset.currentIndex || "0";
+                    renderLightboxThumbs(gallery);
 
-                    function openLightbox() {
-                        const stageImage = gallery.querySelector("[data-appleklinika-stage-image]");
-                        const lightbox = document.querySelector("[data-appleklinika-lightbox]");
-                        const lightboxImage = lightbox ? lightbox.querySelector("[data-appleklinika-lightbox-image]") : null;
-                        if (!lightbox || !lightboxImage || !stageImage) return;
-                        lightboxImage.src = stageImage.src;
-                        lightbox.dataset.currentIndex = gallery.dataset.currentIndex || "0";
-                        lightbox.classList.add("is-open");
-                    }
+                    const stage = gallery.querySelector("[data-appleklinika-gallery-stage]");
+                    bindHoverZoom(stage, "is-zooming", "--ak-gallery-zoom-x", "--ak-gallery-zoom-y");
 
                     gallery.addEventListener("click", function (event) {
                         const thumb = event.target.closest("[data-appleklinika-gallery-thumb]");
                         if (!thumb || !gallery.contains(thumb)) return;
-                        const thumbs = Array.from(gallery.querySelectorAll("[data-appleklinika-gallery-thumb]"));
+                        const thumbs = galleryThumbs(gallery);
                         showGalleryImage(gallery, thumbs.indexOf(thumb));
                     });
                     gallery.querySelectorAll("[data-appleklinika-gallery-direction]").forEach(function (button) {
@@ -288,42 +601,110 @@ final class ProductFrontendDisplay
                             showGalleryImage(gallery, Number(gallery.dataset.currentIndex || "0") + Number(button.dataset.appleklinikaGalleryDirection || "0"));
                         });
                     });
-                    gallery.querySelector("[data-appleklinika-gallery-zoom]")?.addEventListener("click", openLightbox);
-                });
-
-                document.querySelectorAll("[data-appleklinika-lightbox-direction]").forEach(function (button) {
-                    button.addEventListener("click", function () {
-                        const lightbox = button.closest("[data-appleklinika-lightbox]");
-                        const image = lightbox ? lightbox.querySelector("[data-appleklinika-lightbox-image]") : null;
-                        const gallery = document.querySelector(".appleklinika-product-gallery");
-                        const stageImage = gallery ? gallery.querySelector("[data-appleklinika-stage-image]") : null;
-                        const thumbs = gallery ? Array.from(gallery.querySelectorAll("[data-appleklinika-gallery-thumb]")) : [];
-                        if (!lightbox || !image || !stageImage || thumbs.length === 0) return;
-                        const next = (Number(lightbox.dataset.currentIndex || "0") + Number(button.dataset.appleklinikaLightboxDirection || "0") + thumbs.length) % thumbs.length;
-                        lightbox.dataset.currentIndex = String(next);
-                        gallery.dataset.currentIndex = String(next);
-                        const selected = thumbs[next];
-                        image.src = selected.dataset.full;
-                        stageImage.src = selected.dataset.full;
-                        if (selected.dataset.srcset) {
-                            stageImage.srcset = selected.dataset.srcset;
-                        } else {
-                            stageImage.removeAttribute("srcset");
-                        }
-                        thumbs.forEach(function (item) { item.classList.remove("is-selected"); });
-                        selected.classList.add("is-selected");
+                    gallery.querySelector("[data-appleklinika-gallery-zoom]")?.addEventListener("click", function () {
+                        openLightbox(gallery);
+                    });
+                    stage?.addEventListener("click", function (event) {
+                        if (event.target.closest("button")) return;
+                        const stageImage = stage.querySelector("[data-appleklinika-stage-image]");
+                        if (!isPointerOverVisibleProductPixel(stageImage, event)) return;
+                        openLightbox(gallery);
                     });
                 });
+
+                const lightbox = document.querySelector("[data-appleklinika-lightbox]");
+                if (lightbox) {
+                    const viewport = lightbox.querySelector("[data-appleklinika-lightbox-viewport]");
+                    const overlay = lightbox.querySelector("[data-appleklinika-lightbox-overlay]");
+                    viewport?.addEventListener("mousemove", function (event) {
+                        const image = viewport.querySelector("[data-appleklinika-lightbox-image]");
+                        const active = isPointerOverVisibleProductPixel(image, event);
+                        viewport.classList.toggle("is-object-hover", active);
+
+                        if (active && Number(viewport.dataset.zoomLevel || "0") > 0) {
+                            updateLightboxZoomOrigin(viewport, event);
+                        }
+                    });
+                    viewport?.addEventListener("mouseleave", function () {
+                        viewport.classList.remove("is-object-hover");
+                    });
+                    viewport?.addEventListener("click", function (event) {
+                        if (event.target.closest("button")) return;
+                        const image = viewport.querySelector("[data-appleklinika-lightbox-image]");
+                        if (!isPointerOverVisibleProductPixel(image, event)) return;
+                        stepLightboxZoom(1, event);
+                    });
+                    overlay?.addEventListener("click", function (event) {
+                        event.preventDefault();
+                        closeLightbox();
+                    });
+                    lightbox.addEventListener("pointerdown", function (event) {
+                        if (! lightbox.classList.contains("is-open")) return;
+                        if (event.target.closest(".appleklinika-lightbox__dialog")) return;
+                        closeLightbox();
+                    });
+                    lightbox.addEventListener("click", function (event) {
+                        if (event.target.classList.contains("appleklinika-lightbox__overlay")) {
+                            closeLightbox();
+                            return;
+                        }
+                        const zoomButton = event.target.closest("[data-appleklinika-lightbox-zoom]");
+                        if (zoomButton && lightbox.contains(zoomButton)) {
+                            stepLightboxZoom(Number(zoomButton.dataset.appleklinikaLightboxZoom || "1"));
+                            return;
+                        }
+                        const thumb = event.target.closest("[data-appleklinika-lightbox-thumb]");
+                        if (thumb && lightbox.contains(thumb)) {
+                            showLightboxImage(Number(thumb.dataset.index || "0"), true);
+                            return;
+                        }
+                        const direction = event.target.closest("[data-appleklinika-lightbox-direction]");
+                        if (direction && lightbox.contains(direction)) {
+                            showLightboxImage(Number(lightbox.dataset.currentIndex || "0") + Number(direction.dataset.appleklinikaLightboxDirection || "0"), true);
+                        }
+                    });
+                }
 
                 document.querySelectorAll("[data-appleklinika-lightbox-close]").forEach(function (button) {
-                    button.addEventListener("click", function () {
-                        button.closest("[data-appleklinika-lightbox]")?.classList.remove("is-open");
-                    });
+                    button.addEventListener("click", closeLightbox);
                 });
 
                 document.addEventListener("keydown", function (event) {
-                    if (event.key !== "Escape") return;
-                    document.querySelector("[data-appleklinika-lightbox].is-open")?.classList.remove("is-open");
+                    const open = document.querySelector("[data-appleklinika-lightbox].is-open");
+                    if (!open) return;
+                    if (event.key === "Escape") {
+                        closeLightbox();
+                        return;
+                    }
+                    if (event.key === "ArrowLeft") {
+                        event.preventDefault();
+                        showLightboxImage(Number(open.dataset.currentIndex || "0") - 1, true);
+                    }
+                    if (event.key === "ArrowRight") {
+                        event.preventDefault();
+                        showLightboxImage(Number(open.dataset.currentIndex || "0") + 1, true);
+                    }
+                });
+
+                document.querySelectorAll("[data-appleklinika-spec-toggle]").forEach(function (button) {
+                    const panelId = button.getAttribute("aria-controls") || "";
+                    const panel = panelId ? document.getElementById(panelId) : null;
+                    const label = button.querySelector("[data-appleklinika-spec-toggle-label]");
+
+                    if (!panel) return;
+
+                    button.addEventListener("click", function () {
+                        const isExpanded = button.getAttribute("aria-expanded") === "true";
+                        const nextExpanded = !isExpanded;
+                        button.setAttribute("aria-expanded", nextExpanded ? "true" : "false");
+                        panel.hidden = !nextExpanded;
+
+                        if (label) {
+                            label.textContent = nextExpanded
+                                ? (button.dataset.hideLabel || "Mutass kevesebbet")
+                                : (button.dataset.showLabel || "Mutass többet");
+                        }
+                    });
                 });
 
                 document.querySelectorAll(".appleklinika-cart-area form.cart").forEach(function (form) {
@@ -469,6 +850,7 @@ final class ProductFrontendDisplay
                     thumbs.innerHTML = images.map(function (image, index) {
                         return "<button class=\"appleklinika-product-gallery__thumb" + (index === 0 ? " is-selected" : "") + "\" type=\"button\" data-appleklinika-gallery-thumb data-full=\"" + image.url + "\" data-srcset=\"" + (image.srcset || "") + "\" aria-label=\"Termékkép " + (index + 1) + "\"><img src=\"" + image.url + "\" alt=\"\"></button>";
                     }).join("");
+                    renderLightboxThumbs(gallery);
                 }
 
                 function updateProductView(product) {
@@ -615,24 +997,42 @@ final class ProductFrontendDisplay
         $this->renderBelowHeroProductArea($product, $productId, $firstImage, $relatedProducts);
         $this->renderProductInformation($product, $productId, $relatedProducts);
         echo '</section>';
-        echo '<div class="appleklinika-lightbox" data-appleklinika-lightbox role="dialog" aria-modal="true" aria-label="Nagyított termékkép">';
-        echo '<button class="appleklinika-lightbox__close" type="button" data-appleklinika-lightbox-close>Bezárás</button>';
+        echo '<div class="appleklinika-lightbox" data-appleklinika-lightbox role="dialog" aria-modal="true" aria-hidden="true" aria-label="Nagyított termékkép">';
+        echo '<button class="appleklinika-lightbox__overlay" type="button" data-appleklinika-lightbox-overlay data-appleklinika-lightbox-close aria-label="Nagyított kép bezárása"></button>';
+        echo '<div class="appleklinika-lightbox__dialog" role="document">';
+        echo '<button class="appleklinika-lightbox__close" type="button" data-appleklinika-lightbox-close aria-label="Bezárás">×</button>';
+        echo '<div class="appleklinika-lightbox__stage">';
         echo '<button class="appleklinika-lightbox__nav appleklinika-lightbox__nav--prev" type="button" data-appleklinika-lightbox-direction="-1" aria-label="Előző nagyított kép">‹</button>';
+        echo '<div class="appleklinika-lightbox__viewport" data-appleklinika-lightbox-viewport>';
+        echo '<div class="appleklinika-lightbox__zoom-tools" aria-label="Nagyítás vezérlők">';
+        echo '<button class="appleklinika-lightbox__zoom-button" type="button" data-appleklinika-lightbox-zoom="-1" aria-label="Kicsinyítés">−</button>';
+        echo '<span class="appleklinika-lightbox__zoom-label" data-appleklinika-lightbox-zoom-label>1×</span>';
+        echo '<button class="appleklinika-lightbox__zoom-button" type="button" data-appleklinika-lightbox-zoom="1" aria-label="Nagyítás">+</button>';
+        echo '</div>';
         echo '<img class="appleklinika-lightbox__image" data-appleklinika-lightbox-image src="' . esc_url($firstImage['url']) . '" alt="">';
+        echo '</div>';
         echo '<button class="appleklinika-lightbox__nav appleklinika-lightbox__nav--next" type="button" data-appleklinika-lightbox-direction="1" aria-label="Következő nagyított kép">›</button>';
+        echo '</div>';
+        echo '<div class="appleklinika-lightbox__thumbs" data-appleklinika-lightbox-thumbs aria-label="Nagyított termékképek"></div>';
+        echo '</div>';
         echo '</div>';
         echo '<script type="application/json" id="appleklinika-product-selector-data">' . wp_json_encode($this->productSelectorPayload($relatedProducts), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) . '</script>';
     }
 
     /**
-     * @param array<int, array{url: string, srcset: string, html: string}> $images
+     * @param array<int, array{url: string, srcset: string, html: string, profile?: string}> $images
      */
     private function renderProductGallery(array $images): void
     {
         $firstImage = $images[0];
+        $galleryClass = 'appleklinika-product-gallery';
 
-        echo '<div class="appleklinika-product-gallery">';
-        echo '<div class="appleklinika-product-gallery__stage">';
+        if (($firstImage['profile'] ?? '') === 'phone-portrait') {
+            $galleryClass .= ' appleklinika-product-gallery--phone-portrait';
+        }
+
+        echo '<div class="' . esc_attr($galleryClass) . '">';
+        echo '<div class="appleklinika-product-gallery__stage" data-appleklinika-gallery-stage>';
         echo $this->imageHtml($firstImage, 'data-appleklinika-stage-image');
         echo '<button class="appleklinika-product-gallery__nav appleklinika-product-gallery__nav--prev" type="button" data-appleklinika-gallery-direction="-1" aria-label="Előző kép">‹</button>';
         echo '<button class="appleklinika-product-gallery__nav appleklinika-product-gallery__nav--next" type="button" data-appleklinika-gallery-direction="1" aria-label="Következő kép">›</button>';
@@ -710,24 +1110,300 @@ final class ProductFrontendDisplay
         $rows = array_values(array_filter($this->productSpecRows($product, $productId), static function (array $row): bool {
             return $row['label'] !== 'Tartozékok';
         }));
+        $officialSpecs = $this->officialSpecsForProduct($product, $productId);
+        $officialRows = $officialSpecs['rows'] ?? [];
 
-        if ($rows === []) {
+        if ($rows === [] && $officialRows === []) {
             return;
         }
 
         echo '<section class="ak-single-product__data appleklinika-product-panel" aria-label="Termékadatok">';
         echo '<h2>Termékadatok</h2>';
-        echo '<div class="appleklinika-spec-table">';
 
+        if ($rows !== []) {
+            echo '<div class="appleklinika-spec-table">';
+            $this->renderSpecRows($rows);
+            echo '</div>';
+        }
+
+        if ($officialRows !== []) {
+            $officialSpecsId = 'appleklinika-official-specs-' . $productId;
+            echo '<button class="appleklinika-spec-toggle" type="button" aria-expanded="false" aria-controls="' . esc_attr($officialSpecsId) . '" data-appleklinika-spec-toggle data-show-label="Mutass többet" data-hide-label="Mutass kevesebbet">';
+            echo '<span data-appleklinika-spec-toggle-label>Mutass többet</span>';
+            echo '<span class="appleklinika-spec-toggle__icon" aria-hidden="true">⌄</span>';
+            echo '</button>';
+            echo '<div class="appleklinika-spec-official" id="' . esc_attr($officialSpecsId) . '" hidden data-appleklinika-official-specs>';
+            $sourceTitle = trim((string) ($officialSpecs['source_title'] ?? ''));
+            $sourceUrl = trim((string) ($officialSpecs['source_url'] ?? ''));
+            $fetchedAt = trim((string) ($officialSpecs['fetched_at'] ?? ''));
+
+            if ($sourceTitle !== '' || $sourceUrl !== '' || $fetchedAt !== '') {
+                echo '<p class="appleklinika-spec-source">';
+                echo 'Hivatalos műszaki adatok';
+
+                if ($sourceUrl !== '') {
+                    $linkText = $sourceTitle !== '' ? $sourceTitle : 'forrás';
+                    echo ': <a href="' . esc_url($sourceUrl) . '" target="_blank" rel="noopener noreferrer">' . esc_html($linkText) . '</a>';
+                } elseif ($sourceTitle !== '') {
+                    echo ': ' . esc_html($sourceTitle);
+                }
+
+                if ($fetchedAt !== '') {
+                    echo ' · Importálva: ' . esc_html($fetchedAt);
+                }
+
+                echo '</p>';
+            }
+
+            echo '<div class="appleklinika-spec-table appleklinika-spec-table--official">';
+            $this->renderSpecRows($officialRows);
+            echo '</div>';
+            echo '</div>';
+        }
+
+        echo '</section>';
+    }
+
+    /**
+     * @param array<int, array{label: string, value: string}> $rows
+     */
+    private function renderSpecRows(array $rows): void
+    {
         foreach ($rows as $row) {
             echo '<div class="appleklinika-spec-row">';
             echo '<span>' . esc_html($row['label']) . '</span>';
             echo '<strong>' . esc_html($row['value']) . '</strong>';
             echo '</div>';
         }
+    }
 
-        echo '</div>';
-        echo '</section>';
+    /**
+     * @return array{rows: array<int, array{label: string, value: string}>, source_url: string, source_title: string, fetched_at: string, model_key: string}
+     */
+    private function officialSpecsForProduct(\WC_Product $product, int $productId): array
+    {
+        $modelKey = $this->productOfficialSpecsModelKey($product, $productId);
+        $modelSpecs = $this->officialSpecsForModel($modelKey);
+
+        if ($modelSpecs['rows'] !== []) {
+            return $modelSpecs;
+        }
+
+        return $this->officialSpecsFromProductMeta($productId);
+    }
+
+    /**
+     * @return array{rows: array<int, array{label: string, value: string}>, source_url: string, source_title: string, fetched_at: string, model_key: string}
+     */
+    private function officialSpecsForModel(string $modelKey): array
+    {
+        if ($modelKey === '') {
+            return $this->emptyOfficialSpecs();
+        }
+
+        $specsByModel = get_option(self::OFFICIAL_SPECS_BY_MODEL_OPTION, []);
+
+        if (! is_array($specsByModel) || ! isset($specsByModel[$modelKey]) || ! is_array($specsByModel[$modelKey])) {
+            return $this->emptyOfficialSpecs();
+        }
+
+        $modelSpecs = $specsByModel[$modelKey];
+        $rows = $this->normalizeOfficialSpecRows($modelSpecs['rows'] ?? []);
+
+        if ($rows === []) {
+            return $this->emptyOfficialSpecs();
+        }
+
+        return [
+            'rows' => $rows,
+            'source_url' => trim((string) ($modelSpecs['source_url'] ?? '')),
+            'source_title' => trim((string) ($modelSpecs['source_title'] ?? '')),
+            'fetched_at' => trim((string) ($modelSpecs['fetched_at'] ?? '')),
+            'model_key' => $modelKey,
+        ];
+    }
+
+    /**
+     * @return array{rows: array<int, array{label: string, value: string}>, source_url: string, source_title: string, fetched_at: string, model_key: string}
+     */
+    private function officialSpecsFromProductMeta(int $productId): array
+    {
+        $rawSpecs = get_post_meta($productId, self::OFFICIAL_SPECS_META_KEY, true);
+
+        if (! is_string($rawSpecs) || trim($rawSpecs) === '') {
+            return $this->emptyOfficialSpecs();
+        }
+
+        $decodedSpecs = json_decode($rawSpecs, true);
+
+        if (! is_array($decodedSpecs)) {
+            return $this->emptyOfficialSpecs();
+        }
+
+        return [
+            'rows' => $this->normalizeOfficialSpecRows($decodedSpecs),
+            'source_url' => trim((string) get_post_meta($productId, self::OFFICIAL_SPECS_SOURCE_URL_META_KEY, true)),
+            'source_title' => trim((string) get_post_meta($productId, self::OFFICIAL_SPECS_SOURCE_TITLE_META_KEY, true)),
+            'fetched_at' => trim((string) get_post_meta($productId, self::OFFICIAL_SPECS_FETCHED_AT_META_KEY, true)),
+            'model_key' => trim((string) get_post_meta($productId, self::OFFICIAL_SPECS_MODEL_KEY_META_KEY, true)),
+        ];
+    }
+
+    private function productOfficialSpecsModelKey(\WC_Product $product, int $productId): string
+    {
+        $storedModelKey = sanitize_key((string) get_post_meta($productId, self::OFFICIAL_SPECS_MODEL_KEY_META_KEY, true));
+
+        if ($storedModelKey !== '') {
+            return $this->canonicalOfficialSpecsModelKey($storedModelKey);
+        }
+
+        $catalogModelKey = sanitize_key($this->conditionRepository->get($productId, 'device_model'));
+
+        if ($catalogModelKey !== '') {
+            return $this->canonicalOfficialSpecsModelKey($catalogModelKey);
+        }
+
+        $title = strtolower(remove_accents($product->get_name()));
+
+        if (str_contains($title, 'apple watch se') && (str_contains($title, '2nd') || str_contains($title, '2.'))) {
+            return 'apple_watch_se_2';
+        }
+
+        if (str_contains($title, 'apple watch series 8')) {
+            return 'apple_watch_series_8';
+        }
+
+        if (str_contains($title, 'apple watch series 9')) {
+            return 'apple_watch_series_9';
+        }
+
+        if (str_contains($title, 'apple watch series 10')) {
+            return 'apple_watch_series_10';
+        }
+
+        if (str_contains($title, 'apple watch ultra 2')) {
+            return 'apple_watch_ultra_2';
+        }
+
+        if (str_contains($title, 'apple watch ultra')) {
+            return 'apple_watch_ultra';
+        }
+
+        if (str_contains($title, 'iphone 13 pro')) {
+            return 'iphone_13_pro';
+        }
+
+        if (str_contains($title, 'ipad air 5')) {
+            return 'ipad_air_5';
+        }
+
+        if (str_contains($title, 'macbook air m2')) {
+            return 'macbook_air_m2';
+        }
+
+        return '';
+    }
+
+    private function canonicalOfficialSpecsModelKey(string $modelKey): string
+    {
+        $modelKey = sanitize_key($modelKey);
+
+        $aliases = [
+            'apple_watch_se_2nd_generation' => 'apple_watch_se_2',
+            'apple_watch_se2' => 'apple_watch_se_2',
+            'apple_watch_se_2nd_gen' => 'apple_watch_se_2',
+            'apple_watch_se_3rd_generation' => 'apple_watch_se_3',
+            'ipad_9th_generation' => 'ipad_9',
+            'ipad_10th_generation' => 'ipad_10',
+            'ipad_mini_6th_generation' => 'ipad_mini_6',
+            'ipad_air_4th_generation' => 'ipad_air_4',
+            'ipad_air_5th_generation' => 'ipad_air_5',
+            'ipad_air_11_inch_m2' => 'ipad_air_11_m2',
+            'ipad_air_13_inch_m2' => 'ipad_air_13_m2',
+            'ipad_air_11_inch_m3' => 'ipad_air_11_m3',
+            'ipad_air_13_inch_m3' => 'ipad_air_13_m3',
+            'ipad_air_11_inch_m4' => 'ipad_air_11_m4',
+            'ipad_air_13_inch_m4' => 'ipad_air_13_m4',
+            'ipad_pro_11_inch_3rd_generation' => 'ipad_pro_11_3rd_generation',
+            'ipad_pro_12_9_inch_5th_generation' => 'ipad_pro_12_9_5th_generation',
+            'ipad_pro_11_inch_m2' => 'ipad_pro_11_m2',
+            'ipad_pro_12_9_inch_m2' => 'ipad_pro_12_9_m2',
+            'ipad_pro_11_inch_m4' => 'ipad_pro_11_m4',
+            'ipad_pro_13_inch_m4' => 'ipad_pro_13_m4',
+            'ipad_pro_11_inch_m5' => 'ipad_pro_11_m5',
+            'ipad_pro_13_inch_m5' => 'ipad_pro_13_m5',
+            'macbook_air_13_inch_m2' => 'macbook_air_m2',
+            'macbook_air_15_inch_m2' => 'macbook_air_15_m2',
+            'macbook_air_13_inch_m3' => 'macbook_air_13_m3',
+            'macbook_air_15_inch_m3' => 'macbook_air_15_m3',
+            'macbook_air_13_inch_m4' => 'macbook_air_13_m4',
+            'macbook_air_15_inch_m4' => 'macbook_air_15_m4',
+            'macbook_pro_13_inch_m2' => 'macbook_pro_13_m2',
+            'macbook_pro_14_inch_m2_pro' => 'macbook_pro_14_m2_pro',
+            'macbook_pro_16_inch_m2_pro' => 'macbook_pro_16_m2_pro',
+            'macbook_pro_14_inch_m3' => 'macbook_pro_14_m3',
+            'macbook_pro_14_inch_m3_pro' => 'macbook_pro_14_m3_pro',
+            'macbook_pro_14_inch_m3_max' => 'macbook_pro_14_m3_max',
+            'macbook_pro_16_inch_m3' => 'macbook_pro_16_m3',
+            'macbook_pro_16_inch_m3_pro' => 'macbook_pro_16_m3_pro',
+            'macbook_pro_16_inch_m3_max' => 'macbook_pro_16_m3_max',
+            'macbook_pro_14_inch_m4' => 'macbook_pro_14_m4',
+            'macbook_pro_14_inch_m4_pro' => 'macbook_pro_14_m4_pro',
+            'macbook_pro_16_inch_m4_pro' => 'macbook_pro_16_m4_pro',
+            'macbook_pro_16_inch_m4_max' => 'macbook_pro_16_m4_max',
+            'macbook_pro_14_inch_m5' => 'macbook_pro_14_m5',
+            'macbook_pro_14_inch_m5_pro' => 'macbook_pro_14_m5_pro',
+            'macbook_pro_16_inch_m5_pro' => 'macbook_pro_16_m5_pro',
+        ];
+
+        return $aliases[$modelKey] ?? $modelKey;
+    }
+
+    /**
+     * @param mixed $specRows
+     * @return array<int, array{label: string, value: string}>
+     */
+    private function normalizeOfficialSpecRows(mixed $specRows): array
+    {
+        if (! is_array($specRows)) {
+            return [];
+        }
+
+        $rows = [];
+
+        foreach ($specRows as $specRow) {
+            if (! is_array($specRow)) {
+                continue;
+            }
+
+            $label = trim((string) ($specRow['label'] ?? ''));
+            $value = trim((string) ($specRow['value'] ?? ''));
+
+            if ($label === '' || $value === '') {
+                continue;
+            }
+
+            $rows[] = [
+                'label' => $label,
+                'value' => $value,
+            ];
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @return array{rows: array<int, array{label: string, value: string}>, source_url: string, source_title: string, fetched_at: string, model_key: string}
+     */
+    private function emptyOfficialSpecs(): array
+    {
+        return [
+            'rows' => [],
+            'source_url' => '',
+            'source_title' => '',
+            'fetched_at' => '',
+            'model_key' => '',
+        ];
     }
 
     /**
@@ -1300,14 +1976,20 @@ final class ProductFrontendDisplay
     }
 
     /**
-     * @return array<int, array{url: string, srcset: string, html: string}>
+     * @return array<int, array{url: string, srcset: string, html: string, profile?: string}>
      */
     private function productImages(\WC_Product $product): array
     {
         $imageIds = [];
+        $singleProductImageId = $this->singleProductGalleryImageId($product);
+
+        if ($singleProductImageId > 0) {
+            $imageIds[] = $singleProductImageId;
+        }
+
         $mainImageId = $product->get_image_id();
 
-        if ($mainImageId > 0) {
+        if ($singleProductImageId === 0 && $mainImageId > 0) {
             $imageIds[] = $mainImageId;
         }
 
@@ -1322,16 +2004,29 @@ final class ProductFrontendDisplay
                 'url' => wc_placeholder_img_src('woocommerce_single'),
                 'srcset' => '',
                 'html' => wc_placeholder_img('woocommerce_single'),
+                'profile' => '',
             ]];
         }
 
-        return array_map(static function (int $imageId): array {
+        return array_map(static function (int $imageId) use ($singleProductImageId): array {
             return [
                 'url' => (string) wp_get_attachment_image_url($imageId, 'woocommerce_single'),
                 'srcset' => (string) wp_get_attachment_image_srcset($imageId, 'woocommerce_single'),
                 'html' => (string) wp_get_attachment_image($imageId, 'woocommerce_single'),
+                'profile' => $imageId === $singleProductImageId ? 'phone-portrait' : '',
             ];
         }, $imageIds);
+    }
+
+    private function singleProductGalleryImageId(\WC_Product $product): int
+    {
+        $imageId = (int) get_post_meta($product->get_id(), '_ak_single_product_gallery_image_id', true);
+
+        if ($imageId <= 0 || get_post_type($imageId) !== 'attachment') {
+            return 0;
+        }
+
+        return $imageId;
     }
 
     /**

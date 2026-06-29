@@ -19,6 +19,7 @@
 - The single product FAQ section is intentionally not rendered until there is an editable FAQ/content source; fake product FAQs should not be added directly to the frontend.
 - Single product trust block copy is centralized in `ProductFrontendDisplay::productTrustBlocks()` for this pass, but should move to an admin-backed editable source before production if policy wording changes often.
 - Sparse WooCommerce products may render fewer single product information panels because description, attribute, review, and related-product sections are intentionally backed by real available product data only.
+- Official manufacturer specification import now covers the current published demo catalog through model-level `appleklinika_official_specs_by_model` entries and per-product `_ak_official_specs_model_key` references. Refresh tooling, source review workflow, and an admin editing UI still need separate approval before production use.
 - Battery replacement extra prices are development defaults until final business pricing rules exist.
 - Selector demo products are local development fixtures and must not be treated as production inventory.
 - The local selector demo matrix is intentionally broad and can create many WooCommerce products for one model; production inventory needs stricter grouping and stock ownership rules.
@@ -85,6 +86,9 @@
 - The company purchase checkout fields now include required-state handling and Hungarian tax number format validation, but they are still saved as WooCommerce order/user meta only; final invoice plugin integration and any official invoice field mapping still need a separate audit after the chosen invoicing workflow is installed.
 - Checkout address detail fields for house number, floor, staircase, and door are saved as WooCommerce Blocks address meta and appended to formatted order addresses, but final invoice/shipping label field mapping still needs a separate plugin-specific audit.
 - The checkout multi-step shell deliberately hides non-active WooCommerce Blocks form sections without moving or unmounting them, while keeping the live order summary visible; it still needs a full regression pass after GLS shipping and Barion payment plugins are installed because those plugins may add their own fields inside the shipping and payment sections.
+- The single product zoom modal now supports thumbnail switching and previous/next controls, but the current local catalog did not expose a published product with multiple gallery images during this pass; multi-image behavior should be verified as soon as a real multi-photo product is available.
+- The local image normalization pipeline has only been approved for the first iPhone phone-portrait output. MacBook, iPad, and Apple Watch profiles exist in the script but must not be batch-run until each family has a reviewed source/preview pass.
+- Only the tested iPhone 13 Pro product currently uses `_ak_single_product_gallery_image_id`; future products need an admin workflow or import step so portrait/detail images are assigned separately from archive featured images.
 
 ## Next Iteration Questions
 

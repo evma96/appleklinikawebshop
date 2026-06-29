@@ -170,6 +170,7 @@ The frontend currently includes:
 - A right-side purchase panel with WooCommerce stock status, product title, short description, product price, sale savings, real WooCommerce add-to-cart form, add-to-cart feedback, and stock note.
 - Product gallery thumbnails, previous/next controls, and lightbox navigation use real WooCommerce product images.
 - Single product description, specs, reviews, and related products render from real WooCommerce product data, product attributes/meta, WooCommerce reviews, and WooCommerce related/same-model products.
+- Single product `Termékadatok` keeps a short Apple Klinika condition view by default and can show imported official manufacturer specification rows through a `Mutass többet` / `Mutass kevesebbet` toggle when stored model-level specs exist for the product model key. The current model-level cache lives in the `appleklinika_official_specs_by_model` WordPress option, published products reference it with `_ak_official_specs_model_key`, and the current demo catalog has model-level specs coverage for all published products; legacy `_ak_official_specs` product meta is kept as fallback during verification.
 - The product page uses a theme-level WooCommerce single product template override so the custom Appleklinika layout is the only product layout rendered.
 - The block theme product template uses the `appleklinika_single_product` shortcode to avoid fallback rendering through default WooCommerce product content.
 - The header includes real product search, account/cart action buttons with functional icons, and a WooCommerce cart count.
@@ -199,6 +200,9 @@ Product cards intentionally stay compact: non-iPhone archive cards only show sto
 - Custom single product information panels render real WooCommerce descriptions, product attributes/meta, reviews, and related products while default WooCommerce tabs/related output are removed to avoid duplicate product content.
 - A `Termékek` navigation item is injected into the active WordPress navigation block and links to the WooCommerce shop page.
 - Color/storage/grade selection is modeled as separate unique WooCommerce products instead of WooCommerce variations.
+- Single product galleries use a custom portrait-friendly image stage with hover zoom and a single-frame zoom modal that supports stepped inspection zoom, keyboard navigation, thumbnails when multiple gallery images exist, and overlay/ESC/close dismissal.
+- Local product image normalization now starts with `tools/ak-normalize-product-images.py`, which creates category/profile-based display PNGs from local sources without external API calls. The first approved run is iPhone-only and writes reviewed assets to `wordpress/wp-content/uploads/ak-normalized-output/iphone/`.
+- Single product pages can use a dedicated `_ak_single_product_gallery_image_id` attachment for the main gallery image, so archive/shop product cards keep using the normal WooCommerce featured image while the product detail view can use a portrait-optimized display asset.
 
 Internal identifier / IMEI remains admin-only and is not rendered on the frontend.
 
