@@ -8,8 +8,8 @@ Status values:
 - `FAIL`: verified in browser and broken.
 - `NOT TESTED`: not verified in browser during this round.
 
-Last run: 2026-06-19
-Scope: Single product Leonardo-style layout verification.
+Last run: 2026-06-25
+Scope: Single product gallery object-aware zoom and lightbox refinement.
 
 ## 1. Navigation Check
 
@@ -58,12 +58,17 @@ Scope: Single product Leonardo-style layout verification.
 | --- | --- | --- |
 | Piros keretes scope test completed | PASS | Temporary red outlines hit only the single product wrapper, gallery, buy panel, options wrapper, product details grid, and related-products panel; the outlines were removed before finishing. |
 | No duplicated product layout | PASS | Browser QA confirmed one `.appleklinika-product-shell` renders on the tested product URL with the default WooCommerce summary hidden. |
+| Single product iPhone gallery image uses portrait asset | PASS | Browser QA measured the tested iPhone 13 Pro gallery stage at 540x720 and the main image at about 395x572 from `_ak_single_product_gallery_image_id` attachment 527; the iPhone archive card stayed on featured image 525 at the approved thumbnail size. |
 | Gallery works | NOT TESTED | The tested product had one real WooCommerce image, so image switching could not be meaningfully tested in this pass. |
 | Thumbnails work | NOT TESTED | The tested product had one real WooCommerce image and one thumbnail. Verify with a product that has multiple gallery images. |
 | Selectors work | NOT TESTED | Selector UI remains rendered from real same-model WooCommerce products, but option switching was not clicked in this pass. |
 | Selected state stays on clicked option | NOT TESTED | Option switching was not clicked in this pass. |
 | Product information panels render real data | PASS | Browser QA confirmed the custom product shell, options section, details grid, review panel, and four real related-product cards render on the tested product page. |
 | Add to cart works | PASS | Browser QA clicked the real WooCommerce add-to-cart button, saw no console errors, and the header cart count remained present after the click. |
+| Single product portrait gallery | PASS | Browser QA on `selector-teszt-iphone-13-pro-1-tb-alpesi-zold-a` confirmed the main gallery keeps the image contained in the portrait stage without frontend rotation or stretching. |
+| Single product object-aware hover zoom | PASS | Browser QA confirmed blank stage/background hover leaves the gallery calm, while hovering the visible phone object adds `is-zooming is-object-hover` and updates the zoom origin. |
+| Single product zoom modal | PASS | Browser QA confirmed the lightbox uses a transparent dialog with one dark product stage, 1x/2x/3x/4x controls, centered button zoom, object-aware pan only over the phone, and ESC dismissal without leaving body scroll locked. |
+| Single product iPhone display image normalization | PASS | Local image analysis confirmed the iPhone 13 Pro display output uses a 1000x1450 phone-portrait canvas with the visible device at 60.4% width and 84.07% height; Media Library assignment was limited to product ID 364. |
 
 ## 3. Shop / Listing Page Check
 

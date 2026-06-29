@@ -2,7 +2,11 @@
 
 ## Unreleased
 
+- Added an expandable single product `Termékadatok` section that keeps the short Apple Klinika product data visible by default and shows stored official manufacturer specs only when model-level official specs exist.
+- Migrated official Apple specification data into the `appleklinika_official_specs_by_model` model-level option, assigned `_ak_official_specs_model_key` to the current published catalog, and kept frontend rendering cache-only with no external fetches on product page load.
+- Expanded official Apple specification coverage to 54 model keys across the current 122 published iPhone, iPad, MacBook, and Apple Watch demo products, including Apple Watch SE (2nd generation), and added resolver aliases for common generation, inch-size, and chip naming variants.
 - Rebuilt the single product page into a Leonardo-inspired Apple Klinika layout with a large real WooCommerce gallery, sticky buy panel, separate trust row, configuration selectors, product data panels, WooCommerce reviews, and real related products.
+- Refined the single product gallery zoom so hover activation is object-aware, blank transparent/near-white image areas stay calm, and the lightbox uses a single dark product-focused stage with centered controlled zoom steps.
 - Removed the homepage `Kategóriák` shortcut section from the rendered homepage and removed the WooCommerce `Letöltések` item from the My Account navigation with a dashboard redirect for direct downloads endpoint access.
 - Normalized the Apple Klinika logo visual baseline across homepage, shop category views, cart, and account pages, and added a focused checkout logo header without restoring the full webshop navigation on checkout.
 - Tightened homepage desktop proportions across the hero, featured products, category shortcuts, and trust sections with `.ak-home`-scoped spacing and grid overrides.
@@ -207,3 +211,6 @@
 - Simplified the homepage into one hero, one sale-first featured product section, category shortcuts, and a compact trust section while keeping product cards on the shared shop card renderer.
 - Aligned homepage featured products with the approved shop Woo Blocks product-card context, keeping the shared `appleklinika_render_product_card()` output and removing homepage-only internal card overrides.
 - Replaced the homepage shortcode template output with a dynamic `appleklinika/homepage` block so WordPress no longer inserts paragraph or line-break wrappers into featured product cards; homepage and shop cards now share the same direct card/wishlist DOM structure.
+- Refined the single product gallery with a portrait-friendly image stage, hover zoom, and a single-frame Rejoy-style zoom modal with 1x/2x/3x/4x controls, thumbnail support, keyboard navigation, and overlay/ESC/close-button dismissal.
+- Added a reusable local product image normalization script and ran the first iPhone-only phone-portrait pass, producing `iphone-13-pro-display-01.png`, a contact sheet, and a Media Library assignment for the current iPhone 13 Pro test product only.
+- Switched the iPhone 13 Pro single product page to use `_ak_single_product_gallery_image_id` for its portrait-optimized main gallery image while keeping the shop/archive featured image assignment unchanged.
