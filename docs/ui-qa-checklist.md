@@ -8,8 +8,8 @@ Status values:
 - `FAIL`: verified in browser and broken.
 - `NOT TESTED`: not verified in browser during this round.
 
-Last run: 2026-06-25
-Scope: Single product gallery object-aware zoom and lightbox refinement.
+Last run: 2026-06-30
+Scope: My Account favorites final sidebar and product row polish.
 
 ## 1. Navigation Check
 
@@ -21,6 +21,17 @@ Scope: Single product gallery object-aware zoom and lightbox refinement.
 | No empty href | NOT TESTED | Footer links were not changed in this round. |
 | No `#` links | NOT TESTED | Footer links were not changed in this round. |
 | No broken URLs | NOT TESTED | Footer links were not changed in this round. |
+
+## My Account Check
+
+| Item | Status | Notes |
+| --- | --- | --- |
+| My Account sidebar uses simplified navigation | PASS | Browser QA confirmed only `Vezérlőpult`, `Rendelések`, `Fiókadatok`, `Kedvelt termékek`, and `Kijelentkezés` are visible, each with a scoped account icon and active state. The sidebar now measures 326px wide with 30px padding and 54px menu rows at desktop. |
+| My Account Downloads item is hidden | PASS | Browser QA confirmed `Letöltések` is absent from the visible menu and direct Downloads endpoint access redirects to the account dashboard. |
+| My Account Addresses item is hidden | PASS | `edit-address` is removed from the visible account menu; address data is not deleted from WooCommerce. |
+| Account orders endpoint renders | PASS | Browser QA confirmed the `Rendelések` endpoint still loads inside the widened 1120px account shell with no fatal or parse errors; real order rows remain `WC_Order` driven. |
+| Account details form renders | PASS | Browser QA confirmed the `Fiókadatok` endpoint still loads the preserved WooCommerce save form inside the widened account shell; save submission was not performed. |
+| Wishlist account tab works | PASS | Browser QA confirmed the `Kedvelt termékek` endpoint loads inside the widened account shell with 674px favorite rows, larger image boxes, dark product titles, visible `Megnézem` CTA text, subtle default gray borders, and fixed 44px active remove-heart buttons using the existing wishlist renderer. |
 
 ## Header Top Area Check
 
