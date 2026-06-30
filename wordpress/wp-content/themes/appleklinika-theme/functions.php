@@ -15,7 +15,7 @@ add_action('wp_enqueue_scripts', static function (): void {
         'appleklinika-theme',
         get_stylesheet_directory_uri() . '/assets/css/frontend.css',
         [],
-        '0.1.195'
+        '0.1.200'
     );
 
     if (function_exists('is_checkout') && is_checkout()) {
@@ -3023,7 +3023,20 @@ function appleklinika_register_wishlist_account_endpoint(): void
  */
 function appleklinika_add_wishlist_account_menu_item(array $items): array
 {
-    unset($items['downloads']);
+    unset($items['downloads'], $items['edit-address']);
+
+    $labels = [
+        'dashboard' => 'Vezérlőpult',
+        'orders' => 'Rendelések',
+        'edit-account' => 'Fiókadatok',
+        'customer-logout' => 'Kijelentkezés',
+    ];
+
+    foreach ($labels as $key => $label) {
+        if (isset($items[$key])) {
+            $items[$key] = $label;
+        }
+    }
 
     $wishlistItem = ['kedvelt-termekek' => 'Kedvelt termékek'];
 
@@ -3059,14 +3072,78 @@ function appleklinika_redirect_account_downloads_endpoint(): void
     exit;
 }
 
+function appleklinika_current_account_endpoint_key(): string
+{
+    if (! function_exists('is_account_page') || ! is_account_page() || ! function_exists('is_wc_endpoint_url')) {
+        return 'dashboard';
+    }
+
+    $endpoints = [
+        'orders',
+        'view-order',
+        'edit-account',
+        'kedvelt-termekek',
+        'edit-address',
+        'customer-logout',
+    ];
+
+    foreach ($endpoints as $endpoint) {
+        if (is_wc_endpoint_url($endpoint) || isset($_GET[$endpoint])) {
+            return $endpoint;
+        }
+    }
+
+    return 'dashboard';
+}
+
+function appleklinika_account_page_title(): string
+{
+    return match (appleklinika_current_account_endpoint_key()) {
+        'orders' => 'Rendeléseim',
+        'view-order' => 'Rendelés részletei',
+        'edit-account' => 'Fiókadatok',
+        'kedvelt-termekek' => 'Kedvelt termékek',
+        'edit-address' => 'Címadatok',
+        default => 'Fiókom',
+    };
+}
+
+function appleklinika_account_breadcrumb_label(): string
+{
+    return match (appleklinika_current_account_endpoint_key()) {
+        'orders' => 'Rendelések',
+        'view-order' => 'Rendelés részletei',
+        'edit-account' => 'Fiókadatok',
+        'kedvelt-termekek' => 'Kedvelt termékek',
+        'edit-address' => 'Címadatok',
+        default => 'Vezérlőpult',
+    };
+}
+
 function appleklinika_render_wishlist_account_endpoint(): void
 {
     if (! is_user_logged_in()) {
-        echo '<div class="ak-account-wishlist"><p>Jelentkezz be a kedvelt termékek megtekintéséhez.</p></div>';
+        echo '<div class="ak-account-wishlist"><div class="ak-account-wishlist__empty"><h3>Jelentkezz be</h3><p>A kedvelt termékek megtekintéséhez be kell jelentkezned.</p></div></div>';
         return;
     }
 
     $productIds = appleklinika_get_wishlist_product_ids(get_current_user_id());
+    $products = [];
+
+    foreach ($productIds as $productId) {
+        $product = wc_get_product($productId);
+
+        if (! $product instanceof WC_Product || $product->get_status() !== 'publish') {
+            continue;
+        }
+
+        $products[$productId] = $product;
+    }
+
+    $shopUrl = function_exists('get_post_type_archive_link') ? get_post_type_archive_link('product') : false;
+    if (! is_string($shopUrl) || $shopUrl === '') {
+        $shopUrl = home_url('/?post_type=product');
+    }
     ?>
     <section class="ak-account-wishlist">
         <header class="ak-account-wishlist__header">
@@ -3074,28 +3151,41 @@ function appleklinika_render_wishlist_account_endpoint(): void
             <p>Itt találod azokat a készülékeket, amelyeket a webshopban kedvencnek jelöltél.</p>
         </header>
 
-        <?php if ($productIds === []) : ?>
-            <p class="ak-account-wishlist__empty">Még nincs kedvelt terméked.</p>
+        <?php if ($products === []) : ?>
+            <div class="ak-account-wishlist__empty">
+                <h3>Nincsenek kedvelt termékeid</h3>
+                <p>Itt jelennek meg azok a készülékek, amelyeket kedvencnek jelölsz.</p>
+                <a class="ak-account-wishlist__empty-link" href="<?php echo esc_url($shopUrl); ?>">Termékek böngészése</a>
+            </div>
         <?php else : ?>
             <div class="ak-account-wishlist__grid">
-                <?php foreach ($productIds as $productId) : ?>
-                    <?php $product = wc_get_product($productId); ?>
-                    <?php if (! $product instanceof WC_Product) : ?>
-                        <?php continue; ?>
-                    <?php endif; ?>
+                <?php foreach ($products as $productId => $product) : ?>
+                    <?php
+                    $productUrl = get_permalink($productId);
+                    $metaChips = appleklinika_product_card_meta_chips($productId);
+                    ?>
                     <article class="ak-account-wishlist__item" data-wishlist-item="<?php echo esc_attr((string) $productId); ?>">
-                        <a class="ak-account-wishlist__image" href="<?php echo esc_url(get_permalink($productId)); ?>">
+                        <a class="ak-account-wishlist__image" href="<?php echo esc_url($productUrl); ?>" aria-label="<?php echo esc_attr($product->get_name()); ?>">
                             <?php echo wp_kses_post($product->get_image('woocommerce_thumbnail')); ?>
                         </a>
-                        <div class="ak-account-wishlist__content">
-                            <h3>
-                                <a href="<?php echo esc_url(get_permalink($productId)); ?>"><?php echo esc_html($product->get_name()); ?></a>
+                        <div class="ak-account-wishlist__body">
+                            <h3 class="ak-account-wishlist__title">
+                                <a href="<?php echo esc_url($productUrl); ?>"><?php echo esc_html($product->get_name()); ?></a>
                             </h3>
+                            <?php if ($metaChips !== []) : ?>
+                                <div class="ak-account-wishlist__meta" aria-label="Termékadatok">
+                                    <?php foreach ($metaChips as $chip) : ?>
+                                        <span class="ak-account-wishlist__chip ak-account-wishlist__chip--<?php echo esc_attr($chip['type']); ?>">
+                                            <?php echo esc_html($chip['label']); ?>
+                                        </span>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
                             <div class="ak-account-wishlist__price"><?php echo wp_kses_post($product->get_price_html()); ?></div>
-                            <div class="ak-account-wishlist__actions">
-                                <a class="ak-account-wishlist__link" href="<?php echo esc_url(get_permalink($productId)); ?>">Megnézem</a>
-                                <?php appleklinika_render_wishlist_button($productId, 'ak-wishlist-button--account is-active'); ?>
-                            </div>
+                        </div>
+                        <div class="ak-account-wishlist__actions">
+                            <a class="ak-account-wishlist__link" href="<?php echo esc_url($productUrl); ?>">Megnézem</a>
+                            <?php appleklinika_render_wishlist_button($productId, 'ak-wishlist-button--account is-active'); ?>
                         </div>
                     </article>
                 <?php endforeach; ?>

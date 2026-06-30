@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Final-polished the My Account `Kedvelt termékek` layout with a wider account shell, larger sidebar rhythm, balanced favorite rows, subtle default borders, and fixed account remove-heart sizing while keeping wishlist storage and endpoint logic unchanged.
+- Refined the My Account `Kedvelt termékek` endpoint into compact real-product favorite rows with dark titles, visible `Megnézem` CTA buttons, integrated remove-heart actions, and polished empty-state copy.
+- Polished the WooCommerce My Account area with a scoped Apple Klinika account shell, icon sidebar navigation, dashboard quick links, grouped account-details form sections, card-based real order rows or empty states, and preserved wishlist/account-details behavior.
 - Added an expandable single product `Termékadatok` section that keeps the short Apple Klinika product data visible by default and shows stored official manufacturer specs only when model-level official specs exist.
 - Migrated official Apple specification data into the `appleklinika_official_specs_by_model` model-level option, assigned `_ak_official_specs_model_key` to the current published catalog, and kept frontend rendering cache-only with no external fetches on product page load.
 - Expanded official Apple specification coverage to 54 model keys across the current 122 published iPhone, iPad, MacBook, and Apple Watch demo products, including Apple Watch SE (2nd generation), and added resolver aliases for common generation, inch-size, and chip naming variants.
