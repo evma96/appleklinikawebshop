@@ -8,8 +8,8 @@ Status values:
 - `FAIL`: verified in browser and broken.
 - `NOT TESTED`: not verified in browser during this round.
 
-Last run: 2026-06-30
-Scope: My Account favorites final sidebar and product row polish.
+Last run: 2026-07-01
+Scope: My Account V1 functional structure.
 
 ## 1. Navigation Check
 
@@ -26,11 +26,14 @@ Scope: My Account favorites final sidebar and product row polish.
 
 | Item | Status | Notes |
 | --- | --- | --- |
-| My Account sidebar uses simplified navigation | PASS | Browser QA confirmed only `Vezérlőpult`, `Rendelések`, `Fiókadatok`, `Kedvelt termékek`, and `Kijelentkezés` are visible, each with a scoped account icon and active state. The sidebar now measures 326px wide with 30px padding and 54px menu rows at desktop. |
+| My Account sidebar uses final V1 navigation | PASS | Browser QA confirmed only `Vezérlőpult`, `Vásárlásaim`, `Beszámítás`, `Garanciáim`, `Visszaküldéseim`, `Fiók beállítások`, `Kedvelt termékek`, and `Kijelentkezés` are visible. |
 | My Account Downloads item is hidden | PASS | Browser QA confirmed `Letöltések` is absent from the visible menu and direct Downloads endpoint access redirects to the account dashboard. |
-| My Account Addresses item is hidden | PASS | `edit-address` is removed from the visible account menu; address data is not deleted from WooCommerce. |
+| My Account Addresses item is hidden | PASS | Browser QA confirmed `edit-address` is removed from the visible account menu and direct endpoint access redirects to `Fiókadatok`; address data is not deleted from WooCommerce. |
 | Account orders endpoint renders | PASS | Browser QA confirmed the `Rendelések` endpoint still loads inside the widened 1120px account shell with no fatal or parse errors; real order rows remain `WC_Order` driven. |
-| Account details form renders | PASS | Browser QA confirmed the `Fiókadatok` endpoint still loads the preserved WooCommerce save form inside the widened account shell; save submission was not performed. |
+| Dashboard order count excludes checkout drafts | PASS | Docker/WooCommerce QA confirmed the current logged-in user's 18 `checkout-draft` orders are excluded from the dashboard `Vásárlásaim` count, matching the empty orders page. |
+| Account details form renders | PASS | Browser QA confirmed the `Fiókadatok` endpoint loads the preserved WooCommerce save form with grouped personal, shipping, billing, and password sections; save submission was not performed. |
+| Account company billing toggle works visually | PASS | Browser QA toggled `Cégként vásárolok` without submitting; personal name fields hide, `Cégnév`/`Adószám` show, required states switch, and the tax number input formats `12345678123` to `12345678-1-23`. |
+| Account shipping and billing extra fields render | PASS | Browser QA confirmed Házszám, Emelet, Lépcsőház, and Ajtó fields render for both saved shipping and billing addresses. |
 | Wishlist account tab works | PASS | Browser QA confirmed the `Kedvelt termékek` endpoint loads inside the widened account shell with 674px favorite rows, larger image boxes, dark product titles, visible `Megnézem` CTA text, subtle default gray borders, and fixed 44px active remove-heart buttons using the existing wishlist renderer. |
 
 ## Header Top Area Check
@@ -118,6 +121,7 @@ Scope: My Account favorites final sidebar and product row polish.
 | Company tax number formats while typing | PASS | Browser QA confirmed the checkout `Adószám` input formats numeric text as `12345678-1-23` and strips non-digit characters before re-inserting the two hyphens. |
 | Company tax number has no overlapping placeholder | PASS | The checkout JS removes the rendered placeholder from the tax number input and keeps the Woo label/value display clear. |
 | Company tax number validation remains server-side | PASS | PHP registration keeps supported `pattern`/`title` hints only, while `appleklinika_validate_company_checkout_fields()` still enforces `^\d{8}-\d-\d{2}$`. |
+| Checkout save-to-profile option renders | PASS | Browser QA confirmed the WooCommerce Blocks checkout shows `Adatok mentése a fiókomba a következő vásárláshoz`; actual checkout submission was not performed. |
 
 | Item | Status | Notes |
 | --- | --- | --- |

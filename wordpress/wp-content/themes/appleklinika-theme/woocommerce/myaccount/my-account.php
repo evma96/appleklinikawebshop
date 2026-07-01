@@ -10,12 +10,7 @@
 defined('ABSPATH') || exit;
 ?>
 
-<section class="ak-account ak-account-shell" aria-labelledby="ak-account-title">
-    <header class="ak-account-hero">
-        <p class="ak-account-crumb">Fiókom / <?php echo esc_html(appleklinika_account_breadcrumb_label()); ?></p>
-        <h1 id="ak-account-title"><?php echo esc_html(appleklinika_account_page_title()); ?></h1>
-    </header>
-
+<section class="ak-account ak-account-shell" aria-label="Fiókom">
     <div class="ak-account-layout">
         <?php
         /**
@@ -26,7 +21,8 @@ defined('ABSPATH') || exit;
         do_action('woocommerce_account_navigation');
         ?>
 
-        <div class="woocommerce-MyAccount-content ak-account-content ak-account-card">
+        <main class="woocommerce-MyAccount-content ak-account-content ak-account-card" aria-label="<?php echo esc_attr(appleklinika_account_page_title()); ?>">
+            <p class="ak-account-crumb">Fiókom / <?php echo esc_html(appleklinika_account_breadcrumb_label()); ?></p>
             <?php
             /**
              * My Account content.
@@ -35,6 +31,6 @@ defined('ABSPATH') || exit;
              */
             do_action('woocommerce_account_content');
             ?>
-        </div>
+        </main>
     </div>
 </section>

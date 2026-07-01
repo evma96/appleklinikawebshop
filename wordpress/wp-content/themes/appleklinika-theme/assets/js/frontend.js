@@ -1118,6 +1118,81 @@
     });
   });
 
+  function initAccountBillingCompanyMode() {
+    if (!document.body.classList.contains('woocommerce-account')) {
+      return;
+    }
+
+    var billingCard = document.querySelector('.ak-account-address--billing');
+    var companyToggle = document.getElementById('ak_billing_is_company');
+    var taxNumberInput = document.getElementById('ak_billing_tax_number');
+
+    if (!billingCard || !companyToggle) {
+      return;
+    }
+
+    function accountTaxNumberDigits(value) {
+      return String(value || '').replace(/\D/g, '').slice(0, 11);
+    }
+
+    function formatAccountTaxNumber(value) {
+      var digits = accountTaxNumberDigits(value);
+      var firstBlock = digits.slice(0, 8);
+      var middleBlock = digits.slice(8, 9);
+      var lastBlock = digits.slice(9, 11);
+
+      if (digits.length <= 8) {
+        return firstBlock;
+      }
+
+      if (digits.length <= 9) {
+        return firstBlock + '-' + middleBlock;
+      }
+
+      return firstBlock + '-' + middleBlock + '-' + lastBlock;
+    }
+
+    function setRequired(input, required) {
+      if (!input) {
+        return;
+      }
+
+      input.required = required;
+      input.setAttribute('aria-required', required ? 'true' : 'false');
+    }
+
+    function syncAccountCompanyMode() {
+      var enabled = companyToggle.checked;
+
+      billingCard.classList.toggle('is-company-enabled', enabled);
+      setRequired(document.getElementById('billing_first_name'), !enabled);
+      setRequired(document.getElementById('billing_last_name'), !enabled);
+      setRequired(document.getElementById('billing_company'), enabled);
+      setRequired(taxNumberInput, enabled);
+    }
+
+    if (taxNumberInput) {
+      taxNumberInput.maxLength = 13;
+      taxNumberInput.setAttribute('inputmode', 'numeric');
+      taxNumberInput.setAttribute('pattern', '\\d{8}-\\d-\\d{2}');
+      taxNumberInput.setAttribute('title', 'Példa: 12345678-1-23');
+      taxNumberInput.setAttribute('autocomplete', 'off');
+
+      taxNumberInput.addEventListener('input', function () {
+        var normalized = formatAccountTaxNumber(taxNumberInput.value);
+
+        if (taxNumberInput.value !== normalized) {
+          taxNumberInput.value = normalized;
+        }
+      });
+    }
+
+    companyToggle.addEventListener('change', syncAccountCompanyMode);
+    syncAccountCompanyMode();
+  }
+
+  initAccountBillingCompanyMode();
+
   window.addEventListener('scroll', function () {
     if (ticking) {
       return;

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Rebuilt the WooCommerce My Account area into a Rejoy-inspired Apple Klinika V1 shell with the final account navigation, dark profile sidebar, real-data dashboard summaries, CTA-only buyback, warranty/return empty states, grouped settings, and safe redirects for hidden downloads/address endpoints; dashboard order counts now exclude WooCommerce checkout drafts.
+- Expanded the WooCommerce My Account V1 structure with real dashboard summaries, Hungarian order status labels, grouped account details, saved shipping and billing address fields, company billing mode with tax-number validation, and a checkout save-to-profile checkbox backed by user meta.
 - Final-polished the My Account `Kedvelt termékek` layout with a wider account shell, larger sidebar rhythm, balanced favorite rows, subtle default borders, and fixed account remove-heart sizing while keeping wishlist storage and endpoint logic unchanged.
 - Refined the My Account `Kedvelt termékek` endpoint into compact real-product favorite rows with dark titles, visible `Megnézem` CTA buttons, integrated remove-heart actions, and polished empty-state copy.
 - Polished the WooCommerce My Account area with a scoped Apple Klinika account shell, icon sidebar navigation, dashboard quick links, grouped account-details form sections, card-based real order rows or empty states, and preserved wishlist/account-details behavior.

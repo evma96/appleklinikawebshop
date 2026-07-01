@@ -17,8 +17,9 @@ do_action('woocommerce_before_account_orders', $has_orders);
 <section class="ak-account-orders">
     <header class="ak-account-orders__header">
         <div>
-            <p class="ak-account-section-kicker">Rendelések</p>
+            <p class="ak-account-section-kicker">Vásárlásaim</p>
             <h2>Rendeléseim</h2>
+            <p>Valós WooCommerce rendeléseid, állapotuk és részleteik.</p>
         </div>
     </header>
 
@@ -41,10 +42,8 @@ do_action('woocommerce_before_account_orders', $has_orders);
                     ? $first_item->get_name()
                     : sprintf('Rendelés #%s', $order->get_order_number());
                 $status = $order->get_status();
-                $status_label = wc_get_order_status_name($status);
-                $status_class = in_array($status, ['completed'], true)
-                    ? 'is-complete'
-                    : (in_array($status, ['processing', 'pending', 'on-hold'], true) ? 'is-active' : 'is-muted');
+                $status_label = function_exists('appleklinika_account_order_status_label') ? appleklinika_account_order_status_label($status) : wc_get_order_status_name($status);
+                $status_class = function_exists('appleklinika_account_order_status_class') ? appleklinika_account_order_status_class($status) : 'is-neutral';
                 $actions = wc_get_account_orders_actions($order);
                 ?>
                 <article class="ak-account-order-card ak-account-order-card--<?php echo esc_attr($status); ?>">
@@ -119,11 +118,16 @@ do_action('woocommerce_before_account_orders', $has_orders);
             </div>
         <?php endif; ?>
     <?php else : ?>
-        <div class="ak-account-empty">
-            <h3>Még nincs rendelésed.</h3>
-            <p>Ha találsz egy megfelelő készüléket, itt tudod majd követni a rendeléseidet.</p>
-            <a class="ak-account-empty__button" href="<?php echo esc_url(apply_filters('woocommerce_return_to_shop_redirect', wc_get_page_permalink('shop'))); ?>">Termékek megtekintése</a>
-        </div>
+        <?php
+        appleklinika_render_account_empty_state([
+            'title' => 'Jelenleg nincs leadott rendelésed.',
+            'text' => 'Ha vásárolsz nálunk, itt követheted a rendeléseid állapotát és részleteit.',
+            'primary_label' => 'Termékek böngészése',
+            'primary_url' => apply_filters('woocommerce_return_to_shop_redirect', wc_get_page_permalink('shop')),
+            'recommendations' => true,
+            'trust' => true,
+        ]);
+        ?>
     <?php endif; ?>
 </section>
 

@@ -136,7 +136,7 @@ The custom theme also adds a functional `Kedvelt termékek` wishlist flow:
 - Logged-in users save favorite product IDs in WordPress user meta.
 - Logged-out users are sent to the WooCommerce account/login page instead of saving guest favorites.
 - The WooCommerce account area includes a `Kedvelt termékek` section that lists saved products from real WooCommerce data.
-- The WooCommerce My Account area uses a scoped Apple Klinika shell with a simplified icon sidebar, dashboard quick links, grouped account-details form sections, card-based real order rows or empty states, and hidden standalone Downloads/Addresses navigation items.
+- The WooCommerce My Account area uses a scoped Apple Klinika shell with a Rejoy-inspired dark sidebar, dashboard quick links, real-data pages for `Vásárlásaim`, `Beszámítás`, `Garanciáim`, `Visszaküldéseim`, grouped account settings, saved shipping and billing address fields, company billing mode with Hungarian tax-number validation, polished empty states, and hidden standalone Downloads/Addresses navigation items.
 - Body grade.
 - Camera island grade.
 - Display grade.

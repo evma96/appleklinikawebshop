@@ -15,7 +15,7 @@ add_action('wp_enqueue_scripts', static function (): void {
         'appleklinika-theme',
         get_stylesheet_directory_uri() . '/assets/css/frontend.css',
         [],
-        '0.1.200'
+        '0.1.202'
     );
 
     if (function_exists('is_checkout') && is_checkout()) {
@@ -31,7 +31,7 @@ add_action('wp_enqueue_scripts', static function (): void {
         'appleklinika-theme',
         get_stylesheet_directory_uri() . '/assets/js/frontend.js',
         [],
-        '0.1.80',
+        '0.1.81',
         true
     );
 
@@ -54,7 +54,7 @@ add_action('wp_enqueue_scripts', static function (): void {
 
 add_action('init', 'appleklinika_ensure_info_pages');
 add_action('init', 'appleklinika_register_homepage_block');
-add_action('init', 'appleklinika_register_wishlist_account_endpoint');
+add_action('init', 'appleklinika_register_account_endpoints');
 add_action('admin_post_nopriv_appleklinika_contact_submit', 'appleklinika_handle_contact_submit');
 add_action('admin_post_appleklinika_contact_submit', 'appleklinika_handle_contact_submit');
 add_action('wp_ajax_appleklinika_toggle_wishlist', 'appleklinika_handle_wishlist_toggle');
@@ -69,8 +69,13 @@ add_filter('body_class', 'appleklinika_body_classes');
 add_filter('render_block_core/site-title', 'appleklinika_render_checkout_site_title_logo', 10, 2);
 add_filter('the_content', 'appleklinika_replace_cart_page_content', 9);
 add_filter('woocommerce_account_menu_items', 'appleklinika_add_wishlist_account_menu_item');
+add_action('woocommerce_account_beszamitasaim_endpoint', 'appleklinika_render_sell_account_endpoint');
+add_action('woocommerce_account_garanciaim_endpoint', 'appleklinika_render_warranty_account_endpoint');
+add_action('woocommerce_account_visszakuldesek_endpoint', 'appleklinika_render_returns_account_endpoint');
 add_action('woocommerce_account_kedvelt-termekek_endpoint', 'appleklinika_render_wishlist_account_endpoint');
 add_action('template_redirect', 'appleklinika_redirect_account_downloads_endpoint');
+add_action('woocommerce_save_account_details_errors', 'appleklinika_validate_account_details_fields', 10, 2);
+add_action('woocommerce_save_account_details', 'appleklinika_save_account_details_fields', 10, 1);
 add_action('init', 'appleklinika_register_company_checkout_fields', 20);
 add_action('woocommerce_blocks_validate_location_order_fields', 'appleklinika_validate_company_checkout_fields', 10, 3);
 add_action('woocommerce_store_api_checkout_update_order_from_request', 'appleklinika_persist_company_checkout_fields', 10, 2);
@@ -83,7 +88,7 @@ add_filter('woocommerce_get_default_value_for_appleklinika/tax_number', 'applekl
 add_filter('woocommerce_order_formatted_billing_address', 'appleklinika_append_checkout_address_details_to_formatted_address', 10, 2);
 add_filter('woocommerce_order_formatted_shipping_address', 'appleklinika_append_checkout_address_details_to_formatted_address', 10, 2);
 add_action('after_switch_theme', static function (): void {
-    appleklinika_register_wishlist_account_endpoint();
+    appleklinika_register_account_endpoints();
     flush_rewrite_rules();
 });
 
@@ -3005,15 +3010,19 @@ function appleklinika_account_url(): string
     return home_url('/fiokom/');
 }
 
-function appleklinika_register_wishlist_account_endpoint(): void
+function appleklinika_register_account_endpoints(): void
 {
     if (function_exists('add_rewrite_endpoint') && defined('EP_ROOT') && defined('EP_PAGES')) {
+        add_rewrite_endpoint('beszamitasaim', EP_ROOT | EP_PAGES);
+        add_rewrite_endpoint('eladasaim', EP_ROOT | EP_PAGES);
+        add_rewrite_endpoint('garanciaim', EP_ROOT | EP_PAGES);
+        add_rewrite_endpoint('visszakuldesek', EP_ROOT | EP_PAGES);
         add_rewrite_endpoint('kedvelt-termekek', EP_ROOT | EP_PAGES);
     }
 
-    if (! get_option('appleklinika_wishlist_endpoint_flushed')) {
+    if (! get_option('appleklinika_account_endpoints_flushed_v2')) {
         flush_rewrite_rules(false);
-        update_option('appleklinika_wishlist_endpoint_flushed', '1', false);
+        update_option('appleklinika_account_endpoints_flushed_v2', '1', false);
     }
 }
 
@@ -3023,37 +3032,21 @@ function appleklinika_register_wishlist_account_endpoint(): void
  */
 function appleklinika_add_wishlist_account_menu_item(array $items): array
 {
-    unset($items['downloads'], $items['edit-address']);
+    unset($items['downloads'], $items['edit-address'], $items['payment-methods']);
 
-    $labels = [
+    $logoutLabel = $items['customer-logout'] ?? 'Kijelentkezés';
+    $finalItems = [
         'dashboard' => 'Vezérlőpult',
-        'orders' => 'Rendelések',
-        'edit-account' => 'Fiókadatok',
-        'customer-logout' => 'Kijelentkezés',
+        'orders' => 'Vásárlásaim',
+        'beszamitasaim' => 'Beszámítás',
+        'garanciaim' => 'Garanciáim',
+        'visszakuldesek' => 'Visszaküldéseim',
+        'edit-account' => 'Fiók beállítások',
+        'kedvelt-termekek' => 'Kedvelt termékek',
+        'customer-logout' => $logoutLabel,
     ];
 
-    foreach ($labels as $key => $label) {
-        if (isset($items[$key])) {
-            $items[$key] = $label;
-        }
-    }
-
-    $wishlistItem = ['kedvelt-termekek' => 'Kedvelt termékek'];
-
-    if (! isset($items['customer-logout'])) {
-        return $items + $wishlistItem;
-    }
-
-    $updatedItems = [];
-    foreach ($items as $key => $label) {
-        if ($key === 'customer-logout') {
-            $updatedItems += $wishlistItem;
-        }
-
-        $updatedItems[$key] = $label;
-    }
-
-    return $updatedItems;
+    return $finalItems;
 }
 
 function appleklinika_redirect_account_downloads_endpoint(): void
@@ -3063,13 +3056,267 @@ function appleklinika_redirect_account_downloads_endpoint(): void
         || ! function_exists('is_wc_endpoint_url')
         || ! function_exists('wc_get_account_endpoint_url')
         || ! is_account_page()
-        || ! is_wc_endpoint_url('downloads')
     ) {
         return;
     }
 
-    wp_safe_redirect(wc_get_account_endpoint_url('dashboard'));
-    exit;
+    if (is_wc_endpoint_url('downloads')) {
+        wp_safe_redirect(wc_get_account_endpoint_url('dashboard'));
+        exit;
+    }
+
+    if (is_wc_endpoint_url('edit-address')) {
+        wp_safe_redirect(wc_get_account_endpoint_url('edit-account'));
+        exit;
+    }
+
+    if (is_wc_endpoint_url('eladasaim') || isset($_GET['eladasaim'])) {
+        wp_safe_redirect(wc_get_account_endpoint_url('beszamitasaim'));
+        exit;
+    }
+}
+
+function appleklinika_account_order_status_label(string $status): string
+{
+    return match ($status) {
+        'pending' => 'Fizetésre vár',
+        'processing' => 'Feldolgozás alatt',
+        'completed' => 'Teljesítve',
+        'cancelled' => 'Törölve',
+        'failed' => 'Sikertelen',
+        'refunded' => 'Visszatérítve',
+        'on-hold' => 'Várakozik',
+        default => function_exists('wc_get_order_status_name') ? wc_get_order_status_name($status) : $status,
+    };
+}
+
+function appleklinika_account_order_status_class(string $status): string
+{
+    if ($status === 'completed') {
+        return 'is-complete';
+    }
+
+    if (in_array($status, ['processing', 'pending', 'on-hold'], true)) {
+        return 'is-active';
+    }
+
+    if (in_array($status, ['cancelled', 'failed', 'refunded'], true)) {
+        return 'is-muted';
+    }
+
+    return 'is-neutral';
+}
+
+function appleklinika_account_user_meta(int $userId, string $key, string $default = ''): string
+{
+    $value = get_user_meta($userId, $key, true);
+
+    return $value === '' ? $default : (string) $value;
+}
+
+function appleklinika_account_posted_text(string $key): string
+{
+    if (! isset($_POST[$key])) {
+        return '';
+    }
+
+    return sanitize_text_field(wp_unslash((string) $_POST[$key]));
+}
+
+function appleklinika_account_posted_email(string $key): string
+{
+    if (! isset($_POST[$key])) {
+        return '';
+    }
+
+    return sanitize_email(wp_unslash((string) $_POST[$key]));
+}
+
+function appleklinika_account_posted_checkbox(string $key): bool
+{
+    return isset($_POST[$key]) && appleklinika_checkout_company_enabled(wp_unslash((string) $_POST[$key]));
+}
+
+/**
+ * @return array<string, string>
+ */
+function appleklinika_account_country_options(): array
+{
+    if (function_exists('WC') && WC()->countries) {
+        $countries = WC()->countries->get_allowed_countries();
+
+        if (is_array($countries) && $countries !== []) {
+            return array_map('strval', $countries);
+        }
+    }
+
+    return ['HU' => 'Magyarország'];
+}
+
+function appleklinika_account_selected_country(int $userId, string $metaKey): string
+{
+    $country = appleklinika_account_user_meta($userId, $metaKey, 'HU');
+
+    return $country === '' ? 'HU' : $country;
+}
+
+/**
+ * @return array<string, string>
+ */
+function appleklinika_account_profile_summary(int $userId): array
+{
+    $phone = appleklinika_account_user_meta($userId, 'billing_phone');
+    if ($phone === '') {
+        $phone = appleklinika_account_user_meta($userId, 'shipping_phone');
+    }
+
+    $shippingParts = array_filter([
+        appleklinika_account_user_meta($userId, 'shipping_postcode'),
+        appleklinika_account_user_meta($userId, 'shipping_city'),
+        appleklinika_account_user_meta($userId, 'shipping_address_1'),
+    ]);
+
+    return [
+        'email' => appleklinika_account_user_meta($userId, 'billing_email', wp_get_current_user()->user_email),
+        'phone' => $phone,
+        'shipping' => implode(' ', $shippingParts),
+    ];
+}
+
+/**
+ * @param WP_Error $errors
+ * @param WP_User  $user
+ */
+function appleklinika_validate_account_details_fields($errors, $user): void
+{
+    if (! $errors instanceof WP_Error) {
+        return;
+    }
+
+    $requiredFields = [
+        'account_phone' => 'Telefonszám megadása kötelező.',
+        'shipping_country' => 'Szállítási ország megadása kötelező.',
+        'shipping_postcode' => 'Szállítási irányítószám megadása kötelező.',
+        'shipping_city' => 'Szállítási város megadása kötelező.',
+        'shipping_address_1' => 'Szállítási cím megadása kötelező.',
+        'shipping_phone' => 'Szállítási telefonszám megadása kötelező.',
+        'billing_country' => 'Számlázási ország megadása kötelező.',
+        'billing_postcode' => 'Számlázási irányítószám megadása kötelező.',
+        'billing_city' => 'Számlázási város megadása kötelező.',
+        'billing_address_1' => 'Számlázási cím megadása kötelező.',
+        'billing_phone' => 'Számlázási telefonszám megadása kötelező.',
+        'billing_email' => 'Számlázási e-mail cím megadása kötelező.',
+    ];
+
+    foreach ($requiredFields as $fieldKey => $message) {
+        if (appleklinika_account_posted_text($fieldKey) === '') {
+            $errors->add('appleklinika_' . $fieldKey . '_required', $message);
+        }
+    }
+
+    $billingEmail = appleklinika_account_posted_email('billing_email');
+    if ($billingEmail !== '' && ! is_email($billingEmail)) {
+        $errors->add('appleklinika_billing_email_invalid', 'A számlázási e-mail cím formátuma hibás.');
+    }
+
+    $isCompany = appleklinika_account_posted_checkbox('ak_billing_is_company');
+
+    if (! $isCompany) {
+        if (appleklinika_account_posted_text('billing_first_name') === '') {
+            $errors->add('appleklinika_billing_first_name_required', 'Számlázási keresztnév megadása kötelező.');
+        }
+
+        if (appleklinika_account_posted_text('billing_last_name') === '') {
+            $errors->add('appleklinika_billing_last_name_required', 'Számlázási vezetéknév megadása kötelező.');
+        }
+
+        return;
+    }
+
+    $companyName = appleklinika_account_posted_text('billing_company');
+    $taxNumber = appleklinika_sanitize_checkout_tax_number(appleklinika_account_posted_text('ak_billing_tax_number'));
+
+    if ($companyName === '') {
+        $errors->add('appleklinika_billing_company_required', 'Cégnév megadása kötelező, ha cégként vásárolsz.');
+    }
+
+    if ($taxNumber === '') {
+        $errors->add('appleklinika_billing_tax_number_required', 'Adószám megadása kötelező, ha cégként vásárolsz.');
+    } elseif (! appleklinika_valid_hungarian_tax_number($taxNumber)) {
+        $errors->add('appleklinika_billing_tax_number_invalid', 'Az adószám formátuma hibás. Példa: 12345678-1-23');
+    }
+}
+
+function appleklinika_save_account_details_fields(int $userId): void
+{
+    if ($userId <= 0 || ! current_user_can('edit_user', $userId)) {
+        return;
+    }
+
+    $accountPhone = appleklinika_account_posted_text('account_phone');
+    $billingEmail = appleklinika_account_posted_email('billing_email');
+    $isCompany = appleklinika_account_posted_checkbox('ak_billing_is_company');
+    $companyName = appleklinika_account_posted_text('billing_company');
+    $taxNumber = appleklinika_sanitize_checkout_tax_number(appleklinika_account_posted_text('ak_billing_tax_number'));
+    $accountFirstName = appleklinika_account_posted_text('account_first_name');
+    $accountLastName = appleklinika_account_posted_text('account_last_name');
+
+    update_user_meta($userId, 'ak_account_phone', $accountPhone);
+    update_user_meta($userId, 'billing_phone', appleklinika_account_posted_text('billing_phone') ?: $accountPhone);
+
+    foreach ([
+        'shipping_country',
+        'shipping_postcode',
+        'shipping_city',
+        'shipping_address_1',
+        'shipping_phone',
+        'billing_country',
+        'billing_postcode',
+        'billing_city',
+        'billing_address_1',
+        'billing_phone',
+    ] as $metaKey) {
+        update_user_meta($userId, $metaKey, appleklinika_account_posted_text($metaKey));
+    }
+
+    if ($billingEmail !== '') {
+        update_user_meta($userId, 'billing_email', $billingEmail);
+    }
+
+    foreach ([
+        'ak_shipping_house_number',
+        'ak_shipping_floor',
+        'ak_shipping_staircase',
+        'ak_shipping_door',
+        'ak_billing_house_number',
+        'ak_billing_floor',
+        'ak_billing_staircase',
+        'ak_billing_door',
+    ] as $metaKey) {
+        update_user_meta($userId, $metaKey, appleklinika_account_posted_text($metaKey));
+    }
+
+    if ($isCompany) {
+        update_user_meta($userId, 'appleklinika_company_purchase', '1');
+        update_user_meta($userId, 'appleklinika_company_name', $companyName);
+        update_user_meta($userId, 'appleklinika_tax_number', $taxNumber);
+        update_user_meta($userId, 'ak_billing_is_company', '1');
+        update_user_meta($userId, 'ak_billing_tax_number', $taxNumber);
+        update_user_meta($userId, 'billing_company', $companyName);
+        update_user_meta($userId, 'billing_first_name', $accountFirstName);
+        update_user_meta($userId, 'billing_last_name', $accountLastName !== '' ? $accountLastName : $companyName);
+
+        return;
+    }
+
+    delete_user_meta($userId, 'appleklinika_company_purchase');
+    delete_user_meta($userId, 'appleklinika_company_name');
+    delete_user_meta($userId, 'appleklinika_tax_number');
+    delete_user_meta($userId, 'ak_billing_is_company');
+    delete_user_meta($userId, 'ak_billing_tax_number');
+    update_user_meta($userId, 'billing_company', '');
+    update_user_meta($userId, 'billing_first_name', appleklinika_account_posted_text('billing_first_name'));
+    update_user_meta($userId, 'billing_last_name', appleklinika_account_posted_text('billing_last_name'));
 }
 
 function appleklinika_current_account_endpoint_key(): string
@@ -3081,6 +3328,10 @@ function appleklinika_current_account_endpoint_key(): string
     $endpoints = [
         'orders',
         'view-order',
+        'beszamitasaim',
+        'eladasaim',
+        'garanciaim',
+        'visszakuldesek',
         'edit-account',
         'kedvelt-termekek',
         'edit-address',
@@ -3099,25 +3350,406 @@ function appleklinika_current_account_endpoint_key(): string
 function appleklinika_account_page_title(): string
 {
     return match (appleklinika_current_account_endpoint_key()) {
-        'orders' => 'Rendeléseim',
+        'orders' => 'Vásárlásaim',
         'view-order' => 'Rendelés részletei',
-        'edit-account' => 'Fiókadatok',
+        'beszamitasaim', 'eladasaim' => 'Készülék beszámítás',
+        'garanciaim' => 'Garanciáim',
+        'visszakuldesek' => 'Visszaküldéseim',
+        'edit-account' => 'Fiók beállítások',
         'kedvelt-termekek' => 'Kedvelt termékek',
-        'edit-address' => 'Címadatok',
-        default => 'Fiókom',
+        'edit-address' => 'Fiók beállítások',
+        default => 'Vezérlőpult',
     };
 }
 
 function appleklinika_account_breadcrumb_label(): string
 {
     return match (appleklinika_current_account_endpoint_key()) {
-        'orders' => 'Rendelések',
+        'orders' => 'Vásárlásaim',
         'view-order' => 'Rendelés részletei',
-        'edit-account' => 'Fiókadatok',
+        'beszamitasaim', 'eladasaim' => 'Beszámítás',
+        'garanciaim' => 'Garanciáim',
+        'visszakuldesek' => 'Visszaküldéseim',
+        'edit-account' => 'Fiók beállítások',
         'kedvelt-termekek' => 'Kedvelt termékek',
-        'edit-address' => 'Címadatok',
+        'edit-address' => 'Fiók beállítások',
         default => 'Vezérlőpult',
     };
+}
+
+function appleklinika_account_shop_url(string $type = ''): string
+{
+    $url = function_exists('get_post_type_archive_link') ? get_post_type_archive_link('product') : false;
+    if (! is_string($url) || $url === '') {
+        $url = home_url('/?post_type=product');
+    }
+
+    if ($type === '') {
+        return $url;
+    }
+
+    return add_query_arg('ak_type', sanitize_key($type), $url);
+}
+
+function appleklinika_account_initials(?WP_User $user = null): string
+{
+    $user = $user instanceof WP_User ? $user : wp_get_current_user();
+    $name = trim($user->display_name ?: trim($user->first_name . ' ' . $user->last_name));
+
+    if ($name === '') {
+        return 'AK';
+    }
+
+    $parts = preg_split('/\s+/', $name);
+    $substr = function_exists('mb_substr') ? 'mb_substr' : 'substr';
+    $toupper = function_exists('mb_strtoupper') ? 'mb_strtoupper' : 'strtoupper';
+    $first = $substr((string) ($parts[0] ?? 'A'), 0, 1);
+    $second = count($parts) > 1 ? $substr((string) end($parts), 0, 1) : '';
+
+    return $toupper($first . $second);
+}
+
+function appleklinika_account_order_count(int $userId): int
+{
+    if ($userId <= 0 || ! function_exists('wc_get_orders')) {
+        return 0;
+    }
+
+    $statuses = function_exists('wc_get_order_statuses') ? array_keys(wc_get_order_statuses()) : [];
+    $statuses = array_values(array_diff($statuses, ['wc-checkout-draft']));
+
+    $orders = wc_get_orders([
+        'customer_id' => $userId,
+        'limit' => -1,
+        'return' => 'ids',
+        'status' => $statuses,
+    ]);
+
+    return is_array($orders) ? count($orders) : 0;
+}
+
+function appleklinika_account_wishlist_count(int $userId): int
+{
+    return $userId > 0 ? count(appleklinika_get_wishlist_product_ids($userId)) : 0;
+}
+
+function appleklinika_account_warranty_label(string $warranty): string
+{
+    return [
+        '3_months' => '3 hónap',
+        '6_months' => '6 hónap',
+        '12_months' => '12 hónap',
+        '24_months' => '24 hónap',
+        '36_months' => '36 hónap',
+    ][$warranty] ?? $warranty;
+}
+
+function appleklinika_account_warranty_months(string $warranty): int
+{
+    if (preg_match('/^(\d+)_months$/', $warranty, $matches) !== 1) {
+        return 0;
+    }
+
+    return absint($matches[1]);
+}
+
+/**
+ * @return array<int, array<string, mixed>>
+ */
+function appleklinika_account_warranty_records(int $userId): array
+{
+    if ($userId <= 0 || ! function_exists('wc_get_orders')) {
+        return [];
+    }
+
+    $orders = wc_get_orders([
+        'customer_id' => $userId,
+        'status' => ['processing', 'completed', 'on-hold'],
+        'limit' => -1,
+        'orderby' => 'date',
+        'order' => 'DESC',
+    ]);
+    $records = [];
+    $now = current_time('timestamp');
+
+    foreach ($orders as $order) {
+        if (! $order instanceof WC_Order) {
+            continue;
+        }
+
+        foreach ($order->get_items() as $item) {
+            if (! $item instanceof WC_Order_Item_Product) {
+                continue;
+            }
+
+            $product = $item->get_product();
+            $productId = $product instanceof WC_Product ? $product->get_id() : 0;
+            $warranty = $productId > 0 ? (string) get_post_meta($productId, '_appleklinika_warranty_duration', true) : '';
+
+            if ($warranty === '') {
+                continue;
+            }
+
+            $months = appleklinika_account_warranty_months($warranty);
+            $created = $order->get_date_created();
+            $endsAt = '';
+            $statusLabel = $order->has_status('completed') ? 'Aktív' : 'Feldolgozás alatt';
+            $statusClass = $order->has_status('completed') ? 'is-complete' : 'is-active';
+
+            if ($months > 0 && $created instanceof WC_DateTime) {
+                $endDate = clone $created;
+                $endDate->modify('+' . $months . ' months');
+                $endsAt = wc_format_datetime($endDate);
+
+                if ($endDate->getTimestamp() < $now) {
+                    $statusLabel = 'Lejárt';
+                    $statusClass = 'is-muted';
+                }
+            }
+
+            $records[] = [
+                'order' => $order,
+                'product' => $product,
+                'name' => $item->get_name(),
+                'warranty' => appleklinika_account_warranty_label($warranty),
+                'ends_at' => $endsAt,
+                'status' => $statusLabel,
+                'status_class' => $statusClass,
+            ];
+        }
+    }
+
+    return $records;
+}
+
+/**
+ * @return array<int, WC_Order>
+ */
+function appleklinika_account_return_records(int $userId): array
+{
+    if ($userId <= 0 || ! function_exists('wc_get_orders')) {
+        return [];
+    }
+
+    return wc_get_orders([
+        'customer_id' => $userId,
+        'status' => ['refunded'],
+        'limit' => -1,
+        'orderby' => 'date',
+        'order' => 'DESC',
+    ]);
+}
+
+/**
+ * @return array<int, array{title: string, text: string, url: string, icon: string}>
+ */
+function appleklinika_account_category_cards(): array
+{
+    return [
+        ['title' => 'iPhone', 'text' => 'Ellenőrzött használt iPhone készülékek.', 'url' => appleklinika_account_shop_url('iphone'), 'icon' => 'iP'],
+        ['title' => 'MacBook', 'text' => 'Átlátható állapotú MacBook ajánlatok.', 'url' => appleklinika_account_shop_url('macbook'), 'icon' => 'MB'],
+        ['title' => 'iPad', 'text' => 'iPad modellek valós termékadatokkal.', 'url' => appleklinika_account_shop_url('ipad'), 'icon' => 'iP'],
+        ['title' => 'Apple Watch', 'text' => 'Apple Watch ajánlatok garanciával.', 'url' => appleklinika_account_shop_url('apple_watch'), 'icon' => 'AW'],
+    ];
+}
+
+/**
+ * @return array<int, array{title: string, text: string}>
+ */
+function appleklinika_account_trust_items(): array
+{
+    return [
+        ['title' => 'Ellenőrzött készülékek', 'text' => 'Minden terméknél látható állapotadatok.'],
+        ['title' => 'Garancia', 'text' => 'A garanciaadat termékszinten jelenik meg.'],
+        ['title' => 'Átlátható állapot', 'text' => 'Grade, tárhely, szín és akkumulátor egy helyen.'],
+        ['title' => 'Szegedi háttér', 'text' => 'Személyes szakértelem és tiszta kommunikáció.'],
+    ];
+}
+
+function appleklinika_render_account_category_recommendations(string $title = 'Vásárolj okosan!'): void
+{
+    ?>
+    <section class="ak-account-recommendations" aria-labelledby="ak-account-recommendations-title">
+        <h3 id="ak-account-recommendations-title"><?php echo esc_html($title); ?></h3>
+        <div class="ak-account-category-grid">
+            <?php foreach (appleklinika_account_category_cards() as $card) : ?>
+                <a class="ak-account-category-card" href="<?php echo esc_url($card['url']); ?>">
+                    <span aria-hidden="true"><?php echo esc_html($card['icon']); ?></span>
+                    <strong><?php echo esc_html($card['title']); ?></strong>
+                    <small><?php echo esc_html($card['text']); ?></small>
+                </a>
+            <?php endforeach; ?>
+        </div>
+    </section>
+    <?php
+}
+
+function appleklinika_render_account_trust_strip(): void
+{
+    ?>
+    <div class="ak-account-trust-strip" aria-label="Apple Klinika előnyök">
+        <?php foreach (appleklinika_account_trust_items() as $item) : ?>
+            <div>
+                <strong><?php echo esc_html($item['title']); ?></strong>
+                <span><?php echo esc_html($item['text']); ?></span>
+            </div>
+        <?php endforeach; ?>
+    </div>
+    <?php
+}
+
+/**
+ * @param array{title: string, text: string, primary_label?: string, primary_url?: string, secondary_label?: string, secondary_url?: string, recommendations?: bool, trust?: bool} $args
+ */
+function appleklinika_render_account_empty_state(array $args): void
+{
+    ?>
+    <div class="ak-account-empty">
+        <div class="ak-account-empty__copy">
+            <h3><?php echo esc_html($args['title']); ?></h3>
+            <p><?php echo esc_html($args['text']); ?></p>
+        </div>
+        <?php if (! empty($args['primary_label']) && ! empty($args['primary_url'])) : ?>
+            <div class="ak-account-empty__actions">
+                <a class="ak-account-empty__button" href="<?php echo esc_url((string) $args['primary_url']); ?>"><?php echo esc_html((string) $args['primary_label']); ?></a>
+                <?php if (! empty($args['secondary_label']) && ! empty($args['secondary_url'])) : ?>
+                    <a class="ak-account-empty__link" href="<?php echo esc_url((string) $args['secondary_url']); ?>"><?php echo esc_html((string) $args['secondary_label']); ?></a>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+    </div>
+    <?php
+
+    if (! empty($args['recommendations'])) {
+        appleklinika_render_account_category_recommendations();
+    }
+
+    if (! empty($args['trust'])) {
+        appleklinika_render_account_trust_strip();
+    }
+}
+
+function appleklinika_render_sell_account_endpoint(): void
+{
+    $contactUrl = appleklinika_info_page_url('kapcsolat');
+    ?>
+    <section class="ak-account-page ak-account-sell">
+        <header class="ak-account-page__header">
+            <p class="ak-account-section-kicker">Beszámítás</p>
+            <h2>Készülék beszámítás</h2>
+            <p>Ha később beszámításra vagy eladásra küldesz be készüléket, itt fogod látni az állapotát. Jelenleg nincs külön beküldött készülék modul a fiókodban.</p>
+        </header>
+        <div class="ak-account-steps">
+            <article><span>1</span><strong>Add meg a készülék adatait</strong><p>Írd meg, milyen készüléket szeretnél beszámíttatni.</p></article>
+            <article><span>2</span><strong>Egyeztetünk az állapotról</strong><p>Átbeszéljük a készülék állapotát és a lehetőségeket.</p></article>
+            <article><span>3</span><strong>Jóváírás vagy beszámítás</strong><p>A végleges ajánlat valós állapot alapján készül.</p></article>
+        </div>
+        <a class="ak-account-primary-action" href="<?php echo esc_url($contactUrl); ?>">Értékbecslés kérése</a>
+    </section>
+    <?php
+}
+
+function appleklinika_render_warranty_account_endpoint(): void
+{
+    $records = appleklinika_account_warranty_records(get_current_user_id());
+    ?>
+    <section class="ak-account-page ak-account-warranty">
+        <header class="ak-account-page__header">
+            <p class="ak-account-section-kicker">Garancia</p>
+            <h2>Garanciáim</h2>
+            <p>Az Apple Klinikán vásárolt készülékek garanciaadatai itt jelennek meg valós rendelési és termékadatok alapján.</p>
+        </header>
+
+        <?php if ($records === []) : ?>
+            <?php
+            appleklinika_render_account_empty_state([
+                'title' => 'Még nincs aktív garanciád.',
+                'text' => 'Ha vásárolsz nálunk, a termékhez rögzített garanciaadatok itt jelennek meg.',
+                'primary_label' => 'Termékek böngészése',
+                'primary_url' => appleklinika_account_shop_url(),
+                'recommendations' => true,
+                'trust' => true,
+            ]);
+            ?>
+        <?php else : ?>
+            <div class="ak-account-record-list">
+                <?php foreach ($records as $record) : ?>
+                    <?php
+                    $order = $record['order'];
+                    $product = $record['product'];
+                    ?>
+                    <article class="ak-account-record-card">
+                        <div class="ak-account-record-card__thumb">
+                            <?php
+                            if ($product instanceof WC_Product) {
+                                echo wp_kses_post($product->get_image('woocommerce_thumbnail'));
+                            } else {
+                                echo wp_kses_post(wc_placeholder_img('woocommerce_thumbnail'));
+                            }
+                            ?>
+                        </div>
+                        <div class="ak-account-record-card__body">
+                            <span class="ak-account-order-card__status <?php echo esc_attr((string) $record['status_class']); ?>"><?php echo esc_html((string) $record['status']); ?></span>
+                            <h3><?php echo esc_html((string) $record['name']); ?></h3>
+                            <p>Rendelés #<?php echo esc_html($order instanceof WC_Order ? $order->get_order_number() : ''); ?></p>
+                            <p>Garancia: <?php echo esc_html((string) $record['warranty']); ?><?php echo $record['ends_at'] !== '' ? ' · Lejárat: ' . esc_html((string) $record['ends_at']) : ''; ?></p>
+                        </div>
+                        <?php if ($order instanceof WC_Order) : ?>
+                            <a class="ak-account-secondary-action" href="<?php echo esc_url($order->get_view_order_url()); ?>">Részletek</a>
+                        <?php endif; ?>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    </section>
+    <?php
+}
+
+function appleklinika_render_returns_account_endpoint(): void
+{
+    $records = appleklinika_account_return_records(get_current_user_id());
+    ?>
+    <section class="ak-account-page ak-account-returns">
+        <header class="ak-account-page__header">
+            <p class="ak-account-section-kicker">Visszaküldés</p>
+            <h2>Visszaküldéseim</h2>
+            <p>Ha egy rendelésnél visszaküldést vagy visszatérítést kezelsz, annak állapota itt jelenik meg valós rendelési adat alapján.</p>
+        </header>
+
+        <?php if ($records === []) : ?>
+            <?php
+            appleklinika_render_account_empty_state([
+                'title' => 'Nincs aktív visszaküldésed.',
+                'text' => 'Ha visszaküldésre lesz szükség, innen tudsz továbbindulni a feltételekhez és a rendeléseidhez.',
+                'primary_label' => 'Visszaküldési feltételek',
+                'primary_url' => appleklinika_info_page_url('visszakuldes'),
+                'secondary_label' => 'Vásárlásaim megtekintése',
+                'secondary_url' => wc_get_account_endpoint_url('orders'),
+                'recommendations' => true,
+                'trust' => true,
+            ]);
+            ?>
+        <?php else : ?>
+            <div class="ak-account-record-list">
+                <?php foreach ($records as $order) : ?>
+                    <?php if (! $order instanceof WC_Order) { continue; } ?>
+                    <?php $firstItem = array_values($order->get_items())[0] ?? null; ?>
+                    <article class="ak-account-record-card">
+                        <div class="ak-account-record-card__body">
+                            <span class="ak-account-order-card__status is-muted">Visszatérítve</span>
+                            <h3>Rendelés #<?php echo esc_html($order->get_order_number()); ?></h3>
+                            <p><?php echo esc_html($firstItem instanceof WC_Order_Item_Product ? $firstItem->get_name() : 'Rendelés'); ?></p>
+                            <?php if ($order->get_date_created()) : ?>
+                                <p><?php echo esc_html(wc_format_datetime($order->get_date_created())); ?></p>
+                            <?php endif; ?>
+                        </div>
+                        <a class="ak-account-secondary-action" href="<?php echo esc_url($order->get_view_order_url()); ?>">Részletek</a>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    </section>
+    <?php
 }
 
 function appleklinika_render_wishlist_account_endpoint(): void
@@ -3145,18 +3777,24 @@ function appleklinika_render_wishlist_account_endpoint(): void
         $shopUrl = home_url('/?post_type=product');
     }
     ?>
-    <section class="ak-account-wishlist">
+    <section class="ak-account-wishlist ak-account-favorites">
         <header class="ak-account-wishlist__header">
+            <p class="ak-account-section-kicker">Kedvencek</p>
             <h2>Kedvelt termékek</h2>
             <p>Itt találod azokat a készülékeket, amelyeket a webshopban kedvencnek jelöltél.</p>
         </header>
 
         <?php if ($products === []) : ?>
-            <div class="ak-account-wishlist__empty">
-                <h3>Nincsenek kedvelt termékeid</h3>
-                <p>Itt jelennek meg azok a készülékek, amelyeket kedvencnek jelölsz.</p>
-                <a class="ak-account-wishlist__empty-link" href="<?php echo esc_url($shopUrl); ?>">Termékek böngészése</a>
-            </div>
+            <?php
+            appleklinika_render_account_empty_state([
+                'title' => 'Még nincsenek kedvelt termékeid.',
+                'text' => 'A szív ikonra kattintva elmentheted a későbbre félretett készülékeket.',
+                'primary_label' => 'Termékek böngészése',
+                'primary_url' => $shopUrl,
+                'recommendations' => true,
+                'trust' => true,
+            ]);
+            ?>
         <?php else : ?>
             <div class="ak-account-wishlist__grid">
                 <?php foreach ($products as $productId => $product) : ?>
@@ -3208,6 +3846,16 @@ function appleklinika_register_company_checkout_fields(): void
     }
 
     $fields = array_merge(appleklinika_checkout_address_detail_fields(), [
+        [
+            'id' => 'appleklinika/save_to_profile',
+            'label' => 'Adatok mentése a fiókomba a következő vásárláshoz',
+            'optionalLabel' => 'Adatok mentése a fiókomba a következő vásárláshoz',
+            'location' => 'contact',
+            'type' => 'checkbox',
+            'required' => false,
+            'sanitize_callback' => 'appleklinika_sanitize_checkout_checkbox',
+            'show_in_order_confirmation' => false,
+        ],
         [
             'id' => 'appleklinika/company_purchase',
             'label' => 'Cégként vásárolok',
@@ -3453,13 +4101,17 @@ function appleklinika_company_checkout_default_value($value, string $group, WC_D
 function appleklinika_persist_company_checkout_fields(WC_Order $order, WP_REST_Request $request): void
 {
     $additionalFields = (array) $request->get_param('additional_fields');
+    $saveToProfile = appleklinika_checkout_company_enabled($additionalFields['appleklinika/save_to_profile'] ?? false);
     $companyPurchase = appleklinika_checkout_company_enabled($additionalFields['appleklinika/company_purchase'] ?? false);
     $companyName = sanitize_text_field((string) ($additionalFields['appleklinika/company_name'] ?? ''));
     $taxNumber = appleklinika_sanitize_checkout_tax_number($additionalFields['appleklinika/tax_number'] ?? '');
 
     if (! $companyPurchase) {
         appleklinika_clear_company_checkout_meta($order);
-        appleklinika_clear_company_checkout_user_meta($order);
+        if ($saveToProfile) {
+            appleklinika_clear_company_checkout_user_meta($order);
+            appleklinika_save_checkout_profile_from_request($order, $request, $additionalFields, false, '', '');
+        }
         return;
     }
 
@@ -3472,10 +4124,104 @@ function appleklinika_persist_company_checkout_fields(WC_Order $order, WP_REST_R
 
     $userId = $order->get_user_id() ?: get_current_user_id();
 
-    if ($userId > 0) {
+    if ($saveToProfile && $userId > 0) {
         update_user_meta($userId, 'appleklinika_company_purchase', '1');
         update_user_meta($userId, 'appleklinika_company_name', $companyName);
         update_user_meta($userId, 'appleklinika_tax_number', $taxNumber);
+        update_user_meta($userId, 'ak_billing_is_company', '1');
+        update_user_meta($userId, 'ak_billing_tax_number', $taxNumber);
+        appleklinika_save_checkout_profile_from_request($order, $request, $additionalFields, true, $companyName, $taxNumber);
+    }
+}
+
+/**
+ * @param array<string, mixed> $source
+ */
+function appleklinika_array_text_value(array $source, string $key): string
+{
+    return sanitize_text_field((string) ($source[$key] ?? ''));
+}
+
+/**
+ * @param array<string, mixed> $additionalFields
+ */
+function appleklinika_save_checkout_profile_from_request(
+    WC_Order $order,
+    WP_REST_Request $request,
+    array $additionalFields,
+    bool $companyPurchase,
+    string $companyName,
+    string $taxNumber
+): void {
+    $userId = $order->get_user_id() ?: get_current_user_id();
+
+    if ($userId <= 0) {
+        return;
+    }
+
+    $billingAddress = (array) $request->get_param('billing_address');
+    $shippingAddress = (array) $request->get_param('shipping_address');
+
+    foreach ([
+        'country' => 'shipping_country',
+        'postcode' => 'shipping_postcode',
+        'city' => 'shipping_city',
+        'address_1' => 'shipping_address_1',
+        'phone' => 'shipping_phone',
+    ] as $requestKey => $metaKey) {
+        $value = appleklinika_array_text_value($shippingAddress, $requestKey);
+        if ($value === '' && $requestKey === 'phone') {
+            $value = appleklinika_array_text_value($billingAddress, 'phone');
+        }
+        if ($value !== '') {
+            update_user_meta($userId, $metaKey, $value);
+        }
+    }
+
+    foreach ([
+        'first_name' => 'billing_first_name',
+        'last_name' => 'billing_last_name',
+        'country' => 'billing_country',
+        'postcode' => 'billing_postcode',
+        'city' => 'billing_city',
+        'address_1' => 'billing_address_1',
+        'phone' => 'billing_phone',
+        'email' => 'billing_email',
+    ] as $requestKey => $metaKey) {
+        $value = $requestKey === 'email'
+            ? sanitize_email((string) ($billingAddress[$requestKey] ?? ''))
+            : appleklinika_array_text_value($billingAddress, $requestKey);
+
+        if ($value !== '') {
+            update_user_meta($userId, $metaKey, $value);
+        }
+    }
+
+    $addressDetailValues = [
+        'ak_shipping_house_number' => $additionalFields['appleklinika/house_number'] ?? '',
+        'ak_shipping_floor' => $additionalFields['appleklinika/floor'] ?? '',
+        'ak_shipping_staircase' => $additionalFields['appleklinika/staircase'] ?? '',
+        'ak_shipping_door' => $additionalFields['appleklinika/door'] ?? '',
+        'ak_billing_house_number' => $additionalFields['appleklinika/house_number'] ?? '',
+        'ak_billing_floor' => $additionalFields['appleklinika/floor'] ?? '',
+        'ak_billing_staircase' => $additionalFields['appleklinika/staircase'] ?? '',
+        'ak_billing_door' => $additionalFields['appleklinika/door'] ?? '',
+    ];
+
+    foreach ($addressDetailValues as $metaKey => $value) {
+        $sanitized = sanitize_text_field((string) $value);
+        if ($sanitized !== '') {
+            update_user_meta($userId, $metaKey, $sanitized);
+        }
+    }
+
+    if ($companyPurchase) {
+        update_user_meta($userId, 'billing_company', $companyName);
+        update_user_meta($userId, 'appleklinika_company_purchase', '1');
+        update_user_meta($userId, 'appleklinika_company_name', $companyName);
+        update_user_meta($userId, 'appleklinika_tax_number', $taxNumber);
+        update_user_meta($userId, 'ak_billing_is_company', '1');
+        update_user_meta($userId, 'ak_billing_tax_number', $taxNumber);
     }
 }
 
