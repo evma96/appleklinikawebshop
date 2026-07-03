@@ -1,0 +1,30 @@
+<!-- wp:template-part {"slug":"header","tagName":"header"} /-->
+
+<!-- wp:group {"tagName":"main","className":"ak-empty-page ak-search-page","layout":{"type":"constrained"}} -->
+<main class="wp-block-group ak-empty-page ak-search-page">
+<!-- wp:shortcode -->
+[appleklinika_search_heading]
+<!-- /wp:shortcode -->
+
+<!-- wp:query {"query":{"inherit":true},"layout":{"type":"default"}} -->
+<div class="wp-block-query ak-search-results">
+<!-- wp:post-template -->
+<!-- wp:group {"className":"ak-search-results__item","layout":{"type":"constrained"}} -->
+<div class="wp-block-group ak-search-results__item">
+<!-- wp:post-title {"isLink":true,"level":2} /-->
+<!-- wp:post-excerpt {"moreText":"Megnézem"} /-->
+</div>
+<!-- /wp:group -->
+<!-- /wp:post-template -->
+
+<!-- wp:query-no-results -->
+<!-- wp:shortcode -->
+[appleklinika_search_empty_state]
+<!-- /wp:shortcode -->
+<!-- /wp:query-no-results -->
+</div>
+<!-- /wp:query -->
+</main>
+<!-- /wp:group -->
+
+<!-- wp:template-part {"slug":"footer","tagName":"footer"} /-->
