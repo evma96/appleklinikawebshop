@@ -15,7 +15,7 @@ add_action('wp_enqueue_scripts', static function (): void {
         'appleklinika-theme',
         get_stylesheet_directory_uri() . '/assets/css/frontend.css',
         [],
-        '0.1.202'
+        '0.1.203'
     );
 
     if (function_exists('is_checkout') && is_checkout()) {
@@ -153,6 +153,161 @@ add_shortcode('appleklinika_contact_panel', static function (): string {
 
     return (string) ob_get_clean();
 });
+
+add_shortcode('appleklinika_404_empty_state', static function (): string {
+    ob_start();
+    appleklinika_render_404_empty_state();
+
+    return (string) ob_get_clean();
+});
+
+add_shortcode('appleklinika_search_heading', static function (): string {
+    ob_start();
+    appleklinika_render_search_heading();
+
+    return (string) ob_get_clean();
+});
+
+add_shortcode('appleklinika_search_empty_state', static function (): string {
+    ob_start();
+    appleklinika_render_search_empty_state();
+
+    return (string) ob_get_clean();
+});
+
+/**
+ * @return array<int, array{label: string, url: string}>
+ */
+function appleklinika_empty_state_category_links(): array
+{
+    return [
+        ['label' => 'iPhone', 'url' => appleklinika_shop_type_url('iphone')],
+        ['label' => 'MacBook', 'url' => appleklinika_shop_type_url('macbook')],
+        ['label' => 'iPad', 'url' => appleklinika_shop_type_url('ipad')],
+        ['label' => 'Apple Watch', 'url' => appleklinika_shop_type_url('apple_watch')],
+    ];
+}
+
+/**
+ * @param array{
+ *     modifier?: string,
+ *     title: string,
+ *     text: string,
+ *     note?: string,
+ *     primary_label?: string,
+ *     primary_url?: string,
+ *     secondary_label?: string,
+ *     secondary_url?: string,
+ *     show_search?: bool,
+ *     search_value?: string,
+ *     show_categories?: bool
+ * } $args
+ */
+function appleklinika_render_empty_state(array $args): void
+{
+    $modifier = isset($args['modifier']) ? sanitize_html_class((string) $args['modifier']) : 'default';
+    $classes = trim('ak-empty-state ak-empty-state--' . $modifier);
+    ?>
+    <section class="<?php echo esc_attr($classes); ?>" aria-labelledby="<?php echo esc_attr('ak-empty-state-title-' . $modifier); ?>">
+        <div class="ak-empty-state__card">
+            <span class="ak-empty-state__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M5.5 7.5h13l-1.05 9.1a2.2 2.2 0 0 1-2.18 1.9H8.73a2.2 2.2 0 0 1-2.18-1.9L5.5 7.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                    <path d="M9 9.2V6.8a3 3 0 0 1 6 0v2.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+            </span>
+            <h1 id="<?php echo esc_attr('ak-empty-state-title-' . $modifier); ?>" class="ak-empty-state__title"><?php echo esc_html($args['title']); ?></h1>
+            <p class="ak-empty-state__text"><?php echo esc_html($args['text']); ?></p>
+            <?php if (! empty($args['note'])) : ?>
+                <p class="ak-empty-state__note"><?php echo esc_html((string) $args['note']); ?></p>
+            <?php endif; ?>
+
+            <?php if (! empty($args['show_search'])) : ?>
+                <?php appleklinika_render_empty_state_search((string) ($args['search_value'] ?? '')); ?>
+            <?php endif; ?>
+
+            <?php if (! empty($args['primary_label']) || ! empty($args['secondary_label'])) : ?>
+                <div class="ak-empty-state__actions">
+                    <?php if (! empty($args['primary_label']) && ! empty($args['primary_url'])) : ?>
+                        <a class="ak-empty-state__button ak-empty-state__button--primary" href="<?php echo esc_url((string) $args['primary_url']); ?>">
+                            <?php echo esc_html((string) $args['primary_label']); ?>
+                        </a>
+                    <?php endif; ?>
+                    <?php if (! empty($args['secondary_label']) && ! empty($args['secondary_url'])) : ?>
+                        <a class="ak-empty-state__button ak-empty-state__button--secondary" href="<?php echo esc_url((string) $args['secondary_url']); ?>">
+                            <?php echo esc_html((string) $args['secondary_label']); ?>
+                        </a>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+
+            <?php if (! array_key_exists('show_categories', $args) || (bool) $args['show_categories']) : ?>
+                <?php appleklinika_render_empty_state_categories(); ?>
+            <?php endif; ?>
+        </div>
+    </section>
+    <?php
+}
+
+function appleklinika_render_empty_state_search(string $value = ''): void
+{
+    $inputId = wp_unique_id('ak-empty-search-');
+    ?>
+    <form class="ak-empty-state__search" role="search" method="get" action="<?php echo esc_url(home_url('/')); ?>">
+        <label class="screen-reader-text" for="<?php echo esc_attr($inputId); ?>">Keresés a webshopban</label>
+        <input id="<?php echo esc_attr($inputId); ?>" type="search" name="s" value="<?php echo esc_attr($value); ?>" placeholder="Keresés Apple készülékre">
+        <input type="hidden" name="post_type" value="product">
+        <button type="submit">Keresés</button>
+    </form>
+    <?php
+}
+
+function appleklinika_render_empty_state_categories(): void
+{
+    ?>
+    <nav class="ak-empty-state__categories" aria-label="Készülékkategóriák">
+        <?php foreach (appleklinika_empty_state_category_links() as $link) : ?>
+            <a href="<?php echo esc_url($link['url']); ?>"><?php echo esc_html($link['label']); ?></a>
+        <?php endforeach; ?>
+    </nav>
+    <?php
+}
+
+function appleklinika_render_404_empty_state(): void
+{
+    appleklinika_render_empty_state([
+        'modifier' => '404',
+        'title' => 'Ezt az oldalt nem találjuk',
+        'text' => 'Lehet, hogy a hivatkozás megváltozott, vagy a keresett oldal már nem elérhető.',
+        'primary_label' => 'Vissza a webshopba',
+        'primary_url' => appleklinika_shop_url(),
+        'show_search' => true,
+    ]);
+}
+
+function appleklinika_render_search_heading(): void
+{
+    $query = trim((string) get_search_query());
+    ?>
+    <div class="ak-search-page__heading">
+        <p class="ak-search-page__eyebrow">Keresés</p>
+        <h1><?php echo $query !== '' ? esc_html('Keresés: ' . $query) : 'Keresés a webshopban'; ?></h1>
+    </div>
+    <?php
+}
+
+function appleklinika_render_search_empty_state(): void
+{
+    appleklinika_render_empty_state([
+        'modifier' => 'search',
+        'title' => 'Nincs találat erre a keresésre',
+        'text' => 'Próbálj meg más kulcsszót, vagy nézz körül a készülékkategóriák között.',
+        'primary_label' => 'Összes termék',
+        'primary_url' => appleklinika_shop_url(),
+        'show_search' => true,
+        'search_value' => get_search_query(),
+    ]);
+}
 
 function appleklinika_register_homepage_settings_page(): void
 {
@@ -320,11 +475,13 @@ add_action('woocommerce_before_shop_loop', 'appleklinika_render_shop_filters', 5
 add_action('woocommerce_before_shop_loop', 'appleklinika_render_active_filter_chips', 6);
 add_action('pre_get_posts', 'appleklinika_apply_shop_filters');
 add_action('wp', 'appleklinika_customize_shop_loop_cards');
+add_action('wp', 'appleklinika_replace_shop_no_products_empty_state');
 add_filter('woocommerce_catalog_orderby', 'appleklinika_catalog_orderby_options');
 add_filter('woocommerce_default_catalog_orderby_options', 'appleklinika_catalog_orderby_options');
 add_filter('woocommerce_get_catalog_ordering_args', 'appleklinika_catalog_ordering_args', 10, 3);
 add_filter('posts_clauses', 'appleklinika_sale_first_ordering_clauses', 20, 2);
 add_filter('render_block', 'appleklinika_remove_duplicate_shop_product_blocks', 20, 3);
+add_filter('render_block_woocommerce/product-collection-no-results', 'appleklinika_render_product_collection_empty_state', 20, 3);
 add_filter('render_block_woocommerce/product-image', 'appleklinika_remove_duplicate_shop_product_block', 100, 3);
 add_filter('render_block_woocommerce/product-price', 'appleklinika_remove_duplicate_shop_product_block', 100, 3);
 add_filter('render_block_woocommerce/product-button', 'appleklinika_remove_duplicate_shop_product_block', 100, 3);
@@ -477,11 +634,16 @@ function appleklinika_render_cart_page(): void
     if (WC()->cart->is_empty()) {
         ?>
         <section class="ak-cart-layout ak-cart-layout--empty">
-            <div class="ak-cart-card">
-                <h1>Kosár</h1>
-                <p>A kosarad jelenleg üres.</p>
-                <a class="ak-button ak-button--primary" href="<?php echo esc_url(appleklinika_shop_url()); ?>">Vásárlás folytatása</a>
-            </div>
+            <?php
+            appleklinika_render_empty_state([
+                'modifier' => 'cart',
+                'title' => 'A kosarad jelenleg üres',
+                'text' => 'Nézz körül az ellenőrzött Apple készülékek között, és válaszd ki a következő kedvenced.',
+                'note' => 'A pénztár használatához előbb tegyél terméket a kosárba.',
+                'primary_label' => 'Termékek böngészése',
+                'primary_url' => appleklinika_shop_url(),
+            ]);
+            ?>
         </section>
         <?php
         return;
@@ -2511,6 +2673,58 @@ function appleklinika_customize_shop_loop_cards(): void
 
     add_filter('woocommerce_post_class', 'appleklinika_shop_product_card_class', 10, 2);
     add_action('woocommerce_before_shop_loop_item', 'appleklinika_render_shop_product_card', 10);
+}
+
+function appleklinika_replace_shop_no_products_empty_state(): void
+{
+    if (! function_exists('is_shop') || ! (is_shop() || is_product_taxonomy())) {
+        return;
+    }
+
+    remove_action('woocommerce_no_products_found', 'wc_no_products_found', 10);
+    add_action('woocommerce_no_products_found', 'appleklinika_render_shop_no_products_empty_state', 10);
+}
+
+function appleklinika_render_shop_no_products_empty_state(): void
+{
+    $deviceType = appleklinika_current_shop_device_type();
+
+    appleklinika_render_empty_state([
+        'modifier' => 'shop',
+        'title' => 'Nincs ilyen szűrésnek megfelelő készülék',
+        'text' => 'Módosítsd a szűrőket, vagy nézd meg az összes elérhető készüléket.',
+        'primary_label' => 'Szűrők törlése',
+        'primary_url' => appleklinika_shop_type_url($deviceType),
+        'secondary_label' => 'Összes termék',
+        'secondary_url' => appleklinika_shop_url(),
+    ]);
+}
+
+/**
+ * @param array<string, mixed> $block
+ * @param WP_Block|null $instance
+ */
+function appleklinika_render_product_collection_empty_state(string $blockContent, array $block, ?WP_Block $instance = null): string
+{
+    if (is_admin()) {
+        return $blockContent;
+    }
+
+    if (function_exists('is_search') && is_search()) {
+        ob_start();
+        appleklinika_render_search_empty_state();
+
+        return (string) ob_get_clean();
+    }
+
+    if (function_exists('is_shop') && (is_shop() || is_product_taxonomy())) {
+        ob_start();
+        appleklinika_render_shop_no_products_empty_state();
+
+        return (string) ob_get_clean();
+    }
+
+    return $blockContent;
 }
 
 /**
