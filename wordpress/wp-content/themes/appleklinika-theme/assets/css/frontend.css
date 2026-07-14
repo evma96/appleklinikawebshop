@@ -5484,10 +5484,39 @@ body.woocommerce-cart .ak-cart-item__meta {
 
 body.woocommerce-cart .ak-cart-item__controls {
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   align-items: center;
   margin-top: 16px;
   padding-top: 0;
+}
+
+body.woocommerce-cart .ak-cart-item__remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid rgba(214, 0, 28, .22);
+  border-radius: 999px;
+  color: #b80018;
+  background: rgba(214, 0, 28, .045);
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1;
+  text-decoration: none;
+  transition: border-color var(--ak-transition), background-color var(--ak-transition), color var(--ak-transition);
+}
+
+body.woocommerce-cart .ak-cart-item__remove:hover {
+  border-color: rgba(214, 0, 28, .42);
+  color: #970014;
+  background: rgba(214, 0, 28, .09);
+}
+
+body.woocommerce-cart .ak-cart-item__remove:focus-visible {
+  outline: 3px solid rgba(214, 0, 28, .28);
+  outline-offset: 2px;
 }
 
 body.woocommerce-cart .ak-cart-qty-control {
@@ -5591,6 +5620,7 @@ body.woocommerce-cart .ak-cart-actions {
 
 body.woocommerce-cart .ak-cart-layout > aside.ak-cart-card.ak-cart-summary {
   position: static;
+  box-sizing: border-box;
   width: 100%;
   align-self: center;
   justify-self: stretch;
@@ -5666,7 +5696,7 @@ body.woocommerce-cart .ak-cart-coupon label {
 
 body.woocommerce-cart .ak-cart-coupon div {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 64px;
+  grid-template-columns: minmax(0, 1fr) max-content;
   align-items: stretch;
   min-height: 42px;
   overflow: hidden;
@@ -5697,11 +5727,13 @@ body.woocommerce-cart .ak-cart-coupon button {
   align-items: center;
   justify-content: center;
   border: 0;
-  padding: 0;
+  min-width: 148px;
+  padding: 0 16px;
   color: #fff;
   background: var(--ak-red);
   font-size: 13px;
   font-weight: 900;
+  white-space: nowrap;
   cursor: pointer;
   transition: background-color var(--ak-transition), transform var(--ak-transition);
 }

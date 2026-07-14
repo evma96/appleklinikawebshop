@@ -176,6 +176,7 @@ The frontend currently includes:
 - The block theme product template uses the `appleklinika_single_product` shortcode to avoid fallback rendering through default WooCommerce product content.
 - The header includes real product search, account/cart action buttons with functional icons, and a WooCommerce cart count.
 - Product add-to-cart updates the real WooCommerce cart count and displays success feedback.
+- Filled cart rows expose WooCommerce's nonce-protected item removal action with a visible `Eltávolítás` label, and the existing coupon form uses the descriptive `Kupon alkalmazása` submit label without changing coupon calculation logic.
 - The WooCommerce shop/listing page has a compact product grid with equal-height cards, product images, key meta, prices, and real product detail links.
 - Storefront prices are formatted without unnecessary decimals, using space-separated thousands such as `379 990 Ft`.
 - The shop page includes a left-side collapsible filter panel using WooCommerce product meta.

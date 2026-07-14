@@ -10,8 +10,8 @@ All 21 baseline issues (`UX-001` to `UX-021`) were retested against the current 
 
 | Result | Count |
 |---|---:|
-| Fixed | 11 |
-| Still open | 4 |
+| Fixed | 13 |
+| Still open | 2 |
 | Partially fixed | 6 |
 | Regressed | 0 |
 | New issues | 0 |
@@ -63,8 +63,8 @@ No console errors were captured on the sampled pages.
 | UX-008 | Buyback thumbnail/fallback | Medium | **PARTIALLY FIXED** | Medium | `/?page_id=10&beszamitasaim` | The record is readable and populated, but the device visual is still an `iP` initials-style fallback rather than a convincing device thumbnail. | `/tmp/appleklinika-ux-qa-v2/desktop-account-buyback-current.png` | Add a safe category/device fallback image without changing the data source. |
 | UX-009 | Favorites narrow layout | Medium | **PARTIALLY FIXED** | Medium | `/?page_id=10&kedvelt-termekek` | Desktop rows are much more stable and the 390 px view remains usable, but the account shell and content are still vertically dense on narrow screens. | `/tmp/appleklinika-ux-qa-v2/desktop-account-favorites-current.png`, `/tmp/appleklinika-ux-qa-v2/narrow-account-favorites-current.png` | Do a mobile-only density pass for the account shell and wishlist rows. |
 | UX-010 | Favorites CTA/heart crowding | Medium | **FIXED** | – | `/?page_id=10&kedvelt-termekek` | `Megnézem` and the heart control have stable separate positions; titles, chips, price, CTA, and remove control no longer visibly collide in the sampled desktop view. | `/tmp/appleklinika-ux-qa-v2/desktop-account-favorites-current.png` | Preserve current row geometry; test remove behavior in a data-mutation-approved pass. |
-| UX-011 | Cart remove discoverability | Medium | **STILL OPEN** | Medium | `/?page_id=8` | Filled cart has quantity controls and update action, but no clearly labelled `Eltávolítás` action is discoverable in the item row. | `/tmp/appleklinika-ux-qa-v2/desktop-cart-filled-current.png`, `/tmp/appleklinika-ux-qa-v2/narrow-cart-filled-current.png` | Add a clear, accessible remove label/icon inside the existing item row. |
-| UX-012 | Coupon action copy | Medium | **STILL OPEN** | Low | `/?page_id=8` | The coupon submit action is still the generic `OK`, which does not describe the result. | `/tmp/appleklinika-ux-qa-v2/desktop-cart-filled-current.png` | Rename to `Kupon alkalmazása` without changing coupon logic. |
+| UX-011 | Cart remove discoverability | Medium | **FIXED** | – | `/?page_id=8` | Every filled-cart row now has a visible, keyboard-focusable `Eltávolítás` link backed by WooCommerce's cart-item key and nonce-protected remove URL. Removing one of two items kept the other item, recalculated totals, and produced no nonce error. | Browser QA at 1440×1000 and 390×844 | Preserve the scoped link and Woo remove URL behavior. |
+| UX-012 | Coupon action copy | Medium | **FIXED** | – | `/?page_id=8` | The existing coupon form now labels its submit action `Kupon alkalmazása`; its field name, submit name/value, validation path, and calculation logic are unchanged. | Browser QA at 1440×1000 and 390×844 | No change recommended. |
 | UX-013 | Header-to-content whitespace | Medium | **PARTIALLY FIXED** | Low | Homepage, account, cart, checkout | Main pages are coherent, but some account/checkout states still use generous vertical gaps before the primary content. This is now polish rather than a broken layout. | `/tmp/appleklinika-ux-qa-v2/desktop-account-dashboard-current.png`, `/tmp/appleklinika-ux-qa-v2/desktop-checkout-filled-current.png` | Tune spacing per page type; avoid global header/grid changes. |
 | UX-014 | Logged-in checkout account-save wording | Medium | **STILL OPEN** | Medium | `/?page_id=9` Step 2 | Logged-in demo customer still sees `Adatok mentése a fiókomba a következő vásárláshoz`, which reads like a guest/account-creation option and is confusing. | `/tmp/appleklinika-ux-qa-v2/desktop-checkout-filled-current.png` | Make the copy/state account-aware without changing Woo validation or Store API behavior. |
 | UX-015 | Mixed English/Hungarian Woo text | Medium | **PARTIALLY FIXED** | Medium | Cart, checkout Step 3, favorites | Most notices are Hungarian, but `Free shipping` remains visible in cart/checkout. Wishlist price accessibility text also exposes `Original price was` / `Current price is` in the rendered text layer. | `/tmp/appleklinika-ux-qa-v2/desktop-checkout-step3-current.png`, `/tmp/appleklinika-ux-qa-v2/desktop-cart-filled-current.png` | Translate remaining Woo strings through supported filters/translation, including accessible price text. |
@@ -83,26 +83,22 @@ No new independent regression was confirmed. Newly observed details are already 
 - The weak buyback device visual is tracked under `UX-008`.
 - Remaining narrow account density is tracked under `UX-009` and `UX-021`.
 
-## Top 10 next fixes
+## Top remaining fixes
 
-1. `UX-011` — Make cart item removal discoverable and accessible.
-2. `UX-014` — Correct the logged-in checkout account-save wording/state.
-3. `UX-015` — Remove remaining English Woo strings, including `Free shipping`.
-4. `UX-012` — Rename the cart coupon action from `OK` to a descriptive Hungarian label.
-5. `UX-017` — Replace phone-specific sorting text on MacBook, iPad, and Watch archives.
-6. `UX-008` — Replace the buyback initials placeholder with a useful device/category fallback.
-7. `UX-021` — Normalize account endpoint content depth and presentation.
-8. `UX-009` — Improve narrow favorites/account density.
-9. `UX-013` — Tune remaining page-specific header-to-content whitespace.
-10. `UX-018` — Complete focused gallery zoom/lightbox and missing-image fallback QA.
+1. `UX-014` — Correct the logged-in checkout account-save wording/state.
+2. `UX-015` — Remove remaining English Woo strings, including `Free shipping`.
+3. `UX-017` — Replace phone-specific sorting text on MacBook, iPad, and Watch archives.
+4. `UX-008` — Replace the buyback initials placeholder with a useful device/category fallback.
+5. `UX-021` — Normalize account endpoint content depth and presentation.
+6. `UX-009` — Improve narrow favorites/account density.
+7. `UX-013` — Tune remaining page-specific header-to-content whitespace.
+8. `UX-018` — Complete focused gallery zoom/lightbox and missing-image fallback QA.
 
 ## Quick wins
 
-- `UX-012`: change coupon action copy to `Kupon alkalmazása`.
 - `UX-017`: use category-neutral sort wording.
 - `UX-015`: translate the visible shipping label and Woo price accessibility strings.
 - `UX-014`: hide or rewrite the account-save option for authenticated customers.
-- `UX-011`: add a clear `Eltávolítás` label or labelled icon while preserving cart logic.
 
 ## Bigger tasks
 
@@ -126,4 +122,3 @@ No new independent regression was confirmed. Newly observed details are already 
 - Guest filled-cart checkout was not completed end to end for the same reason.
 - Gallery hover zoom/lightbox and forced missing-image fallback were not exhaustively exercised.
 - The late account re-login check was performed successfully, but the user's current in-app browser viewport was narrow; the earlier 1440 px desktop captures remain the desktop evidence source.
-
