@@ -15,7 +15,7 @@ add_action('wp_enqueue_scripts', static function (): void {
         'appleklinika-theme',
         get_stylesheet_directory_uri() . '/assets/css/frontend.css',
         [],
-        '0.1.204'
+        '0.1.205'
     );
 
     if (function_exists('is_checkout') && is_checkout()) {
@@ -706,6 +706,7 @@ function appleklinika_render_cart_item(string $cartItemKey, array $cartItem): vo
     $regularPrice = (float) $product->get_regular_price();
     $currentPrice = (float) $product->get_price();
     $savings = $regularPrice > $currentPrice ? ($regularPrice - $currentPrice) * $quantity : 0;
+    $removeUrl = wc_get_cart_remove_url($cartItemKey);
     ?>
     <article class="ak-cart-item">
         <div class="ak-cart-item__row">
@@ -743,6 +744,13 @@ function appleklinika_render_cart_item(string $cartItemKey, array $cartItem): vo
                         >
                         <button type="button" aria-label="Mennyiség növelése" data-cart-qty-increase>+</button>
                     </div>
+                    <a
+                        class="ak-cart-item__remove"
+                        href="<?php echo esc_url($removeUrl); ?>"
+                        aria-label="<?php echo esc_attr(sprintf('%s eltávolítása a kosárból', $product->get_name())); ?>"
+                        data-product_id="<?php echo esc_attr((string) $productId); ?>"
+                        data-product_sku="<?php echo esc_attr($product->get_sku()); ?>"
+                    >Eltávolítás</a>
                 </div>
             </div>
 
@@ -807,7 +815,7 @@ function appleklinika_render_cart_summary(): void
                         form="ak-cart-form"
                         placeholder="Kuponkód"
                     >
-                    <button type="submit" name="apply_coupon" value="Kupon alkalmazása" form="ak-cart-form">OK</button>
+                    <button type="submit" name="apply_coupon" value="Kupon alkalmazása" form="ak-cart-form">Kupon alkalmazása</button>
                 </div>
             </div>
         <?php endif; ?>

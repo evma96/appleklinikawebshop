@@ -43,7 +43,7 @@
 - Device catalog color names are seeded as practical Hungarian labels with Apple English names in parentheses and still need final business review.
 - Browser-level storefront checks can be blocked by coming-soon mode when the tester is not in a logged-in WordPress session.
 - The global design system cleanup is a first pass; header-specific and product-selector-specific visual fixes were intentionally left for separate focused iterations.
-- The cart page now renders through a custom dynamic theme layout, but quantity updates, remove links, coupon submission, and checkout navigation still need a hands-on browser interaction pass.
+- The cart page now renders through a custom dynamic theme layout; nonce-protected item removal and the recalculated filled/empty cart transition were browser-tested, while quantity updates, coupon submission, and checkout navigation still need a focused interaction pass.
 - The Kedvencek wishlist is intentionally logged-in-only while the storefront is behind Coming Soon for logged-out users; guest wishlist storage is not implemented.
 
 ## Deferred Improvements

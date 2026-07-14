@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Added a visible, accessible `Eltávolítás` action to each filled-cart row using WooCommerce's cart-item removal URL and nonce, and renamed the existing coupon submit action to `Kupon alkalmazása` with cart-scoped responsive sizing.
 - Rebuilt the WooCommerce My Account area into a Rejoy-inspired Apple Klinika V1 shell with the final account navigation, dark profile sidebar, real-data dashboard summaries, CTA-only buyback, warranty/return empty states, grouped settings, and safe redirects for hidden downloads/address endpoints; dashboard order counts now exclude WooCommerce checkout drafts.
 - Expanded the WooCommerce My Account V1 structure with real dashboard summaries, Hungarian order status labels, grouped account details, saved shipping and billing address fields, company billing mode with tax-number validation, and a checkout save-to-profile checkbox backed by user meta.
 - Final-polished the My Account `Kedvelt termékek` layout with a wider account shell, larger sidebar rhythm, balanced favorite rows, subtle default borders, and fixed account remove-heart sizing while keeping wishlist storage and endpoint logic unchanged.
