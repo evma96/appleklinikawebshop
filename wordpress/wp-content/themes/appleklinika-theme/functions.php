@@ -15,7 +15,7 @@ add_action('wp_enqueue_scripts', static function (): void {
         'appleklinika-theme',
         get_stylesheet_directory_uri() . '/assets/css/frontend.css',
         [],
-        '0.1.205'
+        '0.1.206'
     );
 
     if (function_exists('is_checkout') && is_checkout()) {
@@ -31,7 +31,7 @@ add_action('wp_enqueue_scripts', static function (): void {
         'appleklinika-theme',
         get_stylesheet_directory_uri() . '/assets/js/frontend.js',
         [],
-        '0.1.81',
+        '0.1.83',
         true
     );
 
@@ -80,6 +80,7 @@ add_action('woocommerce_save_account_details_errors', 'appleklinika_validate_acc
 add_action('woocommerce_save_account_details', 'appleklinika_save_account_details_fields', 10, 1);
 add_action('init', 'appleklinika_register_company_checkout_fields', 20);
 add_action('woocommerce_blocks_validate_location_order_fields', 'appleklinika_validate_company_checkout_fields', 10, 3);
+add_action('woocommerce_store_api_checkout_update_customer_from_request', 'appleklinika_reset_checkout_profile_save_state', 20, 2);
 add_action('woocommerce_store_api_checkout_update_order_from_request', 'appleklinika_persist_company_checkout_fields', 10, 2);
 add_action('woocommerce_admin_order_data_after_billing_address', 'appleklinika_render_company_order_admin_meta');
 add_filter('woocommerce_get_country_locale_default', 'appleklinika_checkout_default_locale_overrides');
@@ -87,6 +88,7 @@ add_filter('woocommerce_get_country_locale', 'appleklinika_checkout_country_loca
 add_filter('woocommerce_get_default_value_for_appleklinika/company_purchase', 'appleklinika_company_checkout_default_value', 10, 3);
 add_filter('woocommerce_get_default_value_for_appleklinika/company_name', 'appleklinika_company_checkout_default_value', 10, 3);
 add_filter('woocommerce_get_default_value_for_appleklinika/tax_number', 'appleklinika_company_checkout_default_value', 10, 3);
+add_filter('woocommerce_get_default_value_for_appleklinika/save_to_profile', 'appleklinika_checkout_profile_save_default_value', 10, 3);
 add_filter('woocommerce_order_formatted_billing_address', 'appleklinika_append_checkout_address_details_to_formatted_address', 10, 2);
 add_filter('woocommerce_order_formatted_shipping_address', 'appleklinika_append_checkout_address_details_to_formatted_address', 10, 2);
 add_action('after_switch_theme', static function (): void {
@@ -4157,17 +4159,22 @@ function appleklinika_register_company_checkout_fields(): void
         return;
     }
 
-    $fields = array_merge(appleklinika_checkout_address_detail_fields(), [
-        [
+    $profileFields = [];
+
+    if (is_user_logged_in()) {
+        $profileFields[] = [
             'id' => 'appleklinika/save_to_profile',
-            'label' => 'Adatok mentése a fiókomba a következő vásárláshoz',
-            'optionalLabel' => 'Adatok mentése a fiókomba a következő vásárláshoz',
+            'label' => 'Kiegészítő adatok mentése a fiókomba',
+            'optionalLabel' => 'Kiegészítő adatok mentése a fiókomba',
             'location' => 'contact',
             'type' => 'checkbox',
             'required' => false,
             'sanitize_callback' => 'appleklinika_sanitize_checkout_checkbox',
             'show_in_order_confirmation' => false,
-        ],
+        ];
+    }
+
+    $fields = array_merge(appleklinika_checkout_address_detail_fields(), $profileFields, [
         [
             'id' => 'appleklinika/company_purchase',
             'label' => 'Cégként vásárolok',
@@ -4410,10 +4417,39 @@ function appleklinika_company_checkout_default_value($value, string $group, WC_D
     return $savedValue === '' ? null : $savedValue;
 }
 
+function appleklinika_checkout_profile_save_default_value($value, string $group, WC_Data $wcObject): bool
+{
+    return false;
+}
+
+function appleklinika_reset_checkout_profile_save_state(WC_Customer $customer, WP_REST_Request $request): void
+{
+    if (get_current_user_id() <= 0) {
+        return;
+    }
+
+    $customer->delete_meta_data('_wc_other/appleklinika/save_to_profile');
+}
+
+function appleklinika_checkout_profile_user_id(WC_Order $order): int
+{
+    $userId = get_current_user_id();
+
+    if ($userId <= 0) {
+        return 0;
+    }
+
+    $orderUserId = $order->get_user_id();
+
+    return $orderUserId > 0 && $orderUserId !== $userId ? 0 : $userId;
+}
+
 function appleklinika_persist_company_checkout_fields(WC_Order $order, WP_REST_Request $request): void
 {
     $additionalFields = (array) $request->get_param('additional_fields');
-    $saveToProfile = appleklinika_checkout_company_enabled($additionalFields['appleklinika/save_to_profile'] ?? false);
+    $userId = appleklinika_checkout_profile_user_id($order);
+    $saveToProfile = $userId > 0
+        && appleklinika_checkout_company_enabled($additionalFields['appleklinika/save_to_profile'] ?? false);
     $companyPurchase = appleklinika_checkout_company_enabled($additionalFields['appleklinika/company_purchase'] ?? false);
     $companyName = sanitize_text_field((string) ($additionalFields['appleklinika/company_name'] ?? ''));
     $taxNumber = appleklinika_sanitize_checkout_tax_number($additionalFields['appleklinika/tax_number'] ?? '');
@@ -4422,7 +4458,7 @@ function appleklinika_persist_company_checkout_fields(WC_Order $order, WP_REST_R
         appleklinika_clear_company_checkout_meta($order);
         if ($saveToProfile) {
             appleklinika_clear_company_checkout_user_meta($order);
-            appleklinika_save_checkout_profile_from_request($order, $request, $additionalFields, false, '', '');
+            appleklinika_save_checkout_profile_from_request($order, $request, false, '', '');
         }
         return;
     }
@@ -4434,38 +4470,19 @@ function appleklinika_persist_company_checkout_fields(WC_Order $order, WP_REST_R
     $order->update_meta_data('_wc_other/appleklinika/company_name', $companyName);
     $order->update_meta_data('_wc_other/appleklinika/tax_number', $taxNumber);
 
-    $userId = $order->get_user_id() ?: get_current_user_id();
-
     if ($saveToProfile && $userId > 0) {
-        update_user_meta($userId, 'appleklinika_company_purchase', '1');
-        update_user_meta($userId, 'appleklinika_company_name', $companyName);
-        update_user_meta($userId, 'appleklinika_tax_number', $taxNumber);
-        update_user_meta($userId, 'ak_billing_is_company', '1');
-        update_user_meta($userId, 'ak_billing_tax_number', $taxNumber);
-        appleklinika_save_checkout_profile_from_request($order, $request, $additionalFields, true, $companyName, $taxNumber);
+        appleklinika_save_checkout_profile_from_request($order, $request, true, $companyName, $taxNumber);
     }
 }
 
-/**
- * @param array<string, mixed> $source
- */
-function appleklinika_array_text_value(array $source, string $key): string
-{
-    return sanitize_text_field((string) ($source[$key] ?? ''));
-}
-
-/**
- * @param array<string, mixed> $additionalFields
- */
 function appleklinika_save_checkout_profile_from_request(
     WC_Order $order,
     WP_REST_Request $request,
-    array $additionalFields,
     bool $companyPurchase,
     string $companyName,
     string $taxNumber
 ): void {
-    $userId = $order->get_user_id() ?: get_current_user_id();
+    $userId = appleklinika_checkout_profile_user_id($order);
 
     if ($userId <= 0) {
         return;
@@ -4474,57 +4491,19 @@ function appleklinika_save_checkout_profile_from_request(
     $billingAddress = (array) $request->get_param('billing_address');
     $shippingAddress = (array) $request->get_param('shipping_address');
 
-    foreach ([
-        'country' => 'shipping_country',
-        'postcode' => 'shipping_postcode',
-        'city' => 'shipping_city',
-        'address_1' => 'shipping_address_1',
-        'phone' => 'shipping_phone',
-    ] as $requestKey => $metaKey) {
-        $value = appleklinika_array_text_value($shippingAddress, $requestKey);
-        if ($value === '' && $requestKey === 'phone') {
-            $value = appleklinika_array_text_value($billingAddress, 'phone');
-        }
-        if ($value !== '') {
-            update_user_meta($userId, $metaKey, $value);
-        }
-    }
-
-    foreach ([
-        'first_name' => 'billing_first_name',
-        'last_name' => 'billing_last_name',
-        'country' => 'billing_country',
-        'postcode' => 'billing_postcode',
-        'city' => 'billing_city',
-        'address_1' => 'billing_address_1',
-        'phone' => 'billing_phone',
-        'email' => 'billing_email',
-    ] as $requestKey => $metaKey) {
-        $value = $requestKey === 'email'
-            ? sanitize_email((string) ($billingAddress[$requestKey] ?? ''))
-            : appleklinika_array_text_value($billingAddress, $requestKey);
-
-        if ($value !== '') {
-            update_user_meta($userId, $metaKey, $value);
-        }
-    }
-
     $addressDetailValues = [
-        'ak_shipping_house_number' => $additionalFields['appleklinika/house_number'] ?? '',
-        'ak_shipping_floor' => $additionalFields['appleklinika/floor'] ?? '',
-        'ak_shipping_staircase' => $additionalFields['appleklinika/staircase'] ?? '',
-        'ak_shipping_door' => $additionalFields['appleklinika/door'] ?? '',
-        'ak_billing_house_number' => $additionalFields['appleklinika/house_number'] ?? '',
-        'ak_billing_floor' => $additionalFields['appleklinika/floor'] ?? '',
-        'ak_billing_staircase' => $additionalFields['appleklinika/staircase'] ?? '',
-        'ak_billing_door' => $additionalFields['appleklinika/door'] ?? '',
+        'ak_shipping_house_number' => $shippingAddress['appleklinika/house_number'] ?? '',
+        'ak_shipping_floor' => $shippingAddress['appleklinika/floor'] ?? '',
+        'ak_shipping_staircase' => $shippingAddress['appleklinika/staircase'] ?? '',
+        'ak_shipping_door' => $shippingAddress['appleklinika/door'] ?? '',
+        'ak_billing_house_number' => $billingAddress['appleklinika/house_number'] ?? '',
+        'ak_billing_floor' => $billingAddress['appleklinika/floor'] ?? '',
+        'ak_billing_staircase' => $billingAddress['appleklinika/staircase'] ?? '',
+        'ak_billing_door' => $billingAddress['appleklinika/door'] ?? '',
     ];
 
     foreach ($addressDetailValues as $metaKey => $value) {
-        $sanitized = sanitize_text_field((string) $value);
-        if ($sanitized !== '') {
-            update_user_meta($userId, $metaKey, $sanitized);
-        }
+        update_user_meta($userId, $metaKey, sanitize_text_field((string) $value));
     }
 
     if ($companyPurchase) {
@@ -4553,7 +4532,7 @@ function appleklinika_clear_company_checkout_meta(WC_Order $order): void
 
 function appleklinika_clear_company_checkout_user_meta(WC_Order $order): void
 {
-    $userId = $order->get_user_id() ?: get_current_user_id();
+    $userId = appleklinika_checkout_profile_user_id($order);
 
     if ($userId <= 0) {
         return;
@@ -4562,6 +4541,9 @@ function appleklinika_clear_company_checkout_user_meta(WC_Order $order): void
     delete_user_meta($userId, 'appleklinika_company_purchase');
     delete_user_meta($userId, 'appleklinika_company_name');
     delete_user_meta($userId, 'appleklinika_tax_number');
+    delete_user_meta($userId, 'ak_billing_is_company');
+    delete_user_meta($userId, 'ak_billing_tax_number');
+    delete_user_meta($userId, 'billing_company');
 }
 
 function appleklinika_render_company_order_admin_meta(WC_Order $order): void
