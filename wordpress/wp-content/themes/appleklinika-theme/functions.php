@@ -15,7 +15,7 @@ add_action('wp_enqueue_scripts', static function (): void {
         'appleklinika-theme',
         get_stylesheet_directory_uri() . '/assets/css/frontend.css',
         [],
-        '0.1.203'
+        '0.1.204'
     );
 
     if (function_exists('is_checkout') && is_checkout()) {
@@ -3755,6 +3755,47 @@ function appleklinika_account_return_records(int $userId): array
 }
 
 /**
+ * @return array<int, array<string, string>>
+ */
+function appleklinika_account_sell_records(int $userId): array
+{
+    if ($userId <= 0) {
+        return [];
+    }
+
+    $records = get_user_meta($userId, 'appleklinika_buyback_records', true);
+
+    if (! is_array($records)) {
+        return [];
+    }
+
+    return array_values(array_filter(array_map(static function ($record): array {
+        if (! is_array($record)) {
+            return [];
+        }
+
+        $id = sanitize_key((string) ($record['id'] ?? ''));
+        $device = sanitize_text_field((string) ($record['device'] ?? ''));
+
+        if ($id === '' || $device === '') {
+            return [];
+        }
+
+        return [
+            'id' => $id,
+            'device' => $device,
+            'condition' => sanitize_text_field((string) ($record['condition'] ?? '')),
+            'battery' => sanitize_text_field((string) ($record['battery'] ?? '')),
+            'estimated_offer' => sanitize_text_field((string) ($record['estimated_offer'] ?? '')),
+            'final_offer' => sanitize_text_field((string) ($record['final_offer'] ?? '')),
+            'status' => sanitize_text_field((string) ($record['status'] ?? '')),
+            'created_date' => sanitize_text_field((string) ($record['created_date'] ?? '')),
+            'marker' => sanitize_text_field((string) ($record['marker'] ?? '')),
+        ];
+    }, $records)));
+}
+
+/**
  * @return array<int, array{title: string, text: string, url: string, icon: string}>
  */
 function appleklinika_account_category_cards(): array
@@ -3846,19 +3887,44 @@ function appleklinika_render_account_empty_state(array $args): void
 function appleklinika_render_sell_account_endpoint(): void
 {
     $contactUrl = appleklinika_info_page_url('kapcsolat');
+    $records = appleklinika_account_sell_records(get_current_user_id());
     ?>
     <section class="ak-account-page ak-account-sell">
         <header class="ak-account-page__header">
             <p class="ak-account-section-kicker">Beszámítás</p>
             <h2>Készülék beszámítás</h2>
-            <p>Ha később beszámításra vagy eladásra küldesz be készüléket, itt fogod látni az állapotát. Jelenleg nincs külön beküldött készülék modul a fiókodban.</p>
+            <?php if ($records === []) : ?>
+                <p>Ha később beszámításra vagy eladásra küldesz be készüléket, itt fogod látni az állapotát. Jelenleg nincs beküldött készülék a fiókodban.</p>
+            <?php else : ?>
+                <p>Itt követheted a beküldött vagy beszámításra rögzített készülékeid állapotát és ajánlati adatait.</p>
+            <?php endif; ?>
         </header>
-        <div class="ak-account-steps">
-            <article><span>1</span><strong>Add meg a készülék adatait</strong><p>Írd meg, milyen készüléket szeretnél beszámíttatni.</p></article>
-            <article><span>2</span><strong>Egyeztetünk az állapotról</strong><p>Átbeszéljük a készülék állapotát és a lehetőségeket.</p></article>
-            <article><span>3</span><strong>Jóváírás vagy beszámítás</strong><p>A végleges ajánlat valós állapot alapján készül.</p></article>
-        </div>
-        <a class="ak-account-primary-action" href="<?php echo esc_url($contactUrl); ?>">Értékbecslés kérése</a>
+        <?php if ($records === []) : ?>
+            <div class="ak-account-steps">
+                <article><span>1</span><strong>Add meg a készülék adatait</strong><p>Írd meg, milyen készüléket szeretnél beszámíttatni.</p></article>
+                <article><span>2</span><strong>Egyeztetünk az állapotról</strong><p>Átbeszéljük a készülék állapotát és a lehetőségeket.</p></article>
+                <article><span>3</span><strong>Jóváírás vagy beszámítás</strong><p>A végleges ajánlat valós állapot alapján készül.</p></article>
+            </div>
+            <a class="ak-account-primary-action" href="<?php echo esc_url($contactUrl); ?>">Értékbecslés kérése</a>
+        <?php else : ?>
+            <div class="ak-account-record-list">
+                <?php foreach ($records as $record) : ?>
+                    <article class="ak-account-record-card" data-buyback-record="<?php echo esc_attr((string) $record['id']); ?>">
+                        <div class="ak-account-record-card__thumb" aria-hidden="true">
+                            <span><?php echo esc_html(mb_substr((string) $record['device'], 0, 2)); ?></span>
+                        </div>
+                        <div class="ak-account-record-card__body">
+                            <span class="ak-account-order-card__status is-active"><?php echo esc_html((string) $record['status']); ?></span>
+                            <h3><?php echo esc_html((string) $record['device']); ?></h3>
+                            <p><?php echo esc_html((string) $record['condition']); ?><?php echo $record['battery'] !== '' ? ' · Akku: ' . esc_html((string) $record['battery']) : ''; ?></p>
+                            <p>Becsült ajánlat: <?php echo esc_html((string) $record['estimated_offer']); ?> · Végleges ajánlat: <?php echo esc_html((string) $record['final_offer']); ?></p>
+                            <p>Létrehozva: <?php echo esc_html((string) $record['created_date']); ?></p>
+                        </div>
+                        <a class="ak-account-secondary-action" href="<?php echo esc_url($contactUrl); ?>">Egyeztetés</a>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
     </section>
     <?php
 }
