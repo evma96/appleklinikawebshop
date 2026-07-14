@@ -29,6 +29,7 @@
 - The shop listing has a Rejoy-style filter panel, and SIM filtering now uses product meta; production products still need consistent SIM values during admin upload.
 - The shop `Állapot` filter uses `_appleklinika_overall_grade`; production listings depend on admins consistently setting this grade for every used-device product.
 - The shop sale-first ordering uses WooCommerce's product lookup `onsale` flag; after bulk imports or manual database changes, WooCommerce lookup tables may need regeneration for accurate sale ordering.
+- The local `free_shipping#1` instance title is localized in the WooCommerce shipping-zone setting; production shipping zones and newly created method instances still need their own customer-facing title review.
 - The Apple category navigation links into category-specific shop views for iPhone, iPad, MacBook, and Apple Watch. Production still needs final taxonomy rules for AirPods and accessories.
 - iPad, MacBook, and Apple Watch local demo products currently reuse existing local demo image assets; production needs real category-specific product photos.
 - Header links for account/cart pages should be aligned with the final WooCommerce page slugs before production.

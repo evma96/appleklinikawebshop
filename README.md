@@ -179,6 +179,7 @@ The frontend currently includes:
 - Filled cart rows expose WooCommerce's nonce-protected item removal action with a visible `Eltávolítás` label, and the existing coupon form uses the descriptive `Kupon alkalmazása` submit label without changing coupon calculation logic.
 - The WooCommerce shop/listing page has a compact product grid with equal-height cards, product images, key meta, prices, and real product detail links.
 - Storefront prices are formatted without unnecessary decimals, using space-separated thousands such as `379 990 Ft`.
+- WooCommerce sale-price accessibility text is localized as `Eredeti ár` and `Jelenlegi ár`, the local free-shipping method is customer-facing as `Ingyenes szállítás`, and the shared sale-first catalog label is category-neutral.
 - The shop page includes a left-side collapsible filter panel using WooCommerce product meta.
 - iPhone keeps the approved filters for type/model, price, storage, condition, color, and SIM.
 - iPad uses model, price, storage, color, connectivity, and condition filters.

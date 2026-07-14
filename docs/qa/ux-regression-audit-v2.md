@@ -10,8 +10,8 @@ All 21 baseline issues (`UX-001` to `UX-021`) were retested against the current 
 
 | Result | Count |
 |---|---:|
-| Fixed | 13 |
-| Still open | 2 |
+| Fixed | 15 |
+| Still open | 0 |
 | Partially fixed | 6 |
 | Regressed | 0 |
 | New issues | 0 |
@@ -67,9 +67,9 @@ No console errors were captured on the sampled pages.
 | UX-012 | Coupon action copy | Medium | **FIXED** | – | `/?page_id=8` | The existing coupon form now labels its submit action `Kupon alkalmazása`; its field name, submit name/value, validation path, and calculation logic are unchanged. | Browser QA at 1440×1000 and 390×844 | No change recommended. |
 | UX-013 | Header-to-content whitespace | Medium | **PARTIALLY FIXED** | Low | Homepage, account, cart, checkout | Main pages are coherent, but some account/checkout states still use generous vertical gaps before the primary content. This is now polish rather than a broken layout. | `/tmp/appleklinika-ux-qa-v2/desktop-account-dashboard-current.png`, `/tmp/appleklinika-ux-qa-v2/desktop-checkout-filled-current.png` | Tune spacing per page type; avoid global header/grid changes. |
 | UX-014 | Logged-in checkout account-save wording | Medium | **STILL OPEN** | Medium | `/?page_id=9` Step 2 | Logged-in demo customer still sees `Adatok mentése a fiókomba a következő vásárláshoz`, which reads like a guest/account-creation option and is confusing. | `/tmp/appleklinika-ux-qa-v2/desktop-checkout-filled-current.png` | Make the copy/state account-aware without changing Woo validation or Store API behavior. |
-| UX-015 | Mixed English/Hungarian Woo text | Medium | **PARTIALLY FIXED** | Medium | Cart, checkout Step 3, favorites | Most notices are Hungarian, but `Free shipping` remains visible in cart/checkout. Wishlist price accessibility text also exposes `Original price was` / `Current price is` in the rendered text layer. | `/tmp/appleklinika-ux-qa-v2/desktop-checkout-step3-current.png`, `/tmp/appleklinika-ux-qa-v2/desktop-cart-filled-current.png` | Translate remaining Woo strings through supported filters/translation, including accessible price text. |
+| UX-015 | Mixed English/Hungarian Woo text | Medium | **FIXED** | – | Cart, checkout Step 3, favorites, sale prices | The active free-shipping instance now renders `Ingyenes szállítás`, and WooCommerce sale-price screen-reader text renders `Eredeti ár` / `Jelenlegi ár` while preserving the original price markup and values. | Browser QA on cart, checkout, archive, favorite row, and single product | Preserve the exact-domain frontend translation scope and review newly created shipping instances separately. |
 | UX-016 | Missing/broken product image signals | High | **FIXED** | – | Homepage, four archives, four product pages, account favorites | No persistent broken product images were detected in the sampled homepage, archives, single-product pages, or favorites. A transient late image load on favorites resolved immediately and was not reproducible. | `/tmp/appleklinika-ux-qa-v2/desktop-home-current.png`, `/tmp/appleklinika-ux-qa-v2/desktop-product-iphone-current.png` | Keep image normalization isolated from archive-card sources. |
-| UX-017 | Phone-specific sort copy | Low | **STILL OPEN** | Low | `/?post_type=product&ak_type=macbook`, `ipad`, `apple_watch` | MacBook, iPad, and Apple Watch archives still show `Akciós telefonok elöl`. | `/tmp/appleklinika-ux-qa-v2/desktop-shop-macbook-current.png`, `/tmp/appleklinika-ux-qa-v2/desktop-shop-ipad-current.png`, `/tmp/appleklinika-ux-qa-v2/desktop-shop-watch-current.png` | Replace with category-neutral `Akciós termékek elöl`. |
+| UX-017 | Phone-specific sort copy | Low | **FIXED** | – | iPhone, MacBook, iPad, Apple Watch archives | All device archives now use the category-neutral label `Akciós termékek elöl`; the existing `ak_sale_first` key and lookup-table ordering logic are unchanged. | Browser QA on all four archive URLs | No change recommended. |
 | UX-018 | Single-product gallery/fallback QA | Medium | **PARTIALLY FIXED** | Low | Four sampled product URLs | Main gallery images load for iPhone, MacBook, iPad, and Watch; add-to-cart and `Mutass többet` data controls are present. Hover zoom/lightbox and missing-image fallback were not exhaustively interaction-tested in this pass. | `/tmp/appleklinika-ux-qa-v2/desktop-product-iphone-current.png`, `/tmp/appleklinika-ux-qa-v2/desktop-product-macbook-current.png`, `/tmp/appleklinika-ux-qa-v2/desktop-product-ipad-current.png`, `/tmp/appleklinika-ux-qa-v2/desktop-product-watch-current.png` | Run a focused gallery interaction/fallback matrix before declaring fully fixed. |
 | UX-019 | Shop filter no-results | Medium | **FIXED** | – | Impossible archive filter state | Branded Hungarian no-results state provides `Szűrők törlése`, all-products, and category recovery paths. | `/tmp/appleklinika-ux-qa-v2/ux019-shop-filter-no-results-current.png` | No change recommended. |
 | UX-020 | Footer dominates sparse pages | Low | **FIXED** | – | Empty cart, 404, search/filter no-results | Sparse system pages now have purposeful main content and recovery actions before the footer. | `/tmp/appleklinika-ux-qa-v2/ux004-404-current.png`, `/tmp/appleklinika-ux-qa-v2/ux006-product-search-no-results-current.png` | Preserve the current empty-state minimum content depth. |
@@ -79,25 +79,21 @@ No console errors were captured on the sampled pages.
 
 No new independent regression was confirmed. Newly observed details are already covered by existing baseline items:
 
-- English shipping and price accessibility strings are tracked under `UX-015`.
 - The weak buyback device visual is tracked under `UX-008`.
 - Remaining narrow account density is tracked under `UX-009` and `UX-021`.
 
 ## Top remaining fixes
 
 1. `UX-014` — Correct the logged-in checkout account-save wording/state.
-2. `UX-015` — Remove remaining English Woo strings, including `Free shipping`.
-3. `UX-017` — Replace phone-specific sorting text on MacBook, iPad, and Watch archives.
-4. `UX-008` — Replace the buyback initials placeholder with a useful device/category fallback.
-5. `UX-021` — Normalize account endpoint content depth and presentation.
-6. `UX-009` — Improve narrow favorites/account density.
-7. `UX-013` — Tune remaining page-specific header-to-content whitespace.
-8. `UX-018` — Complete focused gallery zoom/lightbox and missing-image fallback QA.
+2. `UX-008` — Replace the buyback initials placeholder with a useful device/category fallback.
+3. `UX-021` — Normalize account endpoint content depth and presentation.
+4. `UX-009` — Improve narrow favorites/account density.
+5. `UX-013` — Tune remaining page-specific header-to-content whitespace.
+6. `UX-018` — Complete focused gallery zoom/lightbox and missing-image fallback QA.
 
 ## Quick wins
 
-- `UX-017`: use category-neutral sort wording.
-- `UX-015`: translate the visible shipping label and Woo price accessibility strings.
+- No remaining localization quick win is open from this audit baseline.
 - `UX-014`: hide or rewrite the account-save option for authenticated customers.
 
 ## Bigger tasks
