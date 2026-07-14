@@ -189,6 +189,7 @@
 - Strengthened the full cart item card elevation with layered shadows so the whole added product block reads as floating.
 - Added the same subtle hover movement pattern to full cart item cards so they lift like premium storefront product cards.
 - Added matching premium hover movement to the cart checkout CTA and continue-shopping link.
+- Localized the active free-shipping method title, WooCommerce sale-price screen-reader text, and the sale-first catalog label without changing shipping rates, visible prices, or ordering behavior.
 - Refined the cart coupon field to match the compact premium reference with a rounded inline input and brand-red OK button.
 - Polished the WooCommerce Blocks checkout page visually with floating white cards, rounded premium inputs, a cart-like order summary, styled notices, and brand-red checkout CTAs without changing checkout logic.
 - Reinforced WooCommerce Blocks checkout input styling so text fields keep the same rounded premium border treatment as select fields.

@@ -65,6 +65,8 @@ add_filter('wc_get_price_thousand_separator', static fn (): string => ' ');
 add_filter('wc_get_price_decimal_separator', static fn (): string => ',');
 add_filter('woocommerce_price_format', static fn (): string => '%2$s %1$s');
 add_filter('gettext', 'appleklinika_checkout_text_translations', 10, 3);
+add_filter('gettext_woocommerce', 'appleklinika_frontend_woocommerce_text_translations', 10, 3);
+add_filter('woocommerce_shipping_rate_label', 'appleklinika_frontend_shipping_rate_label', 20, 2);
 add_filter('body_class', 'appleklinika_body_classes');
 add_filter('render_block_core/site-title', 'appleklinika_render_checkout_site_title_logo', 10, 2);
 add_filter('the_content', 'appleklinika_replace_cart_page_content', 9);
@@ -590,6 +592,28 @@ function appleklinika_checkout_text_translations(string $translation, string $te
     }
 
     return $translation;
+}
+
+function appleklinika_frontend_woocommerce_text_translations(string $translation, string $text, string $domain): string
+{
+    if ($domain !== 'woocommerce' || (is_admin() && ! wp_doing_ajax())) {
+        return $translation;
+    }
+
+    return match ($text) {
+        'Original price was: %s.' => 'Eredeti ár: %s.',
+        'Current price is: %s.' => 'Jelenlegi ár: %s.',
+        default => $translation,
+    };
+}
+
+function appleklinika_frontend_shipping_rate_label(string $label, WC_Shipping_Rate $rate): string
+{
+    if ($rate->get_method_id() === 'free_shipping' && $label === 'Free shipping') {
+        return 'Ingyenes szállítás';
+    }
+
+    return $label;
 }
 
 function appleklinika_body_classes(array $classes): array
@@ -2593,7 +2617,7 @@ function appleklinika_catalog_orderby_options(array $options): array
         'menu_order' => 'Alapértelmezett rendezés',
         'price' => 'Ár szerint növekvő',
         'price-desc' => 'Ár szerint csökkenő',
-        'ak_sale_first' => 'Akciós telefonok elöl',
+        'ak_sale_first' => 'Akciós termékek elöl',
     ];
 }
 
