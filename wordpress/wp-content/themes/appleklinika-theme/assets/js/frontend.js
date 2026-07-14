@@ -155,6 +155,7 @@
     }
 
     var previousEnabled = null;
+    var profileSaveDefaultInitialized = false;
     var taxPattern = '\\d{8}-\\d-\\d{2}';
     var addressDetailLabels = ['Házszám', 'Emelet', 'Lépcsőház', 'Ajtó'];
 
@@ -219,6 +220,40 @@
           element.textContent = 'Céges adatok';
         }
       });
+    }
+
+    function syncCheckoutProfileSaveField() {
+      var input = document.getElementById('contact-appleklinika-save_to_profile');
+
+      if (!input) {
+        return;
+      }
+
+      var wrapper = input.closest('.wc-block-components-checkbox');
+
+      if (!wrapper) {
+        return;
+      }
+
+      wrapper.classList.add('ak-checkout-profile-save');
+
+      if (!profileSaveDefaultInitialized) {
+        profileSaveDefaultInitialized = true;
+
+        if (input.checked) {
+          input.checked = false;
+          dispatchCheckoutFieldUpdate(input);
+        }
+      }
+
+      var helper = wrapper.querySelector('.ak-checkout-profile-save__helper');
+
+      if (!helper) {
+        helper = document.createElement('p');
+        helper.className = 'ak-checkout-profile-save__helper';
+        helper.textContent = 'Bekapcsolva a céges vásárlás, az adószám, valamint a házszám, emelet, lépcsőház és ajtó adatai is elmentésre kerülnek a következő vásárláshoz.';
+        wrapper.appendChild(helper);
+      }
     }
 
     function setCompanyPurchaseState(purchaseField, companyField, taxField, enabled) {
@@ -578,6 +613,7 @@
 
     function syncCompanyCheckoutFields() {
       syncCompanyCheckoutHeading();
+      syncCheckoutProfileSaveField();
       syncCheckoutAddressDetails();
 
       var purchaseField = checkoutFieldByLabel('Cégként vásárolok');

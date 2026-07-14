@@ -4984,6 +4984,17 @@ body.woocommerce-checkout .wc-block-components-checkbox {
   padding: 12px 14px;
 }
 
+body.woocommerce-checkout #contact-fields .ak-checkout-profile-save {
+  box-sizing: border-box;
+}
+
+body.woocommerce-checkout #contact-fields .ak-checkout-profile-save__helper {
+  margin: 7px 0 0 36px;
+  color: var(--ak-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 body.woocommerce-checkout .wc-block-checkout__terms {
   margin-top: 12px;
   padding: 14px;
