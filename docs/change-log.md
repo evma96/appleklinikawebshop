@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Added the Apple Klinika Buyback Phase 1B-A pure domain foundation with immutable value objects, a complete actor/mode/guard-aware status-transition policy, versioned aggregate events, typed application ports, and a deterministic 639-assertion domain test suite while keeping schema version `1.0.0` and public behavior unchanged.
 - Added the standalone Apple Klinika Buyback Phase 1A plugin foundation with semantic schema versioning, idempotent migrations for request/snapshot/event tables, capability-gated read-only WooCommerce diagnostics, read-only legacy record detection, and a Docker-backed activation/migration smoke test without public buyback UI or legacy import.
 - Added a visible, accessible `Eltávolítás` action to each filled-cart row using WooCommerce's cart-item removal URL and nonce, and renamed the existing coupon submit action to `Kupon alkalmazása` with cart-scoped responsive sizing.
 - Rebuilt the WooCommerce My Account area into a Rejoy-inspired Apple Klinika V1 shell with the final account navigation, dark profile sidebar, real-data dashboard summaries, CTA-only buyback, warranty/return empty states, grouped settings, and safe redirects for hidden downloads/address endpoints; dashboard order counts now exclude WooCommerce checkout drafts.
