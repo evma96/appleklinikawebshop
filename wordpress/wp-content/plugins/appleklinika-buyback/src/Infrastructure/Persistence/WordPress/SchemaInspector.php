@@ -76,6 +76,24 @@ final class SchemaInspector implements SchemaDiagnosticsReader
         }
     }
 
+    /** @param list<string> $tableKeys */
+    public function assertTables(array $tableKeys): void
+    {
+        $reports = $this->tables();
+
+        foreach ($tableKeys as $tableKey) {
+            if (! isset($reports[$tableKey])) {
+                throw new \InvalidArgumentException('Unknown buyback table key requested.');
+            }
+
+            $table = $reports[$tableKey];
+
+            if (! $table['exists'] || $table['missing_columns'] !== [] || $table['missing_indexes'] !== []) {
+                throw new \RuntimeException('Buyback schema verification failed for ' . $tableKey . '.');
+            }
+        }
+    }
+
     private function tableExists(string $tableName): bool
     {
         $result = $this->database->get_var(

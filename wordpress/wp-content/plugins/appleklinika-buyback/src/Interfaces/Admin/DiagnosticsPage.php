@@ -27,7 +27,7 @@ final class DiagnosticsPage
         add_submenu_page(
             'woocommerce',
             'Apple Klinika Buyback diagnosztika',
-            'Apple Klinika Buyback',
+            'Buyback – Diagnosztika',
             CapabilityManager::VIEW_DIAGNOSTICS,
             self::SLUG,
             [$this, 'render']
@@ -49,6 +49,10 @@ final class DiagnosticsPage
 
         echo '<div class="wrap">';
         echo '<h1>Apple Klinika Buyback diagnosztika</h1>';
+        echo '<nav class="nav-tab-wrapper">';
+        echo '<a class="nav-tab nav-tab-active" href="' . esc_url(admin_url('admin.php?page=' . self::SLUG)) . '">Diagnosztika</a>';
+        echo '<a class="nav-tab" href="' . esc_url(admin_url('admin.php?page=' . PriceBooksPage::SLUG)) . '">Árkönyvek</a>';
+        echo '</nav>';
         echo '<p>Ez az oldal kizárólag olvasási célú Phase 1A rendszerállapotot mutat. Nem tartalmaz importálási vagy módosítási műveletet.</p>';
 
         $this->renderSystemTable($report);

@@ -2,6 +2,7 @@
 
 ## 2026-07-15
 
+- Added Apple Klinika Buyback Phase 2A draft price-book administration with schema `1.1.0`, two versioned pricing tables, a pure pricing domain, optimistic WordPress repositories, read-only iPhone catalog access, capability/nonce-protected WooCommerce admin forms, and a fully cleaning real pricing/admin integration suite. Plugin version is now `0.5.0`; no activation, calculation, offer, public route, request linkage, or WooCommerce customer-flow integration was added.
 - Added Apple Klinika Buyback Phase 1B-B2 read-only legacy reporting with typed user-meta records, strict field parsing, collision-safe `user-meta:{user_id}:{record_id}` references, explicit dry-run classifications, PII-redacted deterministic WP-CLI table/JSON output, strict exit behavior, and a 50-assertion no-write integration suite. Plugin version is now `0.4.0`; schema remains `1.0.0` and no import or public behavior was added.
 - Added Apple Klinika Buyback Phase 1B-B1 WordPress persistence with database-generated identities, strict row mapping, expected-version optimistic locking, UTC request numbering/time, atomic status-event writes, deterministic event idempotency, and a fully cleaning real MariaDB integration suite. Plugin version is now `0.3.0`; schema remains `1.0.0` and no public behavior was added.
 
