@@ -18,9 +18,14 @@ final class BuybackRequest
         private readonly BuybackRequestId $id,
         private readonly RequestNumber $requestNumber,
         private ?CustomerId $customerId,
+        private readonly DeviceCategory $category,
+        private readonly ModelKey $modelKey,
+        private readonly DeviceDisplayName $deviceDisplayName,
         private ServiceMode $serviceMode,
         private ?HandoverMethod $handoverMethod,
         private BuybackStatus $status,
+        private readonly RequestSource $source,
+        private readonly ?LegacyReference $legacyReference,
         private AggregateVersion $version,
         private readonly \DateTimeImmutable $createdAt,
         private \DateTimeImmutable $updatedAt
@@ -33,17 +38,28 @@ final class BuybackRequest
     public static function createDraft(
         BuybackRequestId $id,
         RequestNumber $requestNumber,
+        DeviceCategory $category,
+        ModelKey $modelKey,
+        DeviceDisplayName $deviceDisplayName,
         ServiceMode $serviceMode,
+        RequestSource $source,
         \DateTimeImmutable $createdAt,
-        ?CustomerId $customerId = null
+        ?CustomerId $customerId = null,
+        ?HandoverMethod $handoverMethod = null,
+        ?LegacyReference $legacyReference = null
     ): self {
         return new self(
             $id,
             $requestNumber,
             $customerId,
+            $category,
+            $modelKey,
+            $deviceDisplayName,
             $serviceMode,
-            null,
+            $handoverMethod,
             new BuybackStatus(BuybackStatus::DRAFT),
+            $source,
+            $legacyReference,
             new AggregateVersion(0),
             $createdAt,
             $createdAt
@@ -54,9 +70,14 @@ final class BuybackRequest
         BuybackRequestId $id,
         RequestNumber $requestNumber,
         ?CustomerId $customerId,
+        DeviceCategory $category,
+        ModelKey $modelKey,
+        DeviceDisplayName $deviceDisplayName,
         ServiceMode $serviceMode,
         ?HandoverMethod $handoverMethod,
         BuybackStatus $status,
+        RequestSource $source,
+        ?LegacyReference $legacyReference,
         AggregateVersion $version,
         \DateTimeImmutable $createdAt,
         \DateTimeImmutable $updatedAt
@@ -65,9 +86,14 @@ final class BuybackRequest
             $id,
             $requestNumber,
             $customerId,
+            $category,
+            $modelKey,
+            $deviceDisplayName,
             $serviceMode,
             $handoverMethod,
             $status,
+            $source,
+            $legacyReference,
             $version,
             $createdAt,
             $updatedAt
@@ -141,7 +167,8 @@ final class BuybackRequest
             $target,
             $context->actorType(),
             $context->now(),
-            $context->correlationId()
+            $context->correlationId(),
+            ['aggregate_version' => $this->version->value()]
         );
     }
 
@@ -160,6 +187,21 @@ final class BuybackRequest
         return $this->customerId;
     }
 
+    public function category(): DeviceCategory
+    {
+        return $this->category;
+    }
+
+    public function modelKey(): ModelKey
+    {
+        return $this->modelKey;
+    }
+
+    public function deviceDisplayName(): DeviceDisplayName
+    {
+        return $this->deviceDisplayName;
+    }
+
     public function serviceMode(): ServiceMode
     {
         return $this->serviceMode;
@@ -173,6 +215,16 @@ final class BuybackRequest
     public function status(): BuybackStatus
     {
         return $this->status;
+    }
+
+    public function source(): RequestSource
+    {
+        return $this->source;
+    }
+
+    public function legacyReference(): ?LegacyReference
+    {
+        return $this->legacyReference;
     }
 
     public function version(): AggregateVersion

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AppleKlinika\Buyback\Application\Port;
 
+use AppleKlinika\Buyback\Application\Command\NewBuybackRequest;
 use AppleKlinika\Buyback\Application\Query\BuybackRequestPage;
 use AppleKlinika\Buyback\Application\Query\PageRequest;
 use AppleKlinika\Buyback\Domain\Buyback\BuybackRequest;
@@ -16,6 +17,8 @@ use AppleKlinika\Buyback\Domain\Shared\AggregateVersion;
 
 interface BuybackRequestRepository
 {
+    public function insert(NewBuybackRequest $request): BuybackRequest;
+
     public function getById(BuybackRequestId $id): ?BuybackRequest;
 
     public function getByRequestNumber(RequestNumber $requestNumber): ?BuybackRequest;

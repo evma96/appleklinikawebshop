@@ -1,6 +1,6 @@
 # Apple Klinika Buyback Phase 1B-A
 
-Status: implemented, awaiting acceptance
+Status: accepted and completed
 
 Date: 2026-07-15
 

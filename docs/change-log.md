@@ -1,5 +1,9 @@
 # Change Log
 
+## 2026-07-15
+
+- Added Apple Klinika Buyback Phase 1B-B1 WordPress persistence with database-generated identities, strict row mapping, expected-version optimistic locking, UTC request numbering/time, atomic status-event writes, deterministic event idempotency, and a fully cleaning real MariaDB integration suite. Plugin version is now `0.3.0`; schema remains `1.0.0` and no public behavior was added.
+
 ## Unreleased
 
 - Added the Apple Klinika Buyback Phase 1B-A pure domain foundation with immutable value objects, a complete actor/mode/guard-aware status-transition policy, versioned aggregate events, typed application ports, and a deterministic 639-assertion domain test suite while keeping schema version `1.0.0` and public behavior unchanged.
