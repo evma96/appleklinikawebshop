@@ -2,7 +2,7 @@
 
 COMPOSE := docker compose
 
-.PHONY: install up down test test-unit test-integration lint format static quality quality-fix check
+.PHONY: install up down test test-unit test-integration test-buyback lint format static quality quality-fix check
 
 install:
 	@if [ ! -f .env ]; then cp .env.example .env; fi
@@ -21,6 +21,9 @@ test-unit:
 
 test-integration:
 	@echo "No integration test suite is configured yet. External live API calls are not allowed in tests."
+
+test-buyback:
+	$(COMPOSE) exec -T wordpress php /var/www/html/wp-content/plugins/appleklinika-buyback/tests/smoke.php
 
 lint:
 	@echo "No linter is configured yet."
