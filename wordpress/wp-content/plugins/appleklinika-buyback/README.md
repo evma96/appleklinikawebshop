@@ -1,6 +1,6 @@
 # Apple Klinika Buyback
 
-Phase 1A provides the schema and read-only diagnostics foundation for the future Apple Klinika buyback system. Phase 1B-A adds the pure domain model. Phase 1B-B1 connects that domain to the existing WordPress tables with optimistic locking and transactional event persistence. The plugin intentionally does not expose a public buyback workflow.
+Phase 1A provides the schema and read-only diagnostics foundation for the future Apple Klinika buyback system. Phase 1B-A adds the pure domain model. Phase 1B-B1 connects that domain to the existing WordPress tables with optimistic locking and transactional event persistence. Phase 1B-B2 adds a read-only legacy source and deterministic dry-run CLI report. The plugin intentionally does not expose a public buyback workflow.
 
 ## Scope
 
@@ -20,12 +20,14 @@ Phase 1A provides the schema and read-only diagnostics foundation for the future
 - Transactional `buyback_status_changed` persistence with deterministic idempotency keys and no customer payload by default.
 - Internal create/transition application handlers with no public interface registration.
 - A rerunnable real MariaDB persistence suite that cleans every exact QA marker and proves row counts plus legacy user meta are unchanged.
+- A typed read-only source for `appleklinika_buyback_records`, strict field parsing, deterministic PII-free references, and explicit dry-run classifications.
+- A CLI-only `wp ak-buyback legacy-report` command with deterministic table/JSON output, optional user filtering, and strict validation mode.
 
-Not included through Phase 1B-B1: public routes, calculators, forms, offers, pricing, inspections, payouts, shipping integrations, trade-in credit implementation, WooCommerce order integration, operational admin UI, or legacy import.
+Not included through Phase 1B-B2: public routes, calculators, forms, offers, pricing, inspections, payouts, shipping integrations, trade-in credit implementation, WooCommerce order integration, operational admin UI, or legacy import.
 
 ## Versions
 
-- Plugin version: `0.3.0`
+- Plugin version: `0.4.0`
 - Core schema version: `1.0.0`
 
 The installed schema version is stored in the `appleklinika_buyback_schema_version` WordPress option. Failed migrations are recorded in `appleklinika_buyback_migration_error`; the installed version is advanced only after a successful migration.
@@ -84,6 +86,24 @@ make test-buyback-persistence
 
 It verifies insert/reconstitution, generated identities, request-number collision handling, duplicate rejection, typed queries, deterministic pagination, optimistic locking, missing-versus-stale failures, UTC timestamps, atomic request/event commits, rollback, event idempotency, and complete QA-fixture cleanup. Run it twice consecutively before accepting persistence changes.
 
+Run the read-only legacy dry-run suite:
+
+```bash
+make test-buyback-legacy
+```
+
+The suite covers field parsers, deterministic references, every classification, CLI registration/JSON output, strict exit behavior, PII redaction, repeatability, the known demo record, table counts, option integrity, and a raw legacy-meta hash. It creates no user or buyback fixture and must pass twice consecutively.
+
+When a real WP-CLI runtime is available, generate a report with:
+
+```bash
+wp ak-buyback legacy-report --format=table
+wp ak-buyback legacy-report --format=json --user-id=2
+wp ak-buyback legacy-report --format=json --strict
+```
+
+Supported formats are `table` and `json`. Normal mode returns zero when reporting succeeds. Strict mode returns non-zero when any record is invalid or needs manual mapping. The command intentionally has no import, update, repair, delete, or migration option.
+
 The repository-wide `make test` and `make quality` commands remain placeholders and are reported as such. The plugin-local domain and Phase 1A smoke commands are real test suites.
 
 ## Deactivation and Rollback
@@ -92,4 +112,4 @@ Deactivate the plugin from the standard WordPress Plugins screen. Deactivation r
 
 ## Data Ownership
 
-Phase 1A does not replace the theme-owned `Beszámítás` account endpoint and does not modify products, orders, users, checkout, cart, account output, pricing, stock, or legacy buyback records.
+Phase 1B-B2 does not replace the theme-owned `Beszámítás` account endpoint and does not modify products, orders, users, checkout, cart, account output, pricing, stock, or legacy buyback records. A future import requires a separately reviewed command, mapping policy, audit trail, and rollback plan.

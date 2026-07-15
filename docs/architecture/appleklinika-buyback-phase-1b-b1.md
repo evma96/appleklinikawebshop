@@ -108,6 +108,6 @@ The suite must pass twice consecutively. The pure domain (`make test-buyback-dom
 
 Phase 1B-B1 adds no public calculator, form, account replacement, operational admin UI, legacy import, price book, pricing, offer, inspection, payout, IBAN/IMEI, courier integration, notification, trade-in credit, or WooCommerce cart/order/checkout behavior. It changes no theme, frontend assets, product/order/user data, WooCommerce settings, inventory integration, or Számlázz.hu plugin.
 
-## Next phase: 1B-B2
+## Follow-up
 
-Phase 1B-B2 may add the separately reviewed read-only legacy adapter and CLI report. It must preserve legacy source records, start with dry-run output, and must not automatically import data.
+Phase 1B-B2 now supplies the separately reviewed read-only legacy adapter and CLI report. It preserves legacy source records and does not import data. See [Phase 1B-B2](appleklinika-buyback-phase-1b-b2.md).
