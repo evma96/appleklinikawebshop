@@ -2,7 +2,7 @@
 
 COMPOSE := docker compose
 
-.PHONY: install up down test test-unit test-integration test-buyback lint format static quality quality-fix check
+.PHONY: install up down test test-unit test-integration test-buyback test-buyback-domain lint format static quality quality-fix check
 
 install:
 	@if [ ! -f .env ]; then cp .env.example .env; fi
@@ -24,6 +24,9 @@ test-integration:
 
 test-buyback:
 	$(COMPOSE) exec -T wordpress php /var/www/html/wp-content/plugins/appleklinika-buyback/tests/smoke.php
+
+test-buyback-domain:
+	$(COMPOSE) exec -T wordpress php /var/www/html/wp-content/plugins/appleklinika-buyback/tests/domain.php
 
 lint:
 	@echo "No linter is configured yet."

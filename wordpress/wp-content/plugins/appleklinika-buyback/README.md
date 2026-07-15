@@ -1,6 +1,6 @@
 # Apple Klinika Buyback
 
-Phase 1A provides the persistence and read-only diagnostics foundation for the future Apple Klinika buyback system. It intentionally does not expose a public buyback workflow.
+Phase 1A provides the persistence and read-only diagnostics foundation for the future Apple Klinika buyback system. Phase 1B-A adds the pure domain model, transition policy, aggregate foundation, domain event, and application ports. The plugin intentionally does not expose a public buyback workflow.
 
 ## Scope
 
@@ -9,12 +9,17 @@ Phase 1A provides the persistence and read-only diagnostics foundation for the f
 - A read-only WooCommerce diagnostics screen.
 - A read-only detector for the legacy `appleklinika_buyback_records` user meta.
 - Activation, deactivation, migration, capability, and legacy-integrity smoke tests.
+- Immutable request, customer, money, service-mode, handover, status, actor, and aggregate-version types.
+- A complete actor-, mode-, expiry-, evidence-, settlement-, and trade-in-aware status-transition policy.
+- A minimal `BuybackRequest` aggregate that controls status changes, optimistic version increments, and pending domain events.
+- Repository, request-number, clock, transaction, and event-publishing application ports without WordPress implementations.
+- A deterministic pure-PHP domain test suite that does not bootstrap WordPress or access the database.
 
-Not included in Phase 1A: public routes, calculators, forms, offers, pricing, inspections, payouts, shipping, trade-in credit, WooCommerce order integration, or legacy import.
+Not included in Phase 1A/1B-A: public routes, calculators, forms, offers, pricing, inspections, payouts, shipping, trade-in credit implementation, WooCommerce order integration, repository adapters, or legacy import.
 
 ## Versions
 
-- Plugin version: `0.1.0`
+- Plugin version: `0.2.0`
 - Core schema version: `1.0.0`
 
 The installed schema version is stored in the `appleklinika_buyback_schema_version` WordPress option. Failed migrations are recorded in `appleklinika_buyback_migration_error`; the installed version is advanced only after a successful migration.
@@ -49,6 +54,14 @@ The screen reports plugin/schema versions, table health, row counts, missing col
 
 ## Verification
 
+Run the real pure-domain test suite:
+
+```bash
+make test-buyback-domain
+```
+
+This command executes the plugin-local deterministic PHP runner without loading WordPress. It covers all supported value-object codes, all 31 allowed transition edges, all 410 unsupported status pairs, actor restrictions, service-mode restrictions, conditional guards, aggregate version/event behavior, and application-port signatures.
+
 Run the real Docker-backed smoke test:
 
 ```bash
@@ -57,7 +70,7 @@ make test-buyback
 
 The smoke test uses WordPress activation/deactivation APIs, runs the migration twice, checks schema health and authorization, proves that the known legacy demo record is detected but not imported, and compares a raw legacy user-meta hash before and after the full run.
 
-The repository-wide `make test` and `make quality` commands remain placeholders and are reported as such.
+The repository-wide `make test` and `make quality` commands remain placeholders and are reported as such. The plugin-local domain and Phase 1A smoke commands are real test suites.
 
 ## Deactivation and Rollback
 
