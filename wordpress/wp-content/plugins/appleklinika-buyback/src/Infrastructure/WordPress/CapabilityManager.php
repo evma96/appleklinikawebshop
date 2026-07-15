@@ -7,6 +7,7 @@ namespace AppleKlinika\Buyback\Infrastructure\WordPress;
 final class CapabilityManager
 {
     public const VIEW_DIAGNOSTICS = 'ak_buyback_view_diagnostics';
+    public const MANAGE_PRICE_BOOKS = 'ak_buyback_manage_price_books';
 
     /**
      * @var array<int, string>
@@ -20,6 +21,7 @@ final class CapabilityManager
 
             if ($role instanceof \WP_Role) {
                 $role->add_cap(self::VIEW_DIAGNOSTICS);
+                $role->add_cap(self::MANAGE_PRICE_BOOKS);
             }
         }
     }
@@ -31,6 +33,7 @@ final class CapabilityManager
 
             if ($role instanceof \WP_Role) {
                 $role->remove_cap(self::VIEW_DIAGNOSTICS);
+                $role->remove_cap(self::MANAGE_PRICE_BOOKS);
             }
         }
     }

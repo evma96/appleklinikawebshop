@@ -12,7 +12,7 @@
 
 ## Known Limitations
 
-- Buyback Phase 1A intentionally provides only persistence, versioned migrations, read-only diagnostics, and legacy detection. Public submission, pricing, offers, inspection, payout, courier, trade-in credit, WooCommerce order integration, admin write tools, and legacy import remain deferred.
+- Buyback Phase 2A now provides internal, versioned draft price-book and pricing-rule administration only. Price-book activation, live calculation, public submission, offers, inspection, payout, courier, trade-in credit, WooCommerce order integration, and legacy import remain deferred.
 - The Buyback Phase 1A migration smoke test is a real Docker-backed WordPress integration check (`make test-buyback`), while the repository-wide `make test` and `make quality` commands still remain placeholders.
 - WooCommerce is not installed or configured by this bootstrap alone.
 - Custom product fields are editable in admin and selected values render on the product page; selector cards can switch matching same-model products without a full page reload when a complete color/storage/grade combination exists.
@@ -51,7 +51,7 @@
 
 ## Deferred Improvements
 
-- Implement later buyback phases from the approved blueprint only after Phase 1A schema and diagnostics receive manual admin approval; legacy `appleklinika_buyback_records` data must remain read-only until a separately approved import design exists.
+- Keep every Phase 2A price book draft-only until a separately reviewed Phase 2B defines activation governance, deterministic calculation, immutable request linkage, and audit requirements; legacy `appleklinika_buyback_records` data must remain read-only until a separately approved import design exists.
 - Add PHP dependency management with Composer.
 - Add PHPUnit or Pest test setup.
 - Add PHP_CodeSniffer rules for WordPress coding standards.

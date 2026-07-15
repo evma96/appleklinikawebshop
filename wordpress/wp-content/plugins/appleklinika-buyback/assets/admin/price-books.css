@@ -1,0 +1,13 @@
+.ak-buyback-admin .nav-tab-wrapper { margin-bottom: 20px; }
+.ak-buyback-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr); gap: 20px; align-items: start; }
+.ak-buyback-card { margin-top: 20px; padding: 20px; background: #fff; border: 1px solid #dcdcde; border-radius: 6px; }
+.ak-buyback-card h2, .ak-buyback-card h3 { margin-top: 0; }
+.ak-buyback-card label { display: block; margin-bottom: 5px; font-weight: 600; }
+.ak-buyback-card input[type="text"], .ak-buyback-card input[type="number"], .ak-buyback-card select, .ak-buyback-card textarea { width: 100%; max-width: 100%; }
+.ak-buyback-heading { display: flex; justify-content: space-between; gap: 20px; align-items: center; margin: 20px 0 0; }
+.ak-buyback-heading h2 { display: inline-block; margin-right: 10px; }
+.ak-status { display: inline-block; padding: 3px 8px; border-radius: 999px; background: #f0f0f1; color: #3c434a; font-size: 12px; font-weight: 600; }
+.ak-inline-form { display: inline; }
+.ak-rule-field[hidden] { display: none !important; }
+.ak-buyback-rules { overflow-x: auto; }
+@media (max-width: 1100px) { .ak-buyback-grid { grid-template-columns: 1fr; } }

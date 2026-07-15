@@ -98,6 +98,10 @@ final class CoreSchemaMigration implements Migration
             UNIQUE KEY idempotency_key (idempotency_key)
         ) {$charsetCollate};");
 
-        (new SchemaInspector($this->database, $this->version()->value()))->assertRequiredSchema();
+        (new SchemaInspector($this->database, $this->version()->value()))->assertTables([
+            Schema::REQUESTS,
+            Schema::SNAPSHOTS,
+            Schema::EVENTS,
+        ]);
     }
 }

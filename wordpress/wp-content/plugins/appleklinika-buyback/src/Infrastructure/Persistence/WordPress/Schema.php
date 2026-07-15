@@ -14,6 +14,8 @@ final class Schema
     public const REQUESTS = 'ak_buyback_requests';
     public const SNAPSHOTS = 'ak_buyback_snapshots';
     public const EVENTS = 'ak_buyback_events';
+    public const PRICE_BOOKS = 'ak_buyback_price_books';
+    public const PRICE_RULES = 'ak_buyback_price_rules';
 
     /**
      * @return array<string, string>
@@ -24,6 +26,8 @@ final class Schema
             self::REQUESTS => $database->prefix . self::REQUESTS,
             self::SNAPSHOTS => $database->prefix . self::SNAPSHOTS,
             self::EVENTS => $database->prefix . self::EVENTS,
+            self::PRICE_BOOKS => $database->prefix . self::PRICE_BOOKS,
+            self::PRICE_RULES => $database->prefix . self::PRICE_RULES,
         ];
     }
 
@@ -84,6 +88,48 @@ final class Schema
                 'idempotency_key',
                 'created_at',
             ],
+            self::PRICE_BOOKS => [
+                'id',
+                'version_number',
+                'label',
+                'status',
+                'currency',
+                'effective_from',
+                'effective_to',
+                'minimum_offer_minor',
+                'rounding_increment_minor',
+                'minimum_policy',
+                'created_by',
+                'activated_by',
+                'retired_by',
+                'version',
+                'created_at',
+                'updated_at',
+                'activated_at',
+                'retired_at',
+            ],
+            self::PRICE_RULES => [
+                'id',
+                'price_book_id',
+                'rule_code',
+                'rule_kind',
+                'category',
+                'model_key',
+                'storage_gb',
+                'service_mode',
+                'condition_key',
+                'comparison_operator',
+                'comparison_value_json',
+                'amount_minor',
+                'multiplier_bps',
+                'priority',
+                'is_enabled',
+                'public_label',
+                'internal_note',
+                'version',
+                'created_at',
+                'updated_at',
+            ],
         ];
     }
 
@@ -113,6 +159,20 @@ final class Schema
                 'request_created_at',
                 'event_type',
                 'idempotency_key',
+            ],
+            self::PRICE_BOOKS => [
+                'PRIMARY',
+                'version_number',
+                'status_effective_from',
+                'status_updated_at',
+            ],
+            self::PRICE_RULES => [
+                'PRIMARY',
+                'book_rule_code',
+                'book_kind',
+                'book_model_storage',
+                'book_priority',
+                'category_model',
             ],
         ];
     }
