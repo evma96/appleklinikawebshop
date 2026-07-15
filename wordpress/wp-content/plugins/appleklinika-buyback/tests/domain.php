@@ -13,10 +13,14 @@ use AppleKlinika\Buyback\Domain\Buyback\BuybackRequest;
 use AppleKlinika\Buyback\Domain\Buyback\BuybackRequestId;
 use AppleKlinika\Buyback\Domain\Buyback\BuybackStatus;
 use AppleKlinika\Buyback\Domain\Buyback\CustomerId;
+use AppleKlinika\Buyback\Domain\Buyback\DeviceCategory;
+use AppleKlinika\Buyback\Domain\Buyback\DeviceDisplayName;
 use AppleKlinika\Buyback\Domain\Buyback\Event\BuybackStatusChanged;
 use AppleKlinika\Buyback\Domain\Buyback\HandoverMethod;
 use AppleKlinika\Buyback\Domain\Buyback\HandoverMethodPolicy;
+use AppleKlinika\Buyback\Domain\Buyback\ModelKey;
 use AppleKlinika\Buyback\Domain\Buyback\RequestNumber;
+use AppleKlinika\Buyback\Domain\Buyback\RequestSource;
 use AppleKlinika\Buyback\Domain\Buyback\ServiceMode;
 use AppleKlinika\Buyback\Domain\Buyback\StatusTransitionPolicy;
 use AppleKlinika\Buyback\Domain\Buyback\TransitionContext;
@@ -162,6 +166,19 @@ $test->assert((new RequestNumber($maximumRequestNumber))->value() === $maximumRe
 $test->assert((new RequestNumber("  {$maximumRequestNumber}  "))->value() === $maximumRequestNumber, 'RequestNumber trims before validating the 32-character boundary');
 $test->throws(fn () => new RequestNumber('   '), InvalidValueObjectException::class, 'RequestNumber rejects empty values');
 $test->throws(fn () => new RequestNumber(str_repeat('A', 33)), InvalidValueObjectException::class, 'RequestNumber rejects exactly 33 ASCII characters');
+
+$test->assert((new DeviceCategory(DeviceCategory::IPHONE))->code() === 'iphone', 'DeviceCategory accepts the V1 iPhone code');
+$test->throws(fn () => new DeviceCategory('ipad'), InvalidValueObjectException::class, 'DeviceCategory rejects unsupported V1 categories');
+$test->assert((new ModelKey('  iPhone_13 Pro  '))->value() === 'iphone-13-pro', 'ModelKey normalizes identifiers');
+$test->throws(fn () => new ModelKey('<b>iphone</b>'), InvalidValueObjectException::class, 'ModelKey rejects markup and unsupported characters');
+$test->throws(fn () => new ModelKey(str_repeat('a', 101)), InvalidValueObjectException::class, 'ModelKey enforces the schema length');
+$test->assert((new DeviceDisplayName('  iPhone 13   Pro  '))->value() === 'iPhone 13 Pro', 'DeviceDisplayName normalizes whitespace');
+$test->throws(fn () => new DeviceDisplayName('<b>iPhone</b>'), InvalidValueObjectException::class, 'DeviceDisplayName rejects HTML');
+$test->throws(fn () => new DeviceDisplayName(str_repeat('a', 192)), InvalidValueObjectException::class, 'DeviceDisplayName enforces the schema length');
+foreach (RequestSource::supportedCodes() as $sourceCode) {
+    $test->assert((new RequestSource($sourceCode))->code() === $sourceCode, "RequestSource accepts {$sourceCode}");
+}
+$test->throws(fn () => new RequestSource('implicit_test'), InvalidValueObjectException::class, 'RequestSource rejects unknown sources');
 
 $money = new Money(10000, 'HUF');
 $test->assert($money->equals(new Money(10000, 'HUF')), 'Money equality works');
@@ -367,11 +384,22 @@ $createdAt = new DateTimeImmutable('2026-07-15T10:00:00+00:00');
 $aggregate = BuybackRequest::createDraft(
     new BuybackRequestId(100),
     new RequestNumber('AK-TEST-100'),
+    new DeviceCategory(DeviceCategory::IPHONE),
+    new ModelKey('iphone-13-pro'),
+    new DeviceDisplayName('iPhone 13 Pro'),
     new ServiceMode(ServiceMode::FAST_ONLINE),
+    new RequestSource(RequestSource::NATIVE),
     $createdAt
 );
 $test->assert($aggregate->status()->code() === BuybackStatus::DRAFT, 'Aggregate starts in draft');
 $test->assert($aggregate->version()->value() === 0, 'Draft aggregate starts at version zero');
+$test->assert(
+    $aggregate->category()->code() === DeviceCategory::IPHONE
+    && $aggregate->modelKey()->value() === 'iphone-13-pro'
+    && $aggregate->deviceDisplayName()->value() === 'iPhone 13 Pro'
+    && $aggregate->source()->code() === RequestSource::NATIVE,
+    'Aggregate preserves schema-compatible device and source identity'
+);
 $aggregate->attachCustomer(new CustomerId(2), new DateTimeImmutable('2026-07-15T10:01:00+00:00'));
 $test->assert($aggregate->customerId()?->toInt() === 2 && $aggregate->version()->value() === 1, 'Customer attachment increments version');
 $aggregate->selectHandoverMethod(
