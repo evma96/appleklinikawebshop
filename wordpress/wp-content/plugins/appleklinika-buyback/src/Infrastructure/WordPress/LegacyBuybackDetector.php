@@ -8,33 +8,26 @@ use AppleKlinika\Buyback\Application\Port\LegacyDiagnosticsReader;
 
 final class LegacyBuybackDetector implements LegacyDiagnosticsReader
 {
-    public const META_KEY = 'appleklinika_buyback_records';
+    public const META_KEY = WordPressLegacyBuybackRecordSource::META_KEY;
     public const KNOWN_DEMO_RECORD_ID = 'ak-buyback-account-test-profile-v1';
+
+    private readonly WordPressLegacyBuybackRecordSource $source;
 
     public function __construct(private readonly \wpdb $database)
     {
+        $this->source = new WordPressLegacyBuybackRecordSource($database);
     }
 
     public function summary(): array
     {
-        $userIds = $this->database->get_col(
-            $this->database->prepare(
-                "SELECT DISTINCT user_id FROM {$this->database->usermeta} WHERE meta_key = %s ORDER BY user_id ASC",
-                self::META_KEY
-            )
+        $source = $this->source->read();
+        $records = array_map(
+            static fn ($record): array => [
+                'id' => substr((string) $record->recordId, 0, 191),
+                'marker' => substr((string) $record->marker, 0, 191),
+            ],
+            $source->records
         );
-        $userIds = is_array($userIds) ? $userIds : [];
-
-        $records = [];
-
-        foreach ($userIds as $userId) {
-            foreach ($this->recordsForUser((int) $userId) as $record) {
-                $records[] = [
-                    'id' => $this->safeReference($record['id'] ?? ''),
-                    'marker' => $this->safeReference($record['marker'] ?? ''),
-                ];
-            }
-        }
 
         $knownDemoDetected = false;
 
@@ -46,34 +39,12 @@ final class LegacyBuybackDetector implements LegacyDiagnosticsReader
         }
 
         return [
-            'meta_key_exists' => $userIds !== [],
-            'user_count' => count($userIds),
+            'meta_key_exists' => $source->usersScanned > 0,
+            'user_count' => $source->usersScanned,
             'record_count' => count($records),
             'records' => $records,
             'known_demo_detected' => $knownDemoDetected,
         ];
     }
 
-    /**
-     * @return array<int, array<string, mixed>>
-     */
-    private function recordsForUser(int $userId): array
-    {
-        $stored = get_user_meta($userId, self::META_KEY, true);
-
-        if (! is_array($stored) || $stored === []) {
-            return [];
-        }
-
-        if (isset($stored['id']) || isset($stored['marker'])) {
-            return [$stored];
-        }
-
-        return array_values(array_filter($stored, 'is_array'));
-    }
-
-    private function safeReference(mixed $value): string
-    {
-        return substr(sanitize_text_field((string) $value), 0, 191);
-    }
 }
