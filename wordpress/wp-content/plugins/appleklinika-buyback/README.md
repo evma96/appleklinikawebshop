@@ -1,6 +1,6 @@
 # Apple Klinika Buyback
 
-Phase 1A provides the schema and read-only diagnostics foundation for the Apple Klinika buyback system. Phase 1B-A adds the pure request domain model. Phase 1B-B1 connects that domain to WordPress persistence, and Phase 1B-B2 adds read-only legacy reporting. Phase 2A adds versioned draft price books, strictly shaped pricing rules, and a visible capability-gated WooCommerce admin page. The plugin still exposes no public buyback workflow or live price calculation.
+Phase 1A provides the schema and read-only diagnostics foundation for the Apple Klinika buyback system. Phase 1B-A adds the pure request domain model. Phase 1B-B1 connects that domain to WordPress persistence, and Phase 1B-B2 adds read-only legacy reporting. Phase 2A adds versioned draft price books and their admin. Phase 2B1 adds a deterministic pure-PHP pricing engine and a transient, capability-gated draft preview. The plugin still exposes no public buyback workflow or live pricing.
 
 ## Scope
 
@@ -27,12 +27,16 @@ Phase 1A provides the schema and read-only diagnostics foundation for the Apple 
 - A read-only adapter for the existing Apple Klinika iPhone device catalog.
 - A WooCommerce admin page for creating/editing draft price books and draft rules.
 - A real WordPress/MariaDB pricing/admin suite with complete QA cleanup and no-live-behavior checks.
+- A canonical condition registry shared by pricing-rule validation, admin rule fields, preview fields, and calculation input normalization.
+- A deterministic integer-money pricing engine with immutable outcomes, matched rules, and ordered breakdown lines.
+- A read-only application preview that calculates all four service modes without persisting any calculation or offer data.
+- A real pricing-engine domain/integration suite with authorization and complete QA cleanup.
 
-Not included through Phase 2A: public routes, calculators, forms, offers, price-book activation, inspections, payouts, shipping integrations, trade-in credit implementation, WooCommerce order integration, or legacy import.
+Not included through Phase 2B1: public routes/calculators, offers, price-book activation, inspections, payouts, shipping integrations, trade-in credit implementation, WooCommerce order integration, request linkage, or legacy import.
 
 ## Versions
 
-- Plugin version: `0.5.0`
+- Plugin version: `0.6.0`
 - Core schema version: `1.1.0`
 
 The installed schema version is stored in the `appleklinika_buyback_schema_version` WordPress option. Failed migrations are recorded in `appleklinika_buyback_migration_error`; the installed version is advanced only after a successful migration.
@@ -75,7 +79,7 @@ The separate draft price-book admin is available at:
 /wp-admin/admin.php?page=appleklinika-buyback-price-books
 ```
 
-It can create/update draft price books and create/update/toggle/delete draft rules. Active and retired records are read-only. There is no activate, retire, clone, calculator, request-link, or public action. See [Phase 2A architecture](../../../../docs/architecture/appleklinika-buyback-phase-2a.md).
+It can create/update draft price books and create/update/toggle/delete draft rules. A draft edit page also provides a transient **Kalkulációs előnézet** for all four service modes. Active and retired records are read-only. There is no activate, retire, clone, request-link, persistent offer, or public action. See [Phase 2A architecture](../../../../docs/architecture/appleklinika-buyback-phase-2a.md) and [Phase 2B1 architecture](../../../../docs/architecture/appleklinika-buyback-phase-2b1.md).
 
 ## Verification
 
@@ -120,6 +124,15 @@ make test-buyback-pricing-admin
 
 It verifies the `1.0.0` to `1.1.0` migration, exact pricing schema, draft-only domain and repository behavior, optimistic locking, capability/nonce checks, admin commands, read-only catalog access, absence of live calculation/public routes, and complete cleanup with unchanged Phase 1 counts and legacy hash.
 
+Run the real deterministic pricing-engine suite twice:
+
+```bash
+make test-buyback-pricing-engine
+make test-buyback-pricing-engine
+```
+
+It verifies canonical input normalization, every comparison operator, exact base-price resolution, hard-reject/manual-review precedence, ordered deductions and basis-point multipliers, all four service modes, minimum policy, half-up rounding, deterministic shuffled-rule results, no mutation, preview authorization, repository-backed preview, and complete cleanup. The preview reads stored drafts and rules but creates no request, snapshot, event, offer, option, user meta, or WooCommerce record.
+
 When a real WP-CLI runtime is available, generate a report with:
 
 ```bash
@@ -134,8 +147,8 @@ The repository-wide `make test` and `make quality` commands remain placeholders 
 
 ## Deactivation and Rollback
 
-Deactivate the plugin from the standard WordPress Plugins screen. Deactivation removes the diagnostics and price-book-management capabilities and stops the plugin runtime hooks, but deliberately keeps all Phase 1 and Phase 2A tables, schema options, and stored data intact. Reactivating the plugin runs the same version check and safe migration path again. The plugin has no destructive uninstall routine; any future data removal requires a separately reviewed migration or uninstall design.
+Deactivate the plugin from the standard WordPress Plugins screen. Deactivation removes the diagnostics and price-book-management capabilities and stops the plugin runtime hooks, but deliberately keeps all Phase 1 and Phase 2A tables, schema options, and stored data intact. Phase 2B1 adds no schema. Reactivating the plugin runs the same version check and safe migration path again. The plugin has no destructive uninstall routine; any future data removal requires a separately reviewed migration or uninstall design.
 
 ## Data Ownership
 
-Phase 2A does not replace the theme-owned `Beszámítás` account endpoint and does not modify products, orders, users, checkout, cart, account output, stock, inventory catalog, or legacy buyback records. Stored draft pricing is not consumed by any customer-facing behavior. Future activation, calculation, request linkage, or legacy import requires a separately reviewed phase.
+Phase 2B1 does not replace the theme-owned `Beszámítás` account endpoint and does not modify products, orders, users, checkout, cart, account output, stock, inventory catalog, or legacy buyback records. Stored draft pricing is consumed only by an authorized transient admin preview. Future activation, public calculation, request linkage, offer persistence, or legacy import requires a separately reviewed phase.

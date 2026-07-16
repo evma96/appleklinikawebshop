@@ -418,7 +418,7 @@ try {
 
 $test->assert($strictExit === 1, 'Strict CLI exits non-zero for the real manual-mapping record');
 $test->assert(is_plugin_active('appleklinika-buyback/appleklinika-buyback.php'), 'Plugin remains active');
-$test->assert(APPLEKLINIKA_BUYBACK_VERSION === '0.5.0', 'Plugin code version is 0.5.0');
+$test->assert(APPLEKLINIKA_BUYBACK_VERSION === '0.6.0', 'Plugin code version is 0.6.0');
 $test->assert(APPLEKLINIKA_BUYBACK_SCHEMA_VERSION === '1.1.0', 'Code schema is 1.1.0');
 $test->assert(get_option(Schema::OPTION_SCHEMA_VERSION) === '1.1.0', 'Installed schema is 1.1.0');
 
