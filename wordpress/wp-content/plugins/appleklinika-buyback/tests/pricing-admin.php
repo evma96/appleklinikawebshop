@@ -276,7 +276,7 @@ $deleteRule = new DeleteDraftPricingRuleHandler($books, $rules, $transactions, $
 
 try {
     $test->assert(is_plugin_active(AK_BUYBACK_PRICING_PLUGIN), 'Buyback plugin is active');
-    $test->assert(APPLEKLINIKA_BUYBACK_VERSION === '0.7.0', 'Plugin code version is 0.7.0');
+    $test->assert(APPLEKLINIKA_BUYBACK_VERSION === '0.8.0', 'Plugin code version is 0.8.0');
     $test->assert(APPLEKLINIKA_BUYBACK_SCHEMA_VERSION === '1.1.0', 'Code schema version is 1.1.0');
 
     update_option(Schema::OPTION_SCHEMA_VERSION, '1.0.0', false);
@@ -538,7 +538,7 @@ try {
     $test->assert(get_role('subscriber')?->has_cap(CapabilityManager::MANAGE_PRICE_BOOKS) !== true, 'Subscriber never receives pricing capability');
 
     $test->assert(hash('sha256', serialize(get_option('appleklinika_device_catalog', null))) === $catalogHashBefore, 'Device catalog adapter performs no inventory writes');
-    $test->assert((string) get_option(Schema::OPTION_PLUGIN_VERSION, '') === '0.7.0', 'Installed plugin version is 0.7.0');
+    $test->assert((string) get_option(Schema::OPTION_PLUGIN_VERSION, '') === '0.8.0', 'Installed plugin version is 0.8.0');
 } catch (Throwable $exception) {
     $test->fail($exception);
 } finally {
@@ -567,7 +567,7 @@ $test->assert($legacyHashAfter === $legacyHashBefore, 'Legacy user-meta hash rem
 $test->assert($activeAfter === $activeBefore, 'Active price-book count returns to pre-test value');
 $test->assert(hash('sha256', serialize(get_option('appleklinika_device_catalog', null))) === $catalogHashBefore, 'Inventory catalog hash remains unchanged after cleanup');
 $test->assert((string) get_option(Schema::OPTION_SCHEMA_VERSION) === '1.1.0', 'Installed schema ends at 1.1.0');
-$test->assert((string) get_option(Schema::OPTION_PLUGIN_VERSION) === '0.7.0', 'Installed plugin option ends at 0.7.0');
+$test->assert((string) get_option(Schema::OPTION_PLUGIN_VERSION) === '0.8.0', 'Installed plugin option ends at 0.8.0');
 $test->assert((int) $wpdb->get_var('SELECT @@in_transaction') === 0, 'Cleanup leaves no database transaction open');
 foreach ($phaseOneStructureBefore as $key => $signature) {
     $test->assert(pricingTableStructureHash($wpdb, $tables[$key]) === $signature, "Phase 1 table {$key} remains unchanged after cleanup");

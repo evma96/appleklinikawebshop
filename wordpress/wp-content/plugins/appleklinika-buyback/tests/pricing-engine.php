@@ -209,7 +209,7 @@ $authorizedUser = 0;
 $engine = new PricingEngine();
 
 try {
-    $test->assert(APPLEKLINIKA_BUYBACK_VERSION === '0.7.0', 'Plugin version is 0.7.0');
+    $test->assert(APPLEKLINIKA_BUYBACK_VERSION === '0.8.0', 'Plugin version is 0.8.0');
     $test->assert(APPLEKLINIKA_BUYBACK_SCHEMA_VERSION === '1.1.0', 'Schema code remains 1.1.0');
     $test->assert((string) get_option(Schema::OPTION_SCHEMA_VERSION) === '1.1.0', 'Installed schema remains 1.1.0');
 
