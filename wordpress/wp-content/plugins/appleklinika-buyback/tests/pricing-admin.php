@@ -203,10 +203,10 @@ function pricingDefinition(string $kind, string $code, int $priority = 100, bool
     return match ($kind) {
         PricingRuleKind::BASE_PRICE => new PricingRuleDefinition($ruleCode, $ruleKind, 'iphone', 'iphone-13-pro', new StorageCapacity(128), null, null, null, null, new Money(21000000, 'HUF'), null, $rulePriority, $enabled, null, 'QA base price'),
         PricingRuleKind::FIXED_DEDUCTION => new PricingRuleDefinition($ruleCode, $ruleKind, 'iphone', null, null, null, 'battery_health', new ComparisonOperator(ComparisonOperator::LESS_THAN), 80, new Money(1500000, 'HUF'), null, $rulePriority, $enabled, null, 'QA fixed deduction'),
-        PricingRuleKind::MULTIPLIER => new PricingRuleDefinition($ruleCode, $ruleKind, 'iphone', null, null, null, 'screen_condition', new ComparisonOperator(ComparisonOperator::EQUALS), 'scratched', null, new BasisPointsMultiplier(9000), $rulePriority, $enabled, null, 'QA multiplier'),
+        PricingRuleKind::MULTIPLIER => new PricingRuleDefinition($ruleCode, $ruleKind, 'iphone', null, null, null, 'screen_condition', new ComparisonOperator(ComparisonOperator::EQUALS), 'good', null, new BasisPointsMultiplier(9000), $rulePriority, $enabled, null, 'QA multiplier'),
         PricingRuleKind::MODE_ADJUSTMENT => new PricingRuleDefinition($ruleCode, $ruleKind, 'iphone', null, null, 'fast_online', null, null, null, new Money(500000, 'HUF'), null, $rulePriority, $enabled, null, 'QA mode adjustment'),
         PricingRuleKind::HARD_REJECT => new PricingRuleDefinition($ruleCode, $ruleKind, 'iphone', null, null, null, 'liquid_damage', new ComparisonOperator(ComparisonOperator::EQUALS), true, null, null, $rulePriority, $enabled, 'Folyadékkár miatt nem adható ajánlat.', 'QA reject'),
-        PricingRuleKind::MANUAL_REVIEW => new PricingRuleDefinition($ruleCode, $ruleKind, 'iphone', null, null, null, 'replacement_parts', new ComparisonOperator(ComparisonOperator::EQUALS), true, null, null, $rulePriority, $enabled, 'Szakértői ellenőrzés szükséges.', 'QA manual review'),
+        PricingRuleKind::MANUAL_REVIEW => new PricingRuleDefinition($ruleCode, $ruleKind, 'iphone', null, null, null, 'replacement_parts', new ComparisonOperator(ComparisonOperator::EQUALS), 'non_original', null, null, $rulePriority, $enabled, 'Szakértői ellenőrzés szükséges.', 'QA manual review'),
         default => throw new InvalidArgumentException('Unsupported QA pricing kind.'),
     };
 }
@@ -276,7 +276,7 @@ $deleteRule = new DeleteDraftPricingRuleHandler($books, $rules, $transactions, $
 
 try {
     $test->assert(is_plugin_active(AK_BUYBACK_PRICING_PLUGIN), 'Buyback plugin is active');
-    $test->assert(APPLEKLINIKA_BUYBACK_VERSION === '0.5.0', 'Plugin code version is 0.5.0');
+    $test->assert(APPLEKLINIKA_BUYBACK_VERSION === '0.6.0', 'Plugin code version is 0.6.0');
     $test->assert(APPLEKLINIKA_BUYBACK_SCHEMA_VERSION === '1.1.0', 'Code schema version is 1.1.0');
 
     update_option(Schema::OPTION_SCHEMA_VERSION, '1.0.0', false);
@@ -538,7 +538,7 @@ try {
     $test->assert(get_role('subscriber')?->has_cap(CapabilityManager::MANAGE_PRICE_BOOKS) !== true, 'Subscriber never receives pricing capability');
 
     $test->assert(hash('sha256', serialize(get_option('appleklinika_device_catalog', null))) === $catalogHashBefore, 'Device catalog adapter performs no inventory writes');
-    $test->assert((string) get_option(Schema::OPTION_PLUGIN_VERSION, '') === '0.5.0', 'Installed plugin version is 0.5.0');
+    $test->assert((string) get_option(Schema::OPTION_PLUGIN_VERSION, '') === '0.6.0', 'Installed plugin version is 0.6.0');
 } catch (Throwable $exception) {
     $test->fail($exception);
 } finally {
@@ -567,7 +567,7 @@ $test->assert($legacyHashAfter === $legacyHashBefore, 'Legacy user-meta hash rem
 $test->assert($activeAfter === $activeBefore, 'Active price-book count returns to pre-test value');
 $test->assert(hash('sha256', serialize(get_option('appleklinika_device_catalog', null))) === $catalogHashBefore, 'Inventory catalog hash remains unchanged after cleanup');
 $test->assert((string) get_option(Schema::OPTION_SCHEMA_VERSION) === '1.1.0', 'Installed schema ends at 1.1.0');
-$test->assert((string) get_option(Schema::OPTION_PLUGIN_VERSION) === '0.5.0', 'Installed plugin option ends at 0.5.0');
+$test->assert((string) get_option(Schema::OPTION_PLUGIN_VERSION) === '0.6.0', 'Installed plugin option ends at 0.6.0');
 $test->assert((int) $wpdb->get_var('SELECT @@in_transaction') === 0, 'Cleanup leaves no database transaction open');
 foreach ($phaseOneStructureBefore as $key => $signature) {
     $test->assert(pricingTableStructureHash($wpdb, $tables[$key]) === $signature, "Phase 1 table {$key} remains unchanged after cleanup");

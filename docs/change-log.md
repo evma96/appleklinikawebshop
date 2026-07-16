@@ -1,5 +1,9 @@
 # Change Log
 
+## 2026-07-16
+
+- Added Apple Klinika Buyback Phase 2B1 with a canonical condition registry, deterministic integer-money pricing engine, immutable outcomes/breakdowns, four-mode draft preview handler, and capability/nonce-protected admin preview. Plugin version is now `0.6.0`; schema remains `1.1.0`, previews perform no writes, and no activation or public calculator was added.
+
 ## 2026-07-15
 
 - Added Apple Klinika Buyback Phase 2A draft price-book administration with schema `1.1.0`, two versioned pricing tables, a pure pricing domain, optimistic WordPress repositories, read-only iPhone catalog access, capability/nonce-protected WooCommerce admin forms, and a fully cleaning real pricing/admin integration suite. Plugin version is now `0.5.0`; no activation, calculation, offer, public route, request linkage, or WooCommerce customer-flow integration was added.

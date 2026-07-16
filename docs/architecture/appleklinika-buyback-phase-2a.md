@@ -143,7 +143,7 @@ Admin pages:
 
 The first page remains read-only diagnostics. The second page lists price books and allows creating and editing drafts, adding/editing/toggling/deleting draft rules, and reading active or retired books without mutation controls. It clearly states that drafts are not live. The admin-only CSS and JavaScript are enqueued only on the price-book screen.
 
-There is no whole-book delete, clone, activate, retire, calculator, preview, request link, public REST route, or public AJAX action.
+There is no whole-book delete, clone, activate, retire, request link, public REST route, or public AJAX action. Phase 2B1 subsequently adds a transient, admin-only draft calculation preview without changing the Phase 2A schema or lifecycle.
 
 ## Verification and cleanup
 
@@ -172,4 +172,4 @@ Repository-wide `make test` and `make quality` remain placeholders and are repor
 
 Phase 2A adds no public calculator, questionnaire, preliminary/final offer, customer or account flow, inspection, payout, courier, notification, trade-in credit, WooCommerce cart/order/checkout integration, inventory mutation, price seeding, competitor scraping, or legacy import.
 
-Phase 2B may define a separately reviewed, pure calculation/read-model layer that consumes an explicitly activated price-book snapshot. It must first define activation governance, deterministic rule precedence, offer traceability, and immutable request linkage. None of that behavior is present or implied by Phase 2A.
+Phase 2B1 now provides a separately documented pure calculation layer and admin-only draft preview. Price-book activation, offer traceability, immutable request linkage, and every public/live use remain deferred to a later reviewed phase.

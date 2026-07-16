@@ -8,6 +8,7 @@ use AppleKlinika\Buyback\Application\Diagnostics\GetDiagnosticsHandler;
 use AppleKlinika\Buyback\Application\Handler\AddDraftPricingRuleHandler;
 use AppleKlinika\Buyback\Application\Handler\CreateDraftPriceBookHandler;
 use AppleKlinika\Buyback\Application\Handler\DeleteDraftPricingRuleHandler;
+use AppleKlinika\Buyback\Application\Handler\PreviewDraftPriceBookCalculationHandler;
 use AppleKlinika\Buyback\Application\Handler\ToggleDraftPricingRuleHandler;
 use AppleKlinika\Buyback\Application\Handler\UpdateDraftPriceBookSettingsHandler;
 use AppleKlinika\Buyback\Application\Handler\UpdateDraftPricingRuleHandler;
@@ -30,7 +31,9 @@ use AppleKlinika\Buyback\Interfaces\Admin\AdminAuthorization;
 use AppleKlinika\Buyback\Interfaces\Admin\AdminSubmissionGuard;
 use AppleKlinika\Buyback\Interfaces\Admin\DiagnosticsPage;
 use AppleKlinika\Buyback\Interfaces\Admin\PriceBooksPage;
+use AppleKlinika\Buyback\Interfaces\Admin\PreviewCalculationFormParser;
 use AppleKlinika\Buyback\Interfaces\Admin\PricingRuleFormParser;
+use AppleKlinika\Buyback\Domain\Pricing\PricingEngine;
 use AppleKlinika\Buyback\Interfaces\Cli\LegacyReportCommand;
 
 final class Plugin
@@ -59,6 +62,7 @@ final class Plugin
         $rules = new WordPressPricingRuleRepository($wpdb);
         $transactions = new WordPressTransactionManager($wpdb);
         $clock = new SystemClock();
+        $catalog = new WordPressDeviceCatalogReader();
 
         return new self(
             self::migrationRunner(),
@@ -66,7 +70,7 @@ final class Plugin
             new PriceBooksPage(
                 $books,
                 $rules,
-                new WordPressDeviceCatalogReader(),
+                $catalog,
                 new CreateDraftPriceBookHandler($books, $transactions, $clock),
                 new UpdateDraftPriceBookSettingsHandler($books, $clock),
                 new AddDraftPricingRuleHandler($books, $rules, $transactions, $clock),
@@ -74,6 +78,8 @@ final class Plugin
                 new ToggleDraftPricingRuleHandler($books, $rules, $transactions, $clock),
                 new DeleteDraftPricingRuleHandler($books, $rules, $transactions, $clock),
                 new PricingRuleFormParser(),
+                new PreviewDraftPriceBookCalculationHandler($books, $rules, $catalog, new PricingEngine()),
+                new PreviewCalculationFormParser(),
                 new AdminAuthorization(),
                 new AdminSubmissionGuard()
             )
