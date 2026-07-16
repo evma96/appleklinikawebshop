@@ -1,0 +1,2360 @@
+{
+  "schema_version": "1.0.0",
+  "source": "Rejoy",
+  "source_urls": [
+    "https://rejoy.hu/eladas/"
+  ],
+  "captured_at": "2026-07-16T12:20:10Z",
+  "capture_method": {
+    "method": "Public browser flow with visible DOM snapshots and bounded read-only DOM inspection",
+    "browser_surface": "Codex in-app browser",
+    "request_pattern": "Sequential, one public model/configuration flow at a time; no parallel request flood",
+    "private_api_used": false,
+    "authentication_used": false,
+    "personal_data_submitted": false,
+    "offer_accepted": false,
+    "account_created": false,
+    "cookies_or_tokens_stored": false,
+    "automation_stop_reason": "Negative liquid-contact branch automation stopped after two consecutive control/source-state errors, as required by the source-safety rule."
+  },
+  "source_page_marker": {
+    "page_title": "Rejoy.hu - Add el könnyedén telefonodat!",
+    "next_page": "/sell/[step]",
+    "next_build_id": "QpVYop5YYiBU13HtTnzfF",
+    "landing_marker": "Add el használt készüléked",
+    "model_page_marker": "Válaszd ki a készüléket",
+    "questionnaire_terminal_marker": "Utolsó lépésként.. már csak az e-mail címed hiányzik",
+    "public_routes_observed": [
+      "/eladas/",
+      "/sell/brand/",
+      "/sell/model/",
+      "/sell/config/",
+      "/sell/liquid-contact/",
+      "/sell/grading-display/",
+      "/sell/grading-case/",
+      "/sell/battery/",
+      "/sell/display-defects/",
+      "/sell/phone-defects/",
+      "/sell/email/"
+    ]
+  },
+  "supported_device_categories": [
+    {
+      "source_label": "Telefonok / Apple",
+      "canonical_candidate": "iphone",
+      "researched_here": true
+    },
+    {
+      "source_label": "Telefonok / Samsung",
+      "canonical_candidate": "samsung_phone",
+      "researched_here": false
+    },
+    {
+      "source_label": "Telefonok / Huawei",
+      "canonical_candidate": "huawei_phone",
+      "researched_here": false
+    },
+    {
+      "source_label": "Telefonok / Xiaomi",
+      "canonical_candidate": "xiaomi_phone",
+      "researched_here": false
+    },
+    {
+      "source_label": "Tabletek / Apple",
+      "canonical_candidate": "ipad",
+      "researched_here": false
+    },
+    {
+      "source_label": "Laptopok / Apple",
+      "canonical_candidate": "macbook",
+      "researched_here": false
+    },
+    {
+      "source_label": "Okosórák / Apple",
+      "canonical_candidate": "apple_watch",
+      "researched_here": false
+    },
+    {
+      "source_label": "Konzol / PlayStation",
+      "canonical_candidate": "playstation",
+      "researched_here": false
+    }
+  ],
+  "iphone_models": [
+    {
+      "source_model_index": 0,
+      "source_model_id": 837,
+      "source_label": "iPhone 16",
+      "canonical_candidate_model_key": "iphone_16",
+      "storage_options_gb": [
+        128,
+        256,
+        512
+      ],
+      "storage_labels": [
+        "128 GB",
+        "256 GB",
+        "512 GB"
+      ],
+      "color_options": [
+        "White",
+        "Black",
+        "Pink",
+        "Teal",
+        "Ultramarine"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 22000000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 1,
+      "source_model_id": 838,
+      "source_label": "iPhone 16 Plus",
+      "canonical_candidate_model_key": "iphone_16_plus",
+      "storage_options_gb": [
+        128,
+        256,
+        512
+      ],
+      "storage_labels": [
+        "128 GB",
+        "256 GB",
+        "512 GB"
+      ],
+      "color_options": [
+        "White",
+        "Black",
+        "Pink",
+        "Teal",
+        "Ultramarine"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 24100000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 2,
+      "source_model_id": 841,
+      "source_label": "iPhone 16 Pro Max",
+      "canonical_candidate_model_key": "iphone_16_pro_max",
+      "storage_options_gb": [
+        256,
+        512,
+        1024
+      ],
+      "storage_labels": [
+        "256 GB",
+        "512 GB",
+        "1 TB"
+      ],
+      "color_options": [
+        "Black Titanium",
+        "Natural Titanium",
+        "White Titanium",
+        "Desert Titanium"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 29200000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 3,
+      "source_model_id": 842,
+      "source_label": "iPhone 16 Pro",
+      "canonical_candidate_model_key": "iphone_16_pro",
+      "storage_options_gb": [
+        128,
+        256,
+        512,
+        1024
+      ],
+      "storage_labels": [
+        "128 GB",
+        "256 GB",
+        "512 GB",
+        "1 TB"
+      ],
+      "color_options": [
+        "Black Titanium",
+        "Natural Titanium",
+        "White Titanium",
+        "Desert Titanium"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 29100000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 4,
+      "source_model_id": 987,
+      "source_label": "iPhone 16e",
+      "canonical_candidate_model_key": "iphone_16e",
+      "storage_options_gb": [
+        128,
+        256,
+        512
+      ],
+      "storage_labels": [
+        "128 GB",
+        "256 GB",
+        "512 GB"
+      ],
+      "color_options": [
+        "White",
+        "Black"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 16000000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 5,
+      "source_model_id": 1019,
+      "source_label": "iPhone 17",
+      "canonical_candidate_model_key": "iphone_17",
+      "storage_options_gb": [
+        256,
+        512
+      ],
+      "storage_labels": [
+        "256 GB",
+        "512 GB"
+      ],
+      "color_options": [
+        "Black",
+        "Lavender",
+        "Sage",
+        "Mist Blue",
+        "White White"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 29500000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 6,
+      "source_model_id": 1021,
+      "source_label": "iPhone Air",
+      "canonical_candidate_model_key": "iphone_air",
+      "storage_options_gb": [
+        256,
+        512,
+        1024
+      ],
+      "storage_labels": [
+        "256 GB",
+        "512 GB",
+        "1 TB"
+      ],
+      "color_options": [
+        "Sky Blue",
+        "Cloud White",
+        "Space Black",
+        "Light Gold"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 27500000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 7,
+      "source_model_id": 1024,
+      "source_label": "iPhone 17 Pro",
+      "canonical_candidate_model_key": "iphone_17_pro",
+      "storage_options_gb": [
+        256,
+        512,
+        1024
+      ],
+      "storage_labels": [
+        "256 GB",
+        "512 GB",
+        "1 TB"
+      ],
+      "color_options": [
+        "Silver",
+        "Deep Blue",
+        "Cosmic Orange"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 42500000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 8,
+      "source_model_id": 1025,
+      "source_label": "iPhone 17 Pro Max",
+      "canonical_candidate_model_key": "iphone_17_pro_max",
+      "storage_options_gb": [
+        256,
+        512,
+        1024,
+        2048
+      ],
+      "storage_labels": [
+        "256 GB",
+        "512 GB",
+        "1 TB",
+        "2 TB"
+      ],
+      "color_options": [
+        "Silver",
+        "Deep Blue",
+        "Cosmic Orange"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 56800000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 9,
+      "source_model_id": 1189,
+      "source_label": "iPhone 17e",
+      "canonical_candidate_model_key": "iphone_17e",
+      "storage_options_gb": [
+        256,
+        512
+      ],
+      "storage_labels": [
+        "256 GB",
+        "512 GB"
+      ],
+      "color_options": [
+        "White",
+        "Black",
+        "Soft Pink"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 21800000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 10,
+      "source_model_id": 205,
+      "source_label": "iPhone 13",
+      "canonical_candidate_model_key": "iphone_13",
+      "storage_options_gb": [
+        128,
+        256,
+        512
+      ],
+      "storage_labels": [
+        "128 GB",
+        "256 GB",
+        "512 GB"
+      ],
+      "color_options": [
+        "Starlight",
+        "Red",
+        "Midnight",
+        "Pink",
+        "Green",
+        "Blue"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 9500000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 11,
+      "source_model_id": 107,
+      "source_label": "iPhone 11",
+      "canonical_candidate_model_key": "iphone_11",
+      "storage_options_gb": [
+        64,
+        128,
+        256
+      ],
+      "storage_labels": [
+        "64 GB",
+        "128 GB",
+        "256 GB"
+      ],
+      "color_options": [
+        "Red",
+        "White",
+        "Purple",
+        "Black",
+        "Yellow",
+        "Green"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 4600000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 12,
+      "source_model_id": 577,
+      "source_label": "iPhone 15",
+      "canonical_candidate_model_key": "iphone_15",
+      "storage_options_gb": [
+        128,
+        256,
+        512
+      ],
+      "storage_labels": [
+        "128 GB",
+        "256 GB",
+        "512 GB"
+      ],
+      "color_options": [
+        "Black",
+        "Pink",
+        "Yellow",
+        "Green",
+        "Blue"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 15600000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 13,
+      "source_model_id": 203,
+      "source_label": "iPhone 12",
+      "canonical_candidate_model_key": "iphone_12",
+      "storage_options_gb": [
+        64,
+        128,
+        256
+      ],
+      "storage_labels": [
+        "64 GB",
+        "128 GB",
+        "256 GB"
+      ],
+      "color_options": [
+        "Red",
+        "White",
+        "Purple",
+        "Black",
+        "Green",
+        "Blue"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 6000000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 14,
+      "source_model_id": 265,
+      "source_label": "iPhone 14",
+      "canonical_candidate_model_key": "iphone_14",
+      "storage_options_gb": [
+        128,
+        256,
+        512
+      ],
+      "storage_labels": [
+        "128 GB",
+        "256 GB",
+        "512 GB"
+      ],
+      "color_options": [
+        "Starlight",
+        "Red",
+        "Midnight",
+        "Purple",
+        "Yellow",
+        "Blue"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 13000000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 15,
+      "source_model_id": 267,
+      "source_label": "iPhone 14 Pro",
+      "canonical_candidate_model_key": "iphone_14_pro",
+      "storage_options_gb": [
+        128,
+        256,
+        512,
+        1024
+      ],
+      "storage_labels": [
+        "128 GB",
+        "256 GB",
+        "512 GB",
+        "1 TB"
+      ],
+      "color_options": [
+        "Silver",
+        "Gold",
+        "Deep Purple",
+        "Space Black"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 16000000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 16,
+      "source_model_id": 580,
+      "source_label": "iPhone 15 Pro",
+      "canonical_candidate_model_key": "iphone_15_pro",
+      "storage_options_gb": [
+        128,
+        256,
+        512,
+        1024
+      ],
+      "storage_labels": [
+        "128 GB",
+        "256 GB",
+        "512 GB",
+        "1 TB"
+      ],
+      "color_options": [
+        "Blue Titanium",
+        "Black Titanium",
+        "Natural Titanium",
+        "White Titanium"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 19900000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 17,
+      "source_model_id": 204,
+      "source_label": "iPhone 13 mini",
+      "canonical_candidate_model_key": "iphone_13_mini",
+      "storage_options_gb": [
+        128,
+        256,
+        512
+      ],
+      "storage_labels": [
+        "128 GB",
+        "256 GB",
+        "512 GB"
+      ],
+      "color_options": [
+        "Starlight",
+        "Red",
+        "Midnight",
+        "Pink",
+        "Green",
+        "Blue"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 8200000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 18,
+      "source_model_id": 206,
+      "source_label": "iPhone 13 Pro",
+      "canonical_candidate_model_key": "iphone_13_pro",
+      "storage_options_gb": [
+        128,
+        256,
+        512,
+        1024
+      ],
+      "storage_labels": [
+        "128 GB",
+        "256 GB",
+        "512 GB",
+        "1 TB"
+      ],
+      "color_options": [
+        "Silver",
+        "Gold",
+        "Sierra Blue",
+        "Green",
+        "Graphite"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 13000000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 19,
+      "source_model_id": 585,
+      "source_label": "iPhone 15 Pro Max",
+      "canonical_candidate_model_key": "iphone_15_pro_max",
+      "storage_options_gb": [
+        256,
+        512,
+        1024
+      ],
+      "storage_labels": [
+        "256 GB",
+        "512 GB",
+        "1 TB"
+      ],
+      "color_options": [
+        "Blue Titanium",
+        "Black Titanium",
+        "Natural Titanium",
+        "White Titanium"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 22000000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 20,
+      "source_model_id": 130,
+      "source_label": "iPhone 12 mini",
+      "canonical_candidate_model_key": "iphone_12_mini",
+      "storage_options_gb": [
+        64,
+        128,
+        256
+      ],
+      "storage_labels": [
+        "64 GB",
+        "128 GB",
+        "256 GB"
+      ],
+      "color_options": [
+        "Red",
+        "White",
+        "Purple",
+        "Black",
+        "Green",
+        "Blue"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 5600000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 21,
+      "source_model_id": 255,
+      "source_label": "iPhone 13 Pro Max",
+      "canonical_candidate_model_key": "iphone_13_pro_max",
+      "storage_options_gb": [
+        128,
+        256,
+        512,
+        1024
+      ],
+      "storage_labels": [
+        "128 GB",
+        "256 GB",
+        "512 GB",
+        "1 TB"
+      ],
+      "color_options": [
+        "Silver",
+        "Gold",
+        "Sierra Blue",
+        "Green",
+        "Graphite"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 13100000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 22,
+      "source_model_id": 268,
+      "source_label": "iPhone 14 Pro Max",
+      "canonical_candidate_model_key": "iphone_14_pro_max",
+      "storage_options_gb": [
+        128,
+        256,
+        512,
+        1024
+      ],
+      "storage_labels": [
+        "128 GB",
+        "256 GB",
+        "512 GB",
+        "1 TB"
+      ],
+      "color_options": [
+        "Silver",
+        "Gold",
+        "Deep Purple",
+        "Space Black"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 16900000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 23,
+      "source_model_id": 131,
+      "source_label": "iPhone 12 Pro",
+      "canonical_candidate_model_key": "iphone_12_pro",
+      "storage_options_gb": [
+        128,
+        256,
+        512
+      ],
+      "storage_labels": [
+        "128 GB",
+        "256 GB",
+        "512 GB"
+      ],
+      "color_options": [
+        "Silver",
+        "Gold",
+        "Pacific Blue",
+        "Graphite"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 7700000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 24,
+      "source_model_id": 14,
+      "source_label": "iPhone 8",
+      "canonical_candidate_model_key": "iphone_8",
+      "storage_options_gb": [
+        64,
+        128,
+        256
+      ],
+      "storage_labels": [
+        "64 GB",
+        "128 GB",
+        "256 GB"
+      ],
+      "color_options": [
+        "Silver",
+        "Red",
+        "Space Grey",
+        "Gold"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 2300000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 25,
+      "source_model_id": 266,
+      "source_label": "iPhone 14 Plus",
+      "canonical_candidate_model_key": "iphone_14_plus",
+      "storage_options_gb": [
+        128,
+        256,
+        512
+      ],
+      "storage_labels": [
+        "128 GB",
+        "256 GB",
+        "512 GB"
+      ],
+      "color_options": [
+        "Starlight",
+        "Red",
+        "Midnight",
+        "Purple",
+        "Yellow",
+        "Blue"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 13200000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 26,
+      "source_model_id": 586,
+      "source_label": "iPhone 15 Plus",
+      "canonical_candidate_model_key": "iphone_15_plus",
+      "storage_options_gb": [
+        128,
+        256,
+        512
+      ],
+      "storage_labels": [
+        "128 GB",
+        "256 GB",
+        "512 GB"
+      ],
+      "color_options": [
+        "Black",
+        "Pink",
+        "Yellow",
+        "Green",
+        "Blue"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 16300000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 27,
+      "source_model_id": 12,
+      "source_label": "iPhone 7",
+      "canonical_candidate_model_key": "iphone_7",
+      "storage_options_gb": [
+        32,
+        128,
+        256
+      ],
+      "storage_labels": [
+        "32 GB",
+        "128 GB",
+        "256 GB"
+      ],
+      "color_options": [
+        "Jet Black",
+        "Silver",
+        "Red",
+        "Gold",
+        "Black",
+        "Rose Gold"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 1500000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 28,
+      "source_model_id": 261,
+      "source_label": "iPhone SE 2022",
+      "canonical_candidate_model_key": "iphone_se_2022",
+      "storage_options_gb": [
+        64,
+        128,
+        256
+      ],
+      "storage_labels": [
+        "64 GB",
+        "128 GB",
+        "256 GB"
+      ],
+      "color_options": [
+        "Starlight",
+        "Red",
+        "Midnight"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 4300000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 29,
+      "source_model_id": 108,
+      "source_label": "iPhone 11 Pro",
+      "canonical_candidate_model_key": "iphone_11_pro",
+      "storage_options_gb": [
+        64,
+        256,
+        512
+      ],
+      "storage_labels": [
+        "64 GB",
+        "256 GB",
+        "512 GB"
+      ],
+      "color_options": [
+        "Silver",
+        "Space Gray",
+        "Midnight Green",
+        "Gold"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 6000000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 30,
+      "source_model_id": 132,
+      "source_label": "iPhone 12 Pro Max",
+      "canonical_candidate_model_key": "iphone_12_pro_max",
+      "storage_options_gb": [
+        128,
+        256,
+        512
+      ],
+      "storage_labels": [
+        "128 GB",
+        "256 GB",
+        "512 GB"
+      ],
+      "color_options": [
+        "Silver",
+        "Gold",
+        "Pacific Blue",
+        "Graphite"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 9100000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 31,
+      "source_model_id": 109,
+      "source_label": "iPhone 11 Pro Max",
+      "canonical_candidate_model_key": "iphone_11_pro_max",
+      "storage_options_gb": [
+        64,
+        256,
+        512
+      ],
+      "storage_labels": [
+        "64 GB",
+        "256 GB",
+        "512 GB"
+      ],
+      "color_options": [
+        "Silver",
+        "Space Gray",
+        "Midnight Green",
+        "Gold"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 6400000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 32,
+      "source_model_id": 16,
+      "source_label": "iPhone XR",
+      "canonical_candidate_model_key": "iphone_xr",
+      "storage_options_gb": [
+        64,
+        128,
+        256
+      ],
+      "storage_labels": [
+        "64 GB",
+        "128 GB",
+        "256 GB"
+      ],
+      "color_options": [
+        "Red",
+        "White",
+        "Black",
+        "Coral",
+        "Yellow",
+        "Blue"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 2600000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 33,
+      "source_model_id": 17,
+      "source_label": "iPhone XS",
+      "canonical_candidate_model_key": "iphone_xs",
+      "storage_options_gb": [
+        64,
+        256,
+        512
+      ],
+      "storage_labels": [
+        "64 GB",
+        "256 GB",
+        "512 GB"
+      ],
+      "color_options": [
+        "Silver",
+        "Space Grey",
+        "Gold"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 3000000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 34,
+      "source_model_id": 264,
+      "source_label": "iPhone 8 Plus",
+      "canonical_candidate_model_key": "iphone_8_plus",
+      "storage_options_gb": [
+        64,
+        128,
+        256
+      ],
+      "storage_labels": [
+        "64 GB",
+        "128 GB",
+        "256 GB"
+      ],
+      "color_options": [
+        "Silver",
+        "Red",
+        "Space Grey",
+        "Gold"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 2700000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 35,
+      "source_model_id": 115,
+      "source_label": "iPhone SE 2020",
+      "canonical_candidate_model_key": "iphone_se_2020",
+      "storage_options_gb": [
+        64,
+        128,
+        256
+      ],
+      "storage_labels": [
+        "64 GB",
+        "128 GB",
+        "256 GB"
+      ],
+      "color_options": [
+        "Red",
+        "White",
+        "Black"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 1800000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 36,
+      "source_model_id": 18,
+      "source_label": "iPhone XS Max",
+      "canonical_candidate_model_key": "iphone_xs_max",
+      "storage_options_gb": [
+        64,
+        256,
+        512
+      ],
+      "storage_labels": [
+        "64 GB",
+        "256 GB",
+        "512 GB"
+      ],
+      "color_options": [
+        "Silver",
+        "Space Grey",
+        "Gold"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 3500000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 37,
+      "source_model_id": 15,
+      "source_label": "iPhone X",
+      "canonical_candidate_model_key": "iphone_x",
+      "storage_options_gb": [
+        64,
+        256
+      ],
+      "storage_labels": [
+        "64 GB",
+        "256 GB"
+      ],
+      "color_options": [
+        "Silver",
+        "Space Grey"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 2200000,
+      "currency": "HUF"
+    },
+    {
+      "source_model_index": 38,
+      "source_model_id": 13,
+      "source_label": "iPhone 7 Plus",
+      "canonical_candidate_model_key": "iphone_7_plus",
+      "storage_options_gb": [
+        32,
+        128,
+        256
+      ],
+      "storage_labels": [
+        "32 GB",
+        "128 GB",
+        "256 GB"
+      ],
+      "color_options": [
+        "Jet Black",
+        "Silver",
+        "Red",
+        "Gold",
+        "Black",
+        "Rose Gold"
+      ],
+      "network_lock_options": [
+        "Hálózatfüggetlen",
+        "Hálózatfüggő"
+      ],
+      "maximum_teaser_amount_minor": 1900000,
+      "currency": "HUF"
+    }
+  ],
+  "configuration_options": {
+    "common_sequence": [
+      "color",
+      "storage",
+      "network_lock"
+    ],
+    "color": {
+      "scope": "model-specific list",
+      "price_affecting": "unknown",
+      "evidence_note": "Color is required by the public flow, but no comparable public offer was obtained to prove a price effect."
+    },
+    "storage": {
+      "scope": "model-specific list",
+      "price_affecting": "likely_yes_but_not_price-tested",
+      "evidence_note": "Storage is required before condition questions; model-specific choices are recorded above."
+    },
+    "network_lock": {
+      "scope": "all 39 researched models",
+      "options": [
+        {
+          "source_label": "Hálózatfüggetlen",
+          "canonical_candidate": "network_locked=false",
+          "selected_route_machine_value": 527,
+          "price_affecting": "unknown",
+          "eligibility_affecting": "unknown"
+        },
+        {
+          "source_label": "Hálózatfüggő",
+          "canonical_candidate": "network_locked=true",
+          "source_machine_value": null,
+          "price_affecting": "unknown",
+          "eligibility_affecting": "unknown"
+        }
+      ]
+    },
+    "representative_selection_evidence": {
+      "model": "iPhone 13 Pro",
+      "source_model_id": 206,
+      "color": {
+        "label": "Silver",
+        "source_machine_value": 346
+      },
+      "storage": {
+        "label": "128 GB",
+        "storage_gb": 128,
+        "source_machine_value": 520
+      },
+      "network_lock": {
+        "label": "Hálózatfüggetlen",
+        "source_machine_value": 527
+      }
+    },
+    "standardized_reference_scenario": {
+      "scenario_id": "reference_very_good_unlocked_battery_90",
+      "status": "not_observed",
+      "reason": "The public flow requires an email address before revealing an offer. No personal/contact data was submitted.",
+      "nearest_route_completed": {
+        "model": "iPhone 13 Pro",
+        "storage_gb": 128,
+        "color": "Silver",
+        "network_locked": false,
+        "liquid_contact": false,
+        "screen_condition": "perfect",
+        "frame_condition": "perfect",
+        "battery_health": 85,
+        "display_defects": "none",
+        "phone_defects": "none",
+        "terminal_step": "email_gate"
+      },
+      "semantic_difference": "The observed slider default was 85%, not the canonical 90% reference value. No offer amount was revealed."
+    },
+    "question_tree_coverage_status": "All questions and answer options visible on the favorable representative route were captured through the email gate. Non-favorable conditional continuations are incomplete because automation stopped under the mandatory two-consecutive-error rule.",
+    "explicitly_unobserved_canonical_questions": [
+      "powers_on",
+      "charging_functional",
+      "motherboard_issue",
+      "camera_lens_condition",
+      "iCloud_or_Find_My_lock",
+      "stolen_or_lost_declaration",
+      "IMEI_or_ownership_declaration",
+      "accessories_or_box_or_charger"
+    ]
+  },
+  "condition_question_tree": [
+    {
+      "order": 1,
+      "source_step": "liquid-contact",
+      "source_question": "Előfordult, hogy a készülék folyadékkal érintkezett?",
+      "source_help": "Előfordult, hogy készülék vízzel vagy más folyadékkal érintkezett, megsérült, vagy javították bármilyen okból?",
+      "selection_type": "single",
+      "canonical_key_candidates": [
+        "liquid_damage",
+        "replacement_parts"
+      ],
+      "mapping_confidence": "medium_low",
+      "options": [
+        {
+          "source_dom_id": "liquid_contact_0",
+          "source_label": "Nem",
+          "source_machine_value": 2,
+          "canonical_value_candidates": {
+            "liquid_damage": false,
+            "replacement_parts": "none_known"
+          },
+          "price_affecting": "unknown",
+          "eligibility_affecting": "unknown"
+        },
+        {
+          "source_dom_id": "liquid_contact_1",
+          "source_label": "Igen",
+          "source_machine_value": null,
+          "canonical_value_candidates": {
+            "liquid_damage": true,
+            "replacement_parts": "unknown_or_present"
+          },
+          "price_affecting": "unknown",
+          "eligibility_affecting": "unknown"
+        }
+      ],
+      "branch_evidence": "No branch reached grading-display. Yes branch continuation could not be verified before the source stop rule fired."
+    },
+    {
+      "order": 2,
+      "source_step": "grading-display",
+      "source_question": "Milyen állapotban van a képernyő?",
+      "source_help": "Nézd át alaposan a telefont minden lehetséges szögből. Látható rajta bármilyen karcolás, sérülés vagy horpadás?",
+      "selection_type": "single",
+      "canonical_key": "screen_condition",
+      "mapping_confidence": "medium",
+      "options": [
+        {
+          "source_dom_id": "grading_display_0",
+          "source_label": "Tökéletes",
+          "source_machine_value": 5,
+          "canonical_value": "like_new",
+          "price_affecting": "yes",
+          "eligibility_affecting": "unknown"
+        },
+        {
+          "source_dom_id": "grading_display_1",
+          "source_label": "Használat apróbb nyomai",
+          "source_machine_value": null,
+          "canonical_value": "excellent",
+          "price_affecting": "yes",
+          "eligibility_affecting": "unknown"
+        },
+        {
+          "source_dom_id": "grading_display_2",
+          "source_label": "Intenzívebb használat nyomai",
+          "source_machine_value": null,
+          "canonical_value": "very_good_or_good",
+          "price_affecting": "yes",
+          "eligibility_affecting": "unknown",
+          "evidence_text": "A kijelzőn látható karcolások vannak, amelyek tapintással is érezhetők."
+        },
+        {
+          "source_dom_id": "grading_display_3",
+          "source_label": "Erősen kopott",
+          "source_machine_value": null,
+          "canonical_value": "damaged",
+          "price_affecting": "yes",
+          "eligibility_affecting": "unknown"
+        },
+        {
+          "source_dom_id": "grading_display_4",
+          "source_label": "Törött vagy repedt",
+          "source_machine_value": null,
+          "canonical_value": "damaged",
+          "price_affecting": "yes",
+          "eligibility_affecting": "unknown"
+        }
+      ]
+    },
+    {
+      "order": 3,
+      "source_step": "grading-case",
+      "source_question": "Hogyan néz ki a tok és a keret?",
+      "source_help": "Nézd át alaposan a telefont minden lehetséges szögből. Látható rajta bármilyen karcolás, sérülés vagy horpadás?",
+      "selection_type": "single",
+      "canonical_key_candidates": [
+        "frame_condition",
+        "back_glass_condition",
+        "bent_or_dented"
+      ],
+      "mapping_confidence": "medium_low",
+      "options": [
+        {
+          "source_dom_id": "grading_case_0",
+          "source_label": "Hibátlan",
+          "source_machine_value": 10,
+          "canonical_value": "like_new",
+          "price_affecting": "yes",
+          "eligibility_affecting": "unknown"
+        },
+        {
+          "source_dom_id": "grading_case_1",
+          "source_label": "Használat apróbb nyomai",
+          "source_machine_value": null,
+          "canonical_value": "excellent",
+          "price_affecting": "yes",
+          "eligibility_affecting": "unknown"
+        },
+        {
+          "source_dom_id": "grading_case_2",
+          "source_label": "Intenzívebb használat nyomai",
+          "source_machine_value": null,
+          "canonical_value": "very_good_or_good",
+          "price_affecting": "yes",
+          "eligibility_affecting": "unknown",
+          "evidence_text": "Könnyen észrevehető és tapintással is érezhető karcolások; példák: látható karcolások, apró pontok vagy elszíneződések."
+        },
+        {
+          "source_dom_id": "grading_case_3",
+          "source_label": "Használt",
+          "source_machine_value": null,
+          "canonical_value": "good_or_damaged",
+          "price_affecting": "yes",
+          "eligibility_affecting": "unknown"
+        },
+        {
+          "source_dom_id": "grading_case_4",
+          "source_label": "Törött vagy repedt",
+          "source_machine_value": null,
+          "canonical_value": "damaged",
+          "price_affecting": "yes",
+          "eligibility_affecting": "unknown"
+        }
+      ]
+    },
+    {
+      "order": 4,
+      "source_step": "battery",
+      "source_question": "Milyen az akkumulátor állapota?",
+      "source_help": "Beállítások > akkumulátor > akkumulátor állapota",
+      "selection_type": "slider",
+      "canonical_key": "battery_health",
+      "mapping_confidence": "high",
+      "range": {
+        "min": 70,
+        "max": 100,
+        "visible_markers": [
+          70,
+          80,
+          90,
+          100
+        ],
+        "observed_default": 85,
+        "increment": "not exposed"
+      },
+      "selected_route_machine_value": 85,
+      "price_affecting": "yes",
+      "eligibility_affecting": "unknown"
+    },
+    {
+      "order": 5,
+      "source_step": "display-defects",
+      "source_question": "Hibás a képernyő?",
+      "source_help": "Nyiss meg egy fehér oldalt a telefonodon, hogy könnyebben azonosíthasd a hibákat. Több lehetőséget is választhatsz, ha a kijelzőn több hiba található.",
+      "selection_type": "multi",
+      "options": [
+        {
+          "source_dom_id": "display_defects_0",
+          "source_label": "Hibátlan állapot",
+          "source_machine_value": 22,
+          "canonical_mappings": {
+            "display_functional": true,
+            "touch_functional": true
+          },
+          "mapping_confidence": "high",
+          "price_affecting": "yes",
+          "eligibility_affecting": "unknown"
+        },
+        {
+          "source_dom_id": "display_defects_1",
+          "source_label": "Nem reagál minden érintésre",
+          "source_machine_value": null,
+          "canonical_mappings": {
+            "touch_functional": false
+          },
+          "mapping_confidence": "high",
+          "price_affecting": "yes",
+          "eligibility_affecting": "unknown"
+        },
+        {
+          "source_dom_id": "display_defects_2",
+          "source_label": "Besárgult kijelző",
+          "source_machine_value": null,
+          "canonical_registry_gap": "display_discoloration",
+          "mapping_confidence": "high",
+          "price_affecting": "yes",
+          "eligibility_affecting": "unknown"
+        },
+        {
+          "source_dom_id": "display_defects_3",
+          "source_label": "Deformált, benyomott képernyő",
+          "source_machine_value": null,
+          "canonical_key_candidates": [
+            "display_functional",
+            "bent_or_dented"
+          ],
+          "mapping_confidence": "low",
+          "price_affecting": "yes",
+          "eligibility_affecting": "unknown"
+        },
+        {
+          "source_dom_id": "display_defects_4",
+          "source_label": "Kiégett, nem működő pixelek",
+          "source_machine_value": null,
+          "canonical_mappings": {
+            "display_functional": false
+          },
+          "mapping_confidence": "medium",
+          "price_affecting": "yes",
+          "eligibility_affecting": "unknown"
+        }
+      ]
+    },
+    {
+      "order": 6,
+      "source_step": "phone-defects",
+      "source_question": "A telefonjának más problémái vannak?",
+      "source_help": "Több hiba is megadható",
+      "selection_type": "multi",
+      "options": [
+        {
+          "source_dom_id": "phone_defects_0",
+          "source_label": "Hibátlan állapot",
+          "source_machine_value": 28,
+          "canonical_value": "no_reported_functional_defects",
+          "mapping_confidence": "high",
+          "price_affecting": "yes",
+          "eligibility_affecting": "unknown"
+        },
+        {
+          "source_dom_id": "phone_defects_1",
+          "source_label": "Nem megfelelő hangzás (pl: halk)",
+          "source_machine_value": null,
+          "canonical_registry_gap": "audio_functional",
+          "mapping_confidence": "high",
+          "price_affecting": "yes",
+          "eligibility_affecting": "unknown"
+        },
+        {
+          "source_dom_id": "phone_defects_2",
+          "source_label": "Előlapi (szelfi) kamera",
+          "source_machine_value": null,
+          "canonical_mappings": {
+            "camera_functional": false
+          },
+          "mapping_confidence": "medium",
+          "price_affecting": "yes",
+          "eligibility_affecting": "unknown"
+        },
+        {
+          "source_dom_id": "phone_defects_3",
+          "source_label": "Hátlapi kamera",
+          "source_machine_value": null,
+          "canonical_mappings": {
+            "camera_functional": false
+          },
+          "mapping_confidence": "medium",
+          "price_affecting": "yes",
+          "eligibility_affecting": "unknown"
+        },
+        {
+          "source_dom_id": "phone_defects_4",
+          "source_label": "Ujjlenyomat olvasó / Face ID",
+          "source_machine_value": null,
+          "canonical_mappings": {
+            "face_id_functional": false
+          },
+          "mapping_confidence": "medium",
+          "price_affecting": "yes",
+          "eligibility_affecting": "unknown"
+        },
+        {
+          "source_dom_id": "phone_defects_5",
+          "source_label": "Felduzzadt akkumulátor",
+          "source_machine_value": null,
+          "canonical_registry_gap": "swollen_battery",
+          "mapping_confidence": "high",
+          "price_affecting": "yes",
+          "eligibility_affecting": "likely_yes"
+        },
+        {
+          "source_dom_id": "phone_defects_6",
+          "source_label": "Egyéb hibák (pl: beragadó gombok)",
+          "source_machine_value": null,
+          "canonical_registry_gap": "other_functional_defect",
+          "mapping_confidence": "high",
+          "price_affecting": "yes",
+          "eligibility_affecting": "unknown"
+        }
+      ]
+    },
+    {
+      "order": 7,
+      "source_step": "email",
+      "source_question": "E-mail",
+      "source_help": "Az árajánlat csak az e-mail cím megadása után jelenik meg.",
+      "selection_type": "personal_data_gate",
+      "action_taken": "not_submitted",
+      "reason": "The workstream must not submit contact data."
+    }
+  ],
+  "payout_modes": [
+    {
+      "source_mode": "Azonnali eladás",
+      "apple_klinika_mode_candidate": "fast_online",
+      "payout_timing": "The public FAQ states payment occurs within at most 3 working days after inspection; estimated 3-4 working days from courier handover to receipt of funds.",
+      "handover_method": "courier_or_parcel_point",
+      "preliminary_or_final": "Final amount follows inspection and customer acceptance.",
+      "mapping_confidence": "high"
+    },
+    {
+      "source_mode": "Normál eladás / magasabb ajánlat",
+      "apple_klinika_mode_candidate": "higher_offer",
+      "payout_timing": "The public FAQ describes a higher offer and a slower path linked to resale; wording mentions 5-6 days or 1-3 weeks depending on model and cosmetic condition, while bank transfer follows sale.",
+      "handover_method": "courier_or_parcel_point",
+      "preliminary_or_final": "Preliminary online value, then technical inspection and final offer; exact payout timing semantics are partly ambiguous in the public copy.",
+      "mapping_confidence": "medium"
+    },
+    {
+      "source_mode": "10 napos kifizetés",
+      "apple_klinika_mode_candidate": null,
+      "payout_timing": "The public FAQ says payment is expected on the 10th day after inspection and final-offer acceptance; bank processing may add 1-8 working days.",
+      "handover_method": "courier_or_parcel_point",
+      "preliminary_or_final": "Campaign/payment schedule; relation to the other offer amounts was not publicly exposed before the email gate.",
+      "mapping_confidence": "medium_low"
+    }
+  ],
+  "handover_modes": [
+    {
+      "source_mode": "Futár",
+      "details": "The user can choose when and where the courier arrives; public copy calls shipping free.",
+      "mapping_candidate": "courier",
+      "confidence": "high"
+    },
+    {
+      "source_mode": "Csomagpont",
+      "details": "The public selling page states handover is available through a parcel point.",
+      "mapping_candidate": "parcel_point",
+      "confidence": "high"
+    }
+  ],
+  "offer_semantics": {
+    "online_result": "A preliminary/estimated offer is calculated from the online questionnaire, but the representative flow required an email address before displaying it.",
+    "inspection": "Rejoy technicians inspect the device after handover.",
+    "final_offer": "A final offer is sent after inspection and requires customer acceptance before payout.",
+    "deductions": "Public reviews and Rejoy responses state that profile details explain differences and deductions from the preliminary estimate.",
+    "broken_device": "The public FAQ states broken devices may still be accepted; repair costs are deducted from the device value.",
+    "payout_destination": "Bank account transfer.",
+    "binding_status": "Model-list amounts are maximum teaser values, not binding offers and not normalized scenario observations."
+  },
+  "raw_reference_observations": [
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone 16",
+      "canonical_candidate_model_key": "iphone_16",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 220000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone 16 — AKÁR 220.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone 16 Plus",
+      "canonical_candidate_model_key": "iphone_16_plus",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 241000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone 16 Plus — AKÁR 241.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone 16 Pro Max",
+      "canonical_candidate_model_key": "iphone_16_pro_max",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 292000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone 16 Pro Max — AKÁR 292.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone 16 Pro",
+      "canonical_candidate_model_key": "iphone_16_pro",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 291000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone 16 Pro — AKÁR 291.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone 16e",
+      "canonical_candidate_model_key": "iphone_16e",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 160000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone 16e — AKÁR 160.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone 17",
+      "canonical_candidate_model_key": "iphone_17",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 295000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone 17 — AKÁR 295.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone Air",
+      "canonical_candidate_model_key": "iphone_air",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 275000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone Air — AKÁR 275.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone 17 Pro",
+      "canonical_candidate_model_key": "iphone_17_pro",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 425000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone 17 Pro — AKÁR 425.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone 17 Pro Max",
+      "canonical_candidate_model_key": "iphone_17_pro_max",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 568000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone 17 Pro Max — AKÁR 568.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone 17e",
+      "canonical_candidate_model_key": "iphone_17e",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 218000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone 17e — AKÁR 218.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone 13",
+      "canonical_candidate_model_key": "iphone_13",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 95000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone 13 — AKÁR 95.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone 11",
+      "canonical_candidate_model_key": "iphone_11",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 46000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone 11 — AKÁR 46.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone 15",
+      "canonical_candidate_model_key": "iphone_15",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 156000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone 15 — AKÁR 156.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone 12",
+      "canonical_candidate_model_key": "iphone_12",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 60000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone 12 — AKÁR 60.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone 14",
+      "canonical_candidate_model_key": "iphone_14",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 130000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone 14 — AKÁR 130.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone 14 Pro",
+      "canonical_candidate_model_key": "iphone_14_pro",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 160000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone 14 Pro — AKÁR 160.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone 15 Pro",
+      "canonical_candidate_model_key": "iphone_15_pro",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 199000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone 15 Pro — AKÁR 199.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone 13 mini",
+      "canonical_candidate_model_key": "iphone_13_mini",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 82000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone 13 mini — AKÁR 82.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone 13 Pro",
+      "canonical_candidate_model_key": "iphone_13_pro",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 130000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone 13 Pro — AKÁR 130.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone 15 Pro Max",
+      "canonical_candidate_model_key": "iphone_15_pro_max",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 220000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone 15 Pro Max — AKÁR 220.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone 12 mini",
+      "canonical_candidate_model_key": "iphone_12_mini",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 56000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone 12 mini — AKÁR 56.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone 13 Pro Max",
+      "canonical_candidate_model_key": "iphone_13_pro_max",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 131000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone 13 Pro Max — AKÁR 131.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone 14 Pro Max",
+      "canonical_candidate_model_key": "iphone_14_pro_max",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 169000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone 14 Pro Max — AKÁR 169.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone 12 Pro",
+      "canonical_candidate_model_key": "iphone_12_pro",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 77000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone 12 Pro — AKÁR 77.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone 8",
+      "canonical_candidate_model_key": "iphone_8",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 23000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone 8 — AKÁR 23.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone 14 Plus",
+      "canonical_candidate_model_key": "iphone_14_plus",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 132000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone 14 Plus — AKÁR 132.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone 15 Plus",
+      "canonical_candidate_model_key": "iphone_15_plus",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 163000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone 15 Plus — AKÁR 163.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone 7",
+      "canonical_candidate_model_key": "iphone_7",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 15000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone 7 — AKÁR 15.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone SE 2022",
+      "canonical_candidate_model_key": "iphone_se_2022",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 43000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone SE 2022 — AKÁR 43.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone 11 Pro",
+      "canonical_candidate_model_key": "iphone_11_pro",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 60000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone 11 Pro — AKÁR 60.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone 12 Pro Max",
+      "canonical_candidate_model_key": "iphone_12_pro_max",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 91000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone 12 Pro Max — AKÁR 91.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone 11 Pro Max",
+      "canonical_candidate_model_key": "iphone_11_pro_max",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 64000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone 11 Pro Max — AKÁR 64.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone XR",
+      "canonical_candidate_model_key": "iphone_xr",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 26000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone XR — AKÁR 26.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone XS",
+      "canonical_candidate_model_key": "iphone_xs",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 30000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone XS — AKÁR 30.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone 8 Plus",
+      "canonical_candidate_model_key": "iphone_8_plus",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 27000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone 8 Plus — AKÁR 27.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone SE 2020",
+      "canonical_candidate_model_key": "iphone_se_2020",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 18000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone SE 2020 — AKÁR 18.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone XS Max",
+      "canonical_candidate_model_key": "iphone_xs_max",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 35000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone XS Max — AKÁR 35.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone X",
+      "canonical_candidate_model_key": "iphone_x",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 22000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone X — AKÁR 22.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    },
+    {
+      "source": "Rejoy",
+      "source_model_label": "iPhone 7 Plus",
+      "canonical_candidate_model_key": "iphone_7_plus",
+      "storage_gb": null,
+      "standardized_scenario_id": "source_maximum_teaser_unqualified",
+      "source_payout_mode": "unspecified",
+      "amount_minor": 19000,
+      "currency": "HUF",
+      "amount_semantics": "preliminary_maximum_teaser",
+      "observed_at": "2026-07-16T12:20:10Z",
+      "evidence_text": "iPhone 7 Plus — AKÁR 19.000 FT",
+      "sanitized_screenshot_reference": null,
+      "confidence": "medium",
+      "comparability": "not_comparable"
+    }
+  ],
+  "unsupported_or_inaccessible_paths": [
+    {
+      "path": "Offer result after /sell/email/",
+      "reason": "Requires an email address; no personal or fake contact data was submitted.",
+      "impact": "No model/storage-specific standardized offer or payout-mode amount was captured."
+    },
+    {
+      "path": "Liquid-contact = Igen continuation",
+      "reason": "Two consecutive source-state/control errors triggered the mandatory automation stop rule.",
+      "impact": "Conditional questions, manual-review or rejection behavior on this branch remain unverified."
+    },
+    {
+      "path": "Non-favorable display/case/defect combinations",
+      "reason": "Source automation had to stop before branch expansion.",
+      "impact": "No one-factor price deltas or branch outcomes were observed."
+    },
+    {
+      "path": "Offer acceptance, courier scheduling, account tracking and final-offer acceptance",
+      "reason": "Would create external side effects or require personal/account data.",
+      "impact": "Operational semantics are based only on public explanatory copy and FAQ text."
+    },
+    {
+      "sequence": 1,
+      "stage": "liquid-contact negative branch",
+      "error": "The public option element was not yet available immediately after route navigation.",
+      "recovery": "One fresh DOM state read succeeded; no repeated click loop was used."
+    },
+    {
+      "sequence": 2,
+      "stage": "liquid-contact negative branch",
+      "error": "After selecting Igen, the expected current Tovább control was not available in the observed DOM state.",
+      "recovery": "Automation for Rejoy was stopped immediately under the two-consecutive-source-errors rule."
+    }
+  ],
+  "evidence_and_confidence_notes": {
+    "model_list": {
+      "confidence": "high",
+      "evidence": "39 public model cards with labels, source model IDs and visible maximum teaser values."
+    },
+    "model_storage_color_network_options": {
+      "confidence": "high",
+      "evidence": "Each public model card was opened sequentially and its visible config controls were captured."
+    },
+    "question_nodes_and_options_on_favorable_path": {
+      "confidence": "high",
+      "evidence": "Visible DOM text, DOM IDs and selected-route query values through the email gate."
+    },
+    "conditional_branch_completeness": {
+      "confidence": "low",
+      "evidence": "Only the favorable path was completed; mandatory stop rule prevented negative-branch continuation."
+    },
+    "standardized_offer_prices": {
+      "confidence": "none",
+      "evidence": "No amount was exposed before the email gate."
+    },
+    "maximum_teaser_prices": {
+      "confidence": "medium",
+      "evidence": "Amounts were visible on model cards but have unspecified storage, condition and payout mode, so they are not comparable base-price evidence."
+    },
+    "payout_and_handover_semantics": {
+      "confidence": "medium_high",
+      "evidence": "Public selling-page copy and FAQ; some normal-sale timing wording is internally ambiguous."
+    },
+    "canonical_mapping": {
+      "confidence": "candidate_only",
+      "evidence": "Mappings are research suggestions and must be validated by the independent normalization workstream before any production-registry change."
+    },
+    "important_limit": "This snapshot contains no valid standardized reference price observation and must not by itself create an Apple Klinika base-price rule."
+  },
+  "recovery": {
+    "rendered_dom": "success",
+    "model_and_configuration_capture": "success",
+    "standardized_price_capture": "blocked_by_contact_gate",
+    "negative_branch_capture": "stopped_after_two_control_errors",
+    "captcha_or_authentication": false,
+    "contact_submitted": false,
+    "advertised_model_count": 39,
+    "advertised_model_storage_combination_count": 121
+  }
+}
