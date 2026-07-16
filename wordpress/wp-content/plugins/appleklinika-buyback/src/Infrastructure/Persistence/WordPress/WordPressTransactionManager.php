@@ -15,6 +15,11 @@ final class WordPressTransactionManager implements TransactionManager
     {
     }
 
+    public function isActive(): bool
+    {
+        return $this->active;
+    }
+
     public function transactional(callable $operation): mixed
     {
         if ($this->active) {

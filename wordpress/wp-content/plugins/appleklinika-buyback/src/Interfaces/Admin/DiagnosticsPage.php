@@ -53,13 +53,36 @@ final class DiagnosticsPage
         echo '<a class="nav-tab nav-tab-active" href="' . esc_url(admin_url('admin.php?page=' . self::SLUG)) . '">Diagnosztika</a>';
         echo '<a class="nav-tab" href="' . esc_url(admin_url('admin.php?page=' . PriceBooksPage::SLUG)) . '">Árkönyvek</a>';
         echo '</nav>';
-        echo '<p>Ez az oldal kizárólag olvasási célú Phase 1A rendszerállapotot mutat. Nem tartalmaz importálási vagy módosítási műveletet.</p>';
+        echo '<p>Ez az oldal kizárólag olvasási célú rendszerállapotot mutat. Nem tartalmaz importálási vagy módosítási műveletet.</p>';
 
         $this->renderSystemTable($report);
+        $this->renderPricingTable($report);
         $this->renderSchemaTable($report);
         $this->renderLegacyTable($report);
 
         echo '</div>';
+    }
+
+    private function renderPricingTable(DiagnosticsReport $report): void
+    {
+        echo '<h2>Aktív HUF árkönyv</h2>';
+        if ($report->pricing['status'] === 'corrupt_multiple_active') {
+            echo '<div class="notice notice-error inline"><p>Több egyidejűleg aktív HUF árkönyv található. Az élő árkönyv nem oldható fel biztonságosan.</p></div>';
+        }
+        echo '<table class="widefat striped"><tbody>';
+        $status = match ($report->pricing['status']) {
+            'active' => 'Aktív',
+            'corrupt_multiple_active' => 'Hibás: több aktív árkönyv',
+            default => 'Nincs aktív HUF árkönyv',
+        };
+        $this->row('Állapot', $status);
+        $this->row('Árkönyv ID', $report->pricing['book_id'] === null ? '–' : (string) $report->pricing['book_id']);
+        $this->row('Verzió', $report->pricing['version_number'] === null ? '–' : 'v' . $report->pricing['version_number']);
+        $this->row('Megnevezés', $report->pricing['label'] ?? '–');
+        $this->row('Aktív szabályok', (string) $report->pricing['active_rule_count']);
+        $this->row('Támogatott modell/tárhely párok', (string) $report->pricing['supported_configuration_count']);
+        $this->row('Hatályos ettől', $report->pricing['effective_from'] ?? '–');
+        echo '</tbody></table>';
     }
 
     private function renderSystemTable(DiagnosticsReport $report): void

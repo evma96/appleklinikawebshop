@@ -6,6 +6,8 @@ namespace AppleKlinika\Buyback\Application\Port;
 
 interface TransactionManager
 {
+    public function isActive(): bool;
+
     /**
      * @template T
      * @param callable(): T $operation

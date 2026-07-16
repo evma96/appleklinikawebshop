@@ -276,7 +276,7 @@ $deleteRule = new DeleteDraftPricingRuleHandler($books, $rules, $transactions, $
 
 try {
     $test->assert(is_plugin_active(AK_BUYBACK_PRICING_PLUGIN), 'Buyback plugin is active');
-    $test->assert(APPLEKLINIKA_BUYBACK_VERSION === '0.6.0', 'Plugin code version is 0.6.0');
+    $test->assert(APPLEKLINIKA_BUYBACK_VERSION === '0.7.0', 'Plugin code version is 0.7.0');
     $test->assert(APPLEKLINIKA_BUYBACK_SCHEMA_VERSION === '1.1.0', 'Code schema version is 1.1.0');
 
     update_option(Schema::OPTION_SCHEMA_VERSION, '1.0.0', false);
@@ -509,7 +509,7 @@ try {
     $test->throws(fn () => (new WordPressDeviceCatalogReader('qa_missing_catalog_' . $runToken, static fn (): bool => true))->iPhoneModels(), DeviceCatalogUnavailableException::class, 'Missing catalog produces a safe failure');
     $test->throws(fn () => (new WordPressDeviceCatalogReader('appleklinika_device_catalog', static fn (): bool => false))->iPhoneModels(), DeviceCatalogUnavailableException::class, 'Inactive inventory plugin produces a safe failure');
 
-    $test->assert(! method_exists(PriceBook::class, 'activate') && ! method_exists(PriceBook::class, 'retire') && ! method_exists(PriceBook::class, 'setStatus'), 'No activation, retirement or arbitrary status mutation API exists');
+    $test->assert(method_exists(PriceBook::class, 'activate') && method_exists(PriceBook::class, 'retire') && ! method_exists(PriceBook::class, 'setStatus'), 'Only controlled activation and retirement lifecycle APIs exist');
     $test->assert(! class_exists('AppleKlinika\\Buyback\\Application\\Pricing\\PricingCalculator'), 'No pricing calculator service exists');
     $test->assert(! in_array('price_book_id', Schema::requiredColumns()[Schema::REQUESTS], true), 'Buyback requests have no price-book reference');
     $sourceIterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(APPLEKLINIKA_BUYBACK_PATH . '/src'));
@@ -538,7 +538,7 @@ try {
     $test->assert(get_role('subscriber')?->has_cap(CapabilityManager::MANAGE_PRICE_BOOKS) !== true, 'Subscriber never receives pricing capability');
 
     $test->assert(hash('sha256', serialize(get_option('appleklinika_device_catalog', null))) === $catalogHashBefore, 'Device catalog adapter performs no inventory writes');
-    $test->assert((string) get_option(Schema::OPTION_PLUGIN_VERSION, '') === '0.6.0', 'Installed plugin version is 0.6.0');
+    $test->assert((string) get_option(Schema::OPTION_PLUGIN_VERSION, '') === '0.7.0', 'Installed plugin version is 0.7.0');
 } catch (Throwable $exception) {
     $test->fail($exception);
 } finally {
@@ -567,7 +567,7 @@ $test->assert($legacyHashAfter === $legacyHashBefore, 'Legacy user-meta hash rem
 $test->assert($activeAfter === $activeBefore, 'Active price-book count returns to pre-test value');
 $test->assert(hash('sha256', serialize(get_option('appleklinika_device_catalog', null))) === $catalogHashBefore, 'Inventory catalog hash remains unchanged after cleanup');
 $test->assert((string) get_option(Schema::OPTION_SCHEMA_VERSION) === '1.1.0', 'Installed schema ends at 1.1.0');
-$test->assert((string) get_option(Schema::OPTION_PLUGIN_VERSION) === '0.6.0', 'Installed plugin option ends at 0.6.0');
+$test->assert((string) get_option(Schema::OPTION_PLUGIN_VERSION) === '0.7.0', 'Installed plugin option ends at 0.7.0');
 $test->assert((int) $wpdb->get_var('SELECT @@in_transaction') === 0, 'Cleanup leaves no database transaction open');
 foreach ($phaseOneStructureBefore as $key => $signature) {
     $test->assert(pricingTableStructureHash($wpdb, $tables[$key]) === $signature, "Phase 1 table {$key} remains unchanged after cleanup");

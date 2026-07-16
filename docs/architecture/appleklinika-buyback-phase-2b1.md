@@ -1,5 +1,7 @@
 # Apple Klinika Buyback Phase 2B1
 
+> Historical phase note: Phase 2B2 now adds readiness-gated atomic activation and typed current-active resolution. The transient pricing engine and preview behavior documented here remains unchanged.
+
 ## Status and scope
 
 Phase 2B1 adds a deterministic pure-PHP pricing engine and a transient calculation preview to the existing draft price-book admin. Plugin version is `0.6.0`; code and installed schema remain `1.1.0`. No migration or table change is included.
@@ -108,4 +110,4 @@ The engine suite covers validation, every comparison operator, base resolution, 
 
 Phase 2B1 adds no activation, retirement, cloning, public calculator, REST/AJAX route, shortcode, request linkage, preliminary/final offer persistence, pricing snapshot, inspection, payout, courier, trade-in credit, account flow, WooCommerce order/cart/checkout integration, theme change, inventory write, or legacy import.
 
-Phase 2B2 may define separately reviewed activation governance and immutable live-use boundaries. This preview does not imply or perform activation.
+Phase 2B2 now defines separately reviewed activation governance and current-active resolution. This Phase 2B1 preview itself still does not imply or perform activation, and no public/live-use boundary was added.

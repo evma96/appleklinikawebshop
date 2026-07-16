@@ -21,5 +21,7 @@ final class PriceBookStatus
 
     public function code(): string { return $this->code; }
     public function isDraft(): bool { return $this->code === self::DRAFT; }
+    public function isActive(): bool { return $this->code === self::ACTIVE; }
+    public function isRetired(): bool { return $this->code === self::RETIRED; }
     public function equals(self $other): bool { return $this->code === $other->code; }
 }

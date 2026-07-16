@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Apple Klinika Buyback
  * Description: Persistence and diagnostics foundation for the Apple Klinika buyback system.
- * Version: 0.6.0
+ * Version: 0.7.0
  * Requires PHP: 8.1
  * Requires Plugins: woocommerce
  * Author: Apple Klinika
@@ -15,7 +15,7 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-define('APPLEKLINIKA_BUYBACK_VERSION', '0.6.0');
+define('APPLEKLINIKA_BUYBACK_VERSION', '0.7.0');
 define('APPLEKLINIKA_BUYBACK_SCHEMA_VERSION', '1.1.0');
 define('APPLEKLINIKA_BUYBACK_MINIMUM_PHP_VERSION', '8.1');
 define('APPLEKLINIKA_BUYBACK_FILE', __FILE__);

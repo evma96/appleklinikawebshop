@@ -188,12 +188,13 @@ The frontend currently includes:
 - The WooCommerce Blocks checkout includes a real company purchase option (`Cégként vásárolok`) with conditional company name and Hungarian tax number fields, frontend `12345678-1-23` input masking, server-side format validation, order meta persistence, and logged-in user meta reuse when available.
 - The WooCommerce Blocks checkout uses a Phase 1 multi-step shell that keeps the original Blocks DOM mounted, shows only the current logical checkout step, keeps the live order summary visible on each step, links the completed cart step back to the real cart page, and leaves the real place-order button as the only order-submitting control.
 
-The standalone `appleklinika-buyback` plugin now provides the Buyback Phase 1A persistence foundation: versioned idempotent migrations for three prefixed core tables, read-only WooCommerce diagnostics, a read-only legacy user-meta detector, and a Docker-backed activation/migration smoke test. It does not expose a public buyback workflow or import legacy records. See [Buyback Phase 1A architecture](docs/architecture/appleklinika-buyback-phase-1a.md).
+The standalone `appleklinika-buyback` plugin now includes the Phase 1 persistence/domain foundation, read-only legacy reporting, draft pricing administration, deterministic draft preview, and Phase 2B2 readiness-gated atomic price-book activation. The active HUF price book is resolved through a typed service, active/retired configuration is immutable, and no public calculator, customer offer, request linkage, or legacy import is exposed. See [Buyback Phase 1A architecture](docs/architecture/appleklinika-buyback-phase-1a.md) and [Buyback Phase 2B2 architecture](docs/architecture/appleklinika-buyback-phase-2b2.md).
 
 Run its real integration smoke test with:
 
 ```bash
 make test-buyback
+make test-buyback-pricebook-activation
 ```
 
 Product cards intentionally stay compact: non-iPhone archive cards only show storage, grade, an optional real battery-health chip, and a Cellular chip only when an iPad or Apple Watch product has cellular connectivity.
