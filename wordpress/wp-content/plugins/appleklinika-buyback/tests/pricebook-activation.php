@@ -349,7 +349,7 @@ $deleteRuleHandler = new DeleteDraftPricingRuleHandler($books, $rules, $transact
 $activate = new ActivateDraftPriceBookHandler($books, $rules, $readiness, $realLock, $transactions, $clock);
 
 try {
-    $test->assert(APPLEKLINIKA_BUYBACK_VERSION === '0.7.0', 'Plugin code version is 0.7.0');
+    $test->assert(APPLEKLINIKA_BUYBACK_VERSION === '0.8.0', 'Plugin code version is 0.8.0');
     $test->assert(APPLEKLINIKA_BUYBACK_SCHEMA_VERSION === '1.1.0', 'Code schema remains 1.1.0');
     $test->assert((string) get_option(Schema::OPTION_SCHEMA_VERSION) === '1.1.0', 'Installed schema remains 1.1.0');
     $test->assert(is_plugin_active('appleklinika-buyback/appleklinika-buyback.php'), 'Buyback plugin is active');

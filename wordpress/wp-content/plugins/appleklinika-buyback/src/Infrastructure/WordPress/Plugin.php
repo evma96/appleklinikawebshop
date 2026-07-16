@@ -40,6 +40,11 @@ use AppleKlinika\Buyback\Domain\Pricing\PriceBookActivationReadinessEvaluator;
 use AppleKlinika\Buyback\Application\Pricing\PriceBookActivationReadinessService;
 use AppleKlinika\Buyback\Application\Pricing\RepositoryActivePriceBookResolver;
 use AppleKlinika\Buyback\Interfaces\Cli\LegacyReportCommand;
+use AppleKlinika\Buyback\Interfaces\Cli\PriceBookSeedCommand;
+use AppleKlinika\Buyback\Application\Benchmark\BenchmarkPriceBookSeedService;
+use AppleKlinika\Buyback\Domain\Benchmark\BenchmarkSourceSnapshotValidator;
+use AppleKlinika\Buyback\Infrastructure\Benchmark\FileBenchmarkManifestLoader;
+use AppleKlinika\Buyback\Infrastructure\Benchmark\WordPressBenchmarkSeedRegistry;
 
 final class Plugin
 {
@@ -160,6 +165,22 @@ final class Plugin
             new LegacyReportCommand(
                 new LegacyReportService($source, $parser, $repository),
                 new LegacyReportExitPolicy()
+            )
+        );
+
+        $transactions = new WordPressTransactionManager($wpdb);
+        \WP_CLI::add_command(
+            'ak-buyback pricebook-seed',
+            new PriceBookSeedCommand(
+                new FileBenchmarkManifestLoader(new BenchmarkSourceSnapshotValidator()),
+                new BenchmarkPriceBookSeedService(
+                    new WordPressPriceBookRepository($wpdb, $transactions),
+                    new WordPressPricingRuleRepository($wpdb),
+                    new WordPressDeviceCatalogReader(),
+                    new WordPressBenchmarkSeedRegistry($wpdb),
+                    $transactions,
+                    new SystemClock()
+                )
             )
         );
     }
