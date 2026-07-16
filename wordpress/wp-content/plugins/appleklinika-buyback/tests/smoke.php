@@ -112,12 +112,18 @@ try {
     akBuybackAssert($importedDemoCount === 0, 'Known legacy demo record is not imported');
 
     $schemaReader = $inspector;
+    $activePriceBookResolver = new AppleKlinika\Buyback\Application\Pricing\RepositoryActivePriceBookResolver(
+        new AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressPriceBookRepository($wpdb),
+        new AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressPricingRuleRepository($wpdb)
+    );
     $handler = new AppleKlinika\Buyback\Application\Diagnostics\GetDiagnosticsHandler(
         $schemaReader,
         new AppleKlinika\Buyback\Infrastructure\WordPress\WordPressEnvironmentDiagnosticsReader(),
         $legacyDetector,
         APPLEKLINIKA_BUYBACK_VERSION,
-        APPLEKLINIKA_BUYBACK_SCHEMA_VERSION
+        APPLEKLINIKA_BUYBACK_SCHEMA_VERSION,
+        $activePriceBookResolver,
+        new AppleKlinika\Buyback\Infrastructure\Time\SystemClock()
     );
     $diagnosticsPage = new AppleKlinika\Buyback\Interfaces\Admin\DiagnosticsPage($handler);
 

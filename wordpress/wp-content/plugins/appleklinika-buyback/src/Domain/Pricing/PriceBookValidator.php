@@ -9,7 +9,7 @@ use AppleKlinika\Buyback\Domain\Buyback\ServiceMode;
 final class PriceBookValidator
 {
     /** @param list<PricingRule> $rules */
-    public function validate(PriceBook $book, array $rules, PricingCalculationInput $input): PriceBookValidationResult
+    public function validateConfiguration(PriceBook $book, array $rules): PriceBookValidationResult
     {
         $issues = [];
 
@@ -29,6 +29,40 @@ final class PriceBookValidator
             $issues[] = 'invalid_minimum_policy';
         }
 
+        foreach ($rules as $rule) {
+            if ($book->id() === null || ! $rule->priceBookId()->equals($book->id())) {
+                $issues[] = 'rule_price_book_mismatch';
+                continue;
+            }
+
+            $definition = $rule->definition();
+            if (! $definition->enabled) {
+                continue;
+            }
+            if ($definition->conditionKey !== null && ! in_array($definition->conditionKey, ConditionDefinition::keys(), true)) {
+                $issues[] = 'unknown_condition_key';
+                continue;
+            }
+            if ($definition->serviceMode !== null && ! in_array($definition->serviceMode, ServiceMode::supportedCodes(), true)) {
+                $issues[] = 'unsupported_service_mode';
+                continue;
+            }
+
+            try {
+                RuleShapeValidator::assertValid($definition);
+            } catch (\Throwable $exception) {
+                $issues[] = 'invalid_rule_shape';
+            }
+        }
+
+        return new PriceBookValidationResult(array_values(array_unique($issues)));
+    }
+
+    /** @param list<PricingRule> $rules */
+    public function validate(PriceBook $book, array $rules, PricingCalculationInput $input): PriceBookValidationResult
+    {
+        $issues = $this->validateConfiguration($book, $rules)->issues;
+
         $baseMatches = 0;
         $modeMatches = 0;
         foreach ($rules as $rule) {
@@ -38,16 +72,6 @@ final class PriceBookValidator
             }
 
             $definition = $rule->definition();
-            try {
-                RuleShapeValidator::assertValid($definition);
-            } catch (\Throwable $exception) {
-                $issues[] = 'invalid_rule_shape';
-                continue;
-            }
-
-            if ($definition->serviceMode !== null && ! in_array($definition->serviceMode, ServiceMode::supportedCodes(), true)) {
-                $issues[] = 'unsupported_service_mode';
-            }
             if (! $definition->enabled) {
                 continue;
             }

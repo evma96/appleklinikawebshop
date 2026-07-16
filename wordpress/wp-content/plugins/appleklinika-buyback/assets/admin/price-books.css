@@ -16,5 +16,11 @@
 .ak-preview-result h4 { margin: 0 0 8px; font-size: 15px; }
 .ak-preview-amount { margin: 8px 0 14px; font-size: 24px; font-weight: 700; }
 .ak-preview-reasons { margin-left: 18px; }
+.ak-readiness-summary { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(80px, 2fr); max-width: 720px; margin: 16px 0; }
+.ak-readiness-summary dt, .ak-readiness-summary dd { margin: 0; padding: 8px 10px; border-bottom: 1px solid #e2e4e7; }
+.ak-readiness-summary dt { font-weight: 600; }
+.ak-readiness-issues code { color: #b32d2e; }
+.ak-readiness-warnings code { color: #996800; }
+.ak-activation-form { max-width: 520px; margin-top: 18px; }
 @media (max-width: 1100px) { .ak-buyback-grid { grid-template-columns: 1fr; } }
 @media (max-width: 1200px) { .ak-preview-conditions { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

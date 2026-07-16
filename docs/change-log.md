@@ -1,5 +1,7 @@
 # Change Log
 
+- Added Apple Klinika Buyback Phase 2B2 with pure activation readiness, strict `draft -> active -> retired` lifecycle rules, immutable active/retired price books, currency-scoped advisory locking, atomic replacement activation, typed current-active resolution, admin activation confirmation, diagnostics, and a fully cleaning real MariaDB activation suite. Plugin version is now `0.7.0`; schema remains `1.1.0`, and no public calculator, request linkage, or offer persistence was added.
+
 ## 2026-07-16
 
 - Added Apple Klinika Buyback Phase 2B1 with a canonical condition registry, deterministic integer-money pricing engine, immutable outcomes/breakdowns, four-mode draft preview handler, and capability/nonce-protected admin preview. Plugin version is now `0.6.0`; schema remains `1.1.0`, previews perform no writes, and no activation or public calculator was added.

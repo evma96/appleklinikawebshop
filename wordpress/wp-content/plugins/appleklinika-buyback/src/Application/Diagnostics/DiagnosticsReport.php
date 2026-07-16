@@ -22,6 +22,15 @@ final class DiagnosticsReport
      *     records: array<int, array{id: string, marker: string}>,
      *     known_demo_detected: bool
      * } $legacy
+     * @param array{
+     *     status: string,
+     *     book_id: int|null,
+     *     version_number: int|null,
+     *     label: string|null,
+     *     active_rule_count: int,
+     *     supported_configuration_count: int,
+     *     effective_from: string|null
+     * } $pricing
      */
     public function __construct(
         public readonly string $pluginVersion,
@@ -30,7 +39,8 @@ final class DiagnosticsReport
         public readonly string $migrationStatus,
         public readonly array $tables,
         public readonly array $environment,
-        public readonly array $legacy
+        public readonly array $legacy,
+        public readonly array $pricing
     ) {
     }
 }

@@ -6,6 +6,7 @@ namespace AppleKlinika\Buyback\Infrastructure\WordPress;
 
 use AppleKlinika\Buyback\Application\Diagnostics\GetDiagnosticsHandler;
 use AppleKlinika\Buyback\Application\Handler\AddDraftPricingRuleHandler;
+use AppleKlinika\Buyback\Application\Handler\ActivateDraftPriceBookHandler;
 use AppleKlinika\Buyback\Application\Handler\CreateDraftPriceBookHandler;
 use AppleKlinika\Buyback\Application\Handler\DeleteDraftPricingRuleHandler;
 use AppleKlinika\Buyback\Application\Handler\PreviewDraftPriceBookCalculationHandler;
@@ -18,6 +19,7 @@ use AppleKlinika\Buyback\Application\Legacy\LegacyReferenceFactory;
 use AppleKlinika\Buyback\Application\Legacy\LegacyReportExitPolicy;
 use AppleKlinika\Buyback\Application\Legacy\LegacyReportService;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\MigrationRunner;
+use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\MySqlPriceBookActivationLock;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\Schema;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\SchemaInspector;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressBuybackRequestMapper;
@@ -34,6 +36,9 @@ use AppleKlinika\Buyback\Interfaces\Admin\PriceBooksPage;
 use AppleKlinika\Buyback\Interfaces\Admin\PreviewCalculationFormParser;
 use AppleKlinika\Buyback\Interfaces\Admin\PricingRuleFormParser;
 use AppleKlinika\Buyback\Domain\Pricing\PricingEngine;
+use AppleKlinika\Buyback\Domain\Pricing\PriceBookActivationReadinessEvaluator;
+use AppleKlinika\Buyback\Application\Pricing\PriceBookActivationReadinessService;
+use AppleKlinika\Buyback\Application\Pricing\RepositoryActivePriceBookResolver;
 use AppleKlinika\Buyback\Interfaces\Cli\LegacyReportCommand;
 
 final class Plugin
@@ -49,20 +54,30 @@ final class Plugin
     {
         global $wpdb;
 
-        $schemaInspector = new SchemaInspector($wpdb, APPLEKLINIKA_BUYBACK_SCHEMA_VERSION);
+        $transactions = new WordPressTransactionManager($wpdb);
+        $books = new WordPressPriceBookRepository($wpdb, $transactions);
+        $rules = new WordPressPricingRuleRepository($wpdb);
+        $clock = new SystemClock();
+        $catalog = new WordPressDeviceCatalogReader();
+        $readiness = new PriceBookActivationReadinessService($catalog, new PriceBookActivationReadinessEvaluator());
+        $activeResolver = new RepositoryActivePriceBookResolver($books, $rules);
+        $activationHandler = new ActivateDraftPriceBookHandler(
+            $books,
+            $rules,
+            $readiness,
+            new MySqlPriceBookActivationLock($wpdb),
+            $transactions,
+            $clock
+        );
         $handler = new GetDiagnosticsHandler(
-            $schemaInspector,
+            new SchemaInspector($wpdb, APPLEKLINIKA_BUYBACK_SCHEMA_VERSION),
             new WordPressEnvironmentDiagnosticsReader(),
             new LegacyBuybackDetector($wpdb),
             APPLEKLINIKA_BUYBACK_VERSION,
-            APPLEKLINIKA_BUYBACK_SCHEMA_VERSION
+            APPLEKLINIKA_BUYBACK_SCHEMA_VERSION,
+            $activeResolver,
+            $clock
         );
-
-        $books = new WordPressPriceBookRepository($wpdb);
-        $rules = new WordPressPricingRuleRepository($wpdb);
-        $transactions = new WordPressTransactionManager($wpdb);
-        $clock = new SystemClock();
-        $catalog = new WordPressDeviceCatalogReader();
 
         return new self(
             self::migrationRunner(),
@@ -80,6 +95,10 @@ final class Plugin
                 new PricingRuleFormParser(),
                 new PreviewDraftPriceBookCalculationHandler($books, $rules, $catalog, new PricingEngine()),
                 new PreviewCalculationFormParser(),
+                $readiness,
+                $activationHandler,
+                $activeResolver,
+                $clock,
                 new AdminAuthorization(),
                 new AdminSubmissionGuard()
             )

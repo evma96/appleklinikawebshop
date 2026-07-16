@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AppleKlinika\Buyback\Interfaces\Admin;
 
 use AppleKlinika\Buyback\Application\Command\AddDraftPricingRule;
+use AppleKlinika\Buyback\Application\Command\ActivateDraftPriceBook;
 use AppleKlinika\Buyback\Application\Command\CreateDraftPriceBook;
 use AppleKlinika\Buyback\Application\Command\DeleteDraftPricingRule;
 use AppleKlinika\Buyback\Application\Command\ToggleDraftPricingRule;
@@ -12,6 +13,7 @@ use AppleKlinika\Buyback\Application\Command\UpdateDraftPriceBookSettings;
 use AppleKlinika\Buyback\Application\Command\UpdateDraftPricingRule;
 use AppleKlinika\Buyback\Application\Exception\DeviceCatalogUnavailableException;
 use AppleKlinika\Buyback\Application\Handler\AddDraftPricingRuleHandler;
+use AppleKlinika\Buyback\Application\Handler\ActivateDraftPriceBookHandler;
 use AppleKlinika\Buyback\Application\Handler\CreateDraftPriceBookHandler;
 use AppleKlinika\Buyback\Application\Handler\DeleteDraftPricingRuleHandler;
 use AppleKlinika\Buyback\Application\Handler\PreviewDraftPriceBookCalculationHandler;
@@ -19,10 +21,16 @@ use AppleKlinika\Buyback\Application\Handler\ToggleDraftPricingRuleHandler;
 use AppleKlinika\Buyback\Application\Handler\UpdateDraftPriceBookSettingsHandler;
 use AppleKlinika\Buyback\Application\Handler\UpdateDraftPricingRuleHandler;
 use AppleKlinika\Buyback\Application\Port\DeviceCatalogReader;
+use AppleKlinika\Buyback\Application\Port\ActivePriceBookResolver;
+use AppleKlinika\Buyback\Application\Port\Clock;
 use AppleKlinika\Buyback\Application\Port\PriceBookRepository;
 use AppleKlinika\Buyback\Application\Port\PricingRuleRepository;
+use AppleKlinika\Buyback\Application\Pricing\PriceBookActivationReadinessService;
+use AppleKlinika\Buyback\Application\Exception\MultipleActivePriceBooksException;
+use AppleKlinika\Buyback\Application\Exception\NoActivePriceBookException;
 use AppleKlinika\Buyback\Domain\Pricing\ComparisonOperator;
 use AppleKlinika\Buyback\Domain\Pricing\ConditionDefinition;
+use AppleKlinika\Buyback\Domain\Pricing\CurrencyCode;
 use AppleKlinika\Buyback\Domain\Pricing\MinimumOfferPolicy;
 use AppleKlinika\Buyback\Domain\Pricing\PriceBook;
 use AppleKlinika\Buyback\Domain\Pricing\PriceBookId;
@@ -52,6 +60,10 @@ final class PriceBooksPage
         private readonly PricingRuleFormParser $ruleParser,
         private readonly PreviewDraftPriceBookCalculationHandler $previewHandler,
         private readonly PreviewCalculationFormParser $previewParser,
+        private readonly PriceBookActivationReadinessService $readiness,
+        private readonly ActivateDraftPriceBookHandler $activateBook,
+        private readonly ActivePriceBookResolver $activePriceBookResolver,
+        private readonly Clock $clock,
         private readonly AdminAuthorization $authorization,
         private readonly AdminSubmissionGuard $submissionGuard
     ) {
@@ -108,7 +120,7 @@ final class PriceBooksPage
         echo '<div class="wrap ak-buyback-admin">';
         echo '<h1>Apple Klinika Buyback – Árkönyvek</h1>';
         $this->renderTabs();
-        echo '<div class="notice notice-warning inline"><p><strong>Az árkönyv piszkozat.</strong> A webshop és az ajánlatkalkulátor még nem használja.</p></div>';
+        $this->renderActiveBookNotice();
         $this->renderNotice();
 
         $bookId = isset($_GET['book_id']) ? absint($_GET['book_id']) : 0;
@@ -159,6 +171,16 @@ final class PriceBooksPage
             return;
         }
 
+        if ($action === 'activate_price_book') {
+            $this->activateBook->handle(new ActivateDraftPriceBook(
+                $bookId,
+                $bookVersion,
+                get_current_user_id(),
+                sanitize_text_field((string) ($post['activation_confirmation'] ?? ''))
+            ));
+            return;
+        }
+
         $ruleId = $this->requiredPositiveInt($post, 'rule_id');
         $ruleVersion = $this->requiredNonNegativeInt($post, 'expected_rule_version');
         if ($action === 'update_rule') {
@@ -181,12 +203,15 @@ final class PriceBooksPage
     {
         $page = $this->books->list(max(1, absint($_GET['paged'] ?? 1)), 20);
         echo '<div class="ak-buyback-grid"><section class="ak-buyback-card"><h2>Árkönyvek</h2>';
-        echo '<table class="widefat striped"><thead><tr><th>Verzió</th><th>Név</th><th>Állapot</th><th>Pénznem</th><th>Szabályok</th><th>Minimum</th><th>Kerekítés</th><th>Frissítve</th><th></th></tr></thead><tbody>';
+        echo '<table class="widefat striped"><thead><tr><th>Verzió</th><th>Név</th><th>Állapot</th><th>Pénznem</th><th>Szabályok</th><th>Minimum</th><th>Kerekítés</th><th>Hatály</th><th>Frissítve</th><th></th></tr></thead><tbody>';
         foreach ($page->items as $book) {
-            echo '<tr><td>v' . esc_html((string) $book->versionNumber()->value()) . '</td><td>' . esc_html($book->label()) . '</td><td><span class="ak-status">' . esc_html($this->statusLabel($book)) . '</span></td><td>' . esc_html($book->currency()->code()) . '</td><td>' . esc_html((string) $this->rules->countForPriceBook($book->id())) . '</td><td>' . esc_html(number_format_i18n($book->minimumOffer()->amount())) . ' Ft</td><td>' . esc_html(number_format_i18n($book->roundingIncrementMinor())) . ' Ft</td><td>' . esc_html($book->updatedAt()->format('Y-m-d H:i')) . '</td><td><a class="button" href="' . esc_url($this->editUrl($book->id())) . '">Megnyitás</a></td></tr>';
+            $effective = $book->status()->isActive()
+                ? 'Ettől: ' . ($book->effectiveFrom()?->format('Y-m-d H:i') ?? '–')
+                : ($book->status()->isRetired() ? 'Eddig: ' . ($book->effectiveTo()?->format('Y-m-d H:i') ?? '–') : '–');
+            echo '<tr><td>v' . esc_html((string) $book->versionNumber()->value()) . '</td><td>' . esc_html($book->label()) . '</td><td><span class="ak-status">' . esc_html($this->statusLabel($book)) . '</span></td><td>' . esc_html($book->currency()->code()) . '</td><td>' . esc_html((string) $this->rules->countForPriceBook($book->id())) . '</td><td>' . esc_html(number_format_i18n($book->minimumOffer()->amount())) . ' Ft</td><td>' . esc_html(number_format_i18n($book->roundingIncrementMinor())) . ' Ft</td><td>' . esc_html($effective) . '</td><td>' . esc_html($book->updatedAt()->format('Y-m-d H:i')) . '</td><td><a class="button" href="' . esc_url($this->editUrl($book->id())) . '">' . esc_html($book->status()->isDraft() ? 'Szerkesztés' : 'Megtekintés') . '</a></td></tr>';
         }
         if ($page->items === []) {
-            echo '<tr><td colspan="9">Még nincs árkönyv. Hozd létre az első piszkozatot.</td></tr>';
+            echo '<tr><td colspan="10">Még nincs árkönyv. Hozd létre az első piszkozatot.</td></tr>';
         }
         echo '</tbody></table></section>';
         echo '<section class="ak-buyback-card"><h2>Új piszkozat</h2><form method="post">';
@@ -210,10 +235,13 @@ final class PriceBooksPage
         }
         $rules = $this->rules->listForPriceBook($id);
         echo '<p><a href="' . esc_url(admin_url('admin.php?page=' . self::SLUG)) . '">← Vissza az árkönyvekhez</a></p>';
-        echo '<div class="ak-buyback-heading"><div><h2>v' . esc_html((string) $book->versionNumber()->value()) . ' – ' . esc_html($book->label()) . '</h2><span class="ak-status">' . esc_html($this->statusLabel($book)) . '</span></div><p>Nem aktív, és semmilyen ügyfélfolyamat nem használja.</p></div>';
+        $lifecycleText = $book->status()->isDraft()
+            ? 'Nem aktív, és semmilyen ügyfélfolyamat nem használja.'
+            : ($book->status()->isActive() ? 'Az aktív árkönyv és szabályai csak olvashatók.' : 'Az archivált árkönyv és szabályai változatlan előzményként megmaradnak.');
+        echo '<div class="ak-buyback-heading"><div><h2>v' . esc_html((string) $book->versionNumber()->value()) . ' – ' . esc_html($book->label()) . '</h2><span class="ak-status">' . esc_html($this->statusLabel($book)) . '</span></div><p>' . esc_html($lifecycleText) . '</p></div>';
 
         if (! $book->status()->isDraft()) {
-            echo '<div class="notice notice-info inline"><p>Ez az árkönyv csak olvasható. A Phase 2A nem módosít aktív vagy visszavont árkönyvet.</p></div>';
+            echo '<div class="notice notice-info inline"><p>Ez az árkönyv csak olvasható. Aktív vagy archivált árkönyv és annak szabályai nem módosíthatók.</p></div>';
             $this->renderRulesTable($book, $rules);
             return;
         }
@@ -236,6 +264,42 @@ final class PriceBooksPage
         echo '</section></div>';
         $this->renderRulesTable($book, $rules);
         $this->renderCalculationPreview($book);
+        $this->renderActivationReadiness($book, $rules);
+    }
+
+    /** @param list<PricingRule> $rules */
+    private function renderActivationReadiness(PriceBook $book, array $rules): void
+    {
+        $report = $this->readiness->evaluate($book, $rules, $this->clock->now());
+        echo '<section class="ak-buyback-card ak-activation-readiness"><h3>Aktiválási ellenőrzés</h3>';
+        echo '<p><span class="ak-status">' . esc_html($report->ready ? 'Aktiválásra kész' : 'Nem aktiválható') . '</span></p>';
+        echo '<dl class="ak-readiness-summary"><dt>Aktív alapárak</dt><dd>' . esc_html((string) $report->enabledBasePriceCount) . '</dd><dt>Támogatott modell/tárhely párok</dt><dd>' . esc_html((string) $report->supportedConfigurationCount()) . '</dd><dt>Aktív korrekciók</dt><dd>' . esc_html((string) $report->enabledAdjustmentCount) . '</dd><dt>Árkönyvverzió</dt><dd>v' . esc_html((string) $report->versionNumber->value()) . '</dd><dt>Aggregate verzió</dt><dd>' . esc_html((string) $book->version()->value()) . '</dd></dl>';
+        echo '<p><strong>Átvételi módok:</strong> ' . esc_html(implode(', ', array_map([$this, 'serviceModeLabel'], $report->supportedServiceModes))) . '</p>';
+        if ($report->blockingIssues !== []) {
+            echo '<h4>Blokkoló hibák</h4><ul class="ak-readiness-issues">';
+            foreach ($report->blockingIssues as $issue) {
+                echo '<li><code>' . esc_html($issue) . '</code> – ' . esc_html($this->readinessMessage($issue)) . '</li>';
+            }
+            echo '</ul>';
+        }
+        if ($report->warnings !== []) {
+            echo '<h4>Figyelmeztetések</h4><ul class="ak-readiness-warnings">';
+            foreach ($report->warnings as $warning) {
+                echo '<li><code>' . esc_html($warning) . '</code> – ' . esc_html($this->readinessMessage($warning)) . '</li>';
+            }
+            echo '</ul>';
+        }
+        if ($report->ready) {
+            echo '<div class="notice notice-warning inline"><p>Az aktiválás után az árkönyv és szabályai nem szerkeszthetők. Ha már van aktív HUF árkönyv, az automatikusan archiválásra kerül.</p></div>';
+            echo '<form method="post" class="ak-activation-form">';
+            $this->securityFields('activate_price_book', $book);
+            $this->textField('activation_confirmation', 'Megerősítés: AKTIVÁLOM', '', true);
+            submit_button('Árkönyv aktiválása', 'primary');
+            echo '</form>';
+        } else {
+            echo '<p><strong>Az aktiválás nem érhető el, amíg minden blokkoló hiba meg nem szűnik.</strong></p>';
+        }
+        echo '</section>';
     }
 
     private function renderCalculationPreview(PriceBook $book): void
@@ -449,6 +513,18 @@ final class PriceBooksPage
         echo '<nav class="nav-tab-wrapper"><a class="nav-tab" href="' . esc_url(admin_url('admin.php?page=' . DiagnosticsPage::SLUG)) . '">Diagnosztika</a><a class="nav-tab nav-tab-active" href="' . esc_url(admin_url('admin.php?page=' . self::SLUG)) . '">Árkönyvek</a></nav>';
     }
 
+    private function renderActiveBookNotice(): void
+    {
+        try {
+            $resolved = $this->activePriceBookResolver->resolveForCurrencyAt(new CurrencyCode('HUF'), $this->clock->now());
+            echo '<div class="notice notice-success inline"><p><strong>Aktív HUF árkönyv:</strong> v' . esc_html((string) $resolved->priceBook->versionNumber()->value()) . ' – ' . esc_html($resolved->priceBook->label()) . '.</p></div>';
+        } catch (NoActivePriceBookException $exception) {
+            echo '<div class="notice notice-warning inline"><p>Jelenleg nincs aktív HUF árkönyv. A webshop felvásárlási kalkulátora ezért még nem használhat élő árazást.</p></div>';
+        } catch (MultipleActivePriceBooksException $exception) {
+            echo '<div class="notice notice-error inline"><p>Több aktív HUF árkönyv található. Az élő árazás biztonsági okból nem oldható fel.</p></div>';
+        }
+    }
+
     private function renderNotice(): void
     {
         if (! isset($_GET['ak_result'])) {
@@ -504,9 +580,39 @@ final class PriceBooksPage
     {
         return match ($book->status()->code()) {
             PriceBookStatus::DRAFT => 'Piszkozat',
-            PriceBookStatus::ACTIVE => 'Aktív – csak olvasható',
-            PriceBookStatus::RETIRED => 'Visszavont – csak olvasható',
+            PriceBookStatus::ACTIVE => 'Aktív',
+            PriceBookStatus::RETIRED => 'Archivált',
             default => $book->status()->code(),
+        };
+    }
+
+    private function readinessMessage(string $code): string
+    {
+        return match ($code) {
+            'missing_base_price' => 'Az árkönyv nem tartalmaz aktív alapárat.',
+            'duplicate_base_price' => 'Ugyanahhoz a modellhez és tárhelyhez több aktív alapár tartozik.',
+            'duplicate_mode_adjustment' => 'Egy átvételi módhoz több aktív korrekció tartozik.',
+            'invalid_rule_shape' => 'Az egyik szabály mezői ellentmondásosak vagy hiányosak.',
+            'unknown_condition_key' => 'Az egyik szabály nem támogatott feltételt használ.',
+            'unsupported_category' => 'Az árkönyv csak iPhone-modelleket tartalmazhat a V1-ben.',
+            'unknown_model_key' => 'Az egyik alapár ismeretlen iPhone-modellre hivatkozik.',
+            'invalid_storage' => 'Az egyik alapár nem támogatott tárhelyet használ.',
+            'unsupported_service_mode' => 'Az egyik szabály nem támogatott átvételi módot használ.',
+            'invalid_rounding_increment' => 'A kerekítési lépés érvénytelen.',
+            'invalid_minimum_policy' => 'A minimum ajánlati szabály érvénytelen.',
+            'price_book_not_draft' => 'Csak piszkozat állapotú árkönyv aktiválható.',
+            'invalid_currency' => 'A V1 kizárólag HUF árkönyvet támogat.',
+            'rule_price_book_mismatch' => 'Az egyik szabály másik árkönyvhöz tartozik.',
+            'catalog_unavailable' => 'Az iPhone készülékkatalógus jelenleg nem érhető el.',
+            'no_hard_reject_rules' => 'Nincs automatikus elutasítási szabály.',
+            'no_manual_review_rules' => 'Nincs kézi ellenőrzési szabály.',
+            'no_fixed_deduction_rules' => 'Nincs fix levonási szabály.',
+            'no_condition_multiplier_rules' => 'Nincs állapotszorzó szabály.',
+            'missing_mode_adjustment_in_store_instant' => 'Az azonnali személyes felvásárlás semleges korrekciót használ.',
+            'missing_mode_adjustment_fast_online' => 'A gyors felvásárlás semleges korrekciót használ.',
+            'missing_mode_adjustment_higher_offer' => 'A magasabb ajánlat semleges korrekciót használ.',
+            'missing_mode_adjustment_trade_in' => 'Az azonnali beszámítás semleges korrekciót használ.',
+            default => 'Az ellenőrzés további beállítást igényel.',
         };
     }
 

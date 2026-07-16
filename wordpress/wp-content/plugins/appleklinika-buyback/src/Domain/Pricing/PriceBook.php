@@ -15,7 +15,7 @@ final class PriceBook
         private readonly ?PriceBookId $id,
         private readonly PriceBookVersionNumber $versionNumber,
         private string $label,
-        private readonly PriceBookStatus $status,
+        private PriceBookStatus $status,
         private readonly CurrencyCode $currency,
         private Money $minimumOffer,
         private int $roundingIncrementMinor,
@@ -24,12 +24,12 @@ final class PriceBook
         private AggregateVersion $version,
         private readonly \DateTimeImmutable $createdAt,
         private \DateTimeImmutable $updatedAt,
-        private readonly ?\DateTimeImmutable $effectiveFrom = null,
-        private readonly ?\DateTimeImmutable $effectiveTo = null,
-        private readonly ?PricingActorId $activatedBy = null,
-        private readonly ?PricingActorId $retiredBy = null,
-        private readonly ?\DateTimeImmutable $activatedAt = null,
-        private readonly ?\DateTimeImmutable $retiredAt = null
+        private ?\DateTimeImmutable $effectiveFrom = null,
+        private ?\DateTimeImmutable $effectiveTo = null,
+        private ?PricingActorId $activatedBy = null,
+        private ?PricingActorId $retiredBy = null,
+        private ?\DateTimeImmutable $activatedAt = null,
+        private ?\DateTimeImmutable $retiredAt = null
     ) {
         $this->assertLabel($label);
         $this->assertMoney($minimumOffer);
@@ -65,6 +65,35 @@ final class PriceBook
         $this->recordMutation($at);
     }
 
+    public function activate(PricingActorId $actor, \DateTimeImmutable $at): void
+    {
+        if (! $this->status->isDraft()) {
+            throw new InvalidAggregateOperationException('Only a draft price book may be activated.');
+        }
+
+        $this->assertMutationTime($at);
+        $this->status = new PriceBookStatus(PriceBookStatus::ACTIVE);
+        $this->activatedBy = $actor;
+        $this->activatedAt = $at;
+        $this->effectiveFrom = $at;
+        $this->effectiveTo = null;
+        $this->recordMutation($at);
+    }
+
+    public function retire(PricingActorId $actor, \DateTimeImmutable $at): void
+    {
+        if (! $this->status->isActive()) {
+            throw new InvalidAggregateOperationException('Only an active price book may be retired.');
+        }
+
+        $this->assertMutationTime($at);
+        $this->status = new PriceBookStatus(PriceBookStatus::RETIRED);
+        $this->retiredBy = $actor;
+        $this->retiredAt = $at;
+        $this->effectiveTo = $at;
+        $this->recordMutation($at);
+    }
+
     public function assertDraftMutation(): void
     {
         if (! $this->status->isDraft()) {
@@ -93,11 +122,16 @@ final class PriceBook
 
     private function recordMutation(\DateTimeImmutable $at): void
     {
+        $this->assertMutationTime($at);
+        $this->updatedAt = $at;
+        $this->version = $this->version->next();
+    }
+
+    private function assertMutationTime(\DateTimeImmutable $at): void
+    {
         if ($at < $this->updatedAt) {
             throw new InvalidAggregateOperationException('Price-book mutation time cannot move backwards.');
         }
-        $this->updatedAt = $at;
-        $this->version = $this->version->next();
     }
 
     private function assertLabel(string $label): void
