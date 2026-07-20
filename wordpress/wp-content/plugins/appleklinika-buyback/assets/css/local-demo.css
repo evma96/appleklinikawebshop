@@ -1,0 +1,1117 @@
+.ak-buyback-demo {
+  --ak-red: #d6001c;
+  --ak-red-dark: #ad0017;
+  --ak-red-soft: #fff1f3;
+  --ak-navy: #111827;
+  --ak-muted: #667085;
+  --ak-border: #dfe4ec;
+  --ak-surface: #f7f8fa;
+  width: min(1180px, calc(100% - 40px));
+  margin: 38px auto 80px;
+  color: var(--ak-navy);
+}
+
+.ak-buyback-demo-page .wp-block-post-title {
+  display: none;
+}
+
+.ak-buyback-demo-page .entry-content {
+  max-width: none !important;
+}
+
+.ak-buyback-demo * {
+  box-sizing: border-box;
+}
+
+.ak-buyback-demo button,
+.ak-buyback-demo input {
+  font: inherit;
+}
+
+.ak-buyback-demo__header {
+  max-width: 760px;
+  margin: 0 auto 26px;
+  text-align: center;
+}
+
+.ak-buyback-demo__badge,
+.ak-buyback-demo__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  color: var(--ak-red);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.ak-buyback-demo__badge {
+  padding: 7px 10px;
+  border: 1px solid #ffd0d6;
+  border-radius: 8px;
+  background: var(--ak-red-soft);
+}
+
+.ak-buyback-demo__title {
+  margin: 14px 0 10px;
+  font-size: clamp(32px, 4vw, 48px);
+  line-height: 1.08;
+  letter-spacing: 0;
+}
+
+.ak-buyback-demo__header p,
+.ak-buyback-demo__panel-heading p,
+.ak-buyback-demo__question > p {
+  margin: 0;
+  color: var(--ak-muted);
+  line-height: 1.6;
+}
+
+.ak-buyback-demo__navigation {
+  display: grid;
+  grid-template-columns: 42px minmax(180px, auto) minmax(120px, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 18px;
+}
+
+.ak-buyback-demo__back {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid var(--ak-border);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--ak-navy);
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.ak-buyback-demo__back[hidden] {
+  display: grid;
+  visibility: hidden;
+}
+
+.ak-buyback-demo__crumb {
+  overflow: hidden;
+  color: #344054;
+  font-size: 14px;
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ak-buyback-demo__progress {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e9edf3;
+}
+
+.ak-buyback-demo__progress span {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ak-red);
+  transition: width 180ms ease;
+}
+
+.ak-buyback-demo__progress-text {
+  min-width: 42px;
+  color: var(--ak-muted);
+  font-size: 12px;
+  font-weight: 750;
+  text-align: right;
+}
+
+.ak-buyback-demo__panel,
+.ak-buyback-demo__notice {
+  min-height: 580px;
+  padding: clamp(24px, 4vw, 48px);
+  border: 1px solid var(--ak-border);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 22px 60px rgba(16, 24, 40, 0.08);
+}
+
+.ak-buyback-demo__panel[hidden] {
+  display: none;
+}
+
+.ak-buyback-demo__panel-heading {
+  max-width: 720px;
+  margin: 0 auto 28px;
+  text-align: center;
+}
+
+.ak-buyback-demo__panel-heading h3,
+.ak-buyback-demo__question h3 {
+  margin: 8px 0 10px;
+  font-size: clamp(26px, 3vw, 36px);
+  line-height: 1.16;
+  letter-spacing: 0;
+}
+
+.ak-buyback-demo__category-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.ak-buyback-demo__category-card {
+  display: grid;
+  min-height: 180px;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  padding: 22px;
+  border: 1px solid var(--ak-border);
+  border-radius: 16px;
+  background: var(--ak-surface);
+  color: #98a2b3;
+  cursor: not-allowed;
+}
+
+.ak-buyback-demo__category-card.is-available {
+  background: #fff;
+  color: var(--ak-navy);
+  cursor: pointer;
+  box-shadow: 0 14px 34px rgba(16, 24, 40, 0.08);
+}
+
+.ak-buyback-demo__category-card.is-available:hover {
+  border-color: var(--ak-red);
+  transform: translateY(-2px);
+}
+
+.ak-buyback-demo__category-icon {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  border-radius: 14px;
+  background: #fff;
+  color: var(--ak-red);
+  font-size: 22px;
+  font-weight: 850;
+  box-shadow: inset 0 0 0 1px var(--ak-border);
+}
+
+.ak-buyback-demo__category-card strong {
+  font-size: 18px;
+}
+
+.ak-buyback-demo__trust-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  max-width: 900px;
+  margin: 34px auto 0;
+  padding-top: 24px;
+  border-top: 1px solid var(--ak-border);
+  color: #475467;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.ak-buyback-demo__trust-grid span::before {
+  content: "✓";
+  margin-right: 7px;
+  color: var(--ak-red);
+}
+
+.ak-buyback-demo__search {
+  display: block;
+  max-width: 680px;
+  margin: 0 auto 26px;
+}
+
+.ak-buyback-demo__search input,
+.ak-buyback-demo__battery input[type="number"] {
+  width: 100%;
+  min-height: 52px;
+  padding: 0 16px;
+  border: 1px solid var(--ak-border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ak-navy);
+}
+
+.ak-buyback-demo__search input:focus,
+.ak-buyback-demo input:focus-visible,
+.ak-buyback-demo button:focus-visible,
+.ak-buyback-demo a:focus-visible,
+.ak-buyback-demo summary:focus-visible {
+  outline: 3px solid rgba(214, 0, 28, 0.24);
+  outline-offset: 3px;
+}
+
+.ak-buyback-demo__device-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.ak-buyback-demo__device-card,
+.ak-buyback-demo__choice-card {
+  position: relative;
+  display: grid;
+  cursor: pointer;
+}
+
+.ak-buyback-demo__device-card {
+  min-height: 300px;
+  align-content: start;
+  justify-items: center;
+  gap: 8px;
+  padding: 18px;
+  border: 1px solid var(--ak-border);
+  border-radius: 16px;
+  background: #fff;
+  text-align: center;
+}
+
+.ak-buyback-demo__device-card:hover,
+.ak-buyback-demo__choice-card:hover {
+  border-color: #f29aa6;
+}
+
+.ak-buyback-demo__device-card:has(input:checked),
+.ak-buyback-demo__choice-card:has(input:checked) {
+  border-color: var(--ak-red);
+  background: var(--ak-red-soft);
+  box-shadow: 0 0 0 2px rgba(214, 0, 28, 0.08);
+}
+
+.ak-buyback-demo__device-card:has(input:focus-visible),
+.ak-buyback-demo__choice-card:has(input:focus-visible) {
+  outline: 3px solid rgba(214, 0, 28, 0.24);
+  outline-offset: 3px;
+}
+
+.ak-buyback-demo__device-card input,
+.ak-buyback-demo__choice-card input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.ak-buyback-demo__device-image {
+  display: grid;
+  width: 100%;
+  height: 210px;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--ak-surface);
+}
+
+.ak-buyback-demo__device-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.ak-buyback-demo__device-card > strong {
+  font-size: 17px;
+}
+
+.ak-buyback-demo__device-card > small {
+  color: var(--ak-red);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.ak-buyback-demo__selected-mark {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: none;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: var(--ak-red);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.ak-buyback-demo__device-card:has(input:checked) .ak-buyback-demo__selected-mark {
+  display: inline-flex;
+}
+
+.ak-buyback-demo__image-fallback {
+  display: grid;
+  gap: 8px;
+  place-items: center;
+  color: var(--ak-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ak-buyback-demo__image-fallback span {
+  display: block;
+  width: 64px;
+  height: 116px;
+  border: 5px solid #344054;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.ak-buyback-demo__split {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.8fr) minmax(420px, 1.2fr);
+  align-items: center;
+  gap: clamp(30px, 6vw, 72px);
+  min-height: 480px;
+}
+
+.ak-buyback-demo__visual {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  min-width: 0;
+  text-align: center;
+}
+
+.ak-buyback-demo__visual-image {
+  display: grid;
+  width: min(100%, 390px);
+  height: 410px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--ak-border);
+  border-radius: 18px;
+  background: var(--ak-surface);
+}
+
+.ak-buyback-demo__visual-image img {
+  width: 100%;
+  height: 100%;
+  padding: 22px;
+  object-fit: contain;
+}
+
+.ak-buyback-demo__visual > strong {
+  font-size: 17px;
+}
+
+.ak-buyback-demo__visual > span {
+  color: var(--ak-muted);
+  font-size: 12px;
+}
+
+.ak-buyback-demo__question {
+  min-width: 0;
+}
+
+.ak-buyback-demo__choice-grid,
+.ak-buyback-demo__storage-grid {
+  display: grid;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.ak-buyback-demo__choice-grid--two,
+.ak-buyback-demo__storage-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.ak-buyback-demo__choice-card {
+  min-height: 76px;
+  align-content: center;
+  gap: 4px;
+  padding: 15px 18px;
+  border: 1px solid var(--ak-border);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.ak-buyback-demo__choice-card strong {
+  font-size: 15px;
+}
+
+.ak-buyback-demo__choice-card span {
+  color: var(--ak-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.ak-buyback-demo__choice-card small {
+  margin-top: 4px;
+  color: var(--ak-red);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.ak-buyback-demo__choice-card--compact {
+  min-height: 92px;
+  justify-items: center;
+  text-align: center;
+}
+
+.ak-buyback-demo__choice-card[hidden] {
+  display: none;
+}
+
+.ak-buyback-demo__battery {
+  margin-top: 26px;
+}
+
+.ak-buyback-demo__battery output {
+  display: block;
+  margin-bottom: 14px;
+  color: var(--ak-red);
+  font-size: clamp(46px, 7vw, 70px);
+  font-weight: 850;
+  line-height: 1;
+}
+
+.ak-buyback-demo__battery input[type="range"] {
+  width: 100%;
+  accent-color: var(--ak-red);
+}
+
+.ak-buyback-demo__battery label {
+  display: grid;
+  gap: 7px;
+  max-width: 220px;
+  margin-top: 18px;
+  color: #344054;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ak-buyback-demo__battery-guidance {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-top: 18px;
+}
+
+.ak-buyback-demo__battery-guidance span {
+  padding: 7px;
+  border-radius: 7px;
+  background: var(--ak-surface);
+  color: var(--ak-muted);
+  font-size: 10px;
+  font-weight: 750;
+  text-align: center;
+}
+
+.ak-buyback-demo__defects {
+  max-height: 390px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.ak-buyback-demo__panel-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 28px;
+}
+
+.ak-buyback-demo__primary,
+.ak-buyback-demo__secondary,
+.ak-buyback-demo__mode-select {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 22px;
+  border-radius: 9px;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.ak-buyback-demo__primary,
+.ak-buyback-demo__mode-select {
+  border: 1px solid var(--ak-red);
+  background: var(--ak-red);
+  color: #fff;
+}
+
+.ak-buyback-demo__primary:hover,
+.ak-buyback-demo__mode-select:hover {
+  border-color: var(--ak-red-dark);
+  background: var(--ak-red-dark);
+  color: #fff;
+}
+
+.ak-buyback-demo__secondary {
+  border: 1px solid var(--ak-border);
+  background: #fff;
+  color: #475467;
+}
+
+.ak-buyback-demo__errors,
+.ak-buyback-demo__demo-notice {
+  margin-bottom: 18px;
+  padding: 14px 18px;
+  border: 1px solid #f5a9b3;
+  border-radius: 10px;
+  background: var(--ak-red-soft);
+  color: #8d0013;
+}
+
+.ak-buyback-demo__errors p {
+  margin: 4px 0 0;
+}
+
+.ak-buyback-demo__demo-notice {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  line-height: 1.5;
+}
+
+.ak-buyback-demo__mode-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.ak-buyback-demo__mode-card {
+  position: relative;
+  padding: 22px;
+  border: 1px solid var(--ak-border);
+  border-radius: 16px;
+  background: #fff;
+}
+
+.ak-buyback-demo__mode-card.is-recommended {
+  border-color: #f29aa6;
+}
+
+.ak-buyback-demo__mode-card.is-selected {
+  border-color: var(--ak-red);
+  box-shadow: 0 0 0 3px rgba(214, 0, 28, 0.1);
+}
+
+.ak-buyback-demo__mode-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 24px;
+}
+
+.ak-buyback-demo__mode-badges span {
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: var(--ak-red-soft);
+  color: var(--ak-red);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.ak-buyback-demo__mode-card h4 {
+  margin: 12px 0 10px;
+  font-size: 19px;
+}
+
+.ak-buyback-demo__amount,
+.ak-buyback-demo__review {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 30px;
+  line-height: 1.15;
+}
+
+.ak-buyback-demo__review {
+  color: var(--ak-red);
+  font-size: 18px;
+}
+
+.ak-buyback-demo__mode-card p {
+  min-height: 44px;
+  margin: 0 0 6px;
+  color: var(--ak-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.ak-buyback-demo__mode-card > small {
+  color: #475467;
+  font-weight: 750;
+}
+
+.ak-buyback-demo__mode-select {
+  width: 100%;
+  margin: 18px 0 14px;
+}
+
+.ak-buyback-demo details {
+  padding-top: 12px;
+  border-top: 1px solid var(--ak-border);
+}
+
+.ak-buyback-demo summary {
+  color: #344054;
+  font-size: 13px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.ak-buyback-demo details ul {
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ak-buyback-demo details li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  color: var(--ak-muted);
+  font-size: 12px;
+}
+
+.ak-buyback-demo__mode-message {
+  margin: 16px 0 0;
+  padding: 12px 16px;
+  border-radius: 9px;
+  background: var(--ak-surface);
+  color: #475467;
+  font-size: 13px;
+}
+
+.ak-buyback-demo__summary-grid {
+  display: grid;
+  grid-template-columns: 0.8fr 1.2fr;
+  gap: 16px;
+  margin-top: 22px;
+}
+
+.ak-buyback-demo__summary-card {
+  padding: 20px;
+  border: 1px solid var(--ak-border);
+  border-radius: 14px;
+  background: var(--ak-surface);
+}
+
+.ak-buyback-demo__summary-card h4 {
+  margin: 0 0 14px;
+  font-size: 16px;
+}
+
+.ak-buyback-demo__summary-device {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.ak-buyback-demo__summary-device img,
+.ak-buyback-demo__summary-device .ak-buyback-demo__image-fallback {
+  width: 82px;
+  height: 82px;
+  border-radius: 10px;
+  background: #fff;
+  object-fit: contain;
+}
+
+.ak-buyback-demo__summary-device div {
+  display: grid;
+  gap: 5px;
+}
+
+.ak-buyback-demo__summary-device span {
+  color: var(--ak-muted);
+}
+
+.ak-buyback-demo__summary-card dl,
+.ak-buyback-demo__summary-card dl div {
+  margin: 0;
+}
+
+.ak-buyback-demo__summary-card dl div {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 14px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--ak-border);
+  font-size: 12px;
+}
+
+.ak-buyback-demo__summary-card dt {
+  color: var(--ak-muted);
+}
+
+.ak-buyback-demo__summary-card dd {
+  margin: 0;
+  font-weight: 750;
+  text-align: right;
+}
+
+@media (max-width: 900px) {
+  .ak-buyback-demo__category-grid,
+  .ak-buyback-demo__device-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ak-buyback-demo__split {
+    grid-template-columns: 1fr;
+  }
+
+  .ak-buyback-demo__visual-image {
+    height: 300px;
+  }
+
+  .ak-buyback-demo__visual {
+    order: 0;
+  }
+
+  .ak-buyback-demo__question {
+    order: 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .ak-buyback-demo {
+    width: calc(100% - 24px);
+    margin: 24px auto 52px;
+  }
+
+  .ak-buyback-demo__header {
+    text-align: left;
+  }
+
+  .ak-buyback-demo__title {
+    font-size: 32px;
+  }
+
+  .ak-buyback-demo__navigation {
+    grid-template-columns: 38px minmax(0, 1fr) auto;
+    gap: 9px;
+  }
+
+  .ak-buyback-demo__progress {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .ak-buyback-demo__progress-text {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .ak-buyback-demo__panel {
+    min-height: 0;
+    padding: 20px 16px;
+    border-radius: 14px;
+  }
+
+  .ak-buyback-demo__panel-heading,
+  .ak-buyback-demo__question {
+    text-align: left;
+  }
+
+  .ak-buyback-demo__category-grid,
+  .ak-buyback-demo__device-grid,
+  .ak-buyback-demo__choice-grid--two,
+  .ak-buyback-demo__storage-grid,
+  .ak-buyback-demo__mode-grid,
+  .ak-buyback-demo__summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ak-buyback-demo__trust-grid {
+    grid-template-columns: 1fr;
+    text-align: left;
+  }
+
+  .ak-buyback-demo__device-card {
+    min-height: 238px;
+  }
+
+  .ak-buyback-demo__device-image {
+    height: 150px;
+  }
+
+  .ak-buyback-demo__split {
+    gap: 24px;
+  }
+
+  .ak-buyback-demo__visual-image {
+    height: 230px;
+  }
+
+  .ak-buyback-demo__battery-guidance {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .ak-buyback-demo__panel-actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .ak-buyback-demo__primary,
+  .ak-buyback-demo__secondary {
+    width: 100%;
+  }
+
+  .ak-buyback-demo__demo-notice {
+    flex-direction: column;
+  }
+}
+
+/* Questionnaire source-of-truth UI */
+.ak-buyback-demo__question-stack {
+  display: grid;
+  gap: 26px;
+  margin-top: 24px;
+}
+
+.ak-buyback-demo__question-group {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.ak-buyback-demo__question-group + .ak-buyback-demo__question-group {
+  padding-top: 24px;
+  border-top: 1px solid var(--ak-border);
+}
+
+.ak-buyback-demo__question-group legend,
+.ak-buyback-demo__question-group > h4 {
+  margin: 0;
+  padding: 0;
+  color: var(--ak-navy);
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.ak-buyback-demo__question-helper {
+  margin: 7px 0 0;
+  color: var(--ak-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.ak-buyback-demo__question-group.has-error {
+  padding: 14px;
+  border: 1px solid #ef8d9a;
+  border-radius: 12px;
+  background: var(--ak-red-soft);
+}
+
+.ak-buyback-demo__question-error {
+  margin: 10px 0 0;
+  color: #8d0013;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.ak-buyback-demo__question-group .ak-buyback-demo__choice-grid {
+  margin-top: 14px;
+}
+
+.ak-buyback-demo__summary-card--answers {
+  display: grid;
+  gap: 18px;
+}
+
+.ak-buyback-demo__summary-group h5 {
+  margin: 0 0 8px;
+  color: #344054;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.ak-buyback-demo__summary-group + .ak-buyback-demo__summary-group {
+  padding-top: 14px;
+  border-top: 1px solid var(--ak-border);
+}
+
+.ak-buyback-demo__summary-group dl div:last-child {
+  border-bottom: 0;
+}
+
+@media (max-width: 640px) {
+  .ak-buyback-demo__question-stack {
+    gap: 20px;
+  }
+
+  .ak-buyback-demo__question-group + .ak-buyback-demo__question-group {
+    padding-top: 18px;
+  }
+
+  .ak-buyback-demo__question-group .ak-buyback-demo__choice-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Verified Rejoy-inspired flow refinements */
+.ak-buyback-demo__configuration-divider {
+  height: 1px;
+  margin: 28px 0 24px;
+  background: var(--ak-border);
+}
+
+.ak-buyback-demo__eligibility-modal[hidden] {
+  display: none;
+}
+
+.ak-buyback-demo__eligibility-modal {
+  position: fixed;
+  z-index: 99999;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(17, 24, 39, 0.48);
+}
+
+.ak-buyback-demo__eligibility-dialog {
+  position: relative;
+  width: min(460px, 100%);
+  padding: 30px;
+  border: 1px solid var(--ak-border);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 28px 80px rgba(16, 24, 40, 0.22);
+  text-align: center;
+}
+
+.ak-buyback-demo__eligibility-dialog h4 {
+  margin: 12px 0 10px;
+  font-size: 22px;
+  line-height: 1.25;
+}
+
+.ak-buyback-demo__eligibility-dialog p {
+  margin: 0 0 22px;
+  color: var(--ak-muted);
+  line-height: 1.55;
+}
+
+.ak-buyback-demo__modal-icon {
+  display: inline-grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--ak-red-soft);
+  color: var(--ak-red);
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.ak-buyback-demo__modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--ak-surface);
+  color: var(--ak-navy);
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.ak-buyback-demo__mode-fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.ak-buyback-demo__mode-card {
+  display: block;
+  cursor: pointer;
+}
+
+.ak-buyback-demo__mode-card > input[type="radio"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.ak-buyback-demo__mode-card:has(input:focus-visible) {
+  outline: 3px solid rgba(214, 0, 28, 0.24);
+  outline-offset: 3px;
+}
+
+.ak-buyback-demo__mode-card:has(input:checked) {
+  border-color: var(--ak-red);
+  box-shadow: 0 0 0 3px rgba(214, 0, 28, 0.1);
+}
+
+.ak-buyback-demo__primary:disabled {
+  border-color: #d0d5dd;
+  background: #d0d5dd;
+  color: #667085;
+  cursor: not-allowed;
+}
+
+.ak-buyback-demo__review-layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.7fr) minmax(280px, 0.9fr);
+  gap: 16px;
+}
+
+.ak-buyback-demo__summary-card--answers {
+  grid-column: 1 / -1;
+}
+
+.ak-buyback-demo__summary-card--selected-offer {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.ak-buyback-demo__summary-card--selected-offer > strong {
+  font-size: 20px;
+}
+
+.ak-buyback-demo__review-amount {
+  color: var(--ak-red);
+  font-size: clamp(30px, 4vw, 42px);
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.ak-buyback-demo__summary-card--selected-offer p {
+  margin: 4px 0 0;
+  color: var(--ak-muted);
+  line-height: 1.5;
+}
+
+.ak-buyback-demo__summary-card--selected-offer small {
+  color: #475467;
+  font-weight: 750;
+}
+
+.ak-buyback-demo__panel--review .ak-buyback-demo__panel-actions {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .ak-buyback-demo__eligibility-dialog {
+    padding: 26px 20px 22px;
+  }
+
+  .ak-buyback-demo__review-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .ak-buyback-demo__summary-card--answers {
+    grid-column: auto;
+  }
+
+  .ak-buyback-demo__panel--review .ak-buyback-demo__panel-actions {
+    flex-direction: column-reverse;
+  }
+}

@@ -1,0 +1,4 @@
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteRule ^eladas/?$ index.php?pagename=eladas [L,QSA]
+</IfModule>
