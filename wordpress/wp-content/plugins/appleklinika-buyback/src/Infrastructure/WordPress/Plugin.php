@@ -10,6 +10,7 @@ use AppleKlinika\Buyback\Application\Handler\ActivateDraftPriceBookHandler;
 use AppleKlinika\Buyback\Application\Handler\CreateDraftPriceBookHandler;
 use AppleKlinika\Buyback\Application\Handler\ClonePriceBookToDraftHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftBasePriceMatrixHandler;
+use AppleKlinika\Buyback\Application\Handler\SaveDraftQuestionnaireConditionsHandler;
 use AppleKlinika\Buyback\Application\Handler\DeleteDraftPricingRuleHandler;
 use AppleKlinika\Buyback\Application\Handler\PreviewDraftPriceBookCalculationHandler;
 use AppleKlinika\Buyback\Application\Handler\ToggleDraftPricingRuleHandler;
@@ -20,6 +21,7 @@ use AppleKlinika\Buyback\Application\Legacy\LegacyFieldParser;
 use AppleKlinika\Buyback\Application\Legacy\LegacyReferenceFactory;
 use AppleKlinika\Buyback\Application\Legacy\LegacyReportExitPolicy;
 use AppleKlinika\Buyback\Application\Legacy\LegacyReportService;
+use AppleKlinika\Buyback\Application\LocalDemo\LocalDemoQuestionnaire;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\MigrationRunner;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\MySqlPriceBookActivationLock;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\Schema;
@@ -62,6 +64,7 @@ final class Plugin
         $rules = new WordPressPricingRuleRepository($wpdb);
         $clock = new SystemClock();
         $catalog = new WordPressDeviceCatalogReader();
+        $questionnaire = new LocalDemoQuestionnaire();
         $readiness = new PriceBookActivationReadinessService($catalog, new PriceBookActivationReadinessEvaluator());
         $activeResolver = new RepositoryActivePriceBookResolver($books, $rules);
         $activationHandler = new ActivateDraftPriceBookHandler(
@@ -92,6 +95,7 @@ final class Plugin
                 new CreateDraftPriceBookHandler($books, $transactions, $clock),
                 new ClonePriceBookToDraftHandler($books, $rules, $transactions, $clock),
                 new SaveDraftBasePriceMatrixHandler($books, $rules, $catalog, $transactions, $clock),
+                new SaveDraftQuestionnaireConditionsHandler($books, $rules, $transactions, $clock, $questionnaire, $catalog),
                 new UpdateDraftPriceBookSettingsHandler($books, $clock),
                 new AddDraftPricingRuleHandler($books, $rules, $transactions, $clock),
                 new UpdateDraftPricingRuleHandler($books, $rules, $transactions, $clock),
@@ -105,7 +109,8 @@ final class Plugin
                 $activeResolver,
                 $clock,
                 new AdminAuthorization(),
-                new AdminSubmissionGuard()
+                new AdminSubmissionGuard(),
+                $questionnaire
             ),
             LocalDemoModule::create()
         );

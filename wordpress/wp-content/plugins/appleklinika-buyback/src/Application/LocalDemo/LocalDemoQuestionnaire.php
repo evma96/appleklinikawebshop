@@ -224,6 +224,48 @@ final class LocalDemoQuestionnaire
         );
     }
 
+    /**
+     * Business-facing condition-editor metadata derived from this same public
+     * questionnaire. The admin never owns a second list of questions or
+     * answers: it only receives the supported existing pricing-condition
+     * mapping or an immutable system outcome for each public answer.
+     *
+     * @return list<array{panel:string,panel_title:string,question_key:string,label:string,helper:string,conditional_on:?string,conditional_except:?string,options:list<array{answer_key:string,label:string,configurable:bool,condition_key?:string,comparison_value?:int|bool|string,system_outcome?:string}>}>
+     */
+    public function conditionEditorQuestions(): array
+    {
+        $items = [];
+        foreach ($this->panelOrder() as $panelKey) {
+            if (in_array($panelKey, ['model', 'battery', 'offers', 'review'], true)) {
+                continue;
+            }
+
+            foreach ($this->questionsForPanel($panelKey) as $questionKey => $question) {
+                if (! isset($question['options'])) {
+                    continue;
+                }
+
+                $options = [];
+                foreach ($question['options'] as $answerKey => $answer) {
+                    $options[] = $this->conditionEditorOption((string) $questionKey, (string) $answerKey, (string) $answer['label']);
+                }
+
+                $items[] = [
+                    'panel' => $panelKey,
+                    'panel_title' => $this->panel($panelKey)['title'],
+                    'question_key' => (string) $questionKey,
+                    'label' => (string) $question['label'],
+                    'helper' => (string) ($question['helper'] ?? ''),
+                    'conditional_on' => isset($question['conditional_on']) ? (string) $question['conditional_on'] : null,
+                    'conditional_except' => isset($question['conditional_except']) ? (string) $question['conditional_except'] : null,
+                    'options' => $options,
+                ];
+            }
+        }
+
+        return $items;
+    }
+
     /** @return array<string, mixed> */
     public function defaults(): array
     {
@@ -500,5 +542,65 @@ final class LocalDemoQuestionnaire
     private function answerLabels(string $key, array $values): string
     {
         return implode(', ', array_map(fn (string $value): string => $this->answerLabel($key, $value), $values));
+    }
+
+    /** @return array{answer_key:string,label:string,configurable:bool,condition_key?:string,comparison_value?:int|bool|string,system_outcome?:string} */
+    private function conditionEditorOption(string $questionKey, string $answerKey, string $label): array
+    {
+        $target = match ($questionKey) {
+            'screen_condition' => ['condition_key' => 'screen_condition', 'comparison_value' => $answerKey],
+            'frame_condition' => ['condition_key' => 'frame_condition', 'comparison_value' => $answerKey],
+            'back_glass_condition' => ['condition_key' => 'back_glass_condition', 'comparison_value' => $answerKey],
+            'display_defects' => $answerKey === 'touch'
+                ? ['condition_key' => 'touch_functional', 'comparison_value' => false]
+                : null,
+            'service_history' => $answerKey === 'original_repair'
+                ? ['condition_key' => 'replacement_parts', 'comparison_value' => 'original_repair']
+                : null,
+            'other_defects' => match ($answerKey) {
+                'front_camera', 'rear_camera' => ['condition_key' => 'camera_functional', 'comparison_value' => false],
+                'face_id' => ['condition_key' => 'face_id_functional', 'comparison_value' => false],
+                'camera_lens' => ['condition_key' => 'camera_lens_condition', 'comparison_value' => 'damaged'],
+                default => null,
+            },
+            default => null,
+        };
+
+        if ($target !== null) {
+            return ['answer_key' => $answerKey, 'label' => $label, 'configurable' => true] + $target;
+        }
+
+        return [
+            'answer_key' => $answerKey,
+            'label' => $label,
+            'configurable' => false,
+            'system_outcome' => $this->conditionEditorSystemOutcome($questionKey, $answerKey),
+        ];
+    }
+
+    private function conditionEditorSystemOutcome(string $questionKey, string $answerKey): string
+    {
+        return match ($questionKey) {
+            'network_status' => $answerKey === 'locked'
+                ? 'Hálózatfüggő készülékre a nyilvános kérdőív nem ad automatikus ajánlatot; az eszköz elutasításra kerül.'
+                : 'A hálózatfüggetlen készülék folytathatja az automatikus előzetes értékelést.',
+            'liquid_exposure' => $answerKey === 'yes_unknown'
+                ? 'Lehetséges folyadék- vagy párakár esetén a nyilvános kérdőív kötelező kézi bevizsgálást kér.'
+                : 'Ismert folyadékkár hiányában ez a válasz önmagában nem hoz létre levonást.',
+            'display_defects' => match ($answerKey) {
+                'yellowing', 'deformed', 'pixels', 'image_brightness' => 'Ez a kijelzőhiba a nyilvános kérdőívben kötelező kézi bevizsgálást kér.',
+                default => 'Ez a válasz önmagában nem hoz létre külön árazási szabályt.',
+            },
+            'service_history' => match ($answerKey) {
+                'used_original', 'unknown', 'repair_incomplete', 'non_original', 'unsure' => 'Ez a szervizelőzmény a nyilvános kérdőívben kötelező kézi bevizsgálást kér.',
+                'none_known' => 'Ilyenkor nem kell érintett alkatrészt megadni, és a korábban kijelölt alkatrészek törlődnek.',
+                default => 'Ez a válasz önmagában nem hoz létre külön árazási szabályt.',
+            },
+            'affected_parts' => 'Az érintett alkatrész csak a kérdőív bevizsgálási információja; önálló árazási szabály nem tartozik hozzá.',
+            'other_defects' => $answerKey === 'audio'
+                ? 'Hanghiba esetén a nyilvános kérdőív kötelező kézi bevizsgálást kér.'
+                : 'Ez a válasz önmagában nem hoz létre külön árazási szabályt.',
+            default => 'Ez a válasz rendszerszabály szerint nem szerkeszthető ezen a felületen.',
+        };
     }
 }

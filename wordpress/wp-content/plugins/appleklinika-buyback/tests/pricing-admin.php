@@ -12,6 +12,7 @@ use AppleKlinika\Buyback\Application\Command\CreateDraftPriceBook;
 use AppleKlinika\Buyback\Application\Command\ClonePriceBookToDraft;
 use AppleKlinika\Buyback\Application\Command\DeleteDraftPricingRule;
 use AppleKlinika\Buyback\Application\Command\SaveDraftBasePriceMatrix;
+use AppleKlinika\Buyback\Application\Command\SaveDraftQuestionnaireConditions;
 use AppleKlinika\Buyback\Application\Command\ToggleDraftPricingRule;
 use AppleKlinika\Buyback\Application\Command\UpdateDraftPriceBookSettings;
 use AppleKlinika\Buyback\Application\Command\UpdateDraftPricingRule;
@@ -26,9 +27,11 @@ use AppleKlinika\Buyback\Application\Handler\ClonePriceBookToDraftHandler;
 use AppleKlinika\Buyback\Application\Handler\DeleteDraftPricingRuleHandler;
 use AppleKlinika\Buyback\Application\Handler\PreviewDraftPriceBookCalculationHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftBasePriceMatrixHandler;
+use AppleKlinika\Buyback\Application\Handler\SaveDraftQuestionnaireConditionsHandler;
 use AppleKlinika\Buyback\Application\Handler\ToggleDraftPricingRuleHandler;
 use AppleKlinika\Buyback\Application\Handler\UpdateDraftPriceBookSettingsHandler;
 use AppleKlinika\Buyback\Application\Handler\UpdateDraftPricingRuleHandler;
+use AppleKlinika\Buyback\Application\LocalDemo\LocalDemoQuestionnaire;
 use AppleKlinika\Buyback\Application\Port\Clock;
 use AppleKlinika\Buyback\Domain\Exception\InvalidAggregateOperationException;
 use AppleKlinika\Buyback\Domain\Exception\InvalidValueObjectException;
@@ -237,6 +240,20 @@ function pricingAddRule(AddDraftPricingRuleHandler $handler, WordPressPriceBookR
     return $handler->handle(new AddDraftPricingRule($bookId->toInt(), $book->version()->value(), $definition));
 }
 
+/** @return array<string,array<string,array{action:string,value:string}>> */
+function pricingConditionSubmission(LocalDemoQuestionnaire $questionnaire): array
+{
+    $submission = [];
+    foreach ($questionnaire->conditionEditorQuestions() as $question) {
+        foreach ($question['options'] as $option) {
+            if ($option['configurable']) {
+                $submission[$question['question_key']][$option['answer_key']] = ['action' => SaveDraftQuestionnaireConditionsHandler::ACTION_NONE, 'value' => ''];
+            }
+        }
+    }
+    return $submission;
+}
+
 /** @return array{0:int,1:bool} */
 function pricingUserForRole(string $role, string $token): array
 {
@@ -347,7 +364,7 @@ try {
     $test->throws(fn () => new PricingRuleDefinition(new PricingRuleCode('bad-mode'), new PricingRuleKind(PricingRuleKind::MODE_ADJUSTMENT), 'iphone', null, null, 'fast_online', null, null, null, new Money(1000, 'HUF'), new BasisPointsMultiplier(9000), new RulePriority(1), true, null, null), InvalidValueObjectException::class, 'Mode adjustment rejects amount and multiplier together');
     $test->throws(fn () => new PricingRuleDefinition(new PricingRuleCode('bad-review'), new PricingRuleKind(PricingRuleKind::MANUAL_REVIEW), 'iphone', null, null, null, 'liquid_damage', new ComparisonOperator(ComparisonOperator::EQUALS), true, null, null, new RulePriority(1), true, null, null), InvalidValueObjectException::class, 'Manual review requires a public label');
     $test->throws(fn () => new PricingRuleDefinition(new PricingRuleCode('bad-minimum'), new PricingRuleKind(PricingRuleKind::MINIMUM_OFFER), 'iphone', null, null, null, null, null, null, new Money(1000, 'HUF'), null, new RulePriority(1), true, null, null), InvalidValueObjectException::class, 'Rule-level minimum is not editable in Phase 2A');
-    $test->throws(fn () => new PricingRuleDefinition(new PricingRuleCode('bad-target'), new PricingRuleKind(PricingRuleKind::FIXED_DEDUCTION), 'iphone', 'iphone-13-pro', null, null, 'battery_health', new ComparisonOperator(ComparisonOperator::LESS_THAN), 80, new Money(1000, 'HUF'), null, new RulePriority(1), true, null, null), InvalidValueObjectException::class, 'Conditional rule rejects conflicting model target');
+    $test->assert((new PricingRuleDefinition(new PricingRuleCode('model-scope'), new PricingRuleKind(PricingRuleKind::FIXED_DEDUCTION), 'iphone', 'iphone-13-pro', null, null, 'battery_health', new ComparisonOperator(ComparisonOperator::LESS_THAN), 80, new Money(1000, 'HUF'), null, new RulePriority(1), true, null, null))->modelKey === 'iphone-13-pro', 'Conditional rule may use the existing optional model scope');
 
     $parser = new PricingRuleFormParser();
     $test->throws(fn () => $parser->parse([
@@ -585,6 +602,68 @@ try {
     $ruleCountBeforeInvalidPair = count($rules->listForPriceBook($matrixBook->id()));
     $test->throws(fn () => $saveMatrix->handle(new SaveDraftBasePriceMatrix($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, ['iphone_17' => ['128' => '1']])), InvalidArgumentException::class, 'Matrix rejects a crafted storage value that belongs to another iPhone model');
     $test->assert(count($rules->listForPriceBook($matrixBook->id())) === $ruleCountBeforeInvalidPair, 'Invalid matrix submissions do not mutate unrelated rules');
+    $questionnaire = new LocalDemoQuestionnaire();
+    $saveConditions = new SaveDraftQuestionnaireConditionsHandler($books, $rules, $transactions, $clock, $questionnaire, $catalog);
+    $publicQuestionKeys = [];
+    foreach ($questionnaire->panelOrder() as $panel) {
+        if (in_array($panel, ['model', 'battery', 'offers', 'review'], true)) {
+            continue;
+        }
+        foreach ($questionnaire->questionsForPanel($panel) as $key => $question) {
+            if (isset($question['options'])) {
+                $publicQuestionKeys[] = $key;
+            }
+        }
+    }
+    $editorQuestions = $questionnaire->conditionEditorQuestions();
+    $test->assert($publicQuestionKeys === array_column($editorQuestions, 'question_key'), 'Condition editor uses the public questionnaire question order directly');
+    $screenQuestion = array_values(array_filter($editorQuestions, static fn (array $question): bool => $question['question_key'] === 'screen_condition'))[0] ?? null;
+    $test->assert($screenQuestion !== null && ($screenQuestion['options'][4]['answer_key'] ?? null) === 'damaged' && ($screenQuestion['options'][4]['condition_key'] ?? null) === 'screen_condition', 'Condition editor uses the canonical public answer keys and condition mapping');
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $saveMatrix->handle(new SaveDraftBasePriceMatrix($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, [
+        $firstConfiguration->modelKey => [(string) $firstConfiguration->storageGb => '125000'],
+    ]));
+    pricingAddRule($addRule, $books, $matrixBook->id(), pricingDefinition(PricingRuleKind::MODE_ADJUSTMENT, 'matrix-mode-' . $runToken));
+    $conditionSubmission = pricingConditionSubmission($questionnaire);
+    $conditionSubmission['screen_condition']['damaged'] = ['action' => SaveDraftQuestionnaireConditionsHandler::ACTION_FIXED, 'value' => '35000'];
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $saveConditions->handle(new SaveDraftQuestionnaireConditions($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, 'iphone_11_pro', $conditionSubmission));
+    $damagedCode = SaveDraftQuestionnaireConditionsHandler::ruleCode($matrixBook->id()->toInt(), 'iphone_11_pro', 'screen_condition', 'damaged');
+    $damagedRule = array_values(array_filter($rules->listForPriceBook($matrixBook->id()), static fn (PricingRule $rule): bool => $rule->definition()->code->code() === $damagedCode))[0] ?? null;
+    $test->assert($damagedRule instanceof PricingRule && $damagedRule->definition()->amount?->amount() === 35000 && $damagedRule->definition()->modelKey === 'iphone_11_pro', 'Condition editor creates a model-specific deduction from a real questionnaire answer');
+    $test->assert(count(array_filter($rules->listForPriceBook($matrixBook->id()), static fn (PricingRule $rule): bool => $rule->definition()->kind->code() === PricingRuleKind::BASE_PRICE && $rule->definition()->amount?->amount() === 125000)) === 1, 'Condition editor preserves existing base-price rules');
+    $test->assert(count(array_filter($rules->listForPriceBook($matrixBook->id()), static fn (PricingRule $rule): bool => $rule->definition()->code->code() === 'matrix-unrelated-' . $runToken && $rule->definition()->amount?->amount() === 1500000)) === 1, 'Condition editor preserves existing battery rules');
+    $test->assert(count(array_filter($rules->listForPriceBook($matrixBook->id()), static fn (PricingRule $rule): bool => $rule->definition()->kind->code() === PricingRuleKind::MODE_ADJUSTMENT)) === 1, 'Condition editor preserves unrelated offer-mode rules');
+    $iphone16Submission = pricingConditionSubmission($questionnaire);
+    $iphone16Submission['screen_condition']['damaged'] = ['action' => SaveDraftQuestionnaireConditionsHandler::ACTION_FIXED, 'value' => '75000'];
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $saveConditions->handle(new SaveDraftQuestionnaireConditions($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, 'iphone_16_pro', $iphone16Submission));
+    $iphone16Code = SaveDraftQuestionnaireConditionsHandler::ruleCode($matrixBook->id()->toInt(), 'iphone_16_pro', 'screen_condition', 'damaged');
+    $test->assert(count(array_filter($rules->listForPriceBook($matrixBook->id()), static fn (PricingRule $rule): bool => $rule->definition()->code->code() === $damagedCode && $rule->definition()->amount?->amount() === 35000)) === 1 && count(array_filter($rules->listForPriceBook($matrixBook->id()), static fn (PricingRule $rule): bool => $rule->definition()->code->code() === $iphone16Code && $rule->definition()->amount?->amount() === 75000)) === 1, 'iPhone 11 Pro and iPhone 16 Pro keep independent fixed deductions for the same answer');
+    $conditionSubmission['screen_condition']['damaged'] = ['action' => SaveDraftQuestionnaireConditionsHandler::ACTION_PERCENTAGE, 'value' => '10'];
+    $conditionSubmission['other_defects']['face_id'] = ['action' => SaveDraftQuestionnaireConditionsHandler::ACTION_MANUAL_REVIEW, 'value' => ''];
+    $conditionSubmission['other_defects']['rear_camera'] = ['action' => SaveDraftQuestionnaireConditionsHandler::ACTION_HARD_REJECT, 'value' => ''];
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $saveConditions->handle(new SaveDraftQuestionnaireConditions($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, 'iphone_11_pro', $conditionSubmission));
+    $conditionRules = array_values(array_filter($rules->listForPriceBook($matrixBook->id()), static fn (PricingRule $rule): bool => str_starts_with($rule->definition()->code->code(), 'questionnaire-condition-')));
+    $updatedDamagedRule = array_values(array_filter($conditionRules, static fn (PricingRule $rule): bool => $rule->definition()->code->code() === $damagedCode))[0] ?? null;
+    $test->assert(count(array_filter($conditionRules, static fn (PricingRule $rule): bool => $rule->definition()->code->code() === $damagedCode)) === 1 && $updatedDamagedRule?->definition()->multiplier?->value() === 9000, 'Condition editor updates the deterministic rule and uses existing percentage multiplier semantics');
+    $test->assert(count(array_filter($conditionRules, static fn (PricingRule $rule): bool => $rule->definition()->kind->code() === PricingRuleKind::MANUAL_REVIEW)) === 1 && count(array_filter($conditionRules, static fn (PricingRule $rule): bool => $rule->definition()->kind->code() === PricingRuleKind::HARD_REJECT)) === 1, 'Condition editor maps manual review and rejection without financial values');
+    $conditionSubmission['screen_condition']['damaged'] = ['action' => SaveDraftQuestionnaireConditionsHandler::ACTION_NONE, 'value' => ''];
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $saveConditions->handle(new SaveDraftQuestionnaireConditions($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, 'iphone_11_pro', $conditionSubmission));
+    $test->assert(count(array_filter($rules->listForPriceBook($matrixBook->id()), static fn (PricingRule $rule): bool => $rule->definition()->code->code() === $damagedCode)) === 0, 'Nincs változás removes only the matching draft questionnaire rule');
+    $invalidConditionSubmission = $conditionSubmission;
+    $invalidConditionSubmission['other_defects']['rear_camera'] = ['action' => SaveDraftQuestionnaireConditionsHandler::ACTION_HARD_REJECT, 'value' => '1'];
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $ruleCountBeforeInvalidCondition = count($rules->listForPriceBook($matrixBook->id()));
+    $test->throws(fn () => $saveConditions->handle(new SaveDraftQuestionnaireConditions($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, 'iphone_11_pro', $invalidConditionSubmission)), InvalidArgumentException::class, 'Condition editor rejects stale financial values for rejection');
+    $test->assert(count($rules->listForPriceBook($matrixBook->id())) === $ruleCountBeforeInvalidCondition, 'Invalid condition submissions leave all rules unchanged');
+    $invalidConditionSubmission = $conditionSubmission;
+    $invalidConditionSubmission['network_status'] = ['locked' => ['action' => SaveDraftQuestionnaireConditionsHandler::ACTION_FIXED, 'value' => '1']];
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $test->throws(fn () => $saveConditions->handle(new SaveDraftQuestionnaireConditions($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, 'iphone_11_pro', $invalidConditionSubmission)), InvalidArgumentException::class, 'Condition editor does not make immutable network rejection configurable');
+    $test->throws(fn () => $saveConditions->handle(new SaveDraftQuestionnaireConditions($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, 'iphone_not_in_inventory', $conditionSubmission)), InvalidArgumentException::class, 'Condition editor rejects an unknown inventory model key');
     $uiPage = new PriceBooksPage(
         $books,
         $rules,
@@ -592,6 +671,7 @@ try {
         $createBook,
         new ClonePriceBookToDraftHandler($books, $rules, $transactions, $clock),
         $saveMatrix,
+        $saveConditions,
         $updateBook,
         $addRule,
         $updateRule,
@@ -605,7 +685,8 @@ try {
         new RepositoryActivePriceBookResolver($books, $rules),
         $clock,
         $authorization,
-        new AdminSubmissionGuard()
+        new AdminSubmissionGuard(),
+        $questionnaire
     );
     $_GET = ['book_id' => (string) $matrixBook->id()->toInt(), 'tab' => 'base-prices'];
     ob_start();
@@ -617,7 +698,7 @@ try {
     ob_start();
     $uiPage->render();
     $conditionsHtml = (string) ob_get_clean();
-    $test->assert(str_contains($conditionsHtml, 'Az állapotlevonások felhasználóbarát szerkesztője még nem készült el.') && ! str_contains($conditionsHtml, 'Szabálykód') && ! str_contains($conditionsHtml, 'Összehasonlítás értéke'), 'Normal Conditions tab hides the raw technical pricing-rule editor');
+    $test->assert(str_contains($conditionsHtml, 'Hálózatfüggetlen a készülék?') && str_contains($conditionsHtml, 'Művelet') && str_contains($conditionsHtml, 'Rendszerszabály') && ! str_contains($conditionsHtml, 'Az állapotlevonások felhasználóbarát szerkesztője még nem készült el.') && ! str_contains($conditionsHtml, 'Szabálykód') && ! str_contains($conditionsHtml, 'Összehasonlítás értéke') && ! str_contains($conditionsHtml, 'Diagnosztikai azonosító'), 'Normal Conditions tab renders the business questionnaire editor without raw technical fields');
     $_GET = ['book_id' => (string) $matrixBook->id()->toInt(), 'tab' => 'preview'];
     ob_start();
     $uiPage->render();

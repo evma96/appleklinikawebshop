@@ -253,6 +253,24 @@ try {
     $test->assert($offered->finalAmount?->amount() === 172000, 'Final amount uses half-up rounding');
     $test->assert(array_column($offered->toArray()['breakdown'], 'type') === ['base_price', 'fixed_deduction', 'multiplier', 'mode_fixed_adjustment', 'rounding'], 'Breakdown order matches execution order');
 
+    $modelBook = engineBook(700010, 0, 1);
+    $modelRules = [
+        engineRule(101, $modelBook->id(), PricingRuleKind::BASE_PRICE, 'model-11-base', 10, true, ['model_key' => 'iphone_11_pro', 'amount' => 200000]),
+        engineRule(106, $modelBook->id(), PricingRuleKind::BASE_PRICE, 'model-11-base-256', 10, true, ['model_key' => 'iphone_11_pro', 'storage_gb' => 256, 'amount' => 200000]),
+        engineRule(102, $modelBook->id(), PricingRuleKind::BASE_PRICE, 'model-16-base', 10, true, ['model_key' => 'iphone_16_pro', 'amount' => 200000]),
+        engineRule(107, $modelBook->id(), PricingRuleKind::BASE_PRICE, 'model-13-base', 10, true, ['model_key' => 'iphone_13_pro', 'amount' => 200000]),
+        engineRule(103, $modelBook->id(), PricingRuleKind::FIXED_DEDUCTION, 'legacy-global-damaged', 20, true, ['condition_key' => 'screen_condition', 'operator' => ComparisonOperator::EQUALS, 'comparison' => 'damaged', 'amount' => 10000]),
+        engineRule(104, $modelBook->id(), PricingRuleKind::FIXED_DEDUCTION, 'model-11-damaged', 20, true, ['model_key' => 'iphone_11_pro', 'condition_key' => 'screen_condition', 'operator' => ComparisonOperator::EQUALS, 'comparison' => 'damaged', 'amount' => 35000]),
+        engineRule(105, $modelBook->id(), PricingRuleKind::FIXED_DEDUCTION, 'model-16-damaged', 20, true, ['model_key' => 'iphone_16_pro', 'condition_key' => 'screen_condition', 'operator' => ComparisonOperator::EQUALS, 'comparison' => 'damaged', 'amount' => 75000]),
+    ];
+    $model11 = $engine->calculate($modelBook, $modelRules, engineInput(['screen_condition' => 'damaged'], ServiceMode::HIGHER_OFFER, 'iphone_11_pro', 128));
+    $model16 = $engine->calculate($modelBook, $modelRules, engineInput(['screen_condition' => 'damaged'], ServiceMode::HIGHER_OFFER, 'iphone_16_pro', 128));
+    $legacyFallback = $engine->calculate($modelBook, $modelRules, engineInput(['screen_condition' => 'damaged'], ServiceMode::HIGHER_OFFER, 'iphone_13_pro', 128));
+    $test->assert($model11->finalAmount?->amount() === 165000 && $model16->finalAmount?->amount() === 125000, 'Model-specific damaged-screen deductions apply independently: iPhone 11 Pro 35000 Ft and iPhone 16 Pro 75000 Ft');
+    $test->assert($legacyFallback->finalAmount?->amount() === 190000, 'Legacy global condition rule remains the fallback when no model-specific rule exists');
+    $model11Storage = $engine->calculate($modelBook, $modelRules, engineInput(['screen_condition' => 'damaged'], ServiceMode::HIGHER_OFFER, 'iphone_11_pro', 256));
+    $test->assert($model11Storage->finalAmount?->amount() === 165000, 'Storage does not create a different model-level condition deduction');
+
     $missingBase = $engine->calculate($book, $rules, engineInput([], ServiceMode::FAST_ONLINE, 'iphone-14'));
     $test->assert($missingBase->outcome->code() === PricingOutcome::CONFIGURATION_ERROR && in_array('missing_base_price', $missingBase->reasonCodes, true), 'Missing base is a configuration error');
     $duplicateBase = $engine->calculate($book, array_merge($rules, [engineRule(9, $bookId, PricingRuleKind::BASE_PRICE, 'base-copy', 11, true, ['amount' => 190000])]), engineInput());

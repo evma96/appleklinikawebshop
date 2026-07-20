@@ -31,7 +31,7 @@ final class RuleShapeValidator
         }
 
         self::required($rule->conditionKey !== null && $rule->operator !== null && $rule->comparisonValue !== null, 'Conditional rule requires condition, operator and value.');
-        self::required($rule->modelKey === null && $rule->storage === null && $rule->serviceMode === null, 'Conditional rule contains conflicting target fields.');
+        self::required($rule->storage === null && $rule->serviceMode === null, 'Conditional rule contains conflicting target fields.');
         ConditionDefinition::assertValid($rule->conditionKey, $rule->operator, $rule->comparisonValue);
 
         if ($kind === PricingRuleKind::FIXED_DEDUCTION) {

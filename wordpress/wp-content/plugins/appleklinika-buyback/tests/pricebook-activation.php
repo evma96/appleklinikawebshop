@@ -502,10 +502,10 @@ try {
     $test->assert($books->getById($rollback->id())->status()->isDraft(), 'Target remains draft after rollback');
 
     $page = new PriceBooksPage(
-        $books, $rules, $catalog, $create, new AppleKlinika\Buyback\Application\Handler\ClonePriceBookToDraftHandler($books, $rules, $transactions, $clock), new AppleKlinika\Buyback\Application\Handler\SaveDraftBasePriceMatrixHandler($books, $rules, $catalog, $transactions, $clock), new UpdateDraftPriceBookSettingsHandler($books, $clock), $add,
+        $books, $rules, $catalog, $create, new AppleKlinika\Buyback\Application\Handler\ClonePriceBookToDraftHandler($books, $rules, $transactions, $clock), new AppleKlinika\Buyback\Application\Handler\SaveDraftBasePriceMatrixHandler($books, $rules, $catalog, $transactions, $clock), new AppleKlinika\Buyback\Application\Handler\SaveDraftQuestionnaireConditionsHandler($books, $rules, $transactions, $clock, new AppleKlinika\Buyback\Application\LocalDemo\LocalDemoQuestionnaire(), $catalog), new UpdateDraftPriceBookSettingsHandler($books, $clock), $add,
         $updateRuleHandler, $toggleRuleHandler, $deleteRuleHandler,
         new PricingRuleFormParser(), new PreviewDraftPriceBookCalculationHandler($books, $rules, $catalog, new PricingEngine()),
-        new PreviewCalculationFormParser(), $readiness, $activate, $resolver, $clock, $authorization, new AdminSubmissionGuard()
+        new PreviewCalculationFormParser(), $readiness, $activate, $resolver, $clock, $authorization, new AdminSubmissionGuard(), new AppleKlinika\Buyback\Application\LocalDemo\LocalDemoQuestionnaire()
     );
     $_GET = ['page' => PriceBooksPage::SLUG, 'book_id' => 31];
     ob_start(); $page->render(); $realDraftOutput = (string) ob_get_clean();

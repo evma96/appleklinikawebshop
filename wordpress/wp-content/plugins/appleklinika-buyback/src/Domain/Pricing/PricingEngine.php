@@ -170,7 +170,34 @@ final class PricingEngine
     /** @param list<PricingRule> $rules @return list<PricingRule> */
     private function matchingConditional(array $rules, string $kind, PricingCalculationInput $input): array
     {
-        return array_values(array_filter($rules, fn (PricingRule $rule): bool => $rule->definition()->kind->code() === $kind && $this->matcher->matches($rule->definition(), $input->conditionAnswers)));
+        $matching = array_values(array_filter($rules, fn (PricingRule $rule): bool => $this->isMatchingConditional($rule, $input)));
+        $specificTargets = [];
+        foreach ($matching as $rule) {
+            if ($rule->definition()->modelKey === $input->modelKey->value()) {
+                $specificTargets[$this->conditionTargetKey($rule)] = true;
+            }
+        }
+        return array_values(array_filter($matching, function (PricingRule $rule) use ($kind, $specificTargets): bool {
+            $definition = $rule->definition();
+            if ($definition->kind->code() !== $kind) {
+                return false;
+            }
+            return $definition->modelKey !== null || ! isset($specificTargets[$this->conditionTargetKey($rule)]);
+        }));
+    }
+
+    private function isMatchingConditional(PricingRule $rule, PricingCalculationInput $input): bool
+    {
+        $definition = $rule->definition();
+        return $definition->conditionKey !== null
+            && ($definition->modelKey === null || $definition->modelKey === $input->modelKey->value())
+            && $this->matcher->matches($definition, $input->conditionAnswers);
+    }
+
+    private function conditionTargetKey(PricingRule $rule): string
+    {
+        $definition = $rule->definition();
+        return $definition->conditionKey . '|' . $definition->operator?->code() . '|' . json_encode($definition->comparisonValue, JSON_THROW_ON_ERROR);
     }
 
     private function matched(PricingRule $rule): PricingMatchedRule
