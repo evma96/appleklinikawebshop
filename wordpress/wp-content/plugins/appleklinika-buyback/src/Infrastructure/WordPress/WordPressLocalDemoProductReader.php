@@ -56,17 +56,19 @@ final class WordPressLocalDemoProductReader
         return $records;
     }
 
-    /** @return array<string,array{label:string,image_url:string,product_url:string,storages:list<int>}> */
+    /** @return array<string,array{label:string,image_url:string,product_url:string,storages:list<int>,colors:array<int,array<string,string>}>} */
     public function frontendModels(): array
     {
         if (! function_exists('wc_get_products')) {
             return [];
         }
 
+        $catalogReader = new WordPressDeviceCatalogReader();
         $labels = [];
-        foreach ((new WordPressDeviceCatalogReader())->iPhoneModels() as $item) {
+        foreach ($catalogReader->iPhoneModels() as $item) {
             $labels[$item->modelKey] = $item->label;
         }
+        $catalogColors = array_map(static fn (array $item): array => $item['colors'], $catalogReader->iPhoneCatalog());
 
         $models = [];
         $products = wc_get_products([
@@ -102,17 +104,28 @@ final class WordPressLocalDemoProductReader
                     'image_url' => $imageUrl,
                     'product_url' => $product->get_permalink(),
                     'storages' => [],
+                    'colors' => [],
                 ];
             } elseif ($models[$modelKey]['image_url'] === '' && $product->get_image_id() > 0) {
                 $models[$modelKey]['image_url'] = (string) wp_get_attachment_image_url($product->get_image_id(), 'woocommerce_single');
             }
 
             $models[$modelKey]['storages'][$storageGb] = $storageGb;
+            $colorKey = sanitize_key((string) get_post_meta($id, '_appleklinika_color', true));
+            if ($colorKey !== '' && ($catalogColors[$modelKey] ?? []) === []) {
+                $models[$modelKey]['colors'][$storageGb][$colorKey] = $this->colorLabel($modelKey, $colorKey);
+            }
         }
 
-        foreach ($models as &$model) {
+        foreach ($models as $modelKey => &$model) {
             $model['storages'] = array_values($model['storages']);
             sort($model['storages'], SORT_NUMERIC);
+            foreach ($model['storages'] as $storage) {
+                $model['colors'][$storage] = self::resolveColors(
+                    $catalogColors[$modelKey] ?? [],
+                    $model['colors'][$storage] ?? []
+                );
+            }
         }
         unset($model);
 
@@ -123,6 +136,12 @@ final class WordPressLocalDemoProductReader
         });
 
         return $models;
+    }
+
+    /** @param array<string,string> $catalogColors @param array<string,string> $productColors @return array<string,string> */
+    public static function resolveColors(array $catalogColors, array $productColors): array
+    {
+        return $catalogColors !== [] ? $catalogColors : $productColors;
     }
 
     private function storageGb(string $value): ?int
@@ -140,5 +159,16 @@ final class WordPressLocalDemoProductReader
     private function integerHuf(string $value): ?int
     {
         return preg_match('/^[1-9]\d*$/', $value) === 1 ? (int) $value : null;
+    }
+
+    private function colorLabel(string $modelKey, string $colorKey): string
+    {
+        $catalog = get_option('appleklinika_device_catalog', []);
+        foreach (is_array($catalog) ? $catalog : [] as $device) {
+            if (is_array($device) && ($device['key'] ?? '') === $modelKey) {
+                return (string) (($device['colors'][$colorKey] ?? '') ?: $colorKey);
+            }
+        }
+        return $colorKey;
     }
 }

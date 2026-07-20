@@ -190,6 +190,8 @@ The frontend currently includes:
 
 The standalone `appleklinika-buyback` plugin now includes the Phase 1 persistence/domain foundation, read-only legacy reporting, draft pricing administration, deterministic draft preview, and Phase 2B2 readiness-gated atomic price-book activation. The active HUF price book is resolved through a typed service, active/retired configuration is immutable, and no public calculator, customer offer, request linkage, or legacy import is exposed. See [Buyback Phase 1A architecture](docs/architecture/appleklinika-buyback-phase-1a.md) and [Buyback Phase 2B2 architecture](docs/architecture/appleklinika-buyback-phase-2b2.md).
 
+The local-only `/eladas/` demo keeps its approved four-offer calculator and now asks display functionality directly after screen condition, then records parts/service-history answers and affected parts as temporary questionnaire state. It does not write requests, customer data, orders, or price-book data.
+
 Run its real integration smoke test with:
 
 ```bash

@@ -21,10 +21,11 @@ final class LocalDemoQuestionnaire
             'configuration',
             'liquid_contact',
             'screen_cosmetic',
+            'display_defects',
             'frame_cosmetic',
             'back_cosmetic',
             'battery',
-            'display_defects',
+            'service_history',
             'other_defects',
             'offers',
             'review',
@@ -39,13 +40,14 @@ final class LocalDemoQuestionnaire
             'configuration' => ['step' => 2, 'title' => 'Add meg a készülék konfigurációját', 'short' => 'Konfiguráció'],
             'liquid_contact' => ['step' => 3, 'title' => 'Érte a készüléket folyadék?', 'short' => 'Folyadék'],
             'screen_cosmetic' => ['step' => 4, 'title' => 'Milyen állapotban van a kijelző?', 'short' => 'Kijelző'],
-            'frame_cosmetic' => ['step' => 5, 'title' => 'Milyen állapotban van a készülék kerete?', 'short' => 'Keret'],
-            'back_cosmetic' => ['step' => 6, 'title' => 'Milyen állapotban van a hátlap?', 'short' => 'Hátlap'],
-            'battery' => ['step' => 7, 'title' => 'Milyen az akkumulátor állapota?', 'short' => 'Akkumulátor'],
-            'display_defects' => ['step' => 8, 'title' => 'Tapasztalsz hibát a kijelző működésében?', 'short' => 'Kijelzőhibák'],
-            'other_defects' => ['step' => 9, 'title' => 'Van más ismert hibája a készüléknek?', 'short' => 'Egyéb hibák'],
-            'offers' => ['step' => 10, 'title' => 'Válaszd ki a számodra megfelelő ajánlatot', 'short' => 'Ajánlat'],
-            'review' => ['step' => 11, 'title' => 'Ellenőrizd az összefoglalót', 'short' => 'Összegzés'],
+            'display_defects' => ['step' => 5, 'title' => 'Tapasztalsz hibát a kijelző működésében?', 'short' => 'Kijelzőhibák'],
+            'frame_cosmetic' => ['step' => 6, 'title' => 'Milyen állapotban van a készülék kerete?', 'short' => 'Keret'],
+            'back_cosmetic' => ['step' => 7, 'title' => 'Milyen állapotban van a hátlap?', 'short' => 'Hátlap'],
+            'battery' => ['step' => 8, 'title' => 'Milyen az akkumulátor állapota?', 'short' => 'Akkumulátor'],
+            'service_history' => ['step' => 9, 'title' => 'Találsz bejegyzést az Alkatrész- és szervizelési előzmények között?', 'short' => 'Szervizelőzmények'],
+            'other_defects' => ['step' => 10, 'title' => 'Van más ismert hibája a készüléknek?', 'short' => 'Egyéb hibák'],
+            'offers' => ['step' => 11, 'title' => 'Válaszd ki a számodra megfelelő ajánlatot', 'short' => 'Ajánlat'],
+            'review' => ['step' => 12, 'title' => 'Ellenőrizd az összefoglalót', 'short' => 'Összegzés'],
         ];
     }
 
@@ -138,6 +140,42 @@ final class LocalDemoQuestionnaire
                         'label' => 'Kiégett, villogó vagy nem működő pixelek',
                         'helper' => 'Pontszerű, villogó vagy folyamatos képhiba látható.',
                     ],
+                    'image_brightness' => [
+                        'label' => 'A kép vagy a fényerő működése hibás',
+                        'helper' => 'A megjelenített kép vagy a kijelző fényereje nem működik megfelelően.',
+                    ],
+                ],
+            ],
+            'service_history' => [
+                'panel' => 'service_history',
+                'type' => 'single',
+                'label' => 'Találsz bejegyzést az Alkatrész- és szervizelési előzmények között?',
+                'helper' => 'Ebből látható, hogy cseréltek-e fontos alkatrészt, és az eredeti, használt, ismeretlen vagy még befejezetlen javításként szerepel-e.',
+                'default' => 'none_known',
+                'options' => [
+                    'none_known' => ['label' => 'Nincs ilyen bejegyzés', 'helper' => 'Tudomásom szerint a készüléken nem történt rögzített alkatrészcsere.'],
+                    'original_repair' => ['label' => 'Eredeti Apple-alkatrésszel javították', 'helper' => 'Az érintett alkatrész mellett eredeti Apple-alkatrészre utaló jelölés látható.'],
+                    'used_original' => ['label' => 'Használt eredeti Apple-alkatrész szerepel', 'helper' => 'Az alkatrész eredeti, de korábban más készülékben is használhatták.'],
+                    'unknown' => ['label' => 'Ismeretlen vagy nem ellenőrzött alkatrész szerepel', 'helper' => 'Az iPhone nem tudja eredetiként vagy megfelelően ellenőrzöttként azonosítani az alkatrészt.'],
+                    'repair_incomplete' => ['label' => '„Javítás befejezése” vagy más szervizüzenet látható', 'helper' => 'A javítás, párosítás vagy ellenőrzés még nem fejeződött be teljesen.'],
+                    'non_original' => ['label' => 'Tudomásom szerint nem eredeti alkatrész került bele', 'helper' => 'A készüléket utángyártott vagy nem eredeti alkatrésszel javították.'],
+                    'unsure' => ['label' => 'Nem tudom biztosan', 'helper' => 'Nem tudom ellenőrizni vagy értelmezni a megjelenő információt.'],
+                ],
+            ],
+            'affected_parts' => [
+                'panel' => 'service_history',
+                'type' => 'multi',
+                'label' => 'Melyik alkatrészt érinti?',
+                'helper' => 'Jelölj meg legalább egy érintett alkatrészt.',
+                'default' => [],
+                'conditional_on' => 'service_history',
+                'conditional_except' => 'none_known',
+                'options' => [
+                    'battery' => ['label' => 'Akkumulátor', 'helper' => ''],
+                    'display' => ['label' => 'Kijelző', 'helper' => ''],
+                    'rear_camera' => ['label' => 'Hátlapi kamera', 'helper' => ''],
+                    'front_camera_truedepth' => ['label' => 'Előlapi kamera / TrueDepth rendszer', 'helper' => ''],
+                    'other' => ['label' => 'Egyéb alkatrész', 'helper' => ''],
                 ],
             ],
             'other_defects' => [
@@ -203,6 +241,9 @@ final class LocalDemoQuestionnaire
         $errors = [];
         foreach ($this->questions() as $key => $question) {
             if (! array_key_exists($key, $input)) {
+                if (isset($question['conditional_on']) && ! $this->serviceHistoryRequiresAffectedParts($input)) {
+                    continue;
+                }
                 $errors[$key] = 'Hiányzó válasz: ' . $question['label'] . '.';
                 continue;
             }
@@ -217,6 +258,9 @@ final class LocalDemoQuestionnaire
 
             $allowed = array_keys($question['options']);
             if ($question['type'] === 'multi') {
+                if (isset($question['conditional_on']) && ! $this->serviceHistoryRequiresAffectedParts($input)) {
+                    continue;
+                }
                 $values = is_array($input[$key]) ? array_map('strval', $input[$key]) : [(string) $input[$key]];
                 if ($values === [] || array_diff($values, $allowed) !== []) {
                     $errors[$key] = 'Érvénytelen választás: ' . $question['label'] . '.';
@@ -250,10 +294,10 @@ final class LocalDemoQuestionnaire
             if ($question['type'] === 'multi') {
                 $values = is_array($input[$key]) ? $input[$key] : [$input[$key]];
                 $values = array_values(array_unique(array_intersect($allowed, array_map('strval', $values))));
-                $exclusive = (string) $question['exclusive'];
-                $state[$key] = in_array($exclusive, $values, true) || $values === []
+                $exclusive = isset($question['exclusive']) ? (string) $question['exclusive'] : null;
+                $state[$key] = $exclusive !== null && (in_array($exclusive, $values, true) || $values === [])
                     ? [$exclusive]
-                    : array_values(array_diff($values, [$exclusive]));
+                    : array_values($exclusive === null ? $values : array_diff($values, [$exclusive]));
                 continue;
             }
 
@@ -263,7 +307,24 @@ final class LocalDemoQuestionnaire
             }
         }
 
+        if (! $this->serviceHistoryRequiresAffectedParts($state)) {
+            $state['affected_parts'] = [];
+        }
+
         return $state;
+    }
+
+    /** @param array<string,mixed> $state */
+    public function serviceHistoryRequiresAffectedParts(array $state): bool
+    {
+        return $this->normalizedServiceHistory($state) !== 'none_known';
+    }
+
+    /** @param array<string,mixed> $state */
+    private function normalizedServiceHistory(array $state): string
+    {
+        $value = (string) ($state['service_history'] ?? '');
+        return array_key_exists($value, $this->questions()['service_history']['options']) ? $value : '';
     }
 
     /** @param array<string, mixed> $state @return array<string, int|bool|string> */
@@ -273,7 +334,7 @@ final class LocalDemoQuestionnaire
         $displayDefects = (array) $state['display_defects'];
         $otherDefects = (array) $state['other_defects'];
 
-        return [
+        $summary = [
             // The verified reference flow does not ask separate power/output questions.
             // The demo therefore assumes these baseline functions work unless a visible
             // defect option maps to an existing canonical condition below.
@@ -292,8 +353,15 @@ final class LocalDemoQuestionnaire
             'bent_or_dented' => false,
             'liquid_damage' => $state['liquid_exposure'] === 'yes_unknown',
             'motherboard_issue' => false,
-            'replacement_parts' => 'none_known',
+            'replacement_parts' => match ((string) $state['service_history']) {
+                'original_repair', 'used_original' => 'original_repair',
+                'non_original' => 'non_original',
+                'unknown', 'repair_incomplete', 'unsure' => 'unknown',
+                default => 'none_known',
+            },
         ];
+
+        return $summary;
     }
 
     /** @param array<string, mixed> $state */
@@ -321,12 +389,15 @@ final class LocalDemoQuestionnaire
         if (in_array('audio', (array) $state['other_defects'], true)) {
             $reasons[] = 'A hanghiba egyedi bevizsgálást igényel.';
         }
+        if (in_array((string) $state['service_history'], ['used_original', 'unknown', 'repair_incomplete', 'non_original', 'unsure'], true)) {
+            $reasons[] = 'Az alkatrész- és szervizelési előzmények kézi bevizsgálást igényelnek.';
+        }
 
         return array_values(array_unique($reasons));
     }
 
     /** @param array<string, mixed> $state @return array<string, array<string, string>> */
-    public function summary(array $state, string $model, string $storage): array
+    public function summary(array $state, string $model, string $storage, string $color = ''): array
     {
         $state = $this->sanitize($state);
 
@@ -334,6 +405,7 @@ final class LocalDemoQuestionnaire
             'Készülék' => ['Modell' => $model],
             'Konfiguráció' => [
                 'Tárhely' => $storage,
+                'Szín' => $color !== '' ? $color : 'Nincs kiválasztva',
                 'Hálózat' => $this->answerLabel('network_status', $state['network_status']),
             ],
             'Állapot' => [
@@ -346,10 +418,18 @@ final class LocalDemoQuestionnaire
             'Kijelzőhibák' => [
                 'Megjelölt válaszok' => $this->answerLabels('display_defects', (array) $state['display_defects']),
             ],
+            'Alkatrész- és szervizelési előzmények' => [
+                'Állapot' => $this->answerLabel('service_history', $state['service_history']),
+                'Kézi bevizsgálás' => in_array((string) $state['service_history'], ['used_original', 'unknown', 'repair_incomplete', 'non_original', 'unsure'], true) ? 'Szükséges' : 'Nem szükséges',
+            ],
             'Egyéb hibák' => [
                 'Megjelölt válaszok' => $this->answerLabels('other_defects', (array) $state['other_defects']),
             ],
         ];
+        if ($this->serviceHistoryRequiresAffectedParts($state)) {
+            $summary['Alkatrész- és szervizelési előzmények']['Érintett alkatrészek'] = $this->answerLabels('affected_parts', (array) $state['affected_parts']);
+        }
+        return $summary;
     }
 
     /** @return array<string, mixed> */

@@ -25,6 +25,7 @@ use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressPricingRu
 use AppleKlinika\Buyback\Infrastructure\WordPress\LocalDemoModule;
 use AppleKlinika\Buyback\Infrastructure\WordPress\LocalDemoSeeder;
 use AppleKlinika\Buyback\Infrastructure\WordPress\WordPressLocalDemoPageGateway;
+use AppleKlinika\Buyback\Infrastructure\WordPress\WordPressLocalDemoProductReader;
 
 function localDemoAssert(bool $condition, string $message): void
 {
@@ -98,16 +99,19 @@ try {
 localDemoAssert($blocked, 'Localhost guard rejects a non-local host');
 
 $questionnaire = new LocalDemoQuestionnaire();
+localDemoAssert(WordPressLocalDemoProductReader::resolveColors(['graphite' => 'Grafit'], ['graphite' => 'Más címke', 'extra' => 'Extra']) === ['graphite' => 'Grafit'], 'Catalogue colors override and exclude conflicting Woo product colors');
+localDemoAssert(WordPressLocalDemoProductReader::resolveColors([], ['graphite' => 'Grafit']) === ['graphite' => 'Grafit'], 'Woo product colors are used only when the catalogue has no colors');
 localDemoAssert(
     $questionnaire->panelOrder() === [
         'model',
         'configuration',
         'liquid_contact',
         'screen_cosmetic',
+        'display_defects',
         'frame_cosmetic',
         'back_cosmetic',
         'battery',
-        'display_defects',
+        'service_history',
         'other_defects',
         'offers',
         'review',
@@ -116,16 +120,40 @@ localDemoAssert(
 );
 localDemoAssert(! array_key_exists('camera_lens_condition', $questionnaire->questions()), 'Camera-lens condition is not rendered as a separate questionnaire question');
 localDemoAssert(! array_key_exists('powers_on', $questionnaire->questions()), 'Unverified power-on question is not exposed as a dedicated customer step');
-localDemoAssert(! array_key_exists('repair_history', $questionnaire->questions()), 'Unverified repair-history question is not exposed as a dedicated customer step');
+localDemoAssert(array_key_exists('service_history', $questionnaire->questions()), 'Parts and service history is exposed as a dedicated customer step');
+localDemoAssert(array_key_exists('affected_parts', $questionnaire->questions()), 'Affected parts are retained as conditional questionnaire state');
 localDemoAssert(array_key_exists('camera_lens', $questionnaire->questions()['other_defects']['options']), 'Damaged camera lens is available under other defects');
 localDemoAssert($questionnaire->questions()['network_status']['panel'] === 'configuration', 'Network eligibility is part of device configuration');
 
 $healthyQuestionnaire = $questionnaire->defaults();
+$noHistoryWithoutParts = $healthyQuestionnaire;
+$noHistoryWithoutParts['affected_parts'] = [];
+localDemoAssert($questionnaire->validate($noHistoryWithoutParts) === [], 'No-history without affected parts passes validation');
+$unknownWithoutParts = $healthyQuestionnaire;
+$unknownWithoutParts['service_history'] = 'unknown';
+$unknownWithoutParts['affected_parts'] = [];
+localDemoAssert(array_key_exists('affected_parts', $questionnaire->validate($unknownWithoutParts)), 'Unknown service history without parts fails affected-parts validation');
+$unknownWithPart = $unknownWithoutParts;
+$unknownWithPart['affected_parts'] = ['battery'];
+localDemoAssert($questionnaire->validate($unknownWithPart) === [], 'Unknown service history with one part passes validation');
+$clearedHistory = $questionnaire->sanitize(array_replace($unknownWithPart, ['service_history' => 'none_known']));
+localDemoAssert($clearedHistory['affected_parts'] === [], 'Switching back to no-history clears affected parts');
 $healthyConditions = $questionnaire->mapToConditions($healthyQuestionnaire);
 localDemoAssert($healthyConditions['camera_lens_condition'] === 'excellent', 'Unselected camera-lens damage maps to the valid healthy canonical value');
 localDemoAssert($healthyConditions['back_glass_condition'] === 'excellent', 'Back-glass answer maps to the canonical pricing key');
 localDemoAssert($healthyConditions['powers_on'] === true && $healthyConditions['display_functional'] === true, 'Unverified dedicated operation questions retain safe healthy defaults');
 localDemoAssert($healthyConditions['replacement_parts'] === 'none_known', 'Unverified repair history retains the existing healthy canonical default');
+
+$originalRepairQuestionnaire = $healthyQuestionnaire;
+$originalRepairQuestionnaire['service_history'] = 'original_repair';
+$originalRepairQuestionnaire['affected_parts'] = ['display'];
+localDemoAssert($questionnaire->mapToConditions($originalRepairQuestionnaire)['replacement_parts'] === 'original_repair', 'Genuine repair maps to the existing original_repair enum');
+
+$unknownRepairQuestionnaire = $healthyQuestionnaire;
+$unknownRepairQuestionnaire['service_history'] = 'unknown';
+$unknownRepairQuestionnaire['affected_parts'] = ['battery'];
+localDemoAssert($questionnaire->mapToConditions($unknownRepairQuestionnaire)['replacement_parts'] === 'unknown', 'Unknown repair maps to the existing unknown enum');
+localDemoAssert($questionnaire->manualReviewReasons($unknownRepairQuestionnaire) !== [], 'Unknown repair produces an explicit manual-review reason');
 
 $damagedLensQuestionnaire = $healthyQuestionnaire;
 $damagedLensQuestionnaire['other_defects'] = ['camera_lens'];

@@ -13,6 +13,7 @@
 ## Known Limitations
 
 - Buyback Phase 2B2 now provides readiness-gated, atomically serialized HUF price-book activation, immutable active/retired configuration, and typed active resolution. Public/live customer calculation, request-to-price-book linkage, offer persistence, standalone retirement/reactivation/cloning, inspection, payout, courier, trade-in credit, WooCommerce integration, and legacy import remain deferred.
+- The `/eladas/` calculator remains a local-only demo: service-history and affected-parts answers are intentionally not persisted until the separately scoped request-submission phase.
 - The Buyback Phase 1A migration smoke test is a real Docker-backed WordPress integration check (`make test-buyback`), while the repository-wide `make test` and `make quality` commands still remain placeholders.
 - WooCommerce is not installed or configured by this bootstrap alone.
 - Custom product fields are editable in admin and selected values render on the product page; selector cards can switch matching same-model products without a full page reload when a complete color/storage/grade combination exists.

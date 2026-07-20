@@ -388,6 +388,9 @@
   background: var(--ak-surface);
 }
 
+.ak-buyback-demo__visual-image { transition: opacity .18s ease; }
+.ak-buyback-demo__visual-image.is-transitioning { opacity: .72; }
+
 .ak-buyback-demo__visual-image img {
   width: 100%;
   height: 100%;

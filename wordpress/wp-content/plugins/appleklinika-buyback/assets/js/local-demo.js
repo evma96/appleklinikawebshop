@@ -16,7 +16,11 @@
   const visualLabels = root.querySelectorAll('[data-demo-visual-label]');
   const modelCards = Array.from(root.querySelectorAll('[data-model-card]'));
   const storageCards = Array.from(root.querySelectorAll('[data-storage-card]'));
+  const colorPicker = root.querySelector('[data-color-picker]');
+  const colorOptions = root.querySelector('[data-color-options]');
   const networkModal = root.querySelector('[data-network-modal]');
+  const serviceHistoryModal = root.querySelector('[data-service-history-modal]');
+  const serviceHistoryOpen = root.querySelector('[data-service-history-open]');
   const networkInputs = Array.from(root.querySelectorAll('input[name="questionnaire[network_status]"]'));
   const modeInputs = Array.from(root.querySelectorAll('[data-mode-input]'));
   const offerContinue = root.querySelector('[data-offer-continue]');
@@ -62,6 +66,7 @@
     visualImages.forEach((node) => {
       if (image) {
         node.src = image;
+        node.dataset.baseImage = image;
         node.alt = label;
         node.hidden = false;
       } else {
@@ -69,6 +74,24 @@
       }
     });
     visualFallbacks.forEach((node) => { node.hidden = Boolean(image); });
+  }
+
+  function updateConditionVisual(input) {
+    const choice = input && input.closest('[data-visual-key]');
+    const key = choice ? choice.dataset.visualKey : '';
+    root.querySelectorAll('[data-demo-visual]').forEach((visual) => {
+      visual.dataset.visualKey = key || 'device/fallback';
+      visual.classList.add('is-transitioning');
+      window.setTimeout(() => visual.classList.remove('is-transitioning'), 180);
+    });
+    if (!key) return;
+    const tier = key.endsWith('/flawless') ? 'flawless' : key.endsWith('/minor-wear') ? 'minor-wear' : key.endsWith('/heavier-wear') ? 'heavier-wear' : key.endsWith('/strongly-worn') ? 'strongly-worn' : 'damaged';
+    root.querySelectorAll('[data-demo-device-image]').forEach((image) => {
+      const base = root.dataset.visualAssetsBase || '';
+      image.alt = 'iPhone állapotillusztráció: ' + key;
+      image.onerror = () => { image.onerror = () => { image.src = image.dataset.baseImage || ''; }; image.src = base + '_demo/' + tier + '.svg'; };
+      image.src = base + key + '.svg';
+    });
   }
 
   function updateStorageAvailability() {
@@ -84,6 +107,26 @@
     });
 
     updateDeviceContext();
+    updateColorOptions();
+  }
+
+  function updateColorOptions() {
+    if (!colorPicker || !colorOptions) return;
+    const card = selectedModelCard();
+    const storage = selectedStorage();
+    let colors = {};
+    try { colors = card && storage ? (JSON.parse(card.dataset.colors || '{}')[storage.value] || {}) : {}; } catch (error) { colors = {}; }
+    const current = root.querySelector('input[name="color_key"]:checked');
+    const selected = current ? current.value : (colorPicker.dataset.currentColor || '');
+    colorOptions.innerHTML = '';
+    Object.entries(colors).forEach(([key, label]) => {
+      const id = 'ak-demo-color-' + key;
+      const card = document.createElement('label');
+      card.className = 'ak-buyback-demo__choice-card ak-buyback-demo__choice-card--compact';
+      card.innerHTML = '<input id="' + id + '" type="radio" name="color_key" value="' + key + '"' + (key === selected ? ' checked' : '') + '><strong>' + label + '</strong>';
+      colorOptions.appendChild(card);
+    });
+    colorPicker.hidden = Object.keys(colors).length === 0;
   }
 
   function openNetworkModal() {
@@ -98,6 +141,29 @@
     networkModal.hidden = true;
     const locked = root.querySelector('input[name="questionnaire[network_status]"][value="locked"]');
     if (locked) locked.focus({ preventScroll: true });
+  }
+
+  function openServiceHistoryModal() {
+    if (!serviceHistoryModal) return;
+    serviceHistoryModal.hidden = false;
+    const close = serviceHistoryModal.querySelector('[data-service-history-close]');
+    if (close) close.focus({ preventScroll: true });
+  }
+
+  function closeServiceHistoryModal() {
+    if (!serviceHistoryModal) return;
+    serviceHistoryModal.hidden = true;
+    if (serviceHistoryOpen) serviceHistoryOpen.focus({ preventScroll: true });
+  }
+
+  function updateConditionalQuestions() {
+    const serviceHistory = root.querySelector('input[name="questionnaire[service_history]"]:checked');
+    root.querySelectorAll('[data-conditional-on="service_history"]').forEach((group) => {
+      const visible = serviceHistory && serviceHistory.value !== group.dataset.conditionalExcept;
+      group.hidden = !visible;
+      group.querySelectorAll('input').forEach((input) => { input.disabled = !visible; if (!visible) input.checked = false; });
+      if (!visible) clearQuestionError(group);
+    });
   }
 
   function selectedOfferCard() {
@@ -142,6 +208,8 @@
     current = name;
     updateProgress(name);
     updateDeviceContext();
+    const selectedVisual = target.querySelector('[data-visual-key] input:checked');
+    if (selectedVisual) updateConditionVisual(selectedVisual);
 
     if (focusHeading) {
       const heading = target.querySelector('h3');
@@ -174,6 +242,7 @@
   }
 
   function validateQuestion(group) {
+    if (group.hidden) return true;
     clearQuestionError(group);
     const type = group.dataset.questionType;
 
@@ -289,6 +358,16 @@
       return;
     }
 
+    if (event.target.closest('[data-service-history-open]')) {
+      openServiceHistoryModal();
+      return;
+    }
+
+    if (event.target.closest('[data-service-history-close]')) {
+      closeServiceHistoryModal();
+      return;
+    }
+
     const mode = event.target.closest('[data-mode-select]');
     if (mode) {
       selectOffer(mode.closest('[data-mode-card]'));
@@ -307,11 +386,27 @@
   });
 
   root.querySelectorAll('input[name="storage_gb"]').forEach((input) => input.addEventListener('change', updateDeviceContext));
+  root.addEventListener('change', (event) => {
+    if (event.target.name === 'storage_gb' || event.target.name === 'model_key') {
+      updateColorOptions();
+    }
+  });
 
   networkInputs.forEach((input) => {
     input.addEventListener('change', () => {
       if (input.checked && input.value === 'locked') openNetworkModal();
     });
+  });
+
+  root.querySelectorAll('input[name="questionnaire[service_history]"]').forEach((input) => {
+    input.addEventListener('change', updateConditionalQuestions);
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && serviceHistoryModal && !serviceHistoryModal.hidden) {
+      event.preventDefault();
+      closeServiceHistoryModal();
+    }
   });
 
   modeInputs.forEach((input) => {
@@ -379,6 +474,7 @@
     input.addEventListener('change', () => {
       const group = input.closest('[data-question]');
       if (group) clearQuestionError(group);
+      updateConditionVisual(input);
     });
   });
 
@@ -393,6 +489,7 @@
   }
 
   updateStorageAvailability();
+  updateConditionalQuestions();
   const existingOffer = selectedOfferCard();
   if (existingOffer) selectOffer(existingOffer);
   show(current, false);
