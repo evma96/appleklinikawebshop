@@ -6,6 +6,7 @@ namespace AppleKlinika\Buyback\Infrastructure\Inventory;
 
 use AppleKlinika\Buyback\Application\Exception\DeviceCatalogUnavailableException;
 use AppleKlinika\Buyback\Application\Port\DeviceCatalogReader;
+use AppleKlinika\Buyback\Application\Pricing\DeviceCatalogConfiguration;
 use AppleKlinika\Buyback\Application\Pricing\DeviceCatalogItem;
 
 final class WordPressDeviceCatalogReader implements DeviceCatalogReader
@@ -50,6 +51,45 @@ final class WordPressDeviceCatalogReader implements DeviceCatalogReader
         return array_values($items);
     }
 
+    public function iPhoneConfigurations(): array
+    {
+        if (! class_exists(\Appleklinika\Inventory\Domain\ProductCondition\StorageCapacityCatalog::class)) {
+            throw new DeviceCatalogUnavailableException('Az Apple Klinika inventory tárhelykatalógusa nem érhető el.');
+        }
+
+        $items = [];
+        foreach ($this->catalogRecords() as $record) {
+            if (! is_array($record) || ($record['type'] ?? '') !== 'iphone') {
+                continue;
+            }
+            $modelKey = (string) ($record['key'] ?? '');
+            $label = (string) ($record['name'] ?? '');
+            $storageKeys = $record['storage_capacity_keys'] ?? null;
+            if ($modelKey === '' || $label === '' || ! is_array($storageKeys) || $storageKeys === []) {
+                throw new DeviceCatalogUnavailableException('Az inventory iPhone modellhez hiányzik a modellenkénti tárhely-konfiguráció: ' . ($modelKey !== '' ? $modelKey : 'ismeretlen modell') . '.');
+            }
+
+            $seenStorageKeys = [];
+            foreach ($storageKeys as $storageKey) {
+                if (! is_string($storageKey) || isset($seenStorageKeys[$storageKey])) {
+                    throw new DeviceCatalogUnavailableException('Az inventory iPhone modell tárhely-konfigurációja érvénytelen: ' . $modelKey . '.');
+                }
+                $storageGb = \Appleklinika\Inventory\Domain\ProductCondition\StorageCapacityCatalog::gigabytes($storageKey);
+                if ($storageGb === null) {
+                    throw new DeviceCatalogUnavailableException('Az inventory iPhone modell ismeretlen tárhelyértéket tartalmaz: ' . $modelKey . '.');
+                }
+                $seenStorageKeys[$storageKey] = true;
+                $items[$modelKey . ':' . $storageGb] = new DeviceCatalogConfiguration($modelKey, $label, $storageGb);
+            }
+        }
+
+        uasort($items, static function (DeviceCatalogConfiguration $left, DeviceCatalogConfiguration $right): int {
+            $model = strnatcasecmp($left->modelLabel, $right->modelLabel);
+            return $model !== 0 ? $model : $left->storageGb <=> $right->storageGb;
+        });
+        return array_values($items);
+    }
+
     /** @return array<string,array{label:string,colors:array<string,string>}> */
     public function iPhoneCatalog(): array
     {
@@ -82,4 +122,5 @@ final class WordPressDeviceCatalogReader implements DeviceCatalogReader
         }
         return $records;
     }
+
 }

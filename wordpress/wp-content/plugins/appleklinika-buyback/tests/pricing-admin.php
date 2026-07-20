@@ -9,7 +9,9 @@ require_once ABSPATH . 'wp-admin/includes/user.php';
 
 use AppleKlinika\Buyback\Application\Command\AddDraftPricingRule;
 use AppleKlinika\Buyback\Application\Command\CreateDraftPriceBook;
+use AppleKlinika\Buyback\Application\Command\ClonePriceBookToDraft;
 use AppleKlinika\Buyback\Application\Command\DeleteDraftPricingRule;
+use AppleKlinika\Buyback\Application\Command\SaveDraftBasePriceMatrix;
 use AppleKlinika\Buyback\Application\Command\ToggleDraftPricingRule;
 use AppleKlinika\Buyback\Application\Command\UpdateDraftPriceBookSettings;
 use AppleKlinika\Buyback\Application\Command\UpdateDraftPricingRule;
@@ -18,8 +20,12 @@ use AppleKlinika\Buyback\Application\Exception\DuplicatePriceBookVersionExceptio
 use AppleKlinika\Buyback\Application\Exception\DuplicatePricingRuleCodeException;
 use AppleKlinika\Buyback\Application\Exception\PricingRuleNotFoundException;
 use AppleKlinika\Buyback\Application\Handler\AddDraftPricingRuleHandler;
+use AppleKlinika\Buyback\Application\Handler\ActivateDraftPriceBookHandler;
 use AppleKlinika\Buyback\Application\Handler\CreateDraftPriceBookHandler;
+use AppleKlinika\Buyback\Application\Handler\ClonePriceBookToDraftHandler;
 use AppleKlinika\Buyback\Application\Handler\DeleteDraftPricingRuleHandler;
+use AppleKlinika\Buyback\Application\Handler\PreviewDraftPriceBookCalculationHandler;
+use AppleKlinika\Buyback\Application\Handler\SaveDraftBasePriceMatrixHandler;
 use AppleKlinika\Buyback\Application\Handler\ToggleDraftPricingRuleHandler;
 use AppleKlinika\Buyback\Application\Handler\UpdateDraftPriceBookSettingsHandler;
 use AppleKlinika\Buyback\Application\Handler\UpdateDraftPricingRuleHandler;
@@ -47,6 +53,7 @@ use AppleKlinika\Buyback\Domain\Shared\Money;
 use AppleKlinika\Buyback\Infrastructure\Inventory\WordPressDeviceCatalogReader;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\Schema;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\SchemaInspector;
+use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\MySqlPriceBookActivationLock;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressPriceBookRepository;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressPricingRuleRepository;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressTransactionManager;
@@ -56,7 +63,12 @@ use AppleKlinika\Buyback\Infrastructure\WordPress\Plugin;
 use AppleKlinika\Buyback\Interfaces\Admin\AdminAuthorization;
 use AppleKlinika\Buyback\Interfaces\Admin\AdminSubmissionGuard;
 use AppleKlinika\Buyback\Interfaces\Admin\PriceBooksPage;
+use AppleKlinika\Buyback\Interfaces\Admin\PreviewCalculationFormParser;
 use AppleKlinika\Buyback\Interfaces\Admin\PricingRuleFormParser;
+use AppleKlinika\Buyback\Application\Pricing\PriceBookActivationReadinessService;
+use AppleKlinika\Buyback\Application\Pricing\RepositoryActivePriceBookResolver;
+use AppleKlinika\Buyback\Domain\Pricing\PriceBookActivationReadinessEvaluator;
+use AppleKlinika\Buyback\Domain\Pricing\PricingEngine;
 
 const AK_BUYBACK_PRICING_PLUGIN = 'appleklinika-buyback/appleklinika-buyback.php';
 const AK_BUYBACK_PRICING_LEGACY_META = 'appleklinika_buyback_records';
@@ -471,11 +483,24 @@ try {
     if ($activeBook->id() === null || $retiredBook->id() === null) {
         throw new RuntimeException('Read-only QA books have no identity.');
     }
+    pricingAddRule($addRule, $books, $activeBook->id(), pricingDefinition(PricingRuleKind::BASE_PRICE, 'active-clone-base-' . $runToken));
+    $activeBook = $books->getById($activeBook->id());
+    if ($activeBook === null) {
+        throw new RuntimeException('Active clone source could not be reloaded.');
+    }
     $wpdb->update($tables[Schema::PRICE_BOOKS], ['status' => PriceBookStatus::ACTIVE], ['id' => $activeBook->id()->toInt()], ['%s'], ['%d']);
+    $activeBook = $books->getById($activeBook->id());
+    if ($activeBook === null) {
+        throw new RuntimeException('Active clone source status could not be reloaded.');
+    }
     $wpdb->update($tables[Schema::PRICE_BOOKS], ['status' => PriceBookStatus::RETIRED], ['id' => $retiredBook->id()->toInt()], ['%s'], ['%d']);
     $test->assert($books->hasActiveBook(), 'Repository can detect active books read-only');
     $test->throws(fn () => $updateBook->handle(new UpdateDraftPriceBookSettings($activeBook->id()->toInt(), 0, 'Forbidden active edit', 0, 1, MinimumOfferPolicy::REJECT)), InvalidAggregateOperationException::class, 'Active book settings mutation is rejected');
     $test->throws(fn () => pricingAddRule($addRule, $books, $activeBook->id(), pricingDefinition(PricingRuleKind::BASE_PRICE, 'active-forbidden')), InvalidAggregateOperationException::class, 'Active book rule mutation is rejected');
+    $clone = (new ClonePriceBookToDraftHandler($books, $rules, $transactions, $clock))->handle(new ClonePriceBookToDraft($activeBook->id()->toInt(), $adminId));
+    $test->assert($clone->status()->isDraft() && $clone->label() === $activeBook->label() . ' – Másolat v' . $activeBook->versionNumber()->value(), 'Active price book clones to a separately named draft');
+    $test->assert(count($rules->listForPriceBook($clone->id())) === count($rules->listForPriceBook($activeBook->id())), 'Clone preserves all source pricing rules');
+    $test->assert($books->getById($activeBook->id())?->status()->isActive(), 'Clone leaves the active source immutable and active');
     $test->throws(fn () => $updateBook->handle(new UpdateDraftPriceBookSettings($retiredBook->id()->toInt(), 0, 'Forbidden retired edit', 0, 1, MinimumOfferPolicy::REJECT)), InvalidAggregateOperationException::class, 'Retired book mutation is rejected');
 
     $guard = new AdminSubmissionGuard();
@@ -506,7 +531,100 @@ try {
     $sortedLabels = $orderedLabels;
     usort($sortedLabels, 'strnatcasecmp');
     $test->assert($orderedLabels === $sortedLabels, 'Catalog model ordering is deterministic');
-    $test->throws(fn () => (new WordPressDeviceCatalogReader('qa_missing_catalog_' . $runToken, static fn (): bool => true))->iPhoneModels(), DeviceCatalogUnavailableException::class, 'Missing catalog produces a safe failure');
+    $configurations = $catalog->iPhoneConfigurations();
+    $test->assert($configurations !== [], 'Inventory-owned catalogue data provides valid iPhone model/storage configurations');
+    $iphoneRecords = array_values(array_filter(is_array($rawCatalog) ? $rawCatalog : [], static fn ($record): bool => is_array($record) && (($record['type'] ?? '') === 'iphone')));
+    $test->assert(count($iphoneRecords) === 34, 'Inventory contains all 34 canonical iPhone models');
+    $expectedConfigurationCount = 0;
+    foreach ($iphoneRecords as $record) {
+        $storageKeys = $record['storage_capacity_keys'] ?? [];
+        $test->assert(is_array($storageKeys) && $storageKeys !== [], 'Every canonical iPhone model has a non-empty model-specific storage list');
+        $test->assert(count($storageKeys) === count(array_unique($storageKeys)), 'A model-specific storage list contains no duplicate key');
+        foreach ($storageKeys as $storageKey) {
+            $test->assert(is_string($storageKey) && array_key_exists($storageKey, \Appleklinika\Inventory\Domain\ProductCondition\StorageCapacityCatalog::options()), 'Every model-specific storage key belongs to the inventory vocabulary');
+        }
+        $expectedConfigurationCount += count($storageKeys);
+    }
+    $test->assert($expectedConfigurationCount === 107 && count($configurations) === $expectedConfigurationCount, 'Buyback receives exactly the 107 model-specific inventory configurations');
+    $configurationModels = array_values(array_unique(array_map(static fn ($configuration): string => $configuration->modelKey, $configurations)));
+    $test->assert(count($configurationModels) === count($iPhones) && in_array('iphone_12', $configurationModels, true), 'A runtime inventory model without a base-price rule is still present in the matrix source');
+    $test->assert(count(array_filter($configurations, static fn ($configuration): bool => $configuration->storageGb === 2048)) === 1 && count(array_filter($configurations, static fn ($configuration): bool => $configuration->storageGb === 8192)) === 0, 'Storage sets differ by model and the global 8 TB vocabulary does not create configurations');
+    $firstConfiguration = $configurations[0] ?? null;
+    if ($firstConfiguration === null) {
+        throw new RuntimeException('No inventory configuration is available for matrix QA.');
+    }
+    $matrixBook = pricingCreateBook($createBook, $marker . '-MATRIX', $adminId);
+    if ($matrixBook->id() === null) {
+        throw new RuntimeException('Matrix QA price book has no identity.');
+    }
+    pricingAddRule($addRule, $books, $matrixBook->id(), pricingDefinition(PricingRuleKind::FIXED_DEDUCTION, 'matrix-unrelated-' . $runToken));
+    $saveMatrix = new SaveDraftBasePriceMatrixHandler($books, $rules, $catalog, $transactions, $clock);
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $saveMatrix->handle(new SaveDraftBasePriceMatrix($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, [
+        $firstConfiguration->modelKey => [(string) $firstConfiguration->storageGb => '120000'],
+    ]));
+    $matrixRules = $rules->listForPriceBook($matrixBook->id());
+    $matrixBaseRules = array_values(array_filter($matrixRules, static fn (PricingRule $rule): bool => $rule->definition()->kind->code() === PricingRuleKind::BASE_PRICE));
+    $matrixBaseRuleId = $matrixBaseRules[0]->id() ?? null;
+    if ($matrixBaseRuleId === null) {
+        throw new RuntimeException('Matrix QA base-price rule has no identity.');
+    }
+    $test->assert(count($matrixBaseRules) === 1 && $matrixBaseRules[0]->definition()->amount?->amount() === 120000, 'Matrix save creates one canonical draft base-price rule for an inventory configuration');
+    $test->assert(count($matrixRules) === 2, 'Matrix save preserves unrelated pricing rules');
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $saveMatrix->handle(new SaveDraftBasePriceMatrix($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, [
+        $firstConfiguration->modelKey => [(string) $firstConfiguration->storageGb => '130000'],
+    ]));
+    $test->assert($rules->getById($matrixBaseRuleId)?->definition()->amount?->amount() === 130000, 'Matrix save updates the matching draft base-price rule without duplicating it');
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $saveMatrix->handle(new SaveDraftBasePriceMatrix($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, [
+        $firstConfiguration->modelKey => [(string) $firstConfiguration->storageGb => ''],
+    ]));
+    $test->assert(count(array_filter($rules->listForPriceBook($matrixBook->id()), static fn (PricingRule $rule): bool => $rule->definition()->kind->code() === PricingRuleKind::BASE_PRICE)) === 0, 'An empty matrix cell removes only its matching draft base-price rule');
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $ruleCountBeforeInvalidPair = count($rules->listForPriceBook($matrixBook->id()));
+    $test->throws(fn () => $saveMatrix->handle(new SaveDraftBasePriceMatrix($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, ['iphone_17' => ['128' => '1']])), InvalidArgumentException::class, 'Matrix rejects a crafted storage value that belongs to another iPhone model');
+    $test->assert(count($rules->listForPriceBook($matrixBook->id())) === $ruleCountBeforeInvalidPair, 'Invalid matrix submissions do not mutate unrelated rules');
+    $uiPage = new PriceBooksPage(
+        $books,
+        $rules,
+        $catalog,
+        $createBook,
+        new ClonePriceBookToDraftHandler($books, $rules, $transactions, $clock),
+        $saveMatrix,
+        $updateBook,
+        $addRule,
+        $updateRule,
+        $toggleRule,
+        $deleteRule,
+        $parser,
+        new PreviewDraftPriceBookCalculationHandler($books, $rules, $catalog, new PricingEngine()),
+        new PreviewCalculationFormParser(),
+        new PriceBookActivationReadinessService($catalog, new PriceBookActivationReadinessEvaluator()),
+        new ActivateDraftPriceBookHandler($books, $rules, new PriceBookActivationReadinessService($catalog, new PriceBookActivationReadinessEvaluator()), new MySqlPriceBookActivationLock($wpdb), $transactions, $clock),
+        new RepositoryActivePriceBookResolver($books, $rules),
+        $clock,
+        $authorization,
+        new AdminSubmissionGuard()
+    );
+    $_GET = ['book_id' => (string) $matrixBook->id()->toInt(), 'tab' => 'base-prices'];
+    ob_start();
+    $uiPage->render();
+    $matrixHtml = (string) ob_get_clean();
+    $test->assert(! str_contains($matrixHtml, 'name="base_prices[iphone_17][128]"') && str_contains($matrixHtml, 'ak-matrix-na'), 'Invalid model/storage intersections render as non-submittable matrix dashes');
+    $originalGet = $_GET;
+    $_GET = ['book_id' => (string) $matrixBook->id()->toInt(), 'tab' => 'conditions'];
+    ob_start();
+    $uiPage->render();
+    $conditionsHtml = (string) ob_get_clean();
+    $test->assert(str_contains($conditionsHtml, 'Az állapotlevonások felhasználóbarát szerkesztője még nem készült el.') && ! str_contains($conditionsHtml, 'Szabálykód') && ! str_contains($conditionsHtml, 'Összehasonlítás értéke'), 'Normal Conditions tab hides the raw technical pricing-rule editor');
+    $_GET = ['book_id' => (string) $matrixBook->id()->toInt(), 'tab' => 'preview'];
+    ob_start();
+    $uiPage->render();
+    $previewHtml = (string) ob_get_clean();
+    $test->assert(str_contains($previewHtml, 'A felhasználóbarát piszkozat-tesztkalkulátor még nem készült el.') && ! str_contains($previewHtml, 'preview_model_key'), 'Normal Preview tab hides the raw technical calculator form');
+    $_GET = $originalGet;
+    $test->assert((new WordPressDeviceCatalogReader('qa_missing_catalog_' . $runToken, static fn (): bool => true))->iPhoneModels() !== [], 'Inventory runtime catalogue takes priority over the legacy option fallback');
     $test->throws(fn () => (new WordPressDeviceCatalogReader('appleklinika_device_catalog', static fn (): bool => false))->iPhoneModels(), DeviceCatalogUnavailableException::class, 'Inactive inventory plugin produces a safe failure');
 
     $test->assert(method_exists(PriceBook::class, 'activate') && method_exists(PriceBook::class, 'retire') && ! method_exists(PriceBook::class, 'setStatus'), 'Only controlled activation and retirement lifecycle APIs exist');

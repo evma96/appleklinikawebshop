@@ -9,6 +9,7 @@ use Appleklinika\Inventory\Application\ProductCondition\SaveProductConditionHand
 use Appleklinika\Inventory\Domain\ProductCondition\Grade;
 use Appleklinika\Inventory\Infrastructure\WordPress\DeviceCatalogRepository;
 use Appleklinika\Inventory\Infrastructure\WordPress\WooProductConditionRepository;
+use Appleklinika\Inventory\Domain\ProductCondition\StorageCapacityCatalog;
 
 final class ProductConditionFields
 {
@@ -93,23 +94,14 @@ final class ProductConditionFields
         woocommerce_wp_select([
             'id' => 'appleklinika_storage_capacity',
             'label' => 'Tárhely',
-            'options' => [
-                '' => 'Válassz tárhelyet',
-                '64_gb' => '64 GB',
-                '128_gb' => '128 GB',
-                '256_gb' => '256 GB',
-                '512_gb' => '512 GB',
-                '1_tb' => '1 TB',
-                '2_tb' => '2 TB',
-                '4_tb' => '4 TB',
-                '8_tb' => '8 TB',
-            ],
+            'options' => ['' => 'Válassz tárhelyet'] + StorageCapacityCatalog::options(),
             'wrapper_class' => 'appleklinika-device-field',
             'custom_attributes' => [
                 'data-ak-device-types' => 'iphone ipad macbook',
             ],
             'value' => $this->repository->get($post->ID, 'storage_capacity'),
         ]);
+        echo '<p id="appleklinika_storage_capacity_warning" class="form-field" hidden><span class="description"></span></p>';
 
         woocommerce_wp_select([
             'id' => 'appleklinika_color',
@@ -375,6 +367,7 @@ final class ProductConditionFields
                 'name' => $device['name'],
                 'type' => $device['type'],
                 'colors' => $device['colors'],
+                'storage_capacity_keys' => $device['storage_capacity_keys'],
             ];
         }
 
@@ -382,6 +375,7 @@ final class ProductConditionFields
         $watchOptionsJson = wp_json_encode($this->deviceCatalogRepository->watchOptionsByModel());
         $selectedJson = wp_json_encode([
             'model' => $this->repository->get($productId, 'device_model'),
+            'storage' => $this->repository->get($productId, 'storage_capacity'),
             'color' => $this->repository->get($productId, 'color'),
             'connectivity' => $this->repository->get($productId, 'connectivity'),
             'caseSize' => $this->repository->get($productId, 'case_size'),
@@ -396,6 +390,8 @@ const watchOptions={$watchOptionsJson};
 const selected={$selectedJson};
 const typeSelect=document.getElementById("appleklinika_device_type");
 const modelSelect=document.getElementById("appleklinika_device_model");
+const storageSelect=document.getElementById("appleklinika_storage_capacity");
+const storageWarning=document.getElementById("appleklinika_storage_capacity_warning");
 const colorSelect=document.getElementById("appleklinika_color");
 const connectivitySelect=document.getElementById("appleklinika_connectivity");
 const caseSizeSelect=document.getElementById("appleklinika_case_size");
@@ -408,6 +404,7 @@ function deviceMatchesType(device,type){return !type||normalizeType(device.type)
 function optionLabels(select){const labels={};if(!select){return labels;}Array.from(select.options).forEach(function(item){labels[item.value]=item.textContent;});return labels;}
 const labels={
   connectivity: optionLabels(connectivitySelect),
+  storage: optionLabels(storageSelect),
   caseSize: optionLabels(caseSizeSelect),
   caseMaterial: optionLabels(caseMaterialSelect)
 };
@@ -456,6 +453,26 @@ function refreshConnectivity(){
   }
   setFilteredOptions(connectivitySelect,labels.connectivity,[],"","Nincs megadva",false);
 }
+function refreshStorageCapacity(){
+  if(!storageSelect){return;}
+  const current=storageSelect.value;
+  if(selectedType()!=="iphone"){
+    if(storageWarning){storageWarning.hidden=true;}
+    return;
+  }
+  const model=catalog[modelSelect.value]||null;
+  const allowed=(model&&model.storage_capacity_keys)||[];
+  const valid=allowed.indexOf(current)!==-1;
+  setFilteredOptions(storageSelect,labels.storage,allowed,current,"Válassz tárhelyet",false);
+  if(current&& !valid){
+    const label=labels.storage[current]||current;
+    storageSelect.appendChild(option(current,label+" — jelenleg nem érvényes ehhez a modellhez"));
+    storageSelect.value=current;
+    if(storageWarning){storageWarning.hidden=false;storageWarning.querySelector(".description").textContent="A tárolt tárhelyérték nem tartozik a kiválasztott iPhone modellhez. Javítsd ki mentés előtt; a rendszer nem cseréli le automatikusan.";}
+    return;
+  }
+  if(storageWarning){storageWarning.hidden=true;}
+}
 function refreshWatchFields(){
   if(selectedType()!=="apple_watch"){
     setFilteredOptions(caseSizeSelect,labels.caseSize,[],"","Nincs megadva",false);
@@ -488,11 +505,12 @@ function refreshAdminProductFields(){
   refreshDeviceFields();
   refreshModels();
   refreshConnectivity();
+  refreshStorageCapacity();
   refreshWatchFields();
   refreshColors();
 }
 typeSelect.addEventListener("change",function(){refreshAdminProductFields();});
-modelSelect.addEventListener("change",function(){refreshConnectivity();refreshWatchFields();refreshColors();});
+modelSelect.addEventListener("change",function(){refreshConnectivity();refreshStorageCapacity();refreshWatchFields();refreshColors();});
 if(caseMaterialSelect){caseMaterialSelect.addEventListener("change",refreshColors);}
 refreshAdminProductFields();
 })();

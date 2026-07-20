@@ -6,6 +6,7 @@ namespace Appleklinika\Inventory\Application\ProductCondition;
 
 use Appleklinika\Inventory\Domain\ProductCondition\Grade;
 use Appleklinika\Inventory\Infrastructure\WordPress\DeviceCatalogRepository;
+use Appleklinika\Inventory\Domain\ProductCondition\StorageCapacityCatalog;
 use Appleklinika\Inventory\Infrastructure\WordPress\WooProductConditionRepository;
 
 final class SaveProductConditionHandler
@@ -20,7 +21,8 @@ final class SaveProductConditionHandler
     public function handle(SaveProductConditionCommand $command): void
     {
         $deviceType = $this->choiceValue($command->input, 'device_type', ['iphone', 'ipad', 'macbook', 'apple_watch'], '');
-        $deviceModel = $this->textValue($command->input, 'device_model');
+        $deviceModel = $this->normalizedDeviceModel($command, $deviceType);
+        $storageCapacity = $this->normalizedStorageCapacity($command, $deviceType, $deviceModel);
         $connectivity = $this->normalizedConnectivity($command->input, $deviceType, $deviceModel);
         $caseSize = $this->normalizedWatchChoice($command->input, $deviceType, $deviceModel, 'case_size', ['40_mm', '41_mm', '42_mm', '44_mm', '45_mm', '46_mm', '49_mm']);
         $caseMaterial = $this->normalizedWatchChoice($command->input, $deviceType, $deviceModel, 'case_material', ['aluminium', 'stainless_steel', 'titanium']);
@@ -35,7 +37,7 @@ final class SaveProductConditionHandler
             'device_model' => $deviceModel,
             'battery_health' => $this->intRangeValue($command->input, 'battery_health', 0, 100),
             'battery_option' => $this->choiceValue($command->input, 'battery_option', ['standard', 'aftermarket_new', 'factory_new'], 'standard'),
-            'storage_capacity' => $this->choiceValue($command->input, 'storage_capacity', ['64_gb', '128_gb', '256_gb', '512_gb', '1_tb', '2_tb', '4_tb', '8_tb'], ''),
+            'storage_capacity' => $storageCapacity,
             'color' => $color,
             'sim_config' => $this->choiceValue($command->input, 'sim_config', ['dual_esim', 'physical_esim', 'dual_physical'], ''),
             'connectivity' => $connectivity,
@@ -120,6 +122,60 @@ final class SaveProductConditionHandler
         $value = $this->textValue($input, $key);
 
         return in_array($value, $allowed, true) ? $value : $default;
+    }
+
+    private function normalizedStorageCapacity(SaveProductConditionCommand $command, string $deviceType, string $deviceModel): string
+    {
+        $value = $this->choiceValue($command->input, 'storage_capacity', array_keys(StorageCapacityCatalog::options()), '');
+        if ($deviceType !== 'iphone' || $value === '') {
+            return $value;
+        }
+
+        if (in_array($value, $this->iPhoneStorageCapacityKeys($deviceModel), true)) {
+            return $value;
+        }
+
+        // Preserve an already-stored legacy inconsistency until an editor explicitly corrects it.
+        if (
+            $this->repository->get($command->productId, 'device_model') === $deviceModel
+            && $this->repository->get($command->productId, 'storage_capacity') === $value
+        ) {
+            return $value;
+        }
+
+        return '';
+    }
+
+    private function normalizedDeviceModel(SaveProductConditionCommand $command, string $deviceType): string
+    {
+        $value = $this->textValue($command->input, 'device_model');
+        if ($value === '' || $deviceType === '') {
+            return $value;
+        }
+
+        foreach ($this->deviceCatalogRepository->all() as $device) {
+            if (($device['key'] ?? '') === $value && ($device['type'] ?? '') === $deviceType) {
+                return $value;
+            }
+        }
+
+        // Do not silently replace a legacy model value until it is explicitly corrected.
+        return $this->repository->get($command->productId, 'device_model') === $value ? $value : '';
+    }
+
+    /** @return list<string> */
+    private function iPhoneStorageCapacityKeys(string $deviceModel): array
+    {
+        foreach ($this->deviceCatalogRepository->all() as $device) {
+            if (($device['type'] ?? '') !== 'iphone' || ($device['key'] ?? '') !== $deviceModel) {
+                continue;
+            }
+
+            $keys = $device['storage_capacity_keys'] ?? [];
+            return is_array($keys) ? array_values(array_filter($keys, 'is_string')) : [];
+        }
+
+        return [];
     }
 
     /**

@@ -150,6 +150,14 @@ final class ActivationCatalog implements DeviceCatalogReader
     {
         return [new DeviceCatalogItem('iphone-13-pro', 'iPhone 13 Pro'), new DeviceCatalogItem('iphone_xr', 'iPhone XR')];
     }
+
+    public function iPhoneConfigurations(): array
+    {
+        return [
+            new \AppleKlinika\Buyback\Application\Pricing\DeviceCatalogConfiguration('iphone-13-pro', 'iPhone 13 Pro', 128),
+            new \AppleKlinika\Buyback\Application\Pricing\DeviceCatalogConfiguration('iphone_xr', 'iPhone XR', 64),
+        ];
+    }
 }
 
 final class AlwaysBusyActivationLock implements PriceBookActivationLock
@@ -494,7 +502,7 @@ try {
     $test->assert($books->getById($rollback->id())->status()->isDraft(), 'Target remains draft after rollback');
 
     $page = new PriceBooksPage(
-        $books, $rules, $catalog, $create, new UpdateDraftPriceBookSettingsHandler($books, $clock), $add,
+        $books, $rules, $catalog, $create, new AppleKlinika\Buyback\Application\Handler\ClonePriceBookToDraftHandler($books, $rules, $transactions, $clock), new AppleKlinika\Buyback\Application\Handler\SaveDraftBasePriceMatrixHandler($books, $rules, $catalog, $transactions, $clock), new UpdateDraftPriceBookSettingsHandler($books, $clock), $add,
         $updateRuleHandler, $toggleRuleHandler, $deleteRuleHandler,
         new PricingRuleFormParser(), new PreviewDraftPriceBookCalculationHandler($books, $rules, $catalog, new PricingEngine()),
         new PreviewCalculationFormParser(), $readiness, $activate, $resolver, $clock, $authorization, new AdminSubmissionGuard()
