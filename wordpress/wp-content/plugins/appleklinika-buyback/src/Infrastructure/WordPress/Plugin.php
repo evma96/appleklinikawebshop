@@ -46,7 +46,8 @@ final class Plugin
     public function __construct(
         private readonly MigrationRunner $migrationRunner,
         private readonly DiagnosticsPage $diagnosticsPage,
-        private readonly PriceBooksPage $priceBooksPage
+        private readonly PriceBooksPage $priceBooksPage,
+        private readonly LocalDemoModule $localDemoModule
     ) {
     }
 
@@ -101,7 +102,8 @@ final class Plugin
                 $clock,
                 new AdminAuthorization(),
                 new AdminSubmissionGuard()
-            )
+            ),
+            LocalDemoModule::create()
         );
     }
 
@@ -133,6 +135,7 @@ final class Plugin
 
         $this->diagnosticsPage->register();
         $this->priceBooksPage->register();
+        $this->localDemoModule->register();
         $this->registerCli();
     }
 

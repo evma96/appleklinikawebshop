@@ -62,6 +62,9 @@ final class PriceBookValidator
     public function validate(PriceBook $book, array $rules, PricingCalculationInput $input): PriceBookValidationResult
     {
         $issues = $this->validateConfiguration($book, $rules)->issues;
+        if ($book->status()->isActive()) {
+            $issues = array_values(array_diff($issues, ['price_book_not_draft']));
+        }
 
         $baseMatches = 0;
         $modeMatches = 0;
