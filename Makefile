@@ -2,7 +2,7 @@
 
 COMPOSE := docker compose
 
-.PHONY: install up down test test-unit test-integration test-buyback test-buyback-domain test-buyback-persistence test-buyback-legacy test-buyback-pricing-admin test-buyback-pricing-engine test-buyback-pricebook-activation test-buyback-local-demo lint format static quality quality-fix check
+.PHONY: install up down test test-unit test-integration test-inventory-catalog test-buyback test-buyback-domain test-buyback-persistence test-buyback-legacy test-buyback-pricing-admin test-buyback-pricing-engine test-buyback-pricebook-activation test-buyback-local-demo lint format static quality quality-fix check
 
 install:
 	@if [ ! -f .env ]; then cp .env.example .env; fi
@@ -21,6 +21,9 @@ test-unit:
 
 test-integration:
 	@echo "No integration test suite is configured yet. External live API calls are not allowed in tests."
+
+test-inventory-catalog:
+	$(COMPOSE) exec -T wordpress php /var/www/html/wp-content/plugins/appleklinika-inventory/tests/catalog-storage.php
 
 test-buyback:
 	$(COMPOSE) exec -T wordpress php /var/www/html/wp-content/plugins/appleklinika-buyback/tests/smoke.php

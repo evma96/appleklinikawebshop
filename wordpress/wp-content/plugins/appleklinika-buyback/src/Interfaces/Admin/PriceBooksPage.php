@@ -7,6 +7,8 @@ namespace AppleKlinika\Buyback\Interfaces\Admin;
 use AppleKlinika\Buyback\Application\Command\AddDraftPricingRule;
 use AppleKlinika\Buyback\Application\Command\ActivateDraftPriceBook;
 use AppleKlinika\Buyback\Application\Command\CreateDraftPriceBook;
+use AppleKlinika\Buyback\Application\Command\ClonePriceBookToDraft;
+use AppleKlinika\Buyback\Application\Command\SaveDraftBasePriceMatrix;
 use AppleKlinika\Buyback\Application\Command\DeleteDraftPricingRule;
 use AppleKlinika\Buyback\Application\Command\ToggleDraftPricingRule;
 use AppleKlinika\Buyback\Application\Command\UpdateDraftPriceBookSettings;
@@ -15,6 +17,8 @@ use AppleKlinika\Buyback\Application\Exception\DeviceCatalogUnavailableException
 use AppleKlinika\Buyback\Application\Handler\AddDraftPricingRuleHandler;
 use AppleKlinika\Buyback\Application\Handler\ActivateDraftPriceBookHandler;
 use AppleKlinika\Buyback\Application\Handler\CreateDraftPriceBookHandler;
+use AppleKlinika\Buyback\Application\Handler\ClonePriceBookToDraftHandler;
+use AppleKlinika\Buyback\Application\Handler\SaveDraftBasePriceMatrixHandler;
 use AppleKlinika\Buyback\Application\Handler\DeleteDraftPricingRuleHandler;
 use AppleKlinika\Buyback\Application\Handler\PreviewDraftPriceBookCalculationHandler;
 use AppleKlinika\Buyback\Application\Handler\ToggleDraftPricingRuleHandler;
@@ -46,12 +50,22 @@ final class PriceBooksPage
 {
     public const SLUG = 'appleklinika-buyback-price-books';
     private const STORAGE_OPTIONS = [32, 64, 128, 256, 512, 1024];
+    private const TAB_BASE_PRICES = 'base-prices';
+    private const TAB_CONDITIONS = 'conditions';
+    private const TAB_BATTERY = 'battery';
+    private const TAB_OFFER_MODES = 'offer-modes';
+    private const TAB_PREVIEW = 'preview';
+
+    /** @var list<string> */
+    private const EDITOR_TABS = [self::TAB_BASE_PRICES, self::TAB_CONDITIONS, self::TAB_BATTERY, self::TAB_OFFER_MODES, self::TAB_PREVIEW];
 
     public function __construct(
         private readonly PriceBookRepository $books,
         private readonly PricingRuleRepository $rules,
         private readonly DeviceCatalogReader $catalog,
         private readonly CreateDraftPriceBookHandler $createBook,
+        private readonly ClonePriceBookToDraftHandler $cloneBook,
+        private readonly SaveDraftBasePriceMatrixHandler $saveBasePriceMatrix,
         private readonly UpdateDraftPriceBookSettingsHandler $updateBook,
         private readonly AddDraftPricingRuleHandler $addRule,
         private readonly UpdateDraftPricingRuleHandler $updateRule,
@@ -86,8 +100,10 @@ final class PriceBooksPage
         if ($hook !== 'woocommerce_page_' . self::SLUG) {
             return;
         }
-        wp_enqueue_style('appleklinika-buyback-admin', APPLEKLINIKA_BUYBACK_URL . 'assets/admin/price-books.css', [], APPLEKLINIKA_BUYBACK_VERSION);
-        wp_enqueue_script('appleklinika-buyback-admin', APPLEKLINIKA_BUYBACK_URL . 'assets/admin/price-books.js', [], APPLEKLINIKA_BUYBACK_VERSION, true);
+        $cssPath = APPLEKLINIKA_BUYBACK_PATH . '/assets/admin/price-books.css';
+        $jsPath = APPLEKLINIKA_BUYBACK_PATH . '/assets/admin/price-books.js';
+        wp_enqueue_style('appleklinika-buyback-admin', APPLEKLINIKA_BUYBACK_URL . 'assets/admin/price-books.css', [], md5_file($cssPath) ?: APPLEKLINIKA_BUYBACK_VERSION);
+        wp_enqueue_script('appleklinika-buyback-admin', APPLEKLINIKA_BUYBACK_URL . 'assets/admin/price-books.js', [], md5_file($jsPath) ?: APPLEKLINIKA_BUYBACK_VERSION, true);
     }
 
     public function handlePost(): void
@@ -105,9 +121,9 @@ final class PriceBooksPage
         try {
             $this->authorization->assert(CapabilityManager::MANAGE_PRICE_BOOKS, $nonce);
             $this->dispatch($action, wp_unslash($_POST));
-            $this->redirect('success', $action, $this->postedInt('price_book_id'));
+            $this->redirect('success', $action, $this->postedInt('price_book_id'), $this->postedTab());
         } catch (\Throwable $exception) {
-            $this->redirect('error', 'validation', $this->postedInt('price_book_id'));
+            $this->redirect('error', 'validation', $this->postedInt('price_book_id'), $this->postedTab());
         }
     }
 
@@ -117,15 +133,16 @@ final class PriceBooksPage
             wp_die(esc_html('Nincs jogosultságod az árkönyvek kezeléséhez.'));
         }
 
+        $bookId = isset($_GET['book_id']) ? absint($_GET['book_id']) : 0;
+        $tab = $this->resolveTab();
         echo '<div class="wrap ak-buyback-admin">';
         echo '<h1>Apple Klinika Buyback – Árkönyvek</h1>';
-        $this->renderTabs();
+        $this->renderTabs($bookId, $tab);
         $this->renderActiveBookNotice();
         $this->renderNotice();
 
-        $bookId = isset($_GET['book_id']) ? absint($_GET['book_id']) : 0;
         if ($bookId > 0) {
-            $this->renderEdit(new PriceBookId($bookId));
+            $this->renderEdit(new PriceBookId($bookId), $tab);
         } else {
             $this->renderIndex();
         }
@@ -151,6 +168,21 @@ final class PriceBooksPage
             return;
         }
 
+        if ($action === 'clone_active_price_book') {
+            $actorId = get_current_user_id();
+            $token = sanitize_text_field((string) ($post['submission_token'] ?? ''));
+            if (! $this->submissionGuard->consume($action, $token, $actorId)) {
+                throw new \RuntimeException('Ezt a másolási kérést már feldolgoztuk.');
+            }
+            $clone = $this->cloneBook->handle(new ClonePriceBookToDraft(
+                $this->requiredPositiveInt($post, 'source_price_book_id'),
+                $actorId
+            ));
+            $_POST['price_book_id'] = $clone->id()?->toInt() ?? 0;
+            $_POST['editor_tab'] = self::TAB_BASE_PRICES;
+            return;
+        }
+
         $bookId = $this->requiredPositiveInt($post, 'price_book_id');
         $bookVersion = $this->requiredNonNegativeInt($post, 'expected_book_version');
 
@@ -168,6 +200,12 @@ final class PriceBooksPage
 
         if ($action === 'add_rule') {
             $this->addRule->handle(new AddDraftPricingRule($bookId, $bookVersion, $this->ruleParser->parse($post)));
+            return;
+        }
+
+        if ($action === 'save_base_price_matrix') {
+            $basePrices = isset($post['base_prices']) && is_array($post['base_prices']) ? $post['base_prices'] : [];
+            $this->saveBasePriceMatrix->handle(new SaveDraftBasePriceMatrix($bookId, $bookVersion, $basePrices));
             return;
         }
 
@@ -201,20 +239,19 @@ final class PriceBooksPage
 
     private function renderIndex(): void
     {
-        $page = $this->books->list(max(1, absint($_GET['paged'] ?? 1)), 20);
-        echo '<div class="ak-buyback-grid"><section class="ak-buyback-card"><h2>Árkönyvek</h2>';
-        echo '<table class="widefat striped"><thead><tr><th>Verzió</th><th>Név</th><th>Állapot</th><th>Pénznem</th><th>Szabályok</th><th>Minimum</th><th>Kerekítés</th><th>Hatály</th><th>Frissítve</th><th></th></tr></thead><tbody>';
-        foreach ($page->items as $book) {
-            $effective = $book->status()->isActive()
-                ? 'Ettől: ' . ($book->effectiveFrom()?->format('Y-m-d H:i') ?? '–')
-                : ($book->status()->isRetired() ? 'Eddig: ' . ($book->effectiveTo()?->format('Y-m-d H:i') ?? '–') : '–');
-            echo '<tr><td>v' . esc_html((string) $book->versionNumber()->value()) . '</td><td>' . esc_html($book->label()) . '</td><td><span class="ak-status">' . esc_html($this->statusLabel($book)) . '</span></td><td>' . esc_html($book->currency()->code()) . '</td><td>' . esc_html((string) $this->rules->countForPriceBook($book->id())) . '</td><td>' . esc_html(number_format_i18n($book->minimumOffer()->amount())) . ' Ft</td><td>' . esc_html(number_format_i18n($book->roundingIncrementMinor())) . ' Ft</td><td>' . esc_html($effective) . '</td><td>' . esc_html($book->updatedAt()->format('Y-m-d H:i')) . '</td><td><a class="button" href="' . esc_url($this->editUrl($book->id())) . '">' . esc_html($book->status()->isDraft() ? 'Szerkesztés' : 'Megtekintés') . '</a></td></tr>';
-        }
-        if ($page->items === []) {
-            echo '<tr><td colspan="10">Még nincs árkönyv. Hozd létre az első piszkozatot.</td></tr>';
-        }
-        echo '</tbody></table></section>';
-        echo '<section class="ak-buyback-card"><h2>Új piszkozat</h2><form method="post">';
+        $active = $this->books->list(1, 5, new PriceBookStatus(PriceBookStatus::ACTIVE))->items;
+        $drafts = $this->books->list(1, 50, new PriceBookStatus(PriceBookStatus::DRAFT))->items;
+        $archived = $this->books->list(1, 20, new PriceBookStatus(PriceBookStatus::RETIRED))->items;
+        echo '<section class="ak-buyback-card"><h2>Aktív árkönyv</h2>';
+        echo '<p>Az aktív árkönyv közvetlenül nem szerkeszthető, mert ezt használja a nyilvános felvásárlási kalkulátor. Készíts belőle piszkozatot, módosítsd és teszteld, majd külön aktiváld.</p>';
+        $this->renderPriceBookList($active, 'Jelenleg nincs aktív HUF árkönyv.');
+        echo '</section><section class="ak-buyback-card"><h2>Piszkozatok</h2>';
+        echo '<p>A piszkozatok szerkeszthetők, de aktiválásig nem változtatják meg a nyilvános felvásárlási árazást.</p>';
+        $this->renderPriceBookList($drafts, 'Még nincs szerkeszthető piszkozat.');
+        echo '</section><section class="ak-buyback-card"><h2>Archivált árkönyvek</h2>';
+        $this->renderPriceBookList($archived, 'Nincs archivált árkönyv.');
+        echo '</section>';
+        echo '<section class="ak-buyback-card ak-advanced-create"><details><summary>Haladó: üres piszkozat létrehozása</summary><p class="description">Az üres piszkozat nem másolja át az aktív árakat és szabályokat.</p><form method="post">';
         $this->securityFields('create_price_book');
         echo '<input type="hidden" name="submission_token" value="' . esc_attr($this->submissionGuard->issue()) . '">';
         $this->textField('label', 'Megnevezés', '', true);
@@ -223,10 +260,40 @@ final class PriceBooksPage
         $this->numberField('rounding_increment_minor', 'Kerekítési lépés (Ft)', 1000, 1);
         $this->policySelect(MinimumOfferPolicy::MANUAL_REVIEW);
         submit_button('Piszkozat létrehozása');
-        echo '</form></section></div>';
+        echo '</form></details></section>';
     }
 
-    private function renderEdit(PriceBookId $id): void
+    /** @param list<PriceBook> $books */
+    private function renderPriceBookList(array $books, string $emptyMessage): void
+    {
+        echo '<table class="widefat striped ak-pricebook-list"><thead><tr><th>Verzió</th><th>Név</th><th>Állapot</th><th>Alapárak</th><th>Frissítve</th><th></th></tr></thead><tbody>';
+        foreach ($books as $book) {
+            $baseCount = $this->basePriceCount($this->rules->listForPriceBook($book->id()));
+            $baseStatus = $baseCount === 0 && $book->status()->isDraft()
+                ? 'Üres piszkozat – nem örökölte az aktív árkönyv árait.'
+                : ($baseCount === 0 ? 'Nincs megadva' : $baseCount . ' megadva');
+            echo '<tr><td>v' . esc_html((string) $book->versionNumber()->value()) . '</td><td>' . esc_html($book->label()) . '</td><td><span class="ak-status">' . esc_html($this->statusLabel($book)) . '</span></td><td>' . esc_html($baseStatus) . '</td><td>' . esc_html($book->updatedAt()->format('Y-m-d H:i')) . '</td><td>';
+            if ($book->status()->isActive()) {
+                echo '<a class="button" href="' . esc_url($this->editUrl($book->id())) . '">Megtekintés</a> ';
+                echo '<form method="post" class="ak-inline-form">';
+                $this->securityFields('clone_active_price_book');
+                echo '<input type="hidden" name="submission_token" value="' . esc_attr($this->submissionGuard->issue()) . '">';
+                echo '<input type="hidden" name="source_price_book_id" value="' . esc_attr((string) $book->id()->toInt()) . '">';
+                echo '<button type="submit" class="button button-primary">Másolat készítése és szerkesztés</button></form>';
+            } elseif ($book->status()->isDraft()) {
+                echo '<a class="button button-primary" href="' . esc_url($this->editUrl($book->id())) . '">Szerkesztés folytatása</a>';
+            } else {
+                echo '<a class="button" href="' . esc_url($this->editUrl($book->id())) . '">Megtekintés</a>';
+            }
+            echo '</td></tr>';
+        }
+        if ($books === []) {
+            echo '<tr><td colspan="6">' . esc_html($emptyMessage) . '</td></tr>';
+        }
+        echo '</tbody></table>';
+    }
+
+    private function renderEdit(PriceBookId $id, string $tab): void
     {
         $book = $this->books->getById($id);
         if ($book === null) {
@@ -236,35 +303,180 @@ final class PriceBooksPage
         $rules = $this->rules->listForPriceBook($id);
         echo '<p><a href="' . esc_url(admin_url('admin.php?page=' . self::SLUG)) . '">← Vissza az árkönyvekhez</a></p>';
         $lifecycleText = $book->status()->isDraft()
-            ? 'Nem aktív, és semmilyen ügyfélfolyamat nem használja.'
+            ? 'Szerkeszthető piszkozat. Az itt mentett változtatások aktiválásig nem érintik a nyilvános felvásárlási árazást.'
             : ($book->status()->isActive() ? 'Az aktív árkönyv és szabályai csak olvashatók.' : 'Az archivált árkönyv és szabályai változatlan előzményként megmaradnak.');
-        echo '<div class="ak-buyback-heading"><div><h2>v' . esc_html((string) $book->versionNumber()->value()) . ' – ' . esc_html($book->label()) . '</h2><span class="ak-status">' . esc_html($this->statusLabel($book)) . '</span></div><p>' . esc_html($lifecycleText) . '</p></div>';
+        echo '<div class="ak-buyback-heading"><div><h2>v' . esc_html((string) $book->versionNumber()->value()) . ' – ' . esc_html($book->label()) . '</h2><span class="ak-status">' . esc_html($this->statusLabel($book)) . '</span><p class="description">Diagnosztikai azonosító: #' . esc_html((string) $book->id()->toInt()) . '</p></div><p>' . esc_html($lifecycleText) . '</p></div>';
+
+        if ($book->status()->isDraft() && $this->basePriceCount($rules) === 0) {
+            echo '<div class="notice notice-warning inline"><p>Üres piszkozat – nem örökölte az aktív árkönyv árait.</p></div>';
+        }
 
         if (! $book->status()->isDraft()) {
             echo '<div class="notice notice-info inline"><p>Ez az árkönyv csak olvasható. Aktív vagy archivált árkönyv és annak szabályai nem módosíthatók.</p></div>';
-            $this->renderRulesTable($book, $rules);
+            if ($tab === self::TAB_BASE_PRICES) {
+                $this->renderBasePriceMatrix($book, $rules, true, $tab);
+            } else {
+                $this->renderReadOnlyTabPlaceholder($tab, $rules);
+            }
             return;
         }
 
-        echo '<div class="ak-buyback-grid"><section class="ak-buyback-card"><h3>Beállítások</h3><form method="post">';
-        $this->securityFields('update_price_book', $book);
-        $this->textField('label', 'Megnevezés', $book->label(), true);
-        $this->numberField('minimum_offer_minor', 'Minimum ajánlat (Ft)', $book->minimumOffer()->amount(), 0);
-        $this->numberField('rounding_increment_minor', 'Kerekítési lépés (Ft)', $book->roundingIncrementMinor(), 1);
-        $this->policySelect($book->minimumPolicy()->code());
-        submit_button('Beállítások mentése');
-        echo '</form></section>';
-
-        $editRule = isset($_GET['rule_id']) ? $this->rules->getById(new PricingRuleId(absint($_GET['rule_id']))) : null;
-        if ($editRule !== null && ! $editRule->priceBookId()->equals($id)) {
-            $editRule = null;
+        if ($tab === self::TAB_BASE_PRICES) {
+            $this->renderBasePricesTab($book, $rules, $tab);
+            return;
         }
-        echo '<section class="ak-buyback-card"><h3>' . ($editRule === null ? 'Új szabály' : 'Szabály szerkesztése') . '</h3>';
-        $this->renderRuleForm($book, $editRule);
-        echo '</section></div>';
-        $this->renderRulesTable($book, $rules);
-        $this->renderCalculationPreview($book);
-        $this->renderActivationReadiness($book, $rules);
+        if ($tab === self::TAB_CONDITIONS) {
+            $this->renderConditionsTab($rules);
+            return;
+        }
+        if ($tab === self::TAB_BATTERY) {
+            $this->renderUnavailableEditor('Akkumulátor', 'A dedikált akkumulátorsáv-szerkesztő ebben a Phase 3A admin felületben még nem készült el.');
+            return;
+        }
+        if ($tab === self::TAB_OFFER_MODES) {
+            $this->renderUnavailableEditor('Ajánlattípusok', 'A négy átvételi mód dedikált szerkesztője ebben a Phase 3A admin felületben még nem készült el.');
+            return;
+        }
+        $this->renderPreviewPlaceholder();
+    }
+
+    /** @param list<PricingRule> $rules */
+    private function renderBasePricesTab(PriceBook $book, array $rules, string $tab): void
+    {
+        $this->renderBasePriceMatrix($book, $rules, false, $tab);
+    }
+
+    /** @param list<PricingRule> $rules */
+    private function renderBasePriceMatrix(PriceBook $book, array $rules, bool $readOnly, string $tab): void
+    {
+        try {
+            $configurations = $this->catalog->iPhoneConfigurations();
+        } catch (DeviceCatalogUnavailableException $exception) {
+            echo '<section class="ak-buyback-card"><h3>Alapárak</h3><div class="notice notice-error inline"><p>Az inventory készülékkatalógus nem érhető el, ezért az alapár-mátrix nem jeleníthető meg.</p></div></section>';
+            return;
+        }
+        if ($configurations === []) {
+            echo '<section class="ak-buyback-card"><h3>Alapárak</h3><div class="notice notice-warning inline"><p>Az inventory katalógusban még nincs árazható iPhone modell–tárhely konfiguráció.</p></div></section>';
+            return;
+        }
+
+        $models = [];
+        $storages = [];
+        foreach ($configurations as $configuration) {
+            $models[$configuration->modelKey]['label'] = $configuration->modelLabel;
+            $models[$configuration->modelKey]['storages'][$configuration->storageGb] = true;
+            $storages[$configuration->storageGb] = true;
+        }
+        uasort($models, static fn (array $left, array $right): int => strnatcasecmp($left['label'], $right['label']));
+        $storages = array_keys($storages);
+        sort($storages, SORT_NUMERIC);
+
+        $baseRules = [];
+        $duplicateTargets = [];
+        foreach ($rules as $rule) {
+            $definition = $rule->definition();
+            if ($definition->kind->code() !== PricingRuleKind::BASE_PRICE || $definition->modelKey === null || $definition->storage === null) {
+                continue;
+            }
+            $key = $this->basePriceKey($definition->modelKey, $definition->storage->gigabytes());
+            if (! isset($models[$definition->modelKey]['storages'][$definition->storage->gigabytes()])) {
+                continue;
+            }
+            if (isset($baseRules[$key])) {
+                $duplicateTargets[$key] = true;
+            }
+            $baseRules[$key] = $rule;
+        }
+        $configured = count($baseRules);
+        $total = count($configurations);
+        $missing = max(0, $total - $configured);
+
+        echo '<section class="ak-buyback-card ak-base-price-matrix"><h3>Alapár-mátrix</h3>';
+        echo '<p>' . ($readOnly ? 'A történeti árkönyv alapárai csak olvashatók.' : 'Minden mező egy egész HUF összeg. Az üres mezőhöz nem tartozik alapár-szabály; a mentés csak ezt a piszkozatot módosítja.') . '</p>';
+        echo '<p class="description ak-inventory-summary">Inventory: ' . esc_html((string) count($models)) . ' iPhone-modell, ' . esc_html((string) count($configurations)) . ' érvényes konfiguráció</p>';
+        echo '<p class="ak-matrix-summary"><strong><span data-ak-configured-count>' . esc_html((string) $configured) . '</span> / ' . esc_html((string) $total) . '</strong> konfiguráció árazva · <strong><span data-ak-missing-count>' . esc_html((string) $missing) . '</span></strong> hiányzik</p>';
+        if ($duplicateTargets !== []) {
+            echo '<div class="notice notice-error inline"><p>Egy vagy több modell–tárhely párhoz több alapár-szabály tartozik. A mátrix mentése addig nem lehetséges, amíg ezeket külön nem rendezik.</p></div>';
+        }
+        echo '<div class="ak-matrix-controls"><label for="ak-matrix-search">Modell keresése</label><input type="search" id="ak-matrix-search" data-ak-matrix-search placeholder="Például iPhone 15"><label><input type="checkbox" data-ak-missing-only> Csak a hiányzó árak</label></div>';
+        if (! $readOnly && $duplicateTargets === []) {
+            echo '<form method="post" data-ak-base-price-form>';
+            $this->securityFields('save_base_price_matrix', $book);
+            $this->tabField($tab);
+        }
+        echo '<p class="ak-matrix-empty" data-ak-matrix-empty hidden>Nincs a katalógusban a keresésnek megfelelő iPhone-modell.</p>';
+        echo '<div class="ak-matrix-scroll" data-ak-matrix-table><table class="widefat striped"><thead><tr><th>Modell</th>';
+        foreach ($storages as $storage) {
+            echo '<th>' . esc_html($this->storageLabel($storage)) . '</th>';
+        }
+        echo '</tr></thead><tbody>';
+        foreach ($models as $modelKey => $model) {
+            $rowMissing = false;
+            foreach (array_keys($model['storages']) as $storage) {
+                if (! isset($baseRules[$this->basePriceKey($modelKey, (int) $storage)])) {
+                    $rowMissing = true;
+                    break;
+                }
+            }
+            echo '<tr data-ak-matrix-row data-ak-model-label="' . esc_attr((string) $model['label']) . '" data-ak-row-missing="' . ($rowMissing ? '1' : '0') . '"><th scope="row">' . esc_html((string) $model['label']) . '</th>';
+            foreach ($storages as $storage) {
+                if (! isset($model['storages'][$storage])) {
+                    echo '<td class="ak-matrix-na">—</td>';
+                    continue;
+                }
+                $rule = $baseRules[$this->basePriceKey($modelKey, $storage)] ?? null;
+                $amount = $rule?->definition()->amount?->amount();
+                if ($readOnly) {
+                    echo '<td class="ak-matrix-price">' . esc_html($amount === null ? '—' : number_format_i18n($amount) . ' Ft') . '</td>';
+                    continue;
+                }
+                echo '<td><label class="screen-reader-text" for="base_price_' . esc_attr($modelKey . '_' . $storage) . '">' . esc_html((string) $model['label'] . ' ' . $this->storageLabel($storage)) . '</label><div class="ak-price-input"><input type="number" min="0" step="1" inputmode="numeric" id="base_price_' . esc_attr($modelKey . '_' . $storage) . '" name="base_prices[' . esc_attr($modelKey) . '][' . esc_attr((string) $storage) . ']" value="' . esc_attr($amount === null ? '' : (string) $amount) . '" data-ak-base-price><span>Ft</span></div></td>';
+            }
+            echo '</tr>';
+        }
+        echo '</tbody></table></div>';
+        if (! $readOnly && $duplicateTargets === []) {
+            submit_button('Alapárak mentése', 'primary', 'submit', false, ['data-ak-save-base-prices' => '']);
+            echo '</form>';
+        }
+        echo '</section>';
+    }
+
+    /** @param list<PricingRule> $rules */
+    private function renderConditionsTab(array $rules): void
+    {
+        $conditionRules = array_filter($rules, static fn (PricingRule $rule): bool => $rule->definition()->conditionKey !== null);
+        $manualReviews = array_filter($rules, static fn (PricingRule $rule): bool => $rule->definition()->kind->code() === PricingRuleKind::MANUAL_REVIEW);
+        $rejections = array_filter($rules, static fn (PricingRule $rule): bool => $rule->definition()->kind->code() === PricingRuleKind::HARD_REJECT);
+        echo '<section class="ak-buyback-card"><h3>Állapotlevonások <span class="ak-development-badge">Fejlesztés alatt</span></h3><div class="notice notice-info inline"><p>Az állapotlevonások felhasználóbarát szerkesztője még nem készült el. A technikai szabálymezők nem szerkeszthetők ezen a felületen.</p></div>';
+        echo '<p class="ak-rule-summary">Állapotfeltétel-szabályok: <strong>' . esc_html((string) count($conditionRules)) . '</strong> · Kézi ellenőrzések: <strong>' . esc_html((string) count($manualReviews)) . '</strong> · Elutasítások: <strong>' . esc_html((string) count($rejections)) . '</strong></p></section>';
+    }
+
+    private function renderUnavailableEditor(string $title, string $message): void
+    {
+        echo '<section class="ak-buyback-card"><h3>' . esc_html($title) . ' <span class="ak-development-badge">Fejlesztés alatt</span></h3><div class="notice notice-info inline"><p>' . esc_html($message) . '</p></div></section>';
+    }
+
+    private function renderPreviewPlaceholder(): void
+    {
+        echo '<section class="ak-buyback-card"><h3>Tesztkalkulátor <span class="ak-development-badge">Fejlesztés alatt</span></h3><div class="notice notice-info inline"><p>A felhasználóbarát piszkozat-tesztkalkulátor még nem készült el.</p><p>A későbbi kalkulátor a nyilvános kérdőívet követi, a kiválasztott piszkozatot használja, részletes árbontást mutat, és nem hoz létre ügyfélkérelmet.</p></div></section>';
+    }
+
+    /** @param list<PricingRule> $rules */
+    private function renderReadOnlyTabPlaceholder(string $tab, array $rules): void
+    {
+        if ($tab === self::TAB_CONDITIONS) {
+            $this->renderConditionsTab($rules);
+            return;
+        }
+        if ($tab === self::TAB_PREVIEW) {
+            $this->renderPreviewPlaceholder();
+            return;
+        }
+        $this->renderUnavailableEditor(
+            $tab === self::TAB_BATTERY ? 'Akkumulátor' : 'Ajánlattípusok',
+            'Ez a felület fejlesztés alatt áll; az aktív és archivált árkönyvek itt is csak olvashatók.'
+        );
     }
 
     /** @param list<PricingRule> $rules */
@@ -302,7 +514,7 @@ final class PriceBooksPage
         echo '</section>';
     }
 
-    private function renderCalculationPreview(PriceBook $book): void
+    private function renderCalculationPreview(PriceBook $book, string $tab): void
     {
         $preview = null;
         $error = null;
@@ -323,7 +535,7 @@ final class PriceBooksPage
             }
         }
 
-        echo '<section class="ak-buyback-card ak-pricing-preview"><h3>Kalkulációs előnézet</h3>';
+        echo '<section class="ak-buyback-card ak-pricing-preview" id="test-calculator"><h3>Tesztkalkulátor</h3>';
         echo '<div class="notice notice-warning inline"><p>Ez csak adminisztrációs előnézet. Nem hoz létre ajánlatot, nem ment kalkulációt, és a webshop nem használja.</p></div>';
         if ($error !== null) {
             echo '<div class="notice notice-error inline"><p>' . esc_html($error) . '</p></div>';
@@ -331,6 +543,7 @@ final class PriceBooksPage
 
         echo '<form method="post" class="ak-preview-form">';
         $this->securityFields('preview_calculation', $book);
+        $this->tabField($tab);
         echo '<div class="ak-preview-device">';
         echo '<p><label for="preview_model_key">iPhone modell</label><select name="preview_model_key" id="preview_model_key" required><option value="">Válassz modellt</option>';
         try {
@@ -407,10 +620,11 @@ final class PriceBooksPage
     }
 
     /** @param list<PricingRule> $rules */
-    private function renderRulesTable(PriceBook $book, array $rules): void
+    private function renderRulesTable(PriceBook $book, array $rules, string $heading = 'Árazási szabályok', ?callable $filter = null): void
     {
-        echo '<section class="ak-buyback-card ak-buyback-rules"><h3>Árazási szabályok</h3><table class="widefat striped"><thead><tr><th>Prioritás</th><th>Kód</th><th>Típus</th><th>Cél</th><th>Érték</th><th>Állapot</th><th>Művelet</th></tr></thead><tbody>';
-        foreach ($rules as $rule) {
+        $visibleRules = $filter === null ? $rules : array_values(array_filter($rules, $filter));
+        echo '<section class="ak-buyback-card ak-buyback-rules"><h3>' . esc_html($heading) . '</h3><table class="widefat striped"><thead><tr><th>Prioritás</th><th>Kód</th><th>Típus</th><th>Cél</th><th>Érték</th><th>Állapot</th><th>Művelet</th></tr></thead><tbody>';
+        foreach ($visibleRules as $rule) {
             $definition = $rule->definition();
             echo '<tr><td>' . esc_html((string) $definition->priority->value()) . '</td><td><code>' . esc_html($definition->code->code()) . '</code></td><td>' . esc_html($this->kindLabel($definition->kind->code())) . '</td><td>' . esc_html($definition->modelKey ?? $definition->conditionKey ?? $definition->serviceMode ?? '–') . '</td><td>' . esc_html($this->ruleValue($rule)) . '</td><td>' . esc_html($definition->enabled ? 'Engedélyezve' : 'Kikapcsolva') . '</td><td>';
             if ($book->status()->isDraft()) {
@@ -422,21 +636,31 @@ final class PriceBooksPage
             }
             echo '</td></tr>';
         }
-        if ($rules === []) {
+        if ($visibleRules === []) {
             echo '<tr><td colspan="7">Ehhez a piszkozathoz még nincs szabály.</td></tr>';
         }
         echo '</tbody></table></section>';
     }
 
-    private function renderRuleForm(PriceBook $book, ?PricingRule $rule): void
+    /** @param list<PricingRule> $rules */
+    private function basePriceCount(array $rules): int
+    {
+        return count(array_filter($rules, static fn (PricingRule $rule): bool => $rule->definition()->kind->code() === PricingRuleKind::BASE_PRICE));
+    }
+
+    private function basePriceKey(string $modelKey, int $storageGb): string { return $modelKey . ':' . $storageGb; }
+    private function storageLabel(int $storageGb): string { return $storageGb % 1024 === 0 ? ($storageGb / 1024) . ' TB' : $storageGb . ' GB'; }
+
+    private function renderRuleForm(PriceBook $book, ?PricingRule $rule, string $defaultKind, string $tab): void
     {
         $definition = $rule?->definition();
         echo '<form method="post" class="ak-rule-form">';
         $this->securityFields($rule === null ? 'add_rule' : 'update_rule', $book, $rule);
+        $this->tabField($tab);
         $this->textField('rule_code', 'Szabálykód', $definition?->code->code() ?? '', true);
         echo '<p><label for="rule_kind">Szabálytípus</label><select name="rule_kind" id="rule_kind" data-ak-rule-kind>';
         foreach ([PricingRuleKind::BASE_PRICE, PricingRuleKind::FIXED_DEDUCTION, PricingRuleKind::MULTIPLIER, PricingRuleKind::MODE_ADJUSTMENT, PricingRuleKind::HARD_REJECT, PricingRuleKind::MANUAL_REVIEW] as $kind) {
-            echo '<option value="' . esc_attr($kind) . '" ' . selected($definition?->kind->code() ?? PricingRuleKind::BASE_PRICE, $kind, false) . '>' . esc_html($this->kindLabel($kind)) . '</option>';
+            echo '<option value="' . esc_attr($kind) . '" ' . selected($definition?->kind->code() ?? $defaultKind, $kind, false) . '>' . esc_html($this->kindLabel($kind)) . '</option>';
         }
         echo '</select></p>';
         $this->numberField('priority', 'Prioritás', $definition?->priority->value() ?? 100, -100000);
@@ -508,9 +732,16 @@ final class PriceBooksPage
         echo '<button type="submit" class="button' . ($action === 'delete_rule' ? ' button-link-delete' : '') . '">' . esc_html($label) . '</button></form> ';
     }
 
-    private function renderTabs(): void
+    private function renderTabs(int $bookId, string $tab): void
     {
-        echo '<nav class="nav-tab-wrapper"><a class="nav-tab" href="' . esc_url(admin_url('admin.php?page=' . DiagnosticsPage::SLUG)) . '">Diagnosztika</a><a class="nav-tab nav-tab-active" href="' . esc_url(admin_url('admin.php?page=' . self::SLUG)) . '">Árkönyvek</a></nav>';
+        echo '<nav class="nav-tab-wrapper"><a class="nav-tab" href="' . esc_url(admin_url('admin.php?page=' . DiagnosticsPage::SLUG)) . '">Diagnosztika</a><a class="nav-tab' . ($bookId === 0 ? ' nav-tab-active' : '') . '" href="' . esc_url(admin_url('admin.php?page=' . self::SLUG)) . '">Árkönyvek</a>';
+        if ($bookId > 0) {
+            foreach ([self::TAB_BASE_PRICES => 'Alapárak', self::TAB_CONDITIONS => 'Állapotlevonások', self::TAB_BATTERY => 'Akkumulátor', self::TAB_OFFER_MODES => 'Ajánlattípusok', self::TAB_PREVIEW => 'Tesztkalkulátor'] as $value => $label) {
+                $status = $value === self::TAB_BASE_PRICES ? '' : ' <span class="ak-tab-status">Fejlesztés alatt</span>';
+                echo '<a class="nav-tab' . ($tab === $value ? ' nav-tab-active' : '') . '" href="' . esc_url($this->tabUrl($bookId, $value)) . '">' . esc_html($label) . $status . '</a>';
+            }
+        }
+        echo '</nav>';
     }
 
     private function renderActiveBookNotice(): void
@@ -534,11 +765,14 @@ final class PriceBooksPage
         echo '<div class="notice ' . ($success ? 'notice-success' : 'notice-error') . ' is-dismissible"><p>' . esc_html($success ? 'A művelet sikeresen befejeződött.' : 'A művelet nem hajtható végre. Ellenőrizd az adatokat és a verziót.') . '</p></div>';
     }
 
-    private function redirect(string $result, string $action, int $bookId = 0): never
+    private function redirect(string $result, string $action, int $bookId = 0, ?string $tab = null): never
     {
         $args = ['page' => self::SLUG, 'ak_result' => $result, 'ak_action' => $action];
         if ($bookId > 0) {
             $args['book_id'] = $bookId;
+        }
+        if ($bookId > 0 && $tab !== null) {
+            $args['tab'] = $tab;
         }
         wp_safe_redirect(add_query_arg($args, admin_url('admin.php')));
         exit;
@@ -546,6 +780,11 @@ final class PriceBooksPage
 
     private function editUrl(PriceBookId $id): string { return add_query_arg(['page' => self::SLUG, 'book_id' => $id->toInt()], admin_url('admin.php')); }
     private function postedInt(string $key): int { return isset($_POST[$key]) ? absint($_POST[$key]) : 0; }
+    private function tabField(string $tab): void { echo '<input type="hidden" name="editor_tab" value="' . esc_attr($tab) . '">'; }
+    private function postedTab(): ?string { return isset($_POST['editor_tab']) ? $this->normalizeTab(sanitize_key((string) wp_unslash($_POST['editor_tab']))) : null; }
+    private function resolveTab(): string { return $this->normalizeTab(sanitize_key((string) ($_GET['tab'] ?? ''))); }
+    private function normalizeTab(string $tab): string { return in_array($tab, self::EDITOR_TABS, true) ? $tab : self::TAB_BASE_PRICES; }
+    private function tabUrl(int $bookId, string $tab): string { return add_query_arg(['page' => self::SLUG, 'book_id' => $bookId, 'tab' => $tab], admin_url('admin.php')); }
 
     private function requiredPositiveInt(array $post, string $key): int
     {

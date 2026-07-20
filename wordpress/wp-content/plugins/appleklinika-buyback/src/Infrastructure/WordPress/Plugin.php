@@ -8,6 +8,8 @@ use AppleKlinika\Buyback\Application\Diagnostics\GetDiagnosticsHandler;
 use AppleKlinika\Buyback\Application\Handler\AddDraftPricingRuleHandler;
 use AppleKlinika\Buyback\Application\Handler\ActivateDraftPriceBookHandler;
 use AppleKlinika\Buyback\Application\Handler\CreateDraftPriceBookHandler;
+use AppleKlinika\Buyback\Application\Handler\ClonePriceBookToDraftHandler;
+use AppleKlinika\Buyback\Application\Handler\SaveDraftBasePriceMatrixHandler;
 use AppleKlinika\Buyback\Application\Handler\DeleteDraftPricingRuleHandler;
 use AppleKlinika\Buyback\Application\Handler\PreviewDraftPriceBookCalculationHandler;
 use AppleKlinika\Buyback\Application\Handler\ToggleDraftPricingRuleHandler;
@@ -88,6 +90,8 @@ final class Plugin
                 $rules,
                 $catalog,
                 new CreateDraftPriceBookHandler($books, $transactions, $clock),
+                new ClonePriceBookToDraftHandler($books, $rules, $transactions, $clock),
+                new SaveDraftBasePriceMatrixHandler($books, $rules, $catalog, $transactions, $clock),
                 new UpdateDraftPriceBookSettingsHandler($books, $clock),
                 new AddDraftPricingRuleHandler($books, $rules, $transactions, $clock),
                 new UpdateDraftPricingRuleHandler($books, $rules, $transactions, $clock),

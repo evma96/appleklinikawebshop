@@ -10,10 +10,55 @@ final class DeviceCatalogRepository
 {
     private const OPTION_NAME = 'appleklinika_device_catalog';
     private const VERSION_OPTION_NAME = 'appleklinika_device_catalog_version';
-    private const CURRENT_VERSION = 7;
+    private const CURRENT_VERSION = 8;
 
     /**
-     * @return array<int, array{key: string, name: string, type: string, year: int, colors: array<string, string>}>
+     * The sole canonical iPhone model/storage relationship.
+     *
+     * Capacities are transcribed from Apple's "Identify your iPhone model"
+     * support catalogue: https://support.apple.com/en-us/108044
+     *
+     * @var array<string,list<string>>
+     */
+    private const IPHONE_STORAGE_CAPACITY_KEYS_BY_MODEL = [
+        'iphone_xr' => ['64_gb', '128_gb', '256_gb'],
+        'iphone_xs' => ['64_gb', '256_gb', '512_gb'],
+        'iphone_xs_max' => ['64_gb', '256_gb', '512_gb'],
+        'iphone_11' => ['64_gb', '128_gb', '256_gb'],
+        'iphone_11_pro' => ['64_gb', '256_gb', '512_gb'],
+        'iphone_11_pro_max' => ['64_gb', '256_gb', '512_gb'],
+        'iphone_se_2nd_generation' => ['64_gb', '128_gb', '256_gb'],
+        'iphone_12_mini' => ['64_gb', '128_gb', '256_gb'],
+        'iphone_12' => ['64_gb', '128_gb', '256_gb'],
+        'iphone_12_pro' => ['128_gb', '256_gb', '512_gb'],
+        'iphone_12_pro_max' => ['128_gb', '256_gb', '512_gb'],
+        'iphone_13_mini' => ['128_gb', '256_gb', '512_gb'],
+        'iphone_13' => ['128_gb', '256_gb', '512_gb'],
+        'iphone_13_pro' => ['128_gb', '256_gb', '512_gb', '1_tb'],
+        'iphone_13_pro_max' => ['128_gb', '256_gb', '512_gb', '1_tb'],
+        'iphone_se_3rd_generation' => ['64_gb', '128_gb', '256_gb'],
+        'iphone_14' => ['128_gb', '256_gb', '512_gb'],
+        'iphone_14_plus' => ['128_gb', '256_gb', '512_gb'],
+        'iphone_14_pro' => ['128_gb', '256_gb', '512_gb', '1_tb'],
+        'iphone_14_pro_max' => ['128_gb', '256_gb', '512_gb', '1_tb'],
+        'iphone_15' => ['128_gb', '256_gb', '512_gb'],
+        'iphone_15_plus' => ['128_gb', '256_gb', '512_gb'],
+        'iphone_15_pro' => ['128_gb', '256_gb', '512_gb', '1_tb'],
+        'iphone_15_pro_max' => ['256_gb', '512_gb', '1_tb'],
+        'iphone_16' => ['128_gb', '256_gb', '512_gb'],
+        'iphone_16_plus' => ['128_gb', '256_gb', '512_gb'],
+        'iphone_16_pro' => ['128_gb', '256_gb', '512_gb', '1_tb'],
+        'iphone_16_pro_max' => ['256_gb', '512_gb', '1_tb'],
+        'iphone_16e' => ['128_gb', '256_gb', '512_gb'],
+        'iphone_17' => ['256_gb', '512_gb'],
+        'iphone_air' => ['256_gb', '512_gb', '1_tb'],
+        'iphone_17_pro' => ['256_gb', '512_gb', '1_tb'],
+        'iphone_17_pro_max' => ['256_gb', '512_gb', '1_tb', '2_tb'],
+        'iphone_17e' => ['256_gb', '512_gb'],
+    ];
+
+    /**
+     * @return array<int, array{key: string, name: string, type: string, year: int, colors: array<string, string>, storage_capacity_keys: list<string>}>
      */
     public function all(): array
     {
@@ -102,6 +147,9 @@ final class DeviceCatalogRepository
                 'type' => $type,
                 'year' => $year,
                 'colors' => $colors,
+                'storage_capacity_keys' => $type === DeviceType::IPHONE
+                    ? (self::IPHONE_STORAGE_CAPACITY_KEYS_BY_MODEL[$key] ?? (is_array($device['storage_capacity_keys'] ?? null) ? $device['storage_capacity_keys'] : []))
+                    : [],
             ];
         }, $this->all());
 
@@ -122,7 +170,7 @@ final class DeviceCatalogRepository
     }
 
     /**
-     * @return array<int, array{key: string, name: string, type: string, year: int, colors: array<string, string>}>
+     * @return array<int, array{key: string, name: string, type: string, year: int, colors: array<string, string>, storage_capacity_keys: list<string>}>
      */
     private function defaultCatalog(): array
     {
@@ -234,27 +282,28 @@ final class DeviceCatalogRepository
 
     /**
      * @param array<string, string> $colors
-     * @return array{key: string, name: string, type: string, year: int, colors: array<string, string>}
+     * @return array{key: string, name: string, type: string, year: int, colors: array<string, string>, storage_capacity_keys: list<string>}
      */
     private function device(string $name, int $year, array $colors): array
     {
-        return $this->deviceData($name, DeviceType::IPHONE, $year, $colors);
+        return $this->deviceData($name, DeviceType::IPHONE, $year, $colors, self::IPHONE_STORAGE_CAPACITY_KEYS_BY_MODEL[$this->slug($name)] ?? []);
     }
 
     /**
      * @param array<string, string> $colors
-     * @return array{key: string, name: string, type: string, year: int, colors: array<string, string>}
+     * @return array{key: string, name: string, type: string, year: int, colors: array<string, string>, storage_capacity_keys: list<string>}
      */
     private function typedDevice(string $name, string $type, int $year, array $colors): array
     {
-        return $this->deviceData($name, $type, $year, $colors);
+        return $this->deviceData($name, $type, $year, $colors, []);
     }
 
     /**
      * @param array<string, string> $colors
-     * @return array{key: string, name: string, type: string, year: int, colors: array<string, string>}
+     * @param list<string> $storageCapacityKeys
+     * @return array{key: string, name: string, type: string, year: int, colors: array<string, string>, storage_capacity_keys: list<string>}
      */
-    private function deviceData(string $name, string $type, int $year, array $colors): array
+    private function deviceData(string $name, string $type, int $year, array $colors, array $storageCapacityKeys = []): array
     {
         return [
             'key' => $this->slug($name),
@@ -262,13 +311,14 @@ final class DeviceCatalogRepository
             'type' => $type,
             'year' => $year,
             'colors' => $colors,
+            'storage_capacity_keys' => $storageCapacityKeys,
         ];
     }
 
     /**
-     * @param array<int, array{key: string, name: string, type: string, year: int, colors: array<string, string>}> $catalog
-     * @param array<int, array{key: string, name: string, type: string, year: int, colors: array<string, string>}> $defaults
-     * @return array<int, array{key: string, name: string, type: string, year: int, colors: array<string, string>}>
+     * @param array<int, array{key: string, name: string, type: string, year: int, colors: array<string, string>, storage_capacity_keys: list<string>}> $catalog
+     * @param array<int, array{key: string, name: string, type: string, year: int, colors: array<string, string>, storage_capacity_keys: list<string>}> $defaults
+     * @return array<int, array{key: string, name: string, type: string, year: int, colors: array<string, string>, storage_capacity_keys: list<string>}>
      */
     private function mergeMissingDefaultDevices(array $catalog, array $defaults): array
     {
@@ -295,6 +345,7 @@ final class DeviceCatalogRepository
                 $defaultDevice['colors'],
                 is_array($device['colors'] ?? null) ? $device['colors'] : []
             );
+            $catalog[$index]['storage_capacity_keys'] = $defaultDevice['storage_capacity_keys'];
         }
 
         foreach ($defaults as $device) {
@@ -306,12 +357,18 @@ final class DeviceCatalogRepository
             $existingKeys[$device['key']] = true;
         }
 
+        foreach ($catalog as $index => $device) {
+            if (! isset($device['storage_capacity_keys']) || ! is_array($device['storage_capacity_keys'])) {
+                $catalog[$index]['storage_capacity_keys'] = [];
+            }
+        }
+
         return array_values($catalog);
     }
 
     /**
-     * @param array<int, array{key?: string, name?: string, type?: string, year?: int, colors?: array<string, string>}> $catalog
-     * @return array<int, array{key?: string, name?: string, type?: string, year?: int, colors?: array<string, string>}>
+     * @param array<int, array{key?: string, name?: string, type?: string, year?: int, colors?: array<string, string>, storage_capacity_keys?: list<string>}> $catalog
+     * @return array<int, array{key?: string, name?: string, type?: string, year?: int, colors?: array<string, string>, storage_capacity_keys?: list<string>}>
      */
     private function removeDeprecatedDefaultDevices(array $catalog): array
     {
