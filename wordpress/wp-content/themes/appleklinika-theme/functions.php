@@ -1181,7 +1181,7 @@ function appleklinika_render_header_icon(string $icon): void
 
 function appleklinika_should_show_category_nav(): bool
 {
-    return is_front_page() || appleklinika_is_shop_archive_context();
+    return is_front_page() || appleklinika_is_shop_archive_context() || is_page('eladas');
 }
 
 function appleklinika_render_header(): void
@@ -1217,6 +1217,8 @@ function appleklinika_render_header(): void
                         <?php echo $isActive ? 'aria-current="page"' : ''; ?>
                     ><?php echo esc_html($categoryLabel); ?></a>
                 <?php endforeach; ?>
+                <span class="ak-category-nav__spacer" aria-hidden="true"></span>
+                <a class="ak-category-nav__sell<?php echo is_page('eladas') ? ' is-active' : ''; ?>" href="<?php echo esc_url(home_url('/eladas/')); ?>"<?php echo is_page('eladas') ? ' aria-current="page"' : ''; ?>>Eladás</a>
             </nav>
         <?php endif; ?>
     </div>

@@ -28,7 +28,7 @@ final class WordPressDeviceCatalogReader implements DeviceCatalogReader
             throw new DeviceCatalogUnavailableException('Az Apple Klinika készülékkatalógus bővítmény nem aktív.');
         }
 
-        $records = get_option($this->optionName, null);
+        $records = $this->catalogRecords();
         if (! is_array($records)) {
             throw new DeviceCatalogUnavailableException('Az Apple Klinika készülékkatalógus nem érhető el.');
         }
@@ -48,5 +48,38 @@ final class WordPressDeviceCatalogReader implements DeviceCatalogReader
 
         uasort($items, static fn (DeviceCatalogItem $a, DeviceCatalogItem $b): int => strnatcasecmp($a->label, $b->label));
         return array_values($items);
+    }
+
+    /** @return array<string,array{label:string,colors:array<string,string>}> */
+    public function iPhoneCatalog(): array
+    {
+        $catalog = [];
+        foreach ($this->catalogRecords() as $record) {
+            if (! is_array($record) || ($record['type'] ?? '') !== 'iphone') {
+                continue;
+            }
+            $key = (string) ($record['key'] ?? '');
+            $label = (string) ($record['name'] ?? '');
+            if ($key !== '' && $label !== '') {
+                $catalog[$key] = ['label' => $label, 'colors' => is_array($record['colors'] ?? null) ? $record['colors'] : []];
+            }
+        }
+        return $catalog;
+    }
+
+    /** @return array<mixed> */
+    private function catalogRecords(): array
+    {
+        if (! ($this->availability)()) {
+            throw new DeviceCatalogUnavailableException('Az Apple Klinika készülékkatalógus bővítmény nem aktív.');
+        }
+        if (class_exists(\Appleklinika\Inventory\Infrastructure\WordPress\DeviceCatalogRepository::class)) {
+            return (new \Appleklinika\Inventory\Infrastructure\WordPress\DeviceCatalogRepository())->all();
+        }
+        $records = get_option($this->optionName, null);
+        if (! is_array($records)) {
+            throw new DeviceCatalogUnavailableException('Az Apple Klinika készülékkatalógus nem érhető el.');
+        }
+        return $records;
     }
 }

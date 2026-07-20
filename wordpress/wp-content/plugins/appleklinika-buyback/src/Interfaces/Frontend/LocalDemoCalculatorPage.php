@@ -83,8 +83,8 @@ final class LocalDemoCalculatorPage
 
         $cssPath = APPLEKLINIKA_BUYBACK_PATH . '/assets/css/local-demo.css';
         $jsPath = APPLEKLINIKA_BUYBACK_PATH . '/assets/js/local-demo.js';
-        wp_enqueue_style('appleklinika-buyback-local-demo', APPLEKLINIKA_BUYBACK_URL . 'assets/css/local-demo.css', [], (string) filemtime($cssPath));
-        wp_enqueue_script('appleklinika-buyback-local-demo', APPLEKLINIKA_BUYBACK_URL . 'assets/js/local-demo.js', [], (string) filemtime($jsPath), true);
+        wp_enqueue_style('appleklinika-buyback-local-demo', APPLEKLINIKA_BUYBACK_URL . 'assets/css/local-demo.css', [], md5_file($cssPath) ?: null);
+        wp_enqueue_script('appleklinika-buyback-local-demo', APPLEKLINIKA_BUYBACK_URL . 'assets/js/local-demo.js', [], md5_file($jsPath) ?: null, true);
     }
 
     public function render(): string
@@ -125,6 +125,7 @@ final class LocalDemoCalculatorPage
             class="ak-buyback-demo"
             data-initial-panel="<?php echo esc_attr($initialPanel); ?>"
             data-panel-order="<?php echo esc_attr((string) wp_json_encode($flow)); ?>"
+            data-visual-assets-base="<?php echo esc_url(APPLEKLINIKA_BUYBACK_URL . 'assets/images/buyback-states/'); ?>"
         >
             <header class="ak-buyback-demo__header">
                 <span class="ak-buyback-demo__badge">HELYI DEMÓ</span>
@@ -159,6 +160,22 @@ final class LocalDemoCalculatorPage
                 <?php endforeach; ?>
             </form>
 
+            <div class="ak-buyback-demo__eligibility-modal" data-service-history-modal hidden role="dialog" aria-modal="true" aria-labelledby="ak-demo-service-history-title">
+                <div class="ak-buyback-demo__eligibility-dialog">
+                    <button type="button" class="ak-buyback-demo__modal-close" data-service-history-close aria-label="Bezárás">×</button>
+                    <h4 id="ak-demo-service-history-title">Alkatrész- és szervizelési előzmények</h4>
+                    <ol>
+                        <li>Nyisd meg a Beállítások alkalmazást.</li>
+                        <li>Válaszd az Általános menüpontot.</li>
+                        <li>Nyisd meg az Infó részt.</li>
+                        <li>Görgess az Alkatrész- és szervizelési előzményekhez.</li>
+                        <li>Nézd meg, milyen jelölés szerepel az egyes alkatrészek mellett.</li>
+                    </ol>
+                    <p>Ha ez a szakasz nem jelenik meg, válaszd a „Nincs ilyen bejegyzés” opciót. Az elérhető információk modellenként és iOS-verziónként eltérhetnek.</p>
+                    <button type="button" class="ak-buyback-demo__primary" data-service-history-close>Bezárás</button>
+                </div>
+            </div>
+
             <?php if ($state['show_results']) : ?>
                 <?php $this->renderResults($resolved->priceBook, $resolved->enabledRules, $state, $labels, $models); ?>
             <?php endif; ?>
@@ -170,7 +187,7 @@ final class LocalDemoCalculatorPage
 
     /**
      * @param list<\AppleKlinika\Buyback\Domain\Pricing\SupportedPriceConfiguration> $configurations
-     * @return array{panel:string,model_key:string,storage_gb:int,answers:array<string,mixed>,errors:list<string>,show_results:bool}
+     * @return array{panel:string,model_key:string,storage_gb:int,color_key:string,answers:array<string,mixed>,errors:list<string>,show_results:bool}
      */
     private function requestState(array $configurations): array
     {
@@ -178,6 +195,7 @@ final class LocalDemoCalculatorPage
             'panel' => 'entry',
             'model_key' => '',
             'storage_gb' => 0,
+            'color_key' => '',
             'answers' => $this->questionnaire->defaults(),
             'errors' => [],
             'show_results' => false,
@@ -195,6 +213,7 @@ final class LocalDemoCalculatorPage
 
         $state['model_key'] = sanitize_text_field((string) wp_unslash($_POST['model_key'] ?? ''));
         $state['storage_gb'] = (int) wp_unslash($_POST['storage_gb'] ?? 0);
+        $state['color_key'] = sanitize_key((string) wp_unslash($_POST['color_key'] ?? ''));
         $rawAnswers = isset($_POST['questionnaire']) && is_array($_POST['questionnaire'])
             ? wp_unslash($_POST['questionnaire'])
             : [];
@@ -281,7 +300,7 @@ final class LocalDemoCalculatorPage
             <label class="ak-buyback-demo__search"><span class="screen-reader-text">Modell keresése</span><input type="search" placeholder="Keresés az iPhone modellek között" data-model-search></label>
             <div class="ak-buyback-demo__device-grid" data-model-grid>
                 <?php foreach ($models as $key => $model) : $id = 'ak-demo-model-' . sanitize_html_class($key); ?>
-                    <label class="ak-buyback-demo__device-card" data-model-card data-search-text="<?php echo esc_attr(strtolower($model['label'])); ?>" data-image="<?php echo esc_url($model['image_url']); ?>" data-label="<?php echo esc_attr($model['label']); ?>" data-storages="<?php echo esc_attr(implode(',', $model['storages'])); ?>">
+                    <label class="ak-buyback-demo__device-card" data-model-card data-search-text="<?php echo esc_attr(strtolower($model['label'])); ?>" data-image="<?php echo esc_url($model['image_url']); ?>" data-label="<?php echo esc_attr($model['label']); ?>" data-storages="<?php echo esc_attr(implode(',', $model['storages'])); ?>" data-colors="<?php echo esc_attr((string) wp_json_encode($model['colors'])); ?>">
                         <input type="radio" id="<?php echo esc_attr($id); ?>" name="model_key" value="<?php echo esc_attr($key); ?>" <?php checked($state['model_key'], $key); ?> required>
                         <span class="ak-buyback-demo__device-image"><?php $this->renderImage($model['image_url'], $model['label']); ?></span>
                         <strong><?php echo esc_html($model['label']); ?></strong>
@@ -321,6 +340,10 @@ final class LocalDemoCalculatorPage
                             </label>
                         <?php endforeach; ?>
                     </div>
+                    <div class="ak-buyback-demo__color-picker" data-color-picker data-current-color="<?php echo esc_attr($state['color_key']); ?>" hidden>
+                        <h4>Szín</h4><p class="ak-buyback-demo__question-helper">Csak az ehhez a modellhez és tárhelyhez elérhető színek jelennek meg. A szín nem módosítja az ajánlatot.</p>
+                        <div class="ak-buyback-demo__choice-grid ak-buyback-demo__choice-grid--two" data-color-options></div>
+                    </div>
                     <div class="ak-buyback-demo__configuration-divider"></div>
                     <?php $networkQuestion = $this->questionnaire->questions()['network_status']; ?>
                     <?php $this->renderQuestion('network_status', $networkQuestion, $state['answers']['network_status'] ?? $networkQuestion['default']); ?>
@@ -331,8 +354,8 @@ final class LocalDemoCalculatorPage
                 <div class="ak-buyback-demo__eligibility-dialog">
                     <button type="button" class="ak-buyback-demo__modal-close" data-network-close aria-label="Bezárás">×</button>
                     <span class="ak-buyback-demo__modal-icon" aria-hidden="true">!</span>
-                    <h4 id="ak-demo-network-title">Ezt a készüléket most nem tudjuk automatikusan értékelni</h4>
-                    <p>A helyi demó jelenleg csak hálózatfüggetlen iPhone készülékekre ad előzetes ajánlatot. Lépj vissza, és módosítsd a választást.</p>
+                    <h4 id="ak-demo-network-title">Hálózatfüggő készüléket jelenleg nem vásárolunk fel</h4>
+                    <p>A felvásárláshoz a készüléknek minden magyarországi és külföldi mobilhálózaton használhatónak kell lennie. Ellenőrizd a hálózati állapotot, majd térj vissza és módosítsd a választ.</p>
                     <button type="button" class="ak-buyback-demo__primary" data-network-close>Vissza a választáshoz</button>
                 </div>
             </div>
@@ -357,6 +380,9 @@ final class LocalDemoCalculatorPage
                     <span class="ak-buyback-demo__eyebrow"><?php echo esc_html($panel['step'] . '. ' . $panel['short']); ?></span>
                     <h3><?php echo esc_html($panel['title']); ?></h3>
                     <p><?php echo esc_html($this->panelIntro($panelKey)); ?></p>
+                    <?php if ($panelKey === 'service_history') : ?>
+                        <button type="button" class="ak-buyback-demo__secondary" data-service-history-open>Hol tudom ezt megnézni?</button>
+                    <?php endif; ?>
                     <div class="ak-buyback-demo__question-stack">
                         <?php foreach ($questions as $key => $question) : ?>
                             <?php $this->renderQuestion((string) $key, $question, $answers[$key] ?? $question['default']); ?>
@@ -387,7 +413,8 @@ final class LocalDemoCalculatorPage
             data-question
             data-question-key="<?php echo esc_attr($key); ?>"
             data-question-type="<?php echo esc_attr($type); ?>"
-            <?php if ($isMulti) : ?>data-exclusive-value="<?php echo esc_attr((string) $question['exclusive']); ?>"<?php endif; ?>
+            <?php if ($isMulti && isset($question['exclusive'])) : ?>data-exclusive-value="<?php echo esc_attr((string) $question['exclusive']); ?>"<?php endif; ?>
+            <?php if (isset($question['conditional_on'])) : ?>data-conditional-on="<?php echo esc_attr((string) $question['conditional_on']); ?>" data-conditional-except="<?php echo esc_attr((string) ($question['conditional_except'] ?? '')); ?>" hidden<?php endif; ?>
         >
             <legend><?php echo esc_html((string) $question['label']); ?></legend>
             <?php if (! empty($question['helper'])) : ?><p class="ak-buyback-demo__question-helper"><?php echo esc_html((string) $question['helper']); ?></p><?php endif; ?>
@@ -396,7 +423,7 @@ final class LocalDemoCalculatorPage
                     $id = 'ak-demo-' . sanitize_html_class($key . '-' . $option);
                     $checked = in_array((string) $option, $selectedValues, true);
                     ?>
-                    <label class="ak-buyback-demo__choice-card" data-choice-key="<?php echo esc_attr($key); ?>" data-choice-value="<?php echo esc_attr((string) $option); ?>">
+                    <label class="ak-buyback-demo__choice-card" data-choice-key="<?php echo esc_attr($key); ?>" data-choice-value="<?php echo esc_attr((string) $option); ?>" data-visual-key="<?php echo esc_attr($this->visualKey($key, (string) $option)); ?>">
                         <input
                             id="<?php echo esc_attr($id); ?>"
                             type="<?php echo $isMulti ? 'checkbox' : 'radio'; ?>"
@@ -466,7 +493,8 @@ final class LocalDemoCalculatorPage
         $modelLabel = $labels[$state['model_key']] ?? $state['model_key'];
         $image = $models[$state['model_key']]['image_url'] ?? '';
         $storageLabel = $this->storageLabel($state['storage_gb']);
-        $summary = $this->questionnaire->summary($questionnaireAnswers, $modelLabel, $storageLabel);
+        $colorLabel = (string) ($models[$state['model_key']]['colors'][(int) $state['storage_gb']][$state['color_key']] ?? '');
+        $summary = $this->questionnaire->summary($questionnaireAnswers, $modelLabel, $storageLabel, $colorLabel);
         ?>
         <section class="ak-buyback-demo__panel ak-buyback-demo__panel--offers" data-demo-panel="offers" data-step-title="Ajánlat" hidden>
             <div class="ak-buyback-demo__panel-heading">
@@ -575,7 +603,7 @@ final class LocalDemoCalculatorPage
         <?php
     }
 
-    /** @param \AppleKlinika\Buyback\Domain\Pricing\PriceBook $book @param list<\AppleKlinika\Buyback\Domain\Pricing\PricingRule> $rules @param list<\AppleKlinika\Buyback\Domain\Pricing\SupportedPriceConfiguration> $configurations @param array<string,string> $labels @return array<string,array{label:string,image_url:string,storages:list<int>,teaser:?int}> */
+    /** @param \AppleKlinika\Buyback\Domain\Pricing\PriceBook $book @param list<\AppleKlinika\Buyback\Domain\Pricing\PricingRule> $rules @param list<\AppleKlinika\Buyback\Domain\Pricing\SupportedPriceConfiguration> $configurations @param array<string,string> $labels @return array<string,array{label:string,image_url:string,storages:list<int>,colors:array<int,array<string,string>>,teaser:?int}> */
     private function buildModelCards($book, array $rules, array $configurations, array $labels): array
     {
         $frontend = $this->products->frontendModels();
@@ -588,6 +616,7 @@ final class LocalDemoCalculatorPage
                     'label' => $labels[$key] ?? $key,
                     'image_url' => $frontend[$key]['image_url'] ?? '',
                     'storages' => [],
+                    'colors' => $frontend[$key]['colors'] ?? [],
                     'teaser' => null,
                 ];
             }
@@ -646,9 +675,32 @@ final class LocalDemoCalculatorPage
             'back_cosmetic' => 'A karcok mellett a lepattanásokat és az üveg repedéseit is ellenőrizd.',
             'battery' => 'Add meg az iPhone Beállításaiban látható maximális kapacitást.',
             'display_defects' => 'A külső állapottól függetlenül több működési kijelzőhibát is megjelölhetsz.',
+            'service_history' => 'Az iPhone Beállítások / Általános / Infó részében ellenőrizheted a megjelenő bejegyzéseket.',
             'other_defects' => 'Jelöld meg az összes olyan funkciót, amely nem működik megfelelően.',
             default => 'Válaszd ki a készülékedre leginkább jellemző választ.',
         };
+    }
+
+    private function visualKey(string $question, string $option): string
+    {
+        $group = match ($question) {
+            'screen_condition' => 'screen',
+            'frame_condition' => 'frame',
+            'back_glass_condition' => 'back-glass',
+            default => '',
+        };
+        if ($group === '') {
+            return '';
+        }
+        $state = match ($option) {
+            'like_new' => 'flawless',
+            'excellent' => 'minor-wear',
+            'very_good' => 'heavier-wear',
+            'good' => 'strongly-worn',
+            'damaged' => $group === 'back-glass' ? 'cracked' : ($group === 'screen' ? 'cracked' : 'damaged'),
+            default => 'flawless',
+        };
+        return $group . '/' . $state;
     }
 
     private function renderVisual(string $image, string $alt): void
