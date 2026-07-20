@@ -42,5 +42,25 @@
 .ak-price-input { display: flex; align-items: center; gap: 6px; min-width: 130px; }
 .ak-price-input input[type="number"] { min-width: 0; text-align: right; }
 .ak-price-input span { color: #50575e; font-weight: 600; }
+.ak-conditions-editor { max-width: 1080px; }
+.ak-condition-summary { margin: 16px 0; padding: 12px; background: #f6f7f7; border-left: 4px solid #2271b1; }
+.ak-condition-save { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; }
+.ak-condition-save-top { position: sticky; top: 32px; z-index: 3; padding: 12px; margin: 16px 0; background: #fff; border: 1px solid #dcdcde; box-shadow: 0 2px 6px rgba(0, 0, 0, .08); }
+.ak-condition-panel { margin: 20px 0; border: 1px solid #dcdcde; border-radius: 6px; overflow: hidden; }
+.ak-condition-panel h4 { margin: 0; padding: 12px 16px; background: #f6f7f7; font-size: 15px; }
+.ak-condition-questions { padding: 0 16px; }
+.ak-condition-question { padding: 18px 0; border-bottom: 1px solid #e2e4e7; }
+.ak-condition-question:last-child { border-bottom: 0; }
+.ak-condition-question h5 { margin: 0 0 6px; font-size: 14px; }
+.ak-condition-rows { margin-top: 12px; }
+.ak-condition-row { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(190px, .6fr) minmax(150px, .4fr); gap: 12px; align-items: end; padding: 12px; border-top: 1px solid #f0f0f1; }
+.ak-condition-row.is-changed { background: #fff8e5; box-shadow: inset 3px 0 0 #dba617; }
+.ak-condition-row:first-child { border-top: 0; }
+.ak-condition-row p { margin: 6px 0 0; color: #50575e; }
+.ak-condition-row .ak-condition-action, .ak-condition-row .ak-condition-value { margin: 0; }
+.ak-condition-system { grid-template-columns: 1fr; background: #f6f7f7; }
+.ak-system-label { display: inline-block; padding: 2px 6px; border-radius: 999px; background: #dcdcde; color: #3c434a; font-size: 11px; font-weight: 600; }
+.ak-condition-current { padding-bottom: 8px; font-weight: 600; }
+@media (max-width: 782px) { .ak-condition-row { grid-template-columns: 1fr; } .ak-condition-save { align-items: stretch; flex-direction: column; } .ak-condition-save-top { top: 46px; } }
 @media (max-width: 1100px) { .ak-buyback-grid { grid-template-columns: 1fr; } }
 @media (max-width: 1200px) { .ak-preview-conditions { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

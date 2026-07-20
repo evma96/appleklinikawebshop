@@ -2,7 +2,7 @@
 
 COMPOSE := docker compose
 
-.PHONY: install up down test test-unit test-integration test-inventory-catalog test-buyback test-buyback-domain test-buyback-persistence test-buyback-legacy test-buyback-pricing-admin test-buyback-pricing-engine test-buyback-pricebook-activation test-buyback-local-demo lint format static quality quality-fix check
+.PHONY: install up down test test-unit test-integration test-inventory-catalog test-buyback test-buyback-domain test-buyback-persistence test-buyback-legacy test-buyback-pricing-admin test-buyback-condition-admin test-buyback-pricing-engine test-buyback-pricebook-activation test-buyback-local-demo lint format static quality quality-fix check
 
 install:
 	@if [ ! -f .env ]; then cp .env.example .env; fi
@@ -39,6 +39,8 @@ test-buyback-legacy:
 
 test-buyback-pricing-admin:
 	$(COMPOSE) exec -T wordpress php /var/www/html/wp-content/plugins/appleklinika-buyback/tests/pricing-admin.php
+
+test-buyback-condition-admin: test-buyback-pricing-admin
 
 test-buyback-pricing-engine:
 	$(COMPOSE) exec -T wordpress php /var/www/html/wp-content/plugins/appleklinika-buyback/tests/pricing-engine.php

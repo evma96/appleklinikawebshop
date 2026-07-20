@@ -9,6 +9,7 @@ use AppleKlinika\Buyback\Application\Command\ActivateDraftPriceBook;
 use AppleKlinika\Buyback\Application\Command\CreateDraftPriceBook;
 use AppleKlinika\Buyback\Application\Command\ClonePriceBookToDraft;
 use AppleKlinika\Buyback\Application\Command\SaveDraftBasePriceMatrix;
+use AppleKlinika\Buyback\Application\Command\SaveDraftQuestionnaireConditions;
 use AppleKlinika\Buyback\Application\Command\DeleteDraftPricingRule;
 use AppleKlinika\Buyback\Application\Command\ToggleDraftPricingRule;
 use AppleKlinika\Buyback\Application\Command\UpdateDraftPriceBookSettings;
@@ -19,6 +20,7 @@ use AppleKlinika\Buyback\Application\Handler\ActivateDraftPriceBookHandler;
 use AppleKlinika\Buyback\Application\Handler\CreateDraftPriceBookHandler;
 use AppleKlinika\Buyback\Application\Handler\ClonePriceBookToDraftHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftBasePriceMatrixHandler;
+use AppleKlinika\Buyback\Application\Handler\SaveDraftQuestionnaireConditionsHandler;
 use AppleKlinika\Buyback\Application\Handler\DeleteDraftPricingRuleHandler;
 use AppleKlinika\Buyback\Application\Handler\PreviewDraftPriceBookCalculationHandler;
 use AppleKlinika\Buyback\Application\Handler\ToggleDraftPricingRuleHandler;
@@ -29,6 +31,8 @@ use AppleKlinika\Buyback\Application\Port\ActivePriceBookResolver;
 use AppleKlinika\Buyback\Application\Port\Clock;
 use AppleKlinika\Buyback\Application\Port\PriceBookRepository;
 use AppleKlinika\Buyback\Application\Port\PricingRuleRepository;
+use AppleKlinika\Buyback\Application\LocalDemo\LocalDemoQuestionnaire;
+use AppleKlinika\Buyback\Application\Pricing\DeviceCatalogItem;
 use AppleKlinika\Buyback\Application\Pricing\PriceBookActivationReadinessService;
 use AppleKlinika\Buyback\Application\Exception\MultipleActivePriceBooksException;
 use AppleKlinika\Buyback\Application\Exception\NoActivePriceBookException;
@@ -66,6 +70,7 @@ final class PriceBooksPage
         private readonly CreateDraftPriceBookHandler $createBook,
         private readonly ClonePriceBookToDraftHandler $cloneBook,
         private readonly SaveDraftBasePriceMatrixHandler $saveBasePriceMatrix,
+        private readonly SaveDraftQuestionnaireConditionsHandler $saveQuestionnaireConditions,
         private readonly UpdateDraftPriceBookSettingsHandler $updateBook,
         private readonly AddDraftPricingRuleHandler $addRule,
         private readonly UpdateDraftPricingRuleHandler $updateRule,
@@ -79,7 +84,8 @@ final class PriceBooksPage
         private readonly ActivePriceBookResolver $activePriceBookResolver,
         private readonly Clock $clock,
         private readonly AdminAuthorization $authorization,
-        private readonly AdminSubmissionGuard $submissionGuard
+        private readonly AdminSubmissionGuard $submissionGuard,
+        private readonly LocalDemoQuestionnaire $questionnaire
     ) {
     }
 
@@ -121,9 +127,12 @@ final class PriceBooksPage
         try {
             $this->authorization->assert(CapabilityManager::MANAGE_PRICE_BOOKS, $nonce);
             $this->dispatch($action, wp_unslash($_POST));
-            $this->redirect('success', $action, $this->postedInt('price_book_id'), $this->postedTab());
+            $this->redirect('success', $action, $this->postedInt('price_book_id'), $this->postedTab(), null, $this->postedConditionModel());
         } catch (\Throwable $exception) {
-            $this->redirect('error', 'validation', $this->postedInt('price_book_id'), $this->postedTab());
+            $message = $action === 'save_questionnaire_conditions'
+                ? 'Az állapotlevonások mentése nem sikerült: ' . $exception->getMessage()
+                : null;
+            $this->redirect('error', 'validation', $this->postedInt('price_book_id'), $this->postedTab(), $message, $this->postedConditionModel());
         }
     }
 
@@ -206,6 +215,12 @@ final class PriceBooksPage
         if ($action === 'save_base_price_matrix') {
             $basePrices = isset($post['base_prices']) && is_array($post['base_prices']) ? $post['base_prices'] : [];
             $this->saveBasePriceMatrix->handle(new SaveDraftBasePriceMatrix($bookId, $bookVersion, $basePrices));
+            return;
+        }
+
+        if ($action === 'save_questionnaire_conditions') {
+            $conditions = isset($post['questionnaire_conditions']) && is_array($post['questionnaire_conditions']) ? $post['questionnaire_conditions'] : [];
+            $this->saveQuestionnaireConditions->handle(new SaveDraftQuestionnaireConditions($bookId, $bookVersion, sanitize_key((string) ($post['condition_model_key'] ?? '')), $conditions));
             return;
         }
 
@@ -305,7 +320,7 @@ final class PriceBooksPage
         $lifecycleText = $book->status()->isDraft()
             ? 'Szerkeszthető piszkozat. Az itt mentett változtatások aktiválásig nem érintik a nyilvános felvásárlási árazást.'
             : ($book->status()->isActive() ? 'Az aktív árkönyv és szabályai csak olvashatók.' : 'Az archivált árkönyv és szabályai változatlan előzményként megmaradnak.');
-        echo '<div class="ak-buyback-heading"><div><h2>v' . esc_html((string) $book->versionNumber()->value()) . ' – ' . esc_html($book->label()) . '</h2><span class="ak-status">' . esc_html($this->statusLabel($book)) . '</span><p class="description">Diagnosztikai azonosító: #' . esc_html((string) $book->id()->toInt()) . '</p></div><p>' . esc_html($lifecycleText) . '</p></div>';
+        echo '<div class="ak-buyback-heading"><div><h2>v' . esc_html((string) $book->versionNumber()->value()) . ' – ' . esc_html($book->label()) . '</h2><span class="ak-status">' . esc_html($this->statusLabel($book)) . '</span></div><p>' . esc_html($lifecycleText) . '</p></div>';
 
         if ($book->status()->isDraft() && $this->basePriceCount($rules) === 0) {
             echo '<div class="notice notice-warning inline"><p>Üres piszkozat – nem örökölte az aktív árkönyv árait.</p></div>';
@@ -316,7 +331,7 @@ final class PriceBooksPage
             if ($tab === self::TAB_BASE_PRICES) {
                 $this->renderBasePriceMatrix($book, $rules, true, $tab);
             } else {
-                $this->renderReadOnlyTabPlaceholder($tab, $rules);
+                $this->renderReadOnlyTabPlaceholder($tab, $book, $rules);
             }
             return;
         }
@@ -326,7 +341,7 @@ final class PriceBooksPage
             return;
         }
         if ($tab === self::TAB_CONDITIONS) {
-            $this->renderConditionsTab($rules);
+            $this->renderConditionsTab($book, $rules, false, $tab);
             return;
         }
         if ($tab === self::TAB_BATTERY) {
@@ -443,13 +458,113 @@ final class PriceBooksPage
     }
 
     /** @param list<PricingRule> $rules */
-    private function renderConditionsTab(array $rules): void
+    private function renderConditionsTab(PriceBook $book, array $rules, bool $readOnly, string $tab): void
     {
-        $conditionRules = array_filter($rules, static fn (PricingRule $rule): bool => $rule->definition()->conditionKey !== null);
-        $manualReviews = array_filter($rules, static fn (PricingRule $rule): bool => $rule->definition()->kind->code() === PricingRuleKind::MANUAL_REVIEW);
-        $rejections = array_filter($rules, static fn (PricingRule $rule): bool => $rule->definition()->kind->code() === PricingRuleKind::HARD_REJECT);
-        echo '<section class="ak-buyback-card"><h3>Állapotlevonások <span class="ak-development-badge">Fejlesztés alatt</span></h3><div class="notice notice-info inline"><p>Az állapotlevonások felhasználóbarát szerkesztője még nem készült el. A technikai szabálymezők nem szerkeszthetők ezen a felületen.</p></div>';
-        echo '<p class="ak-rule-summary">Állapotfeltétel-szabályok: <strong>' . esc_html((string) count($conditionRules)) . '</strong> · Kézi ellenőrzések: <strong>' . esc_html((string) count($manualReviews)) . '</strong> · Elutasítások: <strong>' . esc_html((string) count($rejections)) . '</strong></p></section>';
+        try {
+            $models = $this->catalog->iPhoneModels();
+        } catch (DeviceCatalogUnavailableException $exception) {
+            echo '<section class="ak-buyback-card"><h3>Állapotlevonások</h3><div class="notice notice-error inline"><p>Az inventory készülékkatalógus nem érhető el, ezért a modellhez tartozó állapotlevonások nem jeleníthetők meg.</p></div></section>';
+            return;
+        }
+        $model = $this->selectedConditionModel($models);
+        if ($model === null) {
+            echo '<section class="ak-buyback-card"><h3>Állapotlevonások</h3><div class="notice notice-error inline"><p>A megadott iPhone modell nem szerepel az inventory készülékkatalógusban.</p></div></section>';
+            return;
+        }
+        $rulesByCode = [];
+        foreach ($rules as $rule) {
+            $rulesByCode[$rule->definition()->code->code()] = $rule;
+        }
+        $questions = $this->questionnaire->conditionEditorQuestions();
+        $summary = ['total' => 0, 'configured' => 0, 'manual' => 0, 'reject' => 0];
+        foreach ($questions as $question) {
+            foreach ($question['options'] as $option) {
+                if (! $option['configurable']) {
+                    continue;
+                }
+                ++$summary['total'];
+                $rule = $rulesByCode[SaveDraftQuestionnaireConditionsHandler::ruleCode($book->id()?->toInt() ?? 0, $model->modelKey, $question['question_key'], $option['answer_key'])] ?? null;
+                $legacy = $rulesByCode[SaveDraftQuestionnaireConditionsHandler::legacyRuleCode($book->id()?->toInt() ?? 0, $question['question_key'], $option['answer_key'])] ?? null;
+                if ($rule === null) { $rule = $legacy; }
+                $action = $this->conditionAction($rule);
+                if ($action !== SaveDraftQuestionnaireConditionsHandler::ACTION_NONE) {
+                    ++$summary['configured'];
+                }
+                if ($action === SaveDraftQuestionnaireConditionsHandler::ACTION_MANUAL_REVIEW) {
+                    ++$summary['manual'];
+                }
+                if ($action === SaveDraftQuestionnaireConditionsHandler::ACTION_HARD_REJECT) {
+                    ++$summary['reject'];
+                }
+            }
+        }
+
+        echo '<section class="ak-buyback-card ak-conditions-editor"><h3>Állapotlevonások beállítása ehhez a modellhez</h3>';
+        echo '<form method="get" class="ak-condition-model-selector" data-ak-condition-model-form><input type="hidden" name="page" value="' . esc_attr(self::SLUG) . '"><input type="hidden" name="book_id" value="' . esc_attr((string) $book->id()?->toInt()) . '"><input type="hidden" name="tab" value="' . esc_attr($tab) . '"><label for="ak-condition-model">Modell<select name="model" id="ak-condition-model" data-ak-condition-model-select data-ak-current-value="' . esc_attr($model->modelKey) . '">';
+        foreach ($models as $item) {
+            echo '<option value="' . esc_attr($item->modelKey) . '" ' . selected($model->modelKey, $item->modelKey, false) . '>' . esc_html($item->label) . '</option>';
+        }
+        echo '</select></label><button type="submit" class="button">Modell betöltése</button></form>';
+        echo '<p>' . esc_html($readOnly ? 'Az árkönyv állapotlevonásai csak olvashatók.' : 'A nyilvános felvásárlási kérdőív válaszaihoz itt üzleti következményt adhatsz. A mentés kizárólag ennek a piszkozatnak a kérdőív-alapú állapotszabályait módosítja.') . '</p>';
+        echo '<div class="ak-condition-summary"><strong>' . esc_html($model->label) . '</strong> · ' . esc_html($this->modelBasePriceStatus($model, $rules)) . '<br><strong><span data-ak-condition-configured>' . esc_html((string) $summary['configured']) . '</span> / <span data-ak-condition-total>' . esc_html((string) $summary['total']) . '</span></strong> válasz beállítva · <strong><span data-ak-condition-unconfigured>' . esc_html((string) ($summary['total'] - $summary['configured'])) . '</span></strong> nincs beállítva · Kézi bevizsgálás: <strong><span data-ak-condition-manual>' . esc_html((string) $summary['manual']) . '</span></strong> · Nem vásároljuk fel: <strong><span data-ak-condition-reject>' . esc_html((string) $summary['reject']) . '</span></strong></div>';
+        echo '<div class="notice notice-info inline"><p><strong>Akkumulátor:</strong> az akkumulátorállapot külön kérdés, dedikált szerkesztője ezen a fülön nem érhető el.</p></div>';
+        if (! $readOnly) {
+            echo '<form method="post" data-ak-condition-form>';
+            $this->securityFields('save_questionnaire_conditions', $book);
+            $this->tabField($tab);
+            echo '<input type="hidden" name="condition_model_key" value="' . esc_attr($model->modelKey) . '"><div class="ak-condition-save ak-condition-save-top"><span data-ak-condition-changes aria-live="polite">Nincs mentetlen változás.</span><button type="submit" class="button button-primary">Módosítások mentése – ' . esc_html($model->label) . '</button></div>';
+        }
+
+        $lastPanel = null;
+        foreach ($questions as $question) {
+            if ($lastPanel !== $question['panel']) {
+                if ($lastPanel !== null) {
+                    echo '</div></section>';
+                }
+                echo '<section class="ak-condition-panel"><h4>' . esc_html($question['panel_title']) . '</h4><div class="ak-condition-questions">';
+                $lastPanel = $question['panel'];
+            }
+            echo '<div class="ak-condition-question"><h5>' . esc_html($question['label']) . '</h5>';
+            if ($question['helper'] !== '') {
+                echo '<p class="description">' . esc_html($question['helper']) . '</p>';
+            }
+            echo '<div class="ak-condition-rows">';
+            foreach ($question['options'] as $option) {
+                if (! $option['configurable']) {
+                    echo '<div class="ak-condition-row ak-condition-system"><div><strong>' . esc_html($option['label']) . '</strong><p><span class="ak-system-label">Rendszerszabály</span> ' . esc_html($option['system_outcome'] ?? '') . '</p></div></div>';
+                    continue;
+                }
+                $rule = $rulesByCode[SaveDraftQuestionnaireConditionsHandler::ruleCode($book->id()?->toInt() ?? 0, $model->modelKey, $question['question_key'], $option['answer_key'])] ?? null;
+                $legacy = $rulesByCode[SaveDraftQuestionnaireConditionsHandler::legacyRuleCode($book->id()?->toInt() ?? 0, $question['question_key'], $option['answer_key'])] ?? null;
+                $action = $this->conditionAction($rule);
+                $value = $this->conditionValue($rule, $action);
+                echo '<div class="ak-condition-row" data-ak-condition-row data-ak-condition-original-action="' . esc_attr($action) . '" data-ak-condition-original-value="' . esc_attr($value === null ? '' : (string) $value) . '"><div class="ak-condition-answer"><strong>' . esc_html($option['label']) . '</strong></div>';
+                if ($readOnly) {
+                    echo '<div class="ak-condition-current">' . esc_html($this->conditionActionLabel($action, $value)) . ($rule !== null ? '<p>Modellspecifikus beállítás</p>' : ($legacy !== null ? '<p>Örökölt globális szabály: ' . esc_html($this->conditionActionLabel($this->conditionAction($legacy), $this->conditionValue($legacy, $this->conditionAction($legacy)))) . '</p>' : '<p>Nincs beállított levonás</p>')) . '</div>';
+                } else {
+                    $name = 'questionnaire_conditions[' . $question['question_key'] . '][' . $option['answer_key'] . ']';
+                    $needsValue = in_array($action, [SaveDraftQuestionnaireConditionsHandler::ACTION_FIXED, SaveDraftQuestionnaireConditionsHandler::ACTION_PERCENTAGE], true);
+                    echo '<label class="ak-condition-action">Művelet<select name="' . esc_attr($name) . '[action]" data-ak-condition-action>';
+                    foreach ($this->conditionActions() as $actionKey => $actionLabel) {
+                        echo '<option value="' . esc_attr($actionKey) . '" ' . selected($action, $actionKey, false) . '>' . esc_html($actionLabel) . '</option>';
+                    }
+                    echo '</select></label>';
+                    echo '<label class="ak-condition-value" data-ak-condition-value ' . ($needsValue ? '' : 'hidden') . '>Érték<div class="ak-price-input"><input type="number" min="0" max="' . esc_attr($action === SaveDraftQuestionnaireConditionsHandler::ACTION_PERCENTAGE ? '100' : (string) PHP_INT_MAX) . '" step="1" inputmode="numeric" name="' . esc_attr($name) . '[value]" value="' . esc_attr($value === null ? '' : (string) $value) . '" ' . ($needsValue ? '' : 'disabled') . ' data-ak-condition-value-input><span data-ak-condition-unit>' . esc_html($action === SaveDraftQuestionnaireConditionsHandler::ACTION_PERCENTAGE ? '%' : 'Ft') . '</span></div></label>';
+                    if ($legacy !== null && $rule === null) {
+                        echo '<p class="ak-condition-inherited">Örökölt globális szabály: ' . esc_html($this->conditionActionLabel($this->conditionAction($legacy), $this->conditionValue($legacy, $this->conditionAction($legacy)))) . '</p>';
+                    }
+                }
+                echo '</div>';
+            }
+            echo '</div></div>';
+        }
+        if ($lastPanel !== null) {
+            echo '</div></section>';
+        }
+        if (! $readOnly) {
+            echo '<div class="ak-condition-save ak-condition-save-bottom"><span data-ak-condition-changes aria-live="polite">Nincs mentetlen változás.</span><button type="submit" class="button button-primary">Módosítások mentése – ' . esc_html($model->label) . '</button></div></form>';
+        }
+        echo '</section>';
     }
 
     private function renderUnavailableEditor(string $title, string $message): void
@@ -463,10 +578,10 @@ final class PriceBooksPage
     }
 
     /** @param list<PricingRule> $rules */
-    private function renderReadOnlyTabPlaceholder(string $tab, array $rules): void
+    private function renderReadOnlyTabPlaceholder(string $tab, PriceBook $book, array $rules): void
     {
         if ($tab === self::TAB_CONDITIONS) {
-            $this->renderConditionsTab($rules);
+            $this->renderConditionsTab($book, $rules, true, $tab);
             return;
         }
         if ($tab === self::TAB_PREVIEW) {
@@ -737,7 +852,7 @@ final class PriceBooksPage
         echo '<nav class="nav-tab-wrapper"><a class="nav-tab" href="' . esc_url(admin_url('admin.php?page=' . DiagnosticsPage::SLUG)) . '">Diagnosztika</a><a class="nav-tab' . ($bookId === 0 ? ' nav-tab-active' : '') . '" href="' . esc_url(admin_url('admin.php?page=' . self::SLUG)) . '">Árkönyvek</a>';
         if ($bookId > 0) {
             foreach ([self::TAB_BASE_PRICES => 'Alapárak', self::TAB_CONDITIONS => 'Állapotlevonások', self::TAB_BATTERY => 'Akkumulátor', self::TAB_OFFER_MODES => 'Ajánlattípusok', self::TAB_PREVIEW => 'Tesztkalkulátor'] as $value => $label) {
-                $status = $value === self::TAB_BASE_PRICES ? '' : ' <span class="ak-tab-status">Fejlesztés alatt</span>';
+                $status = in_array($value, [self::TAB_BASE_PRICES, self::TAB_CONDITIONS], true) ? '' : ' <span class="ak-tab-status">Fejlesztés alatt</span>';
                 echo '<a class="nav-tab' . ($tab === $value ? ' nav-tab-active' : '') . '" href="' . esc_url($this->tabUrl($bookId, $value)) . '">' . esc_html($label) . $status . '</a>';
             }
         }
@@ -756,16 +871,89 @@ final class PriceBooksPage
         }
     }
 
+    /** @return array<string,string> */
+    private function conditionActions(): array
+    {
+        return [
+            SaveDraftQuestionnaireConditionsHandler::ACTION_NONE => 'Nincs változás',
+            SaveDraftQuestionnaireConditionsHandler::ACTION_FIXED => 'Fix levonás',
+            SaveDraftQuestionnaireConditionsHandler::ACTION_PERCENTAGE => 'Százalékos levonás',
+            SaveDraftQuestionnaireConditionsHandler::ACTION_MANUAL_REVIEW => 'Kézi bevizsgálás',
+            SaveDraftQuestionnaireConditionsHandler::ACTION_HARD_REJECT => 'Nem vásároljuk fel',
+        ];
+    }
+
+    private function conditionAction(?PricingRule $rule): string
+    {
+        if ($rule === null) {
+            return SaveDraftQuestionnaireConditionsHandler::ACTION_NONE;
+        }
+        return match ($rule->definition()->kind->code()) {
+            PricingRuleKind::FIXED_DEDUCTION => SaveDraftQuestionnaireConditionsHandler::ACTION_FIXED,
+            PricingRuleKind::MULTIPLIER => SaveDraftQuestionnaireConditionsHandler::ACTION_PERCENTAGE,
+            PricingRuleKind::MANUAL_REVIEW => SaveDraftQuestionnaireConditionsHandler::ACTION_MANUAL_REVIEW,
+            PricingRuleKind::HARD_REJECT => SaveDraftQuestionnaireConditionsHandler::ACTION_HARD_REJECT,
+            default => SaveDraftQuestionnaireConditionsHandler::ACTION_NONE,
+        };
+    }
+
+    private function conditionValue(?PricingRule $rule, string $action): ?int
+    {
+        if ($rule === null) {
+            return null;
+        }
+        if ($action === SaveDraftQuestionnaireConditionsHandler::ACTION_FIXED) {
+            return $rule->definition()->amount?->amount();
+        }
+        if ($action === SaveDraftQuestionnaireConditionsHandler::ACTION_PERCENTAGE) {
+            $basisPoints = $rule->definition()->multiplier?->value();
+            return $basisPoints === null ? null : max(0, intdiv(10000 - $basisPoints, 100));
+        }
+        return null;
+    }
+
+    private function conditionActionLabel(string $action, ?int $value): string
+    {
+        $label = $this->conditionActions()[$action] ?? 'Nincs változás';
+        if ($value === null) {
+            return $label;
+        }
+        return $label . ': ' . number_format_i18n($value) . ($action === SaveDraftQuestionnaireConditionsHandler::ACTION_PERCENTAGE ? '%' : ' Ft');
+    }
+
+    /** @param list<DeviceCatalogItem> $models */
+    private function selectedConditionModel(array $models): ?DeviceCatalogItem
+    {
+        $selected = isset($_GET['model']) ? sanitize_key((string) $_GET['model']) : '';
+        if ($selected === '' && $models !== []) {
+            return $models[0];
+        }
+        foreach ($models as $model) {
+            if ($model->modelKey === $selected) {
+                return $model;
+            }
+        }
+        return null;
+    }
+
+    /** @param list<PricingRule> $rules */
+    private function modelBasePriceStatus(DeviceCatalogItem $model, array $rules): string
+    {
+        $count = count(array_filter($rules, static fn (PricingRule $rule): bool => $rule->definition()->kind->code() === PricingRuleKind::BASE_PRICE && $rule->definition()->modelKey === $model->modelKey && $rule->definition()->enabled));
+        return $count > 0 ? 'Alapár megadva (' . $count . ')' : 'Nincs alapár megadva';
+    }
+
     private function renderNotice(): void
     {
         if (! isset($_GET['ak_result'])) {
             return;
         }
         $success = sanitize_key((string) $_GET['ak_result']) === 'success';
-        echo '<div class="notice ' . ($success ? 'notice-success' : 'notice-error') . ' is-dismissible"><p>' . esc_html($success ? 'A művelet sikeresen befejeződött.' : 'A művelet nem hajtható végre. Ellenőrizd az adatokat és a verziót.') . '</p></div>';
+        $errorMessage = isset($_GET['ak_message']) ? sanitize_text_field((string) wp_unslash($_GET['ak_message'])) : '';
+        echo '<div class="notice ' . ($success ? 'notice-success' : 'notice-error') . ' is-dismissible"><p>' . esc_html($success ? 'A művelet sikeresen befejeződött.' : ($errorMessage !== '' ? $errorMessage : 'A művelet nem hajtható végre. Ellenőrizd az adatokat és a verziót.')) . '</p></div>';
     }
 
-    private function redirect(string $result, string $action, int $bookId = 0, ?string $tab = null): never
+    private function redirect(string $result, string $action, int $bookId = 0, ?string $tab = null, ?string $message = null, ?string $model = null): never
     {
         $args = ['page' => self::SLUG, 'ak_result' => $result, 'ak_action' => $action];
         if ($bookId > 0) {
@@ -773,6 +961,12 @@ final class PriceBooksPage
         }
         if ($bookId > 0 && $tab !== null) {
             $args['tab'] = $tab;
+        }
+        if ($message !== null && $message !== '') {
+            $args['ak_message'] = $message;
+        }
+        if ($bookId > 0 && $tab === self::TAB_CONDITIONS && $model !== null && $model !== '') {
+            $args['model'] = $model;
         }
         wp_safe_redirect(add_query_arg($args, admin_url('admin.php')));
         exit;
@@ -782,6 +976,7 @@ final class PriceBooksPage
     private function postedInt(string $key): int { return isset($_POST[$key]) ? absint($_POST[$key]) : 0; }
     private function tabField(string $tab): void { echo '<input type="hidden" name="editor_tab" value="' . esc_attr($tab) . '">'; }
     private function postedTab(): ?string { return isset($_POST['editor_tab']) ? $this->normalizeTab(sanitize_key((string) wp_unslash($_POST['editor_tab']))) : null; }
+    private function postedConditionModel(): ?string { return isset($_POST['condition_model_key']) ? sanitize_key((string) wp_unslash($_POST['condition_model_key'])) : null; }
     private function resolveTab(): string { return $this->normalizeTab(sanitize_key((string) ($_GET['tab'] ?? ''))); }
     private function normalizeTab(string $tab): string { return in_array($tab, self::EDITOR_TABS, true) ? $tab : self::TAB_BASE_PRICES; }
     private function tabUrl(int $bookId, string $tab): string { return add_query_arg(['page' => self::SLUG, 'book_id' => $bookId, 'tab' => $tab], admin_url('admin.php')); }

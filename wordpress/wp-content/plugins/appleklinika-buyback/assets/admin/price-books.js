@@ -60,4 +60,72 @@ document.addEventListener('DOMContentLoaded', function () {
     if (form) refreshCounts();
     else refreshVisibility();
   });
+
+  document.querySelectorAll('[data-ak-condition-form]').forEach(function (form) {
+    var dirty = false;
+    var editor = form.closest('.ak-conditions-editor') || form;
+    var refresh = function () {
+      var configured = 0;
+      var manual = 0;
+      var reject = 0;
+      var changed = false;
+      form.querySelectorAll('[data-ak-condition-row]').forEach(function (row) {
+        var action = row.querySelector('[data-ak-condition-action]');
+        var valueWrap = row.querySelector('[data-ak-condition-value]');
+        var value = row.querySelector('[data-ak-condition-value-input]');
+        var unit = row.querySelector('[data-ak-condition-unit]');
+        if (!action || !valueWrap || !value) return;
+        var requiresValue = action.value === 'fixed' || action.value === 'percentage';
+        valueWrap.hidden = !requiresValue;
+        value.disabled = !requiresValue;
+        value.max = action.value === 'percentage' ? '100' : String(Number.MAX_SAFE_INTEGER);
+        if (unit) unit.textContent = action.value === 'percentage' ? '%' : 'Ft';
+        if (action.value !== 'none') configured += 1;
+        if (action.value === 'manual_review') manual += 1;
+        if (action.value === 'hard_reject') reject += 1;
+        var currentValue = requiresValue ? value.value.trim() : '';
+        if (action.value !== row.dataset.akConditionOriginalAction || currentValue !== row.dataset.akConditionOriginalValue) {
+          changed = true;
+          row.classList.add('is-changed');
+        } else {
+          row.classList.remove('is-changed');
+        }
+      });
+      var total = editor.querySelector('[data-ak-condition-total]');
+      var configuredTarget = editor.querySelector('[data-ak-condition-configured]');
+      var unconfiguredTarget = editor.querySelector('[data-ak-condition-unconfigured]');
+      var manualTarget = editor.querySelector('[data-ak-condition-manual]');
+      var rejectTarget = editor.querySelector('[data-ak-condition-reject]');
+      if (configuredTarget) configuredTarget.textContent = configured;
+      if (unconfiguredTarget && total) unconfiguredTarget.textContent = Number(total.textContent) - configured;
+      if (manualTarget) manualTarget.textContent = manual;
+      if (rejectTarget) rejectTarget.textContent = reject;
+      form.querySelectorAll('[data-ak-condition-changes]').forEach(function (target) {
+        target.textContent = changed ? 'Mentetlen változások vannak.' : 'Nincs mentetlen változás.';
+      });
+      dirty = changed;
+    };
+    form.querySelectorAll('[data-ak-condition-action], [data-ak-condition-value-input]').forEach(function (control) {
+      control.addEventListener('change', refresh);
+      control.addEventListener('input', refresh);
+    });
+    form.addEventListener('submit', function () { dirty = false; });
+    var modelSelect = editor.querySelector('[data-ak-condition-model-select]');
+    if (modelSelect) {
+      modelSelect.addEventListener('change', function (event) {
+        if (dirty && !window.confirm('Mentetlen állapotlevonás-módosítások vannak. Biztosan másik modellt töltesz be?')) {
+          event.preventDefault();
+          modelSelect.value = modelSelect.dataset.akCurrentValue || '';
+          return;
+        }
+        modelSelect.closest('form').submit();
+      });
+    }
+    window.addEventListener('beforeunload', function (event) {
+      if (!dirty) return;
+      event.preventDefault();
+      event.returnValue = '';
+    });
+    refresh();
+  });
 });
