@@ -58,6 +58,19 @@ foreach ($iPhones as $device) {
 }
 $test->assert($configurationCount === 107, 'The canonical model-specific storage total is 107.');
 
+$iphone11 = array_values(array_filter($iPhones, static fn (array $device): bool => $device['key'] === 'iphone_11'))[0] ?? null;
+$test->assert(
+    is_array($iphone11) && $iphone11['colors'] === [
+        'black' => 'Fekete (Black)',
+        'green' => 'Zöld (Green)',
+        'yellow' => 'Sárga (Yellow)',
+        'purple' => 'Lila (Purple)',
+        'product_red' => '(PRODUCT)RED',
+        'white' => 'Fehér (White)',
+    ],
+    'iPhone 11 exposes the six canonical Apple finishes from the inventory catalogue.'
+);
+
 $byKey = [];
 foreach ($iPhones as $device) {
     $byKey[$device['key']] = $device['storage_capacity_keys'];

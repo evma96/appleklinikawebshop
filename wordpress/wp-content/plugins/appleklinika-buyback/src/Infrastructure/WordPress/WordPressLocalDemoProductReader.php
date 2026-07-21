@@ -111,20 +111,13 @@ final class WordPressLocalDemoProductReader
             }
 
             $models[$modelKey]['storages'][$storageGb] = $storageGb;
-            $colorKey = sanitize_key((string) get_post_meta($id, '_appleklinika_color', true));
-            if ($colorKey !== '' && ($catalogColors[$modelKey] ?? []) === []) {
-                $models[$modelKey]['colors'][$storageGb][$colorKey] = $this->colorLabel($modelKey, $colorKey);
-            }
         }
 
         foreach ($models as $modelKey => &$model) {
             $model['storages'] = array_values($model['storages']);
             sort($model['storages'], SORT_NUMERIC);
             foreach ($model['storages'] as $storage) {
-                $model['colors'][$storage] = self::resolveColors(
-                    $catalogColors[$modelKey] ?? [],
-                    $model['colors'][$storage] ?? []
-                );
+                $model['colors'][$storage] = self::resolveColors($catalogColors[$modelKey] ?? []);
             }
         }
         unset($model);
@@ -138,10 +131,10 @@ final class WordPressLocalDemoProductReader
         return $models;
     }
 
-    /** @param array<string,string> $catalogColors @param array<string,string> $productColors @return array<string,string> */
-    public static function resolveColors(array $catalogColors, array $productColors): array
+    /** @param array<string,string> $catalogColors @return array<string,string> */
+    public static function resolveColors(array $catalogColors): array
     {
-        return $catalogColors !== [] ? $catalogColors : $productColors;
+        return $catalogColors;
     }
 
     private function storageGb(string $value): ?int
@@ -161,14 +154,4 @@ final class WordPressLocalDemoProductReader
         return preg_match('/^[1-9]\d*$/', $value) === 1 ? (int) $value : null;
     }
 
-    private function colorLabel(string $modelKey, string $colorKey): string
-    {
-        $catalog = get_option('appleklinika_device_catalog', []);
-        foreach (is_array($catalog) ? $catalog : [] as $device) {
-            if (is_array($device) && ($device['key'] ?? '') === $modelKey) {
-                return (string) (($device['colors'][$colorKey] ?? '') ?: $colorKey);
-            }
-        }
-        return $colorKey;
-    }
 }
