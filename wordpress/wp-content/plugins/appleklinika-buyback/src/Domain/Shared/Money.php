@@ -19,10 +19,6 @@ final class Money
             throw new InvalidValueObjectException('Money amount must be an integer.');
         }
 
-        if ($amount < 0) {
-            throw new InvalidValueObjectException('Money amount cannot be negative.');
-        }
-
         if (preg_match('/^[A-Z]{3}$/', $currency) !== 1) {
             throw new InvalidValueObjectException('Money currency must be a three-letter uppercase code.');
         }

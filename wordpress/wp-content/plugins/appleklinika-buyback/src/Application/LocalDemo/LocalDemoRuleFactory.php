@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AppleKlinika\Buyback\Application\LocalDemo;
 
+use AppleKlinika\Buyback\Domain\Buyback\OfferModeDefinition;
 use AppleKlinika\Buyback\Domain\Pricing\BasisPointsMultiplier;
 use AppleKlinika\Buyback\Domain\Pricing\ComparisonOperator;
 use AppleKlinika\Buyback\Domain\Pricing\PricingRuleCode;
@@ -26,10 +27,9 @@ final class LocalDemoRuleFactory
             $rules[] = $this->base($point);
         }
 
-        $rules[] = $this->mode('in_store_instant', 9500, 'Azonnali személyes felvásárlás');
-        $rules[] = $this->mode('fast_online', 9000, 'Gyors felvásárlás');
-        $rules[] = $this->mode('higher_offer', 10000, 'Magasabb ajánlat');
-        $rules[] = $this->mode('trade_in', 10500, 'Azonnali beszámítás');
+        foreach ([['in_store_instant', 9500], ['fast_online', 9000], ['higher_offer', 10000], ['trade_in', 10500]] as [$mode, $basisPoints]) {
+            $rules[] = $this->mode($mode, $basisPoints, OfferModeDefinition::all()[$mode]['label']);
+        }
 
         $rules[] = $this->deduction('battery-85-89', 'battery_health', ComparisonOperator::BETWEEN, [85, 89], 5000, '85–89%-os akkumulátor');
         $rules[] = $this->deduction('battery-80-84', 'battery_health', ComparisonOperator::BETWEEN, [80, 84], 10000, '80–84%-os akkumulátor');

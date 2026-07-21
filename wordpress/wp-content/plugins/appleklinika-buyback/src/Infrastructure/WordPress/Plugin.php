@@ -12,6 +12,8 @@ use AppleKlinika\Buyback\Application\Handler\ClonePriceBookToDraftHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftBasePriceMatrixHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftQuestionnaireConditionsHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftBatteryBandsHandler;
+use AppleKlinika\Buyback\Application\Handler\SaveDraftOfferModeModifiersHandler;
+use AppleKlinika\Buyback\Application\Pricing\OfferModeExampleCalculator;
 use AppleKlinika\Buyback\Application\Handler\DeleteDraftPricingRuleHandler;
 use AppleKlinika\Buyback\Application\Handler\PreviewDraftPriceBookCalculationHandler;
 use AppleKlinika\Buyback\Application\Handler\ToggleDraftPricingRuleHandler;
@@ -98,6 +100,8 @@ final class Plugin
                 new SaveDraftBasePriceMatrixHandler($books, $rules, $catalog, $transactions, $clock),
                 new SaveDraftQuestionnaireConditionsHandler($books, $rules, $transactions, $clock, $questionnaire, $catalog),
                 new SaveDraftBatteryBandsHandler($books, $rules, $transactions, $clock, $questionnaire, $catalog),
+                new SaveDraftOfferModeModifiersHandler($books, $rules, $transactions, $clock),
+                new OfferModeExampleCalculator(new PricingEngine()),
                 new UpdateDraftPriceBookSettingsHandler($books, $clock),
                 new AddDraftPricingRuleHandler($books, $rules, $transactions, $clock),
                 new UpdateDraftPricingRuleHandler($books, $rules, $transactions, $clock),

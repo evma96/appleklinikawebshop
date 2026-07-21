@@ -19,6 +19,7 @@ final class RuleShapeValidator
 
         if ($kind === PricingRuleKind::BASE_PRICE) {
             self::required($rule->modelKey !== null && $rule->storage !== null && $rule->amount !== null, 'Base price requires model, storage and amount.');
+            self::required($rule->amount->amount() >= 0, 'Base price amount cannot be negative.');
             self::required($rule->serviceMode === null && $rule->conditionKey === null && $rule->operator === null && $rule->comparisonValue === null && $rule->multiplier === null, 'Base price contains conflicting fields.');
             return;
         }
@@ -36,6 +37,7 @@ final class RuleShapeValidator
 
         if ($kind === PricingRuleKind::FIXED_DEDUCTION) {
             self::required($rule->amount !== null && $rule->multiplier === null, 'Fixed deduction requires only an amount.');
+            self::required($rule->amount->amount() >= 0, 'Fixed deduction amount cannot be negative.');
             return;
         }
 

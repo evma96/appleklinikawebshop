@@ -186,7 +186,7 @@ $test->assert($money->add(new Money(500, 'HUF'))->amount() === 10500, 'Money add
 $test->assert($money->subtract(new Money(500, 'HUF'))->amount() === 9500, 'Money subtraction works');
 $test->assert($money->compare(new Money(9999, 'HUF')) === 1, 'Money comparison works');
 $test->throws(fn () => new Money(1.5, 'HUF'), InvalidValueObjectException::class, 'Money rejects floats');
-$test->throws(fn () => new Money(-1, 'HUF'), InvalidValueObjectException::class, 'Money rejects negative offers');
+$test->assert((new Money(-1, 'HUF'))->amount() === -1, 'Money preserves signed rule adjustments');
 $test->throws(fn () => new Money(1, 'huf'), InvalidValueObjectException::class, 'Money rejects lowercase currency');
 $test->throws(fn () => $money->add(new Money(1, 'EUR')), CurrencyMismatchException::class, 'Money rejects currency mismatch');
 $test->throws(fn () => (new Money(10, 'HUF'))->subtract(new Money(11, 'HUF')), InvalidValueObjectException::class, 'Money prevents negative subtraction result');

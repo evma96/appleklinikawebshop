@@ -14,6 +14,7 @@ use AppleKlinika\Buyback\Application\Command\DeleteDraftPricingRule;
 use AppleKlinika\Buyback\Application\Command\SaveDraftBasePriceMatrix;
 use AppleKlinika\Buyback\Application\Command\SaveDraftQuestionnaireConditions;
 use AppleKlinika\Buyback\Application\Command\SaveDraftBatteryBands;
+use AppleKlinika\Buyback\Application\Command\SaveDraftOfferModeModifiers;
 use AppleKlinika\Buyback\Application\Command\ToggleDraftPricingRule;
 use AppleKlinika\Buyback\Application\Command\UpdateDraftPriceBookSettings;
 use AppleKlinika\Buyback\Application\Command\UpdateDraftPricingRule;
@@ -30,14 +31,17 @@ use AppleKlinika\Buyback\Application\Handler\PreviewDraftPriceBookCalculationHan
 use AppleKlinika\Buyback\Application\Handler\SaveDraftBasePriceMatrixHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftQuestionnaireConditionsHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftBatteryBandsHandler;
+use AppleKlinika\Buyback\Application\Handler\SaveDraftOfferModeModifiersHandler;
 use AppleKlinika\Buyback\Application\Handler\ToggleDraftPricingRuleHandler;
 use AppleKlinika\Buyback\Application\Handler\UpdateDraftPriceBookSettingsHandler;
 use AppleKlinika\Buyback\Application\Handler\UpdateDraftPricingRuleHandler;
 use AppleKlinika\Buyback\Application\LocalDemo\LocalDemoQuestionnaire;
+use AppleKlinika\Buyback\Application\Pricing\OfferModeExampleCalculator;
 use AppleKlinika\Buyback\Application\Port\Clock;
 use AppleKlinika\Buyback\Domain\Exception\InvalidAggregateOperationException;
 use AppleKlinika\Buyback\Domain\Exception\InvalidValueObjectException;
 use AppleKlinika\Buyback\Domain\Exception\StaleAggregateVersionException;
+use AppleKlinika\Buyback\Domain\Buyback\OfferModeDefinition;
 use AppleKlinika\Buyback\Domain\Pricing\BasisPointsMultiplier;
 use AppleKlinika\Buyback\Domain\Pricing\ComparisonOperator;
 use AppleKlinika\Buyback\Domain\Pricing\CurrencyCode;
@@ -626,6 +630,7 @@ try {
     $questionnaire = new LocalDemoQuestionnaire();
     $saveConditions = new SaveDraftQuestionnaireConditionsHandler($books, $rules, $transactions, $clock, $questionnaire, $catalog);
     $saveBatteryBands = new SaveDraftBatteryBandsHandler($books, $rules, $transactions, $clock, $questionnaire, $catalog);
+    $saveOfferModes = new SaveDraftOfferModeModifiersHandler($books, $rules, $transactions, $clock);
     $publicQuestionKeys = [];
     foreach ($questionnaire->panelOrder() as $panel) {
         if (in_array($panel, ['model', 'battery', 'offers', 'review'], true)) {
@@ -730,6 +735,57 @@ try {
     $test->throws(fn () => $saveBatteryBands->handle(new SaveDraftBatteryBands($retiredBook->id()->toInt(), $books->getById($retiredBook->id())?->version()->value() ?? -1, 'iphone_11_pro', [])), InvalidAggregateOperationException::class, 'Battery handler rejects crafted edits to an archived price book');
     $nonBatteryAfter = array_values(array_filter($rules->listForPriceBook($matrixBook->id()), static fn (PricingRule $rule): bool => $rule->definition()->conditionKey !== 'battery_health' || $rule->definition()->modelKey === null));
     $test->assert(serialize(array_map(static fn (PricingRule $rule): string => $rule->definition()->code->code(), $nonBatteryAfter)) === serialize(array_map(static fn (PricingRule $rule): string => $rule->definition()->code->code(), $nonBatteryBefore)), 'Battery saves preserve base-price, Conditions, offer-mode, system and legacy global rules');
+
+    $test->assert(OfferModeDefinition::keys() === ['in_store_instant', 'fast_online', 'higher_offer', 'trade_in'] && OfferModeDefinition::all()['higher_offer']['label'] === 'Magasabb ajánlat', 'Offer-mode editor uses the one canonical shared public definition source');
+    $offerIsolationBefore = array_values(array_filter($rules->listForPriceBook($matrixBook->id()), static fn (PricingRule $rule): bool => $rule->definition()->kind->code() !== PricingRuleKind::MODE_ADJUSTMENT));
+    $offerSubmission = [
+        ['mode' => 'in_store_instant', 'type' => 'amount', 'value' => '-12000'],
+        ['mode' => 'fast_online', 'type' => 'multiplier', 'value' => '-5'],
+        ['mode' => 'higher_offer', 'type' => 'multiplier', 'value' => '+2.5'],
+        ['mode' => 'trade_in', 'type' => 'multiplier', 'value' => '+5'],
+    ];
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $saveOfferModes->handle(new SaveDraftOfferModeModifiers($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, $offerSubmission));
+    $offerRules = array_values(array_filter($rules->listForPriceBook($matrixBook->id()), static fn (PricingRule $rule): bool => $rule->definition()->kind->code() === PricingRuleKind::MODE_ADJUSTMENT));
+    $test->assert(count($offerRules) === 4 && count(array_unique(array_map(static fn (PricingRule $rule): ?string => $rule->definition()->serviceMode, $offerRules))) === 4 && $offerRules[0]->definition()->modelKey === null, 'Offer-mode save creates exactly one price-book-wide rule per canonical mode');
+    $inStore = array_values(array_filter($offerRules, static fn (PricingRule $rule): bool => $rule->definition()->serviceMode === 'in_store_instant'))[0] ?? null;
+    $test->assert($inStore?->definition()->amount?->amount() === -12000, 'Offer-mode editor persists a signed fixed HUF modifier using the real rule shape');
+    $fastOnline = array_values(array_filter($offerRules, static fn (PricingRule $rule): bool => $rule->definition()->serviceMode === 'fast_online'))[0] ?? null;
+    $test->assert($fastOnline?->definition()->multiplier?->value() === 9500, 'Offer-mode editor maps -5% to the existing 95% engine multiplier representation');
+    $offerSubmission[0]['value'] = '-15000';
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $saveOfferModes->handle(new SaveDraftOfferModeModifiers($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, $offerSubmission));
+    $offerRules = array_values(array_filter($rules->listForPriceBook($matrixBook->id()), static fn (PricingRule $rule): bool => $rule->definition()->kind->code() === PricingRuleKind::MODE_ADJUSTMENT));
+    $updatedInStore = array_values(array_filter($offerRules, static fn (PricingRule $rule): bool => $rule->definition()->serviceMode === 'in_store_instant'))[0] ?? null;
+    $test->assert(count($offerRules) === 4 && $updatedInStore?->definition()->amount?->amount() === -15000, 'Repeated offer-mode save updates the matching rule without creating duplicates');
+    $offerSubmission[2]['value'] = '';
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $saveOfferModes->handle(new SaveDraftOfferModeModifiers($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, $offerSubmission));
+    $offerRules = array_values(array_filter($rules->listForPriceBook($matrixBook->id()), static fn (PricingRule $rule): bool => $rule->definition()->kind->code() === PricingRuleKind::MODE_ADJUSTMENT));
+    $test->assert(count($offerRules) === 3 && ! in_array('higher_offer', array_map(static fn (PricingRule $rule): ?string => $rule->definition()->serviceMode, $offerRules), true), 'Empty offer-mode value removes only that mode rule because absence means zero adjustment');
+    $offerSubmission[2]['value'] = '0';
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $saveOfferModes->handle(new SaveDraftOfferModeModifiers($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, $offerSubmission));
+    $offerRules = array_values(array_filter($rules->listForPriceBook($matrixBook->id()), static fn (PricingRule $rule): bool => $rule->definition()->kind->code() === PricingRuleKind::MODE_ADJUSTMENT));
+    $test->assert(count($offerRules) === 3 && ! in_array('higher_offer', array_map(static fn (PricingRule $rule): ?string => $rule->definition()->serviceMode, $offerRules), true), 'A zero offer-mode correction is not persisted as a no-op rule');
+    $offerSubmission[2]['value'] = '+2.5';
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $saveOfferModes->handle(new SaveDraftOfferModeModifiers($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, $offerSubmission));
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $invalidOfferRulesBefore = count($rules->listForPriceBook($matrixBook->id()));
+    $invalidOfferSubmission = $offerSubmission; $invalidOfferSubmission[0]['mode'] = 'unknown_mode';
+    $test->throws(fn () => $saveOfferModes->handle(new SaveDraftOfferModeModifiers($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, $invalidOfferSubmission)), InvalidArgumentException::class, 'Offer-mode editor rejects an unknown mode');
+    $invalidOfferSubmission = $offerSubmission; $invalidOfferSubmission[0]['type'] = 'unsupported';
+    $test->throws(fn () => $saveOfferModes->handle(new SaveDraftOfferModeModifiers($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, $invalidOfferSubmission)), InvalidArgumentException::class, 'Offer-mode editor rejects an unsupported modifier type');
+    $invalidOfferSubmission = $offerSubmission; $invalidOfferSubmission[0]['value'] = '-1.5';
+    $test->throws(fn () => $saveOfferModes->handle(new SaveDraftOfferModeModifiers($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, $invalidOfferSubmission)), InvalidArgumentException::class, 'Offer-mode editor rejects a non-integer fixed HUF modifier');
+    $invalidOfferSubmission = $offerSubmission; $invalidOfferSubmission[1]['value'] = '-100.01';
+    $test->throws(fn () => $saveOfferModes->handle(new SaveDraftOfferModeModifiers($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, $invalidOfferSubmission)), InvalidArgumentException::class, 'Offer-mode editor rejects a percentage below the engine-safe signed range');
+    $test->assert(count($rules->listForPriceBook($matrixBook->id())) === $invalidOfferRulesBefore, 'Invalid offer-mode submissions leave every rule untouched');
+    $test->throws(fn () => $saveOfferModes->handle(new SaveDraftOfferModeModifiers($activeBook->id()->toInt(), $books->getById($activeBook->id())?->version()->value() ?? -1, $offerSubmission)), InvalidAggregateOperationException::class, 'Offer-mode handler rejects active price-book edits');
+    $test->throws(fn () => $saveOfferModes->handle(new SaveDraftOfferModeModifiers($retiredBook->id()->toInt(), $books->getById($retiredBook->id())?->version()->value() ?? -1, $offerSubmission)), InvalidAggregateOperationException::class, 'Offer-mode handler rejects archived price-book edits');
+    $offerIsolationAfter = array_values(array_filter($rules->listForPriceBook($matrixBook->id()), static fn (PricingRule $rule): bool => $rule->definition()->kind->code() !== PricingRuleKind::MODE_ADJUSTMENT));
+    $test->assert(serialize(array_map(static fn (PricingRule $rule): string => $rule->definition()->code->code(), $offerIsolationAfter)) === serialize(array_map(static fn (PricingRule $rule): string => $rule->definition()->code->code(), $offerIsolationBefore)), 'Offer-mode saves preserve Base-price, Conditions, Battery and system rules');
     $uiPage = new PriceBooksPage(
         $books,
         $rules,
@@ -739,6 +795,8 @@ try {
         $saveMatrix,
         $saveConditions,
         $saveBatteryBands,
+        $saveOfferModes,
+        new OfferModeExampleCalculator(new PricingEngine()),
         $updateBook,
         $addRule,
         $updateRule,
@@ -777,6 +835,19 @@ try {
     $uiPage->render();
     $activeBatteryHtml = (string) ob_get_clean();
     $test->assert(str_contains($activeBatteryHtml, 'name="model"') && ! str_contains($activeBatteryHtml, 'data-ak-battery-form') && ! str_contains($activeBatteryHtml, 'battery_bands[') && ! str_contains($activeBatteryHtml, 'Akkumulátorszabályok mentése'), 'Active price-book Battery tab is inspection-only with no editable inputs or save action');
+    $_GET = ['book_id' => (string) $matrixBook->id()->toInt(), 'tab' => 'offer-modes'];
+    ob_start();
+    $uiPage->render();
+    $offerModesHtml = (string) ob_get_clean();
+    $test->assert(substr_count($offerModesHtml, 'data-ak-offer-mode-row') === 4 && str_contains($offerModesHtml, 'Ajánlattípusok mentése') && str_contains($offerModesHtml, 'Azonnali személyes felvásárlás') && str_contains($offerModesHtml, 'Gyors felvásárlás') && str_contains($offerModesHtml, 'Magasabb ajánlat') && str_contains($offerModesHtml, 'Azonnali beszámítás'), 'Offer-mode tab renders exactly four shared public offer modes and one clear save action');
+    $test->assert(! str_contains($offerModesHtml, 'Szabálykód') && ! str_contains($offerModesHtml, 'Prioritás') && ! str_contains($offerModesHtml, 'Összehasonlítás értéke') && ! str_contains($offerModesHtml, 'model_key'), 'Offer-mode UI omits raw technical pricing-rule fields and any model selector');
+    $offerModeScript = file_get_contents(APPLEKLINIKA_BUYBACK_PATH . '/assets/admin/price-books.js');
+    $test->assert(is_string($offerModeScript) && str_contains($offerModeScript, "if (value) value.value = '';") && str_contains($offerModeScript, "if (remove.checked) value.value = '';") && str_contains($offerModeScript, "'missing|' + type.value"), 'Offer-mode client contract clears incompatible type-switch values and keeps missing-row change tracking type-aware');
+    $_GET = ['book_id' => (string) $activeBook->id()->toInt(), 'tab' => 'offer-modes'];
+    ob_start();
+    $uiPage->render();
+    $activeOfferModesHtml = (string) ob_get_clean();
+    $test->assert(substr_count($activeOfferModesHtml, 'data-ak-offer-mode-row') === 4 && ! str_contains($activeOfferModesHtml, 'data-ak-offer-mode-form') && ! str_contains($activeOfferModesHtml, 'Ajánlattípusok mentése') && ! str_contains($activeOfferModesHtml, 'offer_mode_modifiers['), 'Active price-book Offer-mode tab is completely read-only');
     $matrixCurrent = $books->getById($matrixBook->id());
     $saveBatteryBands->handle(new SaveDraftBatteryBands($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, 'iphone_11_pro', [pricingBatteryBand($iphone11Band, 70, 79, SaveDraftBatteryBandsHandler::ACTION_NONE, '', true)]));
     $test->assert(pricingModelBatteryRules($rules->listForPriceBook($matrixBook->id()), 'iphone_11_pro') === [] && count(pricingModelBatteryRules($rules->listForPriceBook($matrixBook->id()), 'iphone_16_pro')) === 1, 'Explicit deletion removes only the selected model battery band and preserves other models');

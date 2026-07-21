@@ -7,6 +7,7 @@ namespace AppleKlinika\Buyback\Interfaces\Frontend;
 use AppleKlinika\Buyback\Application\LocalDemo\LocalDemoQuestionnaire;
 use AppleKlinika\Buyback\Application\Pricing\RepositoryActivePriceBookResolver;
 use AppleKlinika\Buyback\Domain\Buyback\DeviceCategory;
+use AppleKlinika\Buyback\Domain\Buyback\OfferModeDefinition;
 use AppleKlinika\Buyback\Domain\Buyback\ServiceMode;
 use AppleKlinika\Buyback\Domain\Pricing\ConditionAnswerCollection;
 use AppleKlinika\Buyback\Domain\Pricing\CurrencyCode;
@@ -25,29 +26,6 @@ final class LocalDemoCalculatorPage
 {
     private const NONCE_ACTION = 'ak_buyback_local_demo_calculate';
     private const NONCE_NAME = 'ak_buyback_local_demo_nonce';
-
-    private const MODES = [
-        ServiceMode::IN_STORE_INSTANT => [
-            'title' => 'Azonnali személyes felvásárlás',
-            'description' => 'Személyes átadás és bevizsgálás után, a lehető leggyorsabb helyi ügyintézéssel.',
-            'process' => 'Személyes bevizsgálás',
-        ],
-        ServiceMode::FAST_ONLINE => [
-            'title' => 'Gyors felvásárlás',
-            'description' => 'Gyors feldolgozás és kifizetés a készülék beérkezése és bevizsgálása után.',
-            'process' => 'Gyors ügyintézés',
-        ],
-        ServiceMode::HIGHER_OFFER => [
-            'title' => 'Magasabb ajánlat',
-            'description' => 'Magasabb előzetes összeg hosszabb, rugalmasabb feldolgozási idő mellett.',
-            'process' => 'Részletes ellenőrzés',
-        ],
-        ServiceMode::TRADE_IN => [
-            'title' => 'Azonnali beszámítás',
-            'description' => 'A bevizsgálás után elfogadott összeg új készülék vásárlásába számítható be.',
-            'process' => 'Beszámítás vásárláskor',
-        ],
-    ];
 
     public function __construct(
         private readonly RepositoryActivePriceBookResolver $resolver,
@@ -469,7 +447,7 @@ final class LocalDemoCalculatorPage
         $results = [];
         $highest = 0;
 
-        foreach (array_keys(self::MODES) as $mode) {
+        foreach (OfferModeDefinition::keys() as $mode) {
             $serviceMode = new ServiceMode($mode);
             $result = $manualReasons !== []
                 ? PricingCalculationResult::manualReview($book, $serviceMode, $manualReasons)
@@ -509,7 +487,7 @@ final class LocalDemoCalculatorPage
             <fieldset class="ak-buyback-demo__mode-fieldset" data-offer-group>
                 <legend class="screen-reader-text">Ajánlattípus kiválasztása</legend>
                 <div class="ak-buyback-demo__mode-grid">
-                    <?php foreach (self::MODES as $mode => $meta) :
+                    <?php foreach (OfferModeDefinition::all() as $mode => $meta) :
                         $result = $results[$mode];
                         $isOffered = $result->outcome->code() === PricingOutcome::OFFERED;
                         $amount = $isOffered ? ($result->finalAmount?->amount() ?? 0) : 0;
@@ -522,7 +500,7 @@ final class LocalDemoCalculatorPage
                             class="ak-buyback-demo__mode-card<?php echo $mode === ServiceMode::FAST_ONLINE ? ' is-recommended' : ''; ?>"
                             data-mode-card
                             data-mode-code="<?php echo esc_attr($mode); ?>"
-                            data-mode-title="<?php echo esc_attr($meta['title']); ?>"
+                            data-mode-title="<?php echo esc_attr($meta['label']); ?>"
                             data-mode-headline="<?php echo esc_attr($headline); ?>"
                             data-mode-description="<?php echo esc_attr($description); ?>"
                             data-mode-process="<?php echo esc_attr($meta['process']); ?>"
@@ -532,7 +510,7 @@ final class LocalDemoCalculatorPage
                                 <?php if ($isHighest) : ?><span>Legmagasabb összeg</span><?php endif; ?>
                                 <?php if ($mode === ServiceMode::FAST_ONLINE) : ?><span>Kényelmes választás</span><?php endif; ?>
                             </div>
-                            <h4><?php echo esc_html($meta['title']); ?></h4>
+                            <h4><?php echo esc_html($meta['label']); ?></h4>
                             <?php if ($isOffered) : ?>
                                 <strong class="ak-buyback-demo__amount"><?php echo esc_html($headline); ?></strong>
                             <?php else : ?>

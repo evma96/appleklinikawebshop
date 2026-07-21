@@ -146,6 +146,9 @@ final class PriceBook
         if ($money->currency() !== $this->currency->code()) {
             throw new InvalidValueObjectException('Price-book amount currency mismatch.');
         }
+        if ($money->amount() < 0) {
+            throw new InvalidValueObjectException('Price-book minimum offer cannot be negative.');
+        }
     }
 
     private function assertRounding(int $increment): void
