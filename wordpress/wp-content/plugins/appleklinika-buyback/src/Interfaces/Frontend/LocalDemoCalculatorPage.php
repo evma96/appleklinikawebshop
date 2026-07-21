@@ -18,7 +18,6 @@ use AppleKlinika\Buyback\Domain\Pricing\PricingModelKey;
 use AppleKlinika\Buyback\Domain\Pricing\PricingOutcome;
 use AppleKlinika\Buyback\Domain\Pricing\StorageCapacity;
 use AppleKlinika\Buyback\Infrastructure\Inventory\WordPressDeviceCatalogReader;
-use AppleKlinika\Buyback\Infrastructure\WordPress\LocalDemoSeeder;
 use AppleKlinika\Buyback\Infrastructure\WordPress\WordPressLocalDemoPageGateway;
 use AppleKlinika\Buyback\Infrastructure\WordPress\WordPressLocalDemoProductReader;
 
@@ -72,21 +71,19 @@ final class LocalDemoCalculatorPage
                 new CurrencyCode('HUF'),
                 new \DateTimeImmutable('now', new \DateTimeZone('UTC'))
             );
-            if ($resolved->priceBook->label() !== LocalDemoSeeder::LABEL) {
-                throw new \RuntimeException('A helyi demó árkönyve nem aktív.');
-            }
-
+            $catalog = $this->catalog->iPhoneCatalog();
             $labels = $this->modelLabels();
             $models = $this->buildModelCards(
                 $resolved->priceBook,
                 $resolved->enabledRules,
                 $resolved->supportedConfigurations,
-                $labels
+                $labels,
+                $catalog
             );
-            $state = $this->requestState($resolved->supportedConfigurations);
+            $state = $this->requestState($resolved->supportedConfigurations, $catalog);
         } catch (\Throwable $exception) {
-            return '<div class="ak-buyback-demo"><div class="ak-buyback-demo__notice"><strong>HELYI DEMÓ</strong><p>'
-                . esc_html($exception->getMessage())
+            return '<div class="ak-buyback-demo"><div class="ak-buyback-demo__notice"><strong>FELVÁSÁRLÁSI KALKULÁTOR</strong><p>'
+                . esc_html($this->publicAvailabilityMessage($exception))
                 . '</p></div></div>';
         }
 
@@ -106,7 +103,7 @@ final class LocalDemoCalculatorPage
             data-visual-assets-base="<?php echo esc_url(APPLEKLINIKA_BUYBACK_URL . 'assets/images/buyback-states/'); ?>"
         >
             <header class="ak-buyback-demo__header">
-                <span class="ak-buyback-demo__badge">HELYI DEMÓ</span>
+                <span class="ak-buyback-demo__badge">KÉSZÜLÉKFELVÁSÁRLÁS</span>
                 <h2 class="ak-buyback-demo__title">Add el vagy számíttasd be Apple készüléked</h2>
                 <p>Válaszolj néhány egyszerű kérdésre, és megmutatjuk a lehetséges előzetes ajánlatokat.</p>
             </header>
@@ -163,11 +160,21 @@ final class LocalDemoCalculatorPage
         return (string) ob_get_clean();
     }
 
+    private function publicAvailabilityMessage(\Throwable $exception): string
+    {
+        return match (true) {
+            str_contains($exception->getMessage(), 'No active') || str_contains($exception->getMessage(), 'No current active') => 'Jelenleg nincs aktív felvásárlási árkönyv.',
+            str_contains($exception->getMessage(), 'Multiple active') => 'A felvásárlási kalkulátor átmenetileg nem érhető el az árkönyv-beállítás hibája miatt.',
+            default => 'Az aktív felvásárlási árkönyv nem tölthető be.',
+        };
+    }
+
     /**
      * @param list<\AppleKlinika\Buyback\Domain\Pricing\SupportedPriceConfiguration> $configurations
+     * @param array<string,array{label:string,colors:array<string,string>}> $catalog
      * @return array{panel:string,model_key:string,storage_gb:int,color_key:string,answers:array<string,mixed>,errors:list<string>,show_results:bool}
      */
-    private function requestState(array $configurations): array
+    private function requestState(array $configurations, array $catalog): array
     {
         $state = [
             'panel' => 'entry',
@@ -210,6 +217,11 @@ final class LocalDemoCalculatorPage
             $state['panel'] = $state['model_key'] === '' ? 'model' : 'configuration';
         }
 
+        if (! $this->colorExists($catalog, $state['model_key'], $state['color_key'])) {
+            $state['errors'][] = 'Válassz az ehhez a modellhez elérhető színek közül.';
+            $state['panel'] = $state['model_key'] === '' ? 'model' : 'configuration';
+        }
+
         if ($questionErrors !== []) {
             foreach ($questionErrors as $error) {
                 $state['errors'][] = $error;
@@ -240,6 +252,12 @@ final class LocalDemoCalculatorPage
         }
 
         return false;
+    }
+
+    /** @param array<string,array{label:string,colors:array<string,string>}> $catalog */
+    private function colorExists(array $catalog, string $modelKey, string $colorKey): bool
+    {
+        return $colorKey !== '' && isset($catalog[$modelKey]['colors'][$colorKey]);
     }
 
     private function renderEntryPanel(): void
@@ -581,8 +599,8 @@ final class LocalDemoCalculatorPage
         <?php
     }
 
-    /** @param \AppleKlinika\Buyback\Domain\Pricing\PriceBook $book @param list<\AppleKlinika\Buyback\Domain\Pricing\PricingRule> $rules @param list<\AppleKlinika\Buyback\Domain\Pricing\SupportedPriceConfiguration> $configurations @param array<string,string> $labels @return array<string,array{label:string,image_url:string,storages:list<int>,colors:array<int,array<string,string>>,teaser:?int}> */
-    private function buildModelCards($book, array $rules, array $configurations, array $labels): array
+    /** @param \AppleKlinika\Buyback\Domain\Pricing\PriceBook $book @param list<\AppleKlinika\Buyback\Domain\Pricing\PricingRule> $rules @param list<\AppleKlinika\Buyback\Domain\Pricing\SupportedPriceConfiguration> $configurations @param array<string,string> $labels @param array<string,array{label:string,colors:array<string,string>}> $catalog @return array<string,array{label:string,image_url:string,storages:list<int>,colors:array<int,array<string,string>>,teaser:?int}> */
+    private function buildModelCards($book, array $rules, array $configurations, array $labels, array $catalog): array
     {
         $frontend = $this->products->frontendModels();
         $models = [];
@@ -594,11 +612,12 @@ final class LocalDemoCalculatorPage
                     'label' => $labels[$key] ?? $key,
                     'image_url' => $frontend[$key]['image_url'] ?? '',
                     'storages' => [],
-                    'colors' => $frontend[$key]['colors'] ?? [],
+                    'colors' => [],
                     'teaser' => null,
                 ];
             }
             $models[$key]['storages'][$configuration->storageGb] = $configuration->storageGb;
+            $models[$key]['colors'][$configuration->storageGb] = $catalog[$key]['colors'] ?? [];
             try {
                 $result = $this->engine->calculate($book, $rules, new PricingCalculationInput(new DeviceCategory('iphone'), new PricingModelKey($key), new StorageCapacity($configuration->storageGb), $perfect, new ServiceMode(ServiceMode::HIGHER_OFFER)));
                 if ($result->outcome->code() === PricingOutcome::OFFERED) {

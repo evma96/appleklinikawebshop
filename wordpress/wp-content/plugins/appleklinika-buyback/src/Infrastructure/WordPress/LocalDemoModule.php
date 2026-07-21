@@ -56,7 +56,6 @@ final class LocalDemoModule
     public function register(): void
     {
         $this->page->register();
-        add_action('init', [$this, 'seedIfLocal'], 20);
     }
 
     public function seedIfLocal(): void

@@ -10,7 +10,7 @@ final class DeviceCatalogRepository
 {
     private const OPTION_NAME = 'appleklinika_device_catalog';
     private const VERSION_OPTION_NAME = 'appleklinika_device_catalog_version';
-    private const CURRENT_VERSION = 8;
+    private const CURRENT_VERSION = 9;
 
     /**
      * The sole canonical iPhone model/storage relationship.
@@ -70,9 +70,15 @@ final class DeviceCatalogRepository
             update_option(self::VERSION_OPTION_NAME, self::CURRENT_VERSION, false);
         }
 
-        if ((int) get_option(self::VERSION_OPTION_NAME, 0) < self::CURRENT_VERSION) {
-            $catalog = $this->mergeMissingDefaultDevices($catalog, $this->defaultCatalog());
-            $catalog = $this->removeDeprecatedDefaultDevices($catalog);
+        $catalogVersion = (int) get_option(self::VERSION_OPTION_NAME, 0);
+        if ($catalogVersion < self::CURRENT_VERSION) {
+            if ($catalogVersion < 8) {
+                $catalog = $this->mergeMissingDefaultDevices($catalog, $this->defaultCatalog());
+                $catalog = $this->removeDeprecatedDefaultDevices($catalog);
+            }
+            if ($catalogVersion < 9) {
+                $catalog = $this->restoreMissingIPhone11Colors($catalog, $this->defaultCatalog());
+            }
             update_option(self::OPTION_NAME, $catalog, false);
             update_option(self::VERSION_OPTION_NAME, self::CURRENT_VERSION, false);
         }
@@ -364,6 +370,39 @@ final class DeviceCatalogRepository
         }
 
         return array_values($catalog);
+    }
+
+    /**
+     * Restores the canonical iPhone 11 finishes only when an earlier saved
+     * inventory record is explicitly empty. Existing merchant-maintained
+     * color selections remain untouched.
+     *
+     * @param array<int, array{key?: string, name?: string, type?: string, year?: int, colors?: array<string, string>, storage_capacity_keys?: list<string>}> $catalog
+     * @param array<int, array{key: string, name: string, type: string, year: int, colors: array<string, string>, storage_capacity_keys: list<string>}> $defaults
+     * @return array<int, array{key?: string, name?: string, type?: string, year?: int, colors?: array<string, string>, storage_capacity_keys?: list<string>}>
+     */
+    private function restoreMissingIPhone11Colors(array $catalog, array $defaults): array
+    {
+        $canonicalColors = [];
+        foreach ($defaults as $device) {
+            if (($device['key'] ?? '') === 'iphone_11') {
+                $canonicalColors = $device['colors'];
+                break;
+            }
+        }
+
+        if ($canonicalColors === []) {
+            return $catalog;
+        }
+
+        foreach ($catalog as &$device) {
+            if (($device['key'] ?? '') === 'iphone_11' && is_array($device['colors'] ?? null) && $device['colors'] === []) {
+                $device['colors'] = $canonicalColors;
+            }
+        }
+        unset($device);
+
+        return $catalog;
     }
 
     /**
