@@ -8,6 +8,7 @@ use AppleKlinika\Buyback\Application\Command\AddDraftPricingRule;
 use AppleKlinika\Buyback\Application\Command\ActivateDraftPriceBook;
 use AppleKlinika\Buyback\Application\Command\CreateDraftPriceBook;
 use AppleKlinika\Buyback\Application\Command\ClonePriceBookToDraft;
+use AppleKlinika\Buyback\Application\Command\DiscardDraftPriceBook;
 use AppleKlinika\Buyback\Application\Command\SaveDraftBasePriceMatrix;
 use AppleKlinika\Buyback\Application\Command\SaveDraftQuestionnaireConditions;
 use AppleKlinika\Buyback\Application\Command\SaveDraftBatteryBands;
@@ -17,10 +18,13 @@ use AppleKlinika\Buyback\Application\Command\ToggleDraftPricingRule;
 use AppleKlinika\Buyback\Application\Command\UpdateDraftPriceBookSettings;
 use AppleKlinika\Buyback\Application\Command\UpdateDraftPricingRule;
 use AppleKlinika\Buyback\Application\Exception\DeviceCatalogUnavailableException;
+use AppleKlinika\Buyback\Application\Exception\PriceBookHasBusinessReferencesException;
+use AppleKlinika\Buyback\Application\Exception\PriceBookNotFoundException;
 use AppleKlinika\Buyback\Application\Handler\AddDraftPricingRuleHandler;
 use AppleKlinika\Buyback\Application\Handler\ActivateDraftPriceBookHandler;
 use AppleKlinika\Buyback\Application\Handler\CreateDraftPriceBookHandler;
 use AppleKlinika\Buyback\Application\Handler\ClonePriceBookToDraftHandler;
+use AppleKlinika\Buyback\Application\Handler\DiscardDraftPriceBookHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftBasePriceMatrixHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftQuestionnaireConditionsHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftBatteryBandsHandler;
@@ -42,6 +46,7 @@ use AppleKlinika\Buyback\Application\Pricing\PriceBookActivationReadinessService
 use AppleKlinika\Buyback\Application\Exception\MultipleActivePriceBooksException;
 use AppleKlinika\Buyback\Application\Exception\NoActivePriceBookException;
 use AppleKlinika\Buyback\Domain\Pricing\ComparisonOperator;
+use AppleKlinika\Buyback\Domain\Exception\InvalidAggregateOperationException;
 use AppleKlinika\Buyback\Domain\Pricing\ConditionDefinition;
 use AppleKlinika\Buyback\Domain\Pricing\CurrencyCode;
 use AppleKlinika\Buyback\Domain\Pricing\MinimumOfferPolicy;
@@ -75,6 +80,7 @@ final class PriceBooksPage
         private readonly DeviceCatalogReader $catalog,
         private readonly CreateDraftPriceBookHandler $createBook,
         private readonly ClonePriceBookToDraftHandler $cloneBook,
+        private readonly DiscardDraftPriceBookHandler $discardDraft,
         private readonly SaveDraftBasePriceMatrixHandler $saveBasePriceMatrix,
         private readonly SaveDraftQuestionnaireConditionsHandler $saveQuestionnaireConditions,
         private readonly SaveDraftBatteryBandsHandler $saveBatteryBands,
@@ -136,12 +142,13 @@ final class PriceBooksPage
         try {
             $this->authorization->assert(CapabilityManager::MANAGE_PRICE_BOOKS, $nonce);
             $this->dispatch($action, wp_unslash($_POST));
-            $this->redirect('success', $action, $this->postedInt('price_book_id'), $this->postedTab(), null, $this->postedModel());
+            $this->redirect('success', $action, $action === 'discard_draft_price_book' ? 0 : $this->postedInt('price_book_id'), $this->postedTab(), null, $this->postedModel());
         } catch (\Throwable $exception) {
             $message = match ($action) {
                 'save_questionnaire_conditions' => 'Az állapotlevonások mentése nem sikerült: ' . $exception->getMessage(),
                 'save_battery_bands' => 'Az akkumulátorsávok mentése nem sikerült: ' . $exception->getMessage(),
                 'save_offer_mode_modifiers' => 'Az ajánlattípusok mentése nem sikerült: ' . $exception->getMessage(),
+                'discard_draft_price_book' => $this->discardErrorMessage($exception),
                 default => null,
             };
             $this->redirect('error', 'validation', $this->postedInt('price_book_id'), $this->postedTab(), $message, $this->postedModel());
@@ -201,6 +208,14 @@ final class PriceBooksPage
             ));
             $_POST['price_book_id'] = $clone->id()?->toInt() ?? 0;
             $_POST['editor_tab'] = self::TAB_BASE_PRICES;
+            return;
+        }
+
+        if ($action === 'discard_draft_price_book') {
+            $this->discardDraft->handle(new DiscardDraftPriceBook(
+                $this->requiredPositiveInt($post, 'price_book_id'),
+                sanitize_text_field((string) ($post['discard_confirmation'] ?? ''))
+            ));
             return;
         }
 
@@ -332,6 +347,10 @@ final class PriceBooksPage
                 echo '<p class="ak-pricebook-action-help">Másolat készül a jelenlegi élő beállításokról, amelyet biztonságosan szerkeszthetsz és tesztelhetsz.</p>';
             } elseif ($book->status()->isDraft()) {
                 echo '<a class="button button-primary" href="' . esc_url($this->editUrl($book->id())) . '">Szerkesztés folytatása</a>';
+                echo '<form method="post" class="ak-discard-pricebook-form" data-ak-discard-form data-ak-discard-title="' . esc_attr($this->ownerFacingTitle($book, $isEmptyDraft)) . '">';
+                $this->securityFields('discard_draft_price_book', $book);
+                echo '<input type="hidden" name="discard_confirmation" value=""><button type="submit" class="button-link-delete">Módosítás elvetése</button></form>';
+                echo '<p class="ak-pricebook-discard-help">A piszkozat és a benne lévő, még nem aktivált árak és szabályok végleg törlődnek.</p>';
             } else {
                 echo '<a class="button" href="' . esc_url($this->editUrl($book->id())) . '">Részletek megtekintése</a>';
             }
@@ -1526,7 +1545,22 @@ final class PriceBooksPage
         }
         $success = sanitize_key((string) $_GET['ak_result']) === 'success';
         $errorMessage = isset($_GET['ak_message']) ? sanitize_text_field((string) wp_unslash($_GET['ak_message'])) : '';
-        echo '<div class="notice ' . ($success ? 'notice-success' : 'notice-error') . ' is-dismissible"><p>' . esc_html($success ? 'A művelet sikeresen befejeződött.' : ($errorMessage !== '' ? $errorMessage : 'A művelet nem hajtható végre. Ellenőrizd az adatokat és a verziót.')) . '</p></div>';
+        $action = sanitize_key((string) ($_GET['ak_action'] ?? ''));
+        $successMessage = $action === 'discard_draft_price_book'
+            ? 'A módosítás és a hozzá tartozó piszkozat-szabályok törölve lettek.'
+            : 'A művelet sikeresen befejeződött.';
+        echo '<div class="notice ' . ($success ? 'notice-success' : 'notice-error') . ' is-dismissible"><p>' . esc_html($success ? $successMessage : ($errorMessage !== '' ? $errorMessage : 'A művelet nem hajtható végre. Ellenőrizd az adatokat és a verziót.')) . '</p></div>';
+    }
+
+    private function discardErrorMessage(\Throwable $exception): string
+    {
+        return match (true) {
+            $exception instanceof PriceBookNotFoundException => 'A kiválasztott módosítás már nem található.',
+            $exception instanceof InvalidAggregateOperationException => 'Csak szerkesztés alatt álló módosítás vethető el.',
+            $exception instanceof PriceBookHasBusinessReferencesException => 'A módosítás üzleti vagy történeti hivatkozást tartalmaz, ezért nem vethető el.',
+            $exception instanceof \InvalidArgumentException => 'A végleges elvetést meg kell erősíteni.',
+            default => 'A módosítás elvetése nem sikerült. Kérjük, próbáld újra.',
+        };
     }
 
     private function redirect(string $result, string $action, int $bookId = 0, ?string $tab = null, ?string $message = null, ?string $model = null): never

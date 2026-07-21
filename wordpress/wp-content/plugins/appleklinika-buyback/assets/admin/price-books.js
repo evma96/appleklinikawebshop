@@ -1,4 +1,17 @@
 document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('[data-ak-discard-form]').forEach(function (form) {
+    form.addEventListener('submit', function (event) {
+      var title = form.dataset.akDiscardTitle || 'ezt a módosítást';
+      var message = 'Biztosan végleg elveted ezt a módosítást (' + title + ')? A piszkozatban lévő árak és szabályok nem állíthatók vissza.';
+      if (!window.confirm(message)) {
+        event.preventDefault();
+        return;
+      }
+      var confirmation = form.querySelector('[name="discard_confirmation"]');
+      if (confirmation) confirmation.value = 'DISCARD_DRAFT_PRICE_BOOK';
+    });
+  });
+
   document.querySelectorAll('.ak-rule-form').forEach(function (form) {
     var kind = form.querySelector('[data-ak-rule-kind]');
     var adjustmentType = form.querySelector('[name="adjustment_type"]');

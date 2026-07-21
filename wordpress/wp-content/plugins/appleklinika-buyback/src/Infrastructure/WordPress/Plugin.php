@@ -9,6 +9,7 @@ use AppleKlinika\Buyback\Application\Handler\AddDraftPricingRuleHandler;
 use AppleKlinika\Buyback\Application\Handler\ActivateDraftPriceBookHandler;
 use AppleKlinika\Buyback\Application\Handler\CreateDraftPriceBookHandler;
 use AppleKlinika\Buyback\Application\Handler\ClonePriceBookToDraftHandler;
+use AppleKlinika\Buyback\Application\Handler\DiscardDraftPriceBookHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftBasePriceMatrixHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftQuestionnaireConditionsHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftBatteryBandsHandler;
@@ -32,6 +33,7 @@ use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\SchemaInspector;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressBuybackRequestMapper;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressBuybackRequestRepository;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressPriceBookRepository;
+use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressDraftPriceBookDiscardRepository;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressPricingRuleRepository;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressTransactionManager;
 use AppleKlinika\Buyback\Infrastructure\Inventory\WordPressDeviceCatalogReader;
@@ -97,6 +99,7 @@ final class Plugin
                 $catalog,
                 new CreateDraftPriceBookHandler($books, $transactions, $clock),
                 new ClonePriceBookToDraftHandler($books, $rules, $transactions, $clock),
+                new DiscardDraftPriceBookHandler($books, new WordPressDraftPriceBookDiscardRepository($wpdb), $transactions),
                 new SaveDraftBasePriceMatrixHandler($books, $rules, $catalog, $transactions, $clock),
                 new SaveDraftQuestionnaireConditionsHandler($books, $rules, $transactions, $clock, $questionnaire, $catalog),
                 new SaveDraftBatteryBandsHandler($books, $rules, $transactions, $clock, $questionnaire, $catalog),
