@@ -56,7 +56,27 @@
 .ak-readiness-warnings code { color: #996800; }
 .ak-activation-form { max-width: 520px; margin-top: 18px; }
 .ak-advanced-create summary { cursor: pointer; font-weight: 600; }
-.ak-pricebook-list { margin-top: 16px; }
+.ak-pricebook-intro { margin: 20px 0 0; color: #50575e; font-size: 14px; }
+.ak-pricebook-section { margin-top: 16px; }
+.ak-pricebook-section--retired { background: #f6f7f7; }
+.ak-pricebook-list { display: grid; gap: 12px; margin-top: 16px; }
+.ak-pricebook-entry { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; padding: 16px; border: 1px solid #dcdcde; border-radius: 6px; background: #fff; }
+.ak-pricebook-entry--active { border-left: 4px solid #2271b1; box-shadow: 0 1px 2px rgba(0, 0, 0, .04); }
+.ak-pricebook-entry--retired { border-color: #e2e4e7; background: #fcfcfc; color: #646970; }
+.ak-pricebook-entry h3 { margin: 8px 0 0; font-size: 16px; }
+.ak-pricebook-entry-actions { align-self: start; text-align: right; }
+.ak-pricebook-action-help { max-width: 370px; margin: 8px 0 0 auto; color: #50575e; font-size: 12px; line-height: 1.45; }
+.ak-pricebook-warning { margin: 10px 0 0; padding: 9px 10px; border-left: 4px solid #dba617; background: #fcf9e8; color: #3c434a; font-weight: 600; }
+.ak-pricebook-meta { margin: 9px 0 0; color: #50575e; }
+.ak-pricebook-technical { grid-column: 1 / -1; border-top: 1px solid #f0f0f1; padding-top: 10px; color: #50575e; font-size: 12px; }
+.ak-pricebook-technical summary { cursor: pointer; font-weight: 600; }
+.ak-pricebook-technical dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 14px; margin: 10px 0 0; }
+.ak-pricebook-technical dt { font-weight: 600; }
+.ak-pricebook-technical dd { margin: 0; overflow-wrap: anywhere; }
+.ak-pricebook-empty { margin: 0; padding: 14px; border: 1px dashed #c3c4c7; color: #646970; }
+.ak-status--active { background: #e7f3ff; color: #135e96; }
+.ak-status--draft { background: #fff8e5; color: #996800; }
+.ak-status--retired { background: #f0f0f1; color: #646970; }
 .ak-base-price-matrix { overflow: hidden; }
 .ak-matrix-summary { margin: 14px 0; }
 .ak-inventory-summary { margin: 8px 0; }
@@ -132,3 +152,4 @@
 @media (max-width: 1200px) { .ak-preview-conditions { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 1100px) { .ak-preview-layout { grid-template-columns: 1fr; } .ak-preview-results { position: static; } }
 @media (max-width: 780px) { .ak-preview-panel, .ak-preview-offer-grid { grid-template-columns: 1fr; } }
+@media (max-width: 782px) { .ak-pricebook-entry { grid-template-columns: 1fr; } .ak-pricebook-entry-actions { text-align: left; } .ak-pricebook-action-help { margin-left: 0; } }
