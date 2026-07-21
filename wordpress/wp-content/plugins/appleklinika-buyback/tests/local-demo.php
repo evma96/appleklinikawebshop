@@ -13,12 +13,16 @@ use AppleKlinika\Buyback\Domain\Buyback\DeviceCategory;
 use AppleKlinika\Buyback\Domain\Buyback\ServiceMode;
 use AppleKlinika\Buyback\Domain\Pricing\ConditionAnswerCollection;
 use AppleKlinika\Buyback\Domain\Pricing\CurrencyCode;
+use AppleKlinika\Buyback\Domain\Pricing\MinimumOfferPolicy;
+use AppleKlinika\Buyback\Domain\Pricing\PriceBook;
 use AppleKlinika\Buyback\Domain\Pricing\PriceBookId;
+use AppleKlinika\Buyback\Domain\Pricing\PricingActorId;
 use AppleKlinika\Buyback\Domain\Pricing\PricingCalculationInput;
 use AppleKlinika\Buyback\Domain\Pricing\PricingEngine;
 use AppleKlinika\Buyback\Domain\Pricing\PricingModelKey;
 use AppleKlinika\Buyback\Domain\Pricing\PricingOutcome;
 use AppleKlinika\Buyback\Domain\Pricing\StorageCapacity;
+use AppleKlinika\Buyback\Domain\Shared\Money;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\Schema;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressPriceBookRepository;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressPricingRuleRepository;
@@ -36,14 +40,41 @@ function localDemoAssert(bool $condition, string $message): void
 }
 
 /** @return array<string,int> */
-function localDemoProtectedCounts(wpdb $database): array
+function localDemoPersistentCounts(wpdb $database): array
 {
     $tables = Schema::tableNames($database);
     return [
+        'price_books' => (int) $database->get_var("SELECT COUNT(*) FROM `{$tables[Schema::PRICE_BOOKS]}`"),
+        'price_rules' => (int) $database->get_var("SELECT COUNT(*) FROM `{$tables[Schema::PRICE_RULES]}`"),
         'requests' => (int) $database->get_var("SELECT COUNT(*) FROM `{$tables[Schema::REQUESTS]}`"),
         'snapshots' => (int) $database->get_var("SELECT COUNT(*) FROM `{$tables[Schema::SNAPSHOTS]}`"),
         'events' => (int) $database->get_var("SELECT COUNT(*) FROM `{$tables[Schema::EVENTS]}`"),
     ];
+}
+
+/** @return array<int,array{status:string,version:int,rule_hash:string}> */
+function localDemoPriceBookFingerprints(wpdb $database): array
+{
+    $tables = Schema::tableNames($database);
+    $books = $database->get_results("SELECT id, status, version FROM `{$tables[Schema::PRICE_BOOKS]}` ORDER BY id", ARRAY_A);
+    $fingerprints = [];
+    foreach (is_array($books) ? $books : [] as $book) {
+        $id = (int) $book['id'];
+        $rules = $database->get_results($database->prepare("SELECT * FROM `{$tables[Schema::PRICE_RULES]}` WHERE price_book_id = %d ORDER BY id", $id), ARRAY_A);
+        $fingerprints[$id] = [
+            'status' => (string) $book['status'],
+            'version' => (int) $book['version'],
+            'rule_hash' => hash('sha256', wp_json_encode(is_array($rules) ? $rules : [])),
+        ];
+    }
+    return $fingerprints;
+}
+
+function localDemoDeleteTemporaryFixture(wpdb $database, PriceBookId $id): void
+{
+    $tables = Schema::tableNames($database);
+    $database->query($database->prepare("DELETE FROM `{$tables[Schema::PRICE_RULES]}` WHERE price_book_id = %d", $id->toInt()));
+    $database->query($database->prepare("DELETE FROM `{$tables[Schema::PRICE_BOOKS]}` WHERE id = %d", $id->toInt()));
 }
 
 /** @param array<string,int|bool|string> $overrides @return array<string,int|bool|string> */
@@ -186,7 +217,30 @@ localDemoAssert(count($synthetic) === 1, 'Price matrix groups model and storage 
 localDemoAssert($synthetic[0]->representativePrice === 230000, 'Representative median prefers Grade A+ and Grade A');
 localDemoAssert($synthetic[0]->basePrice === 115000, 'Local demo base uses integer 50 percent and 1000 HUF rounding');
 
-$countsBefore = localDemoProtectedCounts($wpdb);
+$countsBefore = localDemoPersistentCounts($wpdb);
+$fingerprintsBefore = localDemoPriceBookFingerprints($wpdb);
+$books = new WordPressPriceBookRepository($wpdb);
+$rulesRepository = new WordPressPricingRuleRepository($wpdb);
+$resolver = new RepositoryActivePriceBookResolver($books, $rulesRepository);
+$activeBefore = $resolver->resolveForCurrencyAt(new CurrencyCode('HUF'), new DateTimeImmutable('now', new DateTimeZone('UTC')))->priceBook->id()?->toInt();
+$temporaryFixture = $books->createDraft(PriceBook::createDraft(
+    $books->nextAvailableVersionNumber(),
+    'QA-LOCAL-DEMO-PROTECTED-' . gmdate('YmdHis') . '-' . bin2hex(random_bytes(3)),
+    new CurrencyCode('HUF'),
+    new Money(0, 'HUF'),
+    1000,
+    new MinimumOfferPolicy(MinimumOfferPolicy::MANUAL_REVIEW),
+    new PricingActorId(max(1, get_current_user_id())),
+    new DateTimeImmutable('now', new DateTimeZone('UTC'))
+));
+$temporaryFixtureId = $temporaryFixture->id();
+if ($temporaryFixtureId === null) {
+    throw new RuntimeException('Temporary protected price book was not persisted.');
+}
+$temporaryFixtureBefore = localDemoPriceBookFingerprints($wpdb)[$temporaryFixtureId->toInt()] ?? null;
+register_shutdown_function(static function () use ($wpdb, $temporaryFixtureId): void {
+    localDemoDeleteTemporaryFixture($wpdb, $temporaryFixtureId);
+});
 $module = LocalDemoModule::create();
 $first = $module->seeder()->seed();
 $second = $module->seeder()->seed();
@@ -196,17 +250,12 @@ localDemoAssert($second->modelCount === 1, 'Published catalog generates one iPho
 localDemoAssert($second->configurationCount === 4, 'Published catalog generates four model/storage configurations');
 localDemoAssert($second->ruleCount === 30, 'Demo price book contains the exact thirty configured rules');
 
-$books = new WordPressPriceBookRepository($wpdb);
-$rulesRepository = new WordPressPricingRuleRepository($wpdb);
-$resolver = new RepositoryActivePriceBookResolver($books, $rulesRepository);
 $resolved = $resolver->resolveForCurrencyAt(new CurrencyCode('HUF'), new DateTimeImmutable('now', new DateTimeZone('UTC')));
 localDemoAssert($resolved->priceBook->label() === LocalDemoSeeder::LABEL, 'Exactly the local demo book resolves as active HUF book');
 localDemoAssert($books->countCurrentActiveForCurrencyAt(new CurrencyCode('HUF'), new DateTimeImmutable('now', new DateTimeZone('UTC'))) === 1, 'Exactly one active HUF price book exists');
 localDemoAssert(count($resolved->enabledRules) === 30, 'Active demo book exposes thirty enabled rules');
 
-$protected = $books->getById(new PriceBookId(31));
-localDemoAssert($protected !== null && $protected->label() === 'noj' && $protected->status()->code() === 'draft' && $protected->version()->value() === 0, 'Protected price book 31 remains noj draft version zero');
-localDemoAssert($rulesRepository->countForPriceBook(new PriceBookId(31)) === 0, 'Protected price book 31 still has zero rules');
+localDemoAssert((localDemoPriceBookFingerprints($wpdb)[$temporaryFixtureId->toInt()] ?? null) === $temporaryFixtureBefore, 'Temporary protected price book remains unchanged after Local Demo seeding and calculation');
 
 $page = get_page_by_path(WordPressLocalDemoPageGateway::SLUG, OBJECT, 'page');
 localDemoAssert($page instanceof WP_Post && (int) $page->ID === $second->pageId, 'Local demo page exists idempotently at the expected slug');
@@ -228,7 +277,11 @@ foreach ($manual as $mode => $result) {
     localDemoAssert($result->outcome->code() === PricingOutcome::MANUAL_REVIEW, "{$mode} requires manual review when the display does not work");
 }
 
-localDemoAssert(localDemoProtectedCounts($wpdb) === $countsBefore, 'Seed and calculation create no request, snapshot or event rows');
+localDemoDeleteTemporaryFixture($wpdb, $temporaryFixtureId);
+localDemoAssert(localDemoPersistentCounts($wpdb) === $countsBefore, 'Seed, calculation and temporary fixture cleanup restore all persistent table counts');
+localDemoAssert(localDemoPriceBookFingerprints($wpdb) === $fingerprintsBefore, 'All pre-existing price books and rule-content hashes remain unchanged');
+$activeAfter = $resolver->resolveForCurrencyAt(new CurrencyCode('HUF'), new DateTimeImmutable('now', new DateTimeZone('UTC')))->priceBook->id()?->toInt();
+localDemoAssert($activeAfter === $activeBefore, 'Active HUF price-book identity remains unchanged');
 
 echo sprintf(
     "Local demo tests passed: book %d, page %d, models %d, configurations %d, rules %d; reference amounts %s.\n",

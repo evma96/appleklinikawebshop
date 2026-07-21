@@ -443,8 +443,9 @@ try {
     $persistedRule = $ruleRepository->insert(PricingRule::create($persistedBook->id(), new PricingRuleDefinition(new PricingRuleCode('qa-preview-base'), new PricingRuleKind(PricingRuleKind::BASE_PRICE), 'iphone', $modelKey, new StorageCapacity(128), null, null, null, null, new Money(200000, 'HUF'), null, new RulePriority(1), true, null, 'QA preview base'), $now));
     $bookVersionPersisted = $books->getById($persistedBook->id())->version()->value();
     $ruleVersionPersisted = $ruleRepository->getById($persistedRule->id())->version()->value();
-    $handler = new PreviewDraftPriceBookCalculationHandler($books, $ruleRepository, $catalog, new PricingEngine());
-    $preview = $handler->handle(new PreviewDraftPriceBookCalculation($persistedBook->id()->toInt(), $modelKey, 128, engineAnswers()));
+    $publicQuestionnaire = new LocalDemoQuestionnaire();
+    $handler = new PreviewDraftPriceBookCalculationHandler($books, $ruleRepository, $catalog, new PricingEngine(), $publicQuestionnaire);
+    $preview = $handler->handle(new PreviewDraftPriceBookCalculation($persistedBook->id()->toInt(), $modelKey, 128, $publicQuestionnaire->defaults()));
     $test->assert(count($preview->modeResults) === 4, 'Preview handler returns four mode results');
     foreach ($preview->modeResults as $mode => $result) {
         $test->assert($result->outcome->code() === PricingOutcome::OFFERED && $result->serviceMode->code() === $mode, "Preview returns offered result for {$mode}");

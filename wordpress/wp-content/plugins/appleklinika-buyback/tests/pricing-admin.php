@@ -803,8 +803,8 @@ try {
         $toggleRule,
         $deleteRule,
         $parser,
-        new PreviewDraftPriceBookCalculationHandler($books, $rules, $catalog, new PricingEngine()),
-        new PreviewCalculationFormParser(),
+        new PreviewDraftPriceBookCalculationHandler($books, $rules, $catalog, new PricingEngine(), $questionnaire),
+        new PreviewCalculationFormParser($questionnaire),
         new PriceBookActivationReadinessService($catalog, new PriceBookActivationReadinessEvaluator()),
         new ActivateDraftPriceBookHandler($books, $rules, new PriceBookActivationReadinessService($catalog, new PriceBookActivationReadinessEvaluator()), new MySqlPriceBookActivationLock($wpdb), $transactions, $clock),
         new RepositoryActivePriceBookResolver($books, $rules),
@@ -855,7 +855,11 @@ try {
     ob_start();
     $uiPage->render();
     $previewHtml = (string) ob_get_clean();
-    $test->assert(str_contains($previewHtml, 'A felhasználóbarát piszkozat-tesztkalkulátor még nem készült el.') && ! str_contains($previewHtml, 'preview_model_key'), 'Normal Preview tab hides the raw technical calculator form');
+    $test->assert(str_contains($previewHtml, 'Tesztkalkuláció futtatása'), 'Preview tab renders the non-persistent calculation action');
+    $test->assert(str_contains($previewHtml, 'Hálózatfüggetlen a készülék?'), 'Preview tab renders the shared public questionnaire');
+    $test->assert(! str_contains($previewHtml, 'name="rule_code"'), 'Preview tab omits raw rule-programming fields');
+    $previewPageSource = file_get_contents(APPLEKLINIKA_BUYBACK_PATH . '/src/Interfaces/Admin/PriceBooksPage.php');
+    $test->assert(is_string($previewPageSource) && str_contains($previewPageSource, 'ak-preview-breakdown') && str_contains($previewPageSource, 'ak-preview-offer-grid') && str_contains($previewPageSource, 'Elnyomott örökölt globális szabályok') && ! str_contains($previewPageSource, '<table class="widefat striped"><thead><tr><th>Lépés</th>'), 'Preview results render one shared breakdown and a separate offer-mode card grid without a clipped table');
     $_GET = $originalGet;
     $test->assert((new WordPressDeviceCatalogReader('qa_missing_catalog_' . $runToken, static fn (): bool => true))->iPhoneModels() !== [], 'Inventory runtime catalogue takes priority over the legacy option fallback');
     $test->throws(fn () => (new WordPressDeviceCatalogReader('appleklinika_device_catalog', static fn (): bool => false))->iPhoneModels(), DeviceCatalogUnavailableException::class, 'Inactive inventory plugin produces a safe failure');

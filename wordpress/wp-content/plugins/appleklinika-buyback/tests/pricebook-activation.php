@@ -159,6 +159,14 @@ final class ActivationCatalog implements DeviceCatalogReader
             new \AppleKlinika\Buyback\Application\Pricing\DeviceCatalogConfiguration('iphone_xr', 'iPhone XR', 64),
         ];
     }
+
+    public function iPhoneCatalog(): array
+    {
+        return [
+            'iphone-13-pro' => ['label' => 'iPhone 13 Pro', 'colors' => ['graphite' => 'Grafit']],
+            'iphone_xr' => ['label' => 'iPhone XR', 'colors' => ['black' => 'Fekete']],
+        ];
+    }
 }
 
 final class AlwaysBusyActivationLock implements PriceBookActivationLock
@@ -501,8 +509,8 @@ try {
     $page = new PriceBooksPage(
         $books, $rules, $catalog, $create, new AppleKlinika\Buyback\Application\Handler\ClonePriceBookToDraftHandler($books, $rules, $transactions, $clock), new AppleKlinika\Buyback\Application\Handler\SaveDraftBasePriceMatrixHandler($books, $rules, $catalog, $transactions, $clock), new AppleKlinika\Buyback\Application\Handler\SaveDraftQuestionnaireConditionsHandler($books, $rules, $transactions, $clock, new AppleKlinika\Buyback\Application\LocalDemo\LocalDemoQuestionnaire(), $catalog), new AppleKlinika\Buyback\Application\Handler\SaveDraftBatteryBandsHandler($books, $rules, $transactions, $clock, new AppleKlinika\Buyback\Application\LocalDemo\LocalDemoQuestionnaire(), $catalog), new AppleKlinika\Buyback\Application\Handler\SaveDraftOfferModeModifiersHandler($books, $rules, $transactions, $clock), new OfferModeExampleCalculator(new PricingEngine()), new UpdateDraftPriceBookSettingsHandler($books, $clock), $add,
         $updateRuleHandler, $toggleRuleHandler, $deleteRuleHandler,
-        new PricingRuleFormParser(), new PreviewDraftPriceBookCalculationHandler($books, $rules, $catalog, new PricingEngine()),
-        new PreviewCalculationFormParser(), $readiness, $activate, $resolver, $clock, $authorization, new AdminSubmissionGuard(), new AppleKlinika\Buyback\Application\LocalDemo\LocalDemoQuestionnaire()
+        new PricingRuleFormParser(), new PreviewDraftPriceBookCalculationHandler($books, $rules, $catalog, new PricingEngine(), new AppleKlinika\Buyback\Application\LocalDemo\LocalDemoQuestionnaire()),
+        new PreviewCalculationFormParser(new AppleKlinika\Buyback\Application\LocalDemo\LocalDemoQuestionnaire()), $readiness, $activate, $resolver, $clock, $authorization, new AdminSubmissionGuard(), new AppleKlinika\Buyback\Application\LocalDemo\LocalDemoQuestionnaire()
     );
     $_GET = ['page' => PriceBooksPage::SLUG, 'book_id' => $unready->id()->toInt()];
     ob_start(); $page->render(); $unreadyOutput = (string) ob_get_clean();

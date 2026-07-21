@@ -14,4 +14,7 @@ interface DeviceCatalogReader
 
     /** @return list<DeviceCatalogConfiguration> */
     public function iPhoneConfigurations(): array;
+
+    /** @return array<string,array{label:string,colors:array<string,string>}> */
+    public function iPhoneCatalog(): array;
 }

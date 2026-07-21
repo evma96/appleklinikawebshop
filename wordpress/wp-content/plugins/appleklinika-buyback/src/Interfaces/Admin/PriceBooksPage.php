@@ -376,7 +376,7 @@ final class PriceBooksPage
             $this->renderOfferModesTab($book, $rules, false, $tab);
             return;
         }
-        $this->renderPreviewPlaceholder();
+        $this->renderCalculationPreview($book, $tab);
     }
 
     /** @param list<PricingRule> $rules */
@@ -783,7 +783,7 @@ final class PriceBooksPage
             return;
         }
         if ($tab === self::TAB_PREVIEW) {
-            $this->renderPreviewPlaceholder();
+            $this->renderCalculationPreview($book, $tab);
             return;
         }
     }
@@ -829,6 +829,9 @@ final class PriceBooksPage
         $error = null;
         $posted = isset($_POST['ak_buyback_action']) && sanitize_key((string) wp_unslash($_POST['ak_buyback_action'])) === 'preview_calculation';
         $post = $posted ? wp_unslash($_POST) : [];
+        $state = isset($post['preview_questionnaire']) && is_array($post['preview_questionnaire'])
+            ? $this->questionnaire->sanitize($post['preview_questionnaire'])
+            : $this->questionnaire->defaults();
 
         if ($posted) {
             try {
@@ -839,93 +842,296 @@ final class PriceBooksPage
                     throw new \InvalidArgumentException('Az előnézet árkönyve nem egyezik a megnyitott árkönyvvel.');
                 }
                 $preview = $this->previewHandler->handle($query);
+                $state = $preview->questionnaireState;
             } catch (\Throwable $exception) {
-                $error = 'Az előnézet nem számítható ki. Ellenőrizd az összes mezőt és az árkönyv szabályait.';
+                $error = $exception->getMessage();
             }
         }
 
         echo '<section class="ak-buyback-card ak-pricing-preview" id="test-calculator"><h3>Tesztkalkulátor</h3>';
-        echo '<div class="notice notice-warning inline"><p>Ez csak adminisztrációs előnézet. Nem hoz létre ajánlatot, nem ment kalkulációt, és a webshop nem használja.</p></div>';
+        echo '<p><strong>Árkönyv:</strong> ' . esc_html($book->label()) . ' · <span class="ak-status">' . esc_html($this->statusLabel($book)) . '</span></p>';
+        if ($book->status()->isDraft()) {
+            echo '<div class="notice notice-warning inline"><p>Ez a kalkuláció a kiválasztott piszkozat szabályait használja. A nyilvános /eladas/ oldal és az aktív árkönyv változatlan marad.</p></div>';
+        }
+        echo '<div class="notice notice-info inline"><p>A tesztkalkuláció nem hoz létre ügyfélkérelmet, ajánlatot vagy rendelést.</p></div>';
         if ($error !== null) {
             echo '<div class="notice notice-error inline"><p>' . esc_html($error) . '</p></div>';
         }
 
-        echo '<form method="post" class="ak-preview-form">';
+        $catalog = [];
+        $configurations = [];
+        try {
+            $catalog = $this->catalog->iPhoneCatalog();
+            foreach ($this->catalog->iPhoneConfigurations() as $configuration) {
+                $configurations[$configuration->modelKey][] = $configuration->storageGb;
+            }
+        } catch (DeviceCatalogUnavailableException $exception) {
+            $error ??= 'Az inventory készülékkatalógus nem érhető el.';
+        }
+
+        echo '<div class="ak-preview-layout"><form method="post" class="ak-preview-form" data-ak-preview-form data-ak-preview-catalog="' . esc_attr(wp_json_encode(['catalog' => $catalog, 'configurations' => $configurations])) . '">';
         $this->securityFields('preview_calculation', $book);
         $this->tabField($tab);
         echo '<div class="ak-preview-device">';
-        echo '<p><label for="preview_model_key">iPhone modell</label><select name="preview_model_key" id="preview_model_key" required><option value="">Válassz modellt</option>';
-        try {
-            foreach ($this->catalog->iPhoneModels() as $item) {
-                echo '<option value="' . esc_attr($item->modelKey) . '" ' . selected((string) ($post['preview_model_key'] ?? ''), $item->modelKey, false) . '>' . esc_html($item->label) . '</option>';
-            }
-        } catch (DeviceCatalogUnavailableException $exception) {
-            echo '<option value="">A készülékkatalógus nem érhető el</option>';
+        $selectedModel = sanitize_key((string) ($post['preview_model_key'] ?? ''));
+        $selectedStorage = (string) ($post['preview_storage_gb'] ?? '');
+        $selectedColor = sanitize_key((string) ($post['preview_color_key'] ?? ''));
+        echo '<p><label for="preview_model_key">iPhone modell</label><select name="preview_model_key" id="preview_model_key" data-ak-preview-model required><option value="">Válassz modellt</option>';
+        foreach ($catalog as $modelKey => $item) {
+            echo '<option value="' . esc_attr($modelKey) . '" ' . selected($selectedModel, $modelKey, false) . '>' . esc_html($item['label']) . '</option>';
         }
-        echo '</select></p><p><label for="preview_storage_gb">Tárhely</label><select name="preview_storage_gb" id="preview_storage_gb" required><option value="">Válassz tárhelyet</option>';
-        foreach (self::STORAGE_OPTIONS as $storage) {
+        echo '</select></p><p><label for="preview_storage_gb">Tárhely</label><select name="preview_storage_gb" id="preview_storage_gb" data-ak-preview-storage required><option value="">Válassz tárhelyet</option>';
+        foreach ($configurations[$selectedModel] ?? [] as $storage) {
             echo '<option value="' . esc_attr((string) $storage) . '" ' . selected((string) ($post['preview_storage_gb'] ?? ''), (string) $storage, false) . '>' . esc_html((string) $storage) . ' GB</option>';
         }
-        echo '</select></p></div><div class="ak-preview-conditions">';
-        $rawConditions = isset($post['preview_conditions']) && is_array($post['preview_conditions']) ? $post['preview_conditions'] : [];
-        foreach (ConditionDefinition::all() as $key => $definition) {
-            $fieldName = 'preview_conditions[' . $key . ']';
-            $fieldId = 'preview_condition_' . $key;
-            $current = is_scalar($rawConditions[$key] ?? null) ? (string) $rawConditions[$key] : '';
-            echo '<p><label for="' . esc_attr($fieldId) . '">' . esc_html($definition['label']) . '</label>';
-            if ($definition['type'] === ConditionDefinition::TYPE_INTEGER) {
-                echo '<input type="number" min="0" max="100" step="1" name="' . esc_attr($fieldName) . '" id="' . esc_attr($fieldId) . '" value="' . esc_attr($current) . '" required>';
-            } else {
-                echo '<select name="' . esc_attr($fieldName) . '" id="' . esc_attr($fieldId) . '" required><option value="">Válassz</option>';
-                $options = $definition['type'] === ConditionDefinition::TYPE_BOOLEAN
-                    ? ['1' => 'Igen', '0' => 'Nem']
-                    : $definition['values'];
-                foreach ($options as $value => $label) {
-                    echo '<option value="' . esc_attr((string) $value) . '" ' . selected($current, (string) $value, false) . '>' . esc_html($label) . '</option>';
-                }
-                echo '</select>';
+        echo '</select></p><p data-ak-preview-color-wrap' . (($catalog[$selectedModel]['colors'] ?? []) === [] ? ' hidden' : '') . '><label for="preview_color_key">Szín</label><select name="preview_color_key" id="preview_color_key" data-ak-preview-color><option value="">Nincs kiválasztva</option>';
+        foreach (($catalog[$selectedModel]['colors'] ?? []) as $colorKey => $colorLabel) {
+            echo '<option value="' . esc_attr($colorKey) . '" ' . selected($selectedColor, $colorKey, false) . '>' . esc_html($colorLabel) . '</option>';
+        }
+        echo '</select></p></div><div class="ak-preview-questionnaire">';
+        foreach ($this->questionnaire->panelOrder() as $panel) {
+            if (in_array($panel, ['model', 'offers', 'review'], true)) {
+                continue;
             }
-            echo '</p>';
+            echo '<fieldset class="ak-preview-panel"><legend>' . esc_html($this->questionnaire->panel($panel)['title']) . '</legend>';
+            foreach ($this->questionnaire->questionsForPanel($panel) as $key => $question) {
+                $this->renderPreviewQuestion($key, $question, $state);
+            }
+            echo '</fieldset>';
         }
         echo '</div>';
-        submit_button('Négy átvételi mód kiszámítása', 'secondary');
+        echo '<p><button type="submit" class="button button-primary">Tesztkalkuláció futtatása</button> <button type="reset" class="button" data-ak-preview-reset>Űrlap alaphelyzetbe</button></p>';
         echo '</form>';
 
+        echo '<aside class="ak-preview-results" data-ak-preview-results>';
         if ($preview !== null) {
-            echo '<div class="ak-preview-results">';
-            foreach ($preview->modeResults as $mode => $result) {
-                $this->renderPreviewResult($mode, $result);
+            $modelLabel = $catalog[$preview->modelKey]['label'] ?? $preview->modelKey;
+            $colorLabel = $catalog[$preview->modelKey]['colors'][$preview->colorKey] ?? '';
+            echo '<header class="ak-preview-result-header"><h3>Eredmény</h3><p><strong>' . esc_html($modelLabel) . '</strong> · ' . esc_html($this->storageLabel($preview->storageGb)) . ($colorLabel !== '' ? ' · ' . esc_html($colorLabel) : '') . '</p><p class="description">' . esc_html($book->label()) . ' · ' . esc_html($this->statusLabel($book)) . '</p></header>';
+            $reference = $preview->modeResults[\AppleKlinika\Buyback\Domain\Buyback\ServiceMode::HIGHER_OFFER] ?? reset($preview->modeResults);
+            $ruleDetails = $this->previewRuleDetails($this->rules->listForPriceBook($book->id()));
+            if ($reference->outcome->code() === PricingOutcome::OFFERED) {
+                echo '<dl class="ak-preview-summary"><dt>Alapár</dt><dd>' . esc_html(number_format_i18n($reference->baseAmount?->amount() ?? 0)) . ' Ft</dd><dt>Korrekciózott készülékérték</dt><dd>' . esc_html(number_format_i18n($reference->amountAfterConditionMultipliers?->amount() ?? 0)) . ' Ft</dd></dl>';
+                $this->renderSharedPreviewBreakdown($reference, $ruleDetails);
+                $suppressed = $this->previewSuppressedFallbacks($preview, $this->rules->listForPriceBook($book->id()), $ruleDetails);
+                if ($suppressed !== []) {
+                    echo '<details class="ak-preview-suppressed"><summary>Elnyomott örökölt globális szabályok</summary><ul>';
+                    foreach ($suppressed as $item) { echo '<li>' . esc_html($item) . '</li>'; }
+                    echo '</ul></details>';
+                }
+                echo '<div class="ak-preview-offer-grid">';
+                foreach ($preview->modeResults as $mode => $result) {
+                    $this->renderPreviewResult($mode, $result, $ruleDetails);
+                }
+                echo '</div>';
+            } else {
+                $this->renderPreviewOutcome($reference);
             }
-            echo '</div>';
+        } else {
+            echo '<p class="description">Töltsd ki a nyilvános kérdőívvel azonos mezőket, majd futtasd a nem perzisztáló tesztkalkulációt.</p>';
         }
-        echo '</section>';
+        echo '</aside></div></section>';
     }
 
-    private function renderPreviewResult(string $mode, PricingCalculationResult $result): void
+    /** @param array<string,mixed> $question @param array<string,mixed> $state */
+    private function renderPreviewQuestion(string $key, array $question, array $state): void
+    {
+        $conditional = isset($question['conditional_on']) ? ' data-ak-preview-conditional="' . esc_attr((string) $question['conditional_on']) . '" data-ak-preview-except="' . esc_attr((string) ($question['conditional_except'] ?? '')) . '"' : '';
+        echo '<div class="ak-preview-question"' . $conditional . '><label>' . esc_html((string) $question['label']) . '</label>';
+        if (($question['helper'] ?? '') !== '') {
+            echo '<p class="description">' . esc_html((string) $question['helper']) . '</p>';
+        }
+        $value = $state[$key] ?? $question['default'];
+        if ($question['type'] === 'range') {
+            echo '<input type="number" name="preview_questionnaire[' . esc_attr($key) . ']" min="' . esc_attr((string) $question['min']) . '" max="' . esc_attr((string) $question['max']) . '" step="1" value="' . esc_attr((string) $value) . '" required> %';
+        } elseif ($question['type'] === 'multi') {
+            foreach ($question['options'] as $optionKey => $option) {
+                echo '<label class="ak-preview-check"><input type="checkbox" name="preview_questionnaire[' . esc_attr($key) . '][]" value="' . esc_attr((string) $optionKey) . '" ' . checked(in_array((string) $optionKey, (array) $value, true), true, false) . '> ' . esc_html((string) $option['label']) . '</label>';
+            }
+        } else {
+            echo '<select name="preview_questionnaire[' . esc_attr($key) . ']" data-ak-preview-question="' . esc_attr($key) . '" required>';
+            foreach ($question['options'] as $optionKey => $option) {
+                echo '<option value="' . esc_attr((string) $optionKey) . '" ' . selected((string) $value, (string) $optionKey, false) . '>' . esc_html((string) $option['label']) . '</option>';
+            }
+            echo '</select>';
+        }
+        echo '</div>';
+    }
+
+    /** @param array<string,array{label:string,source:string}> $ruleDetails */
+    private function renderPreviewResult(string $mode, PricingCalculationResult $result, array $ruleDetails = []): void
     {
         echo '<article class="ak-preview-result"><h4>' . esc_html($this->serviceModeLabel($mode)) . '</h4>';
-        echo '<p><span class="ak-status">' . esc_html($this->outcomeLabel($result->outcome->code())) . '</span></p>';
-        if ($result->outcome->code() === PricingOutcome::OFFERED && $result->finalAmount !== null) {
-            echo '<p class="ak-preview-amount">' . esc_html(number_format_i18n($result->finalAmount->amount())) . ' Ft</p>';
+        $modeLine = null;
+        $minimumLine = null;
+        $roundingLine = null;
+        foreach ($result->breakdown as $line) {
+            if (in_array($line->type, ['mode_fixed_adjustment', 'mode_multiplier'], true)) {
+                $modeLine = $line;
+            } elseif ($line->type === 'minimum_policy') {
+                $minimumLine = $line;
+            } elseif ($line->type === 'rounding') {
+                $roundingLine = $line;
+            }
         }
+        echo '<p class="ak-preview-mode-detail"><strong>Módosító:</strong> ' . esc_html($modeLine === null ? 'Nincs módosítás' : $this->previewModeModifier($modeLine)) . '</p>';
+        echo '<p class="ak-preview-mode-detail">Nyers összeg: ' . esc_html(number_format_i18n($result->rawAmountBeforeMinimumAndRounding?->amount() ?? 0)) . ' Ft</p>';
+        if ($minimumLine !== null) {
+            echo '<p class="ak-preview-mode-detail">Minimumár-kezelés: ' . esc_html($this->previewLineDetail($minimumLine, $ruleDetails)['label']) . '</p>';
+        }
+        if ($roundingLine !== null) {
+            echo '<p class="ak-preview-mode-detail">Kerekítés: ' . esc_html($this->previewLineChange($roundingLine)) . '</p>';
+        }
+        echo '<p class="ak-preview-amount">' . esc_html(number_format_i18n($result->finalAmount?->amount() ?? 0)) . ' Ft</p>';
+        echo '</article>';
+    }
+
+    /** @param array<string,array{label:string,source:string}> $ruleDetails */
+    private function renderSharedPreviewBreakdown(PricingCalculationResult $result, array $ruleDetails): void
+    {
+        echo '<section class="ak-preview-breakdown"><h4>Árbontás</h4><ol class="ak-preview-breakdown-list">';
+        foreach ($result->breakdown as $line) {
+            if (! in_array($line->type, ['base_price', 'fixed_deduction', 'multiplier'], true)) {
+                continue;
+            }
+            $detail = $this->previewLineDetail($line, $ruleDetails);
+            echo '<li class="ak-preview-breakdown-row"><div><strong>' . esc_html($this->previewSharedLineLabel($line, $detail)) . '</strong><span>' . esc_html($detail['label']) . '</span><small>' . esc_html($detail['source']) . '</small></div><b>' . esc_html($this->previewLineChange($line)) . '</b></li>';
+        }
+        echo '</ol><p class="ak-preview-corrected"><strong>Korrigált készülékérték</strong><b>' . esc_html(number_format_i18n($result->amountAfterConditionMultipliers?->amount() ?? 0)) . ' Ft</b></p></section>';
+    }
+
+    /** @param array<string,array{label:string,source:string}> $ruleDetails @return array{label:string,source:string} */
+    private function previewLineDetail(object $line, array $ruleDetails): array
+    {
+        return $line->ruleCode === null
+            ? ['label' => 'Rendszerszabály', 'source' => 'Rendszerszabály']
+            : ($ruleDetails[$line->ruleCode] ?? ['label' => ($line->publicLabel ?? 'Árkönyvszabály'), 'source' => 'Árkönyvszabály']);
+    }
+
+    private function previewLineChange(object $line): string
+    {
+        if ($line->multiplierBps !== null) {
+            return $this->basisPointsPercent($line->multiplierBps) . '%';
+        }
+        if ($line->adjustmentAmountMinor !== null) {
+            $amount = $line->adjustmentAmountMinor;
+            return ($amount > 0 ? '+' : '') . number_format_i18n($amount) . ' Ft';
+        }
+        return '–';
+    }
+
+    private function previewModeModifier(object $line): string
+    {
+        if ($line->type === 'mode_multiplier' && $line->multiplierBps !== null) {
+            $percent = ($line->multiplierBps / 100) - 100;
+            return ($percent > 0 ? '+' : '') . number_format_i18n($percent, 0) . '%';
+        }
+        return $this->previewLineChange($line);
+    }
+
+    /** @param array{label:string,source:string} $detail */
+    private function previewSharedLineLabel(object $line, array $detail): string
+    {
+        if ($line->type === 'base_price') {
+            return 'Alapár';
+        }
+        if (str_starts_with($detail['label'], 'Akkumulátor')) {
+            return 'Akkumulátor';
+        }
+        return $line->type === 'multiplier' ? 'Állapotkorrekció' : 'Állapotlevonás';
+    }
+
+    private function renderPreviewOutcome(PricingCalculationResult $result): void
+    {
+        $code = $result->outcome->code();
+        $title = match ($code) {
+            PricingOutcome::MANUAL_REVIEW => 'Kézi bevizsgálás szükséges',
+            PricingOutcome::REJECTED => 'A készülék jelen állapotban nem vásárolható fel',
+            PricingOutcome::CONFIGURATION_ERROR => 'Ehhez a modell- és tárhely-konfigurációhoz nincs alapár beállítva ebben az árkönyvben.',
+            default => $this->outcomeLabel($code),
+        };
+        echo '<article class="ak-preview-outcome ak-preview-outcome-' . esc_attr($code) . '"><h4>' . esc_html($title) . '</h4>';
         if ($result->reasonCodes !== []) {
             echo '<ul class="ak-preview-reasons">';
             foreach ($result->reasonCodes as $reason) {
-                echo '<li><code>' . esc_html($reason) . '</code></li>';
+                echo '<li>' . esc_html($this->previewReasonLabel($reason)) . '</li>';
             }
             echo '</ul>';
         }
-        if ($result->breakdown !== []) {
-            echo '<table class="widefat striped"><thead><tr><th>Lépés</th><th>Szabály</th><th>Előtte</th><th>Változás</th><th>Utána</th></tr></thead><tbody>';
-            foreach ($result->breakdown as $line) {
-                $change = $line->multiplierBps !== null
-                    ? $this->basisPointsPercent($line->multiplierBps) . '%'
-                    : ($line->adjustmentAmountMinor === null ? '–' : number_format_i18n($line->adjustmentAmountMinor) . ' Ft');
-                echo '<tr><td>' . esc_html($this->breakdownLabel($line->type)) . '</td><td><code>' . esc_html($line->ruleCode ?? '–') . '</code></td><td>' . esc_html(number_format_i18n($line->beforeAmountMinor)) . ' Ft</td><td>' . esc_html($change) . '</td><td>' . esc_html(number_format_i18n($line->afterAmountMinor)) . ' Ft</td></tr>';
-            }
-            echo '</tbody></table>';
-        }
         echo '</article>';
+    }
+
+    private function previewReasonLabel(string $reason): string
+    {
+        return match ($reason) {
+            'below_minimum_offer' => 'Az összeg az árkönyvben beállított minimum alatt van.',
+            'missing_base_price' => 'Ehhez a modell- és tárhely-konfigurációhoz nincs alapár.',
+            default => str_starts_with($reason, 'A ') ? $reason : 'A kiválasztott állapothoz kézi ellenőrzés szükséges.',
+        };
+    }
+
+    /** @param list<PricingRule> $rules @return array<string,array{label:string,source:string}> */
+    private function previewRuleDetails(array $rules): array
+    {
+        $details = [];
+        foreach ($rules as $rule) {
+            $definition = $rule->definition();
+            $label = $definition->publicLabel ?? '';
+            if ($label === '' && $definition->conditionKey === 'battery_health') {
+                $label = 'Akkumulátor ' . $this->comparisonLabel($definition->comparisonValue);
+            }
+            if ($label === '') {
+                foreach ($this->questionnaire->conditionEditorQuestions() as $question) {
+                    foreach ($question['options'] as $option) {
+                        if (($option['condition_key'] ?? null) === $definition->conditionKey && ($option['comparison_value'] ?? null) === $definition->comparisonValue) {
+                            $label = $question['label'] . ': ' . $option['label'];
+                            break 2;
+                        }
+                    }
+                }
+            }
+            $details[$definition->code->code()] = [
+                'label' => $label !== '' ? $label : ($definition->serviceMode !== null ? $this->serviceModeLabel($definition->serviceMode) : 'Árkönyvszabály'),
+                'source' => $definition->modelKey !== null ? 'Modellspecifikus szabály' : 'Örökölt globális szabály',
+            ];
+        }
+        return $details;
+    }
+
+    private function comparisonLabel(mixed $comparison): string
+    {
+        return is_array($comparison) ? ((string) $comparison[0] . '–' . (string) $comparison[1] . '%') : ((string) $comparison . '%');
+    }
+
+    /** @param list<PricingRule> $rules @param array<string,array{label:string,source:string}> $details @return list<string> */
+    private function previewSuppressedFallbacks(\AppleKlinika\Buyback\Application\Pricing\DraftPriceBookPreview $preview, array $rules, array $details): array
+    {
+        $answers = \AppleKlinika\Buyback\Domain\Pricing\ConditionAnswerCollection::fromAssociative($this->questionnaire->mapToConditions($preview->questionnaireState));
+        $matcher = new \AppleKlinika\Buyback\Domain\Pricing\ConditionMatcher();
+        $modelMatches = [];
+        foreach ($rules as $rule) {
+            $definition = $rule->definition();
+            if ($definition->modelKey === $preview->modelKey && $definition->conditionKey !== null && $matcher->matches($definition, $answers)) {
+                $modelMatches[] = $rule;
+            }
+        }
+        $suppressed = [];
+        foreach ($rules as $rule) {
+            $definition = $rule->definition();
+            if ($definition->modelKey !== null || $definition->conditionKey === null || ! $matcher->matches($definition, $answers)) {
+                continue;
+            }
+            foreach ($modelMatches as $modelRule) {
+                $modelDefinition = $modelRule->definition();
+                $sameBattery = $definition->conditionKey === 'battery_health' && $modelDefinition->conditionKey === 'battery_health';
+                $sameTarget = $definition->conditionKey === $modelDefinition->conditionKey && $definition->operator?->code() === $modelDefinition->operator?->code() && $definition->comparisonValue === $modelDefinition->comparisonValue;
+                if ($sameBattery || $sameTarget) {
+                    $suppressed[] = ($details[$definition->code->code()]['label'] ?? 'Örökölt globális szabály') . ' – modellspecifikus szabály felülírta.';
+                    break;
+                }
+            }
+        }
+        return array_values(array_unique($suppressed));
     }
 
     /** @param list<PricingRule> $rules */
@@ -1046,7 +1252,7 @@ final class PriceBooksPage
         echo '<nav class="nav-tab-wrapper"><a class="nav-tab" href="' . esc_url(admin_url('admin.php?page=' . DiagnosticsPage::SLUG)) . '">Diagnosztika</a><a class="nav-tab' . ($bookId === 0 ? ' nav-tab-active' : '') . '" href="' . esc_url(admin_url('admin.php?page=' . self::SLUG)) . '">Árkönyvek</a>';
         if ($bookId > 0) {
             foreach ([self::TAB_BASE_PRICES => 'Alapárak', self::TAB_CONDITIONS => 'Állapotlevonások', self::TAB_BATTERY => 'Akkumulátor', self::TAB_OFFER_MODES => 'Ajánlattípusok', self::TAB_PREVIEW => 'Tesztkalkulátor'] as $value => $label) {
-                $status = $value === self::TAB_PREVIEW ? ' <span class="ak-tab-status">Fejlesztés alatt</span>' : '';
+                $status = '';
                 echo '<a class="nav-tab' . ($tab === $value ? ' nav-tab-active' : '') . '" href="' . esc_url($this->tabUrl($bookId, $value)) . '">' . esc_html($label) . $status . '</a>';
             }
         }

@@ -6,12 +6,13 @@ namespace AppleKlinika\Buyback\Application\Query;
 
 final class PreviewDraftPriceBookCalculation
 {
-    /** @param array<string, mixed> $conditionAnswers */
+    /** @param array<string, mixed> $questionnaireState */
     public function __construct(
         public readonly int $priceBookId,
         public readonly string $modelKey,
         public readonly int $storageGb,
-        public readonly array $conditionAnswers
+        public readonly array $questionnaireState,
+        public readonly string $colorKey = ''
     ) {
     }
 }
