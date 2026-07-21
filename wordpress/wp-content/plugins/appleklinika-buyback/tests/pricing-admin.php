@@ -813,6 +813,11 @@ try {
         new AdminSubmissionGuard(),
         $questionnaire
     );
+    $_GET = [];
+    ob_start();
+    $uiPage->render();
+    $priceBookIndexHtml = (string) ob_get_clean();
+    $test->assert(str_contains($priceBookIndexHtml, 'Apple Klinika Felvásárlás – Árkönyvek') && str_contains($priceBookIndexHtml, 'Itt kezelheted a nyilvános felvásárlási kalkulátor árait és szabályait.') && str_contains($priceBookIndexHtml, 'Élő árkönyv') && str_contains($priceBookIndexHtml, 'Szerkesztés alatt') && str_contains($priceBookIndexHtml, 'Korábbi verziók') && str_contains($priceBookIndexHtml, 'Technikai részletek') && str_contains($priceBookIndexHtml, 'Új módosítás indítása') && str_contains($priceBookIndexHtml, 'Haladó beállítások'), 'Price-book index presents owner-facing sections, safe clone guidance and collapsed technical details');
     $_GET = ['book_id' => (string) $matrixBook->id()->toInt(), 'tab' => 'base-prices'];
     ob_start();
     $uiPage->render();
