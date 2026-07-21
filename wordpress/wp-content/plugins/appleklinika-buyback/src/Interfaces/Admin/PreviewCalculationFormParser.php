@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace AppleKlinika\Buyback\Interfaces\Admin;
 
 use AppleKlinika\Buyback\Application\Query\PreviewDraftPriceBookCalculation;
-use AppleKlinika\Buyback\Domain\Pricing\ConditionDefinition;
+use AppleKlinika\Buyback\Application\LocalDemo\LocalDemoQuestionnaire;
 
 final class PreviewCalculationFormParser
 {
+    public function __construct(private readonly LocalDemoQuestionnaire $questionnaire)
+    {
+    }
+
     /** @param array<string, mixed> $post */
     public function parse(array $post): PreviewDraftPriceBookCalculation
     {
@@ -19,26 +23,24 @@ final class PreviewCalculationFormParser
             throw new \InvalidArgumentException('iPhone modell kiválasztása szükséges.');
         }
 
-        $rawAnswers = $post['preview_conditions'] ?? null;
+        $rawAnswers = $post['preview_questionnaire'] ?? null;
         if (! is_array($rawAnswers)) {
-            throw new \InvalidArgumentException('A készülékállapot adatai hiányoznak.');
+            throw new \InvalidArgumentException('A kérdőív válaszai hiányoznak.');
         }
 
-        $unknown = array_diff(array_keys($rawAnswers), ConditionDefinition::keys());
+        $questions = $this->questionnaire->questions();
+        $unknown = array_diff(array_keys($rawAnswers), array_keys($questions));
         if ($unknown !== []) {
-            throw new \InvalidArgumentException('Ismeretlen készülékállapot-mező.');
+            throw new \InvalidArgumentException('Ismeretlen kérdőívmező.');
         }
 
-        $answers = [];
-        foreach (ConditionDefinition::keys() as $key) {
-            if (! array_key_exists($key, $rawAnswers)) {
-                throw new \InvalidArgumentException('Hiányzó készülékállapot-mező.');
-            }
-            $raw = is_scalar($rawAnswers[$key]) ? sanitize_text_field((string) $rawAnswers[$key]) : null;
-            $answers[$key] = ConditionDefinition::normalizeInput($key, $raw);
+        $errors = $this->questionnaire->validate($rawAnswers);
+        if ($errors !== []) {
+            throw new \InvalidArgumentException(implode(' ', array_values($errors)));
         }
 
-        return new PreviewDraftPriceBookCalculation($bookId, $modelKey, $storage, $answers);
+        $colorKey = sanitize_key((string) ($post['preview_color_key'] ?? ''));
+        return new PreviewDraftPriceBookCalculation($bookId, $modelKey, $storage, $this->questionnaire->sanitize($rawAnswers), $colorKey);
     }
 
     /** @param array<string, mixed> $post */

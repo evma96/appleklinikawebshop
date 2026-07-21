@@ -13,7 +13,9 @@ final class DraftPriceBookPreview
         public readonly PriceBook $priceBook,
         public readonly string $modelKey,
         public readonly int $storageGb,
-        public readonly array $modeResults
+        public readonly array $modeResults,
+        public readonly array $questionnaireState = [],
+        public readonly string $colorKey = ''
     ) {
     }
 }

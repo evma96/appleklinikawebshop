@@ -297,4 +297,52 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     refresh();
   });
+
+  document.querySelectorAll('[data-ak-preview-form]').forEach(function (form) {
+    var payload;
+    try { payload = JSON.parse(form.dataset.akPreviewCatalog || '{}'); } catch (error) { payload = {}; }
+    var model = form.querySelector('[data-ak-preview-model]');
+    var storage = form.querySelector('[data-ak-preview-storage]');
+    var color = form.querySelector('[data-ak-preview-color]');
+    var colorWrap = form.querySelector('[data-ak-preview-color-wrap]');
+    var refreshConfiguration = function () {
+      if (!model || !storage) return;
+      var key = model.value;
+      var storages = (payload.configurations || {})[key] || [];
+      var colors = ((payload.catalog || {})[key] || {}).colors || {};
+      storage.innerHTML = '<option value="">Válassz tárhelyet</option>';
+      storages.forEach(function (value) {
+        var option = document.createElement('option');
+        option.value = String(value);
+        option.textContent = value % 1024 === 0 ? String(value / 1024) + ' TB' : String(value) + ' GB';
+        storage.appendChild(option);
+      });
+      if (color) {
+        color.innerHTML = '<option value="">Nincs kiválasztva</option>';
+        Object.keys(colors).forEach(function (key) {
+          var option = document.createElement('option');
+          option.value = key;
+          option.textContent = colors[key];
+          color.appendChild(option);
+        });
+      }
+      if (colorWrap) colorWrap.hidden = Object.keys(colors).length === 0;
+    };
+    if (model) model.addEventListener('change', refreshConfiguration);
+    form.querySelectorAll('[data-ak-preview-conditional]').forEach(function (field) {
+      var source = form.querySelector('[data-ak-preview-question="' + field.dataset.akPreviewConditional + '"]');
+      var refreshConditional = function () {
+        var visible = !source || source.value !== field.dataset.akPreviewExcept;
+        field.hidden = !visible;
+        field.querySelectorAll('input, select').forEach(function (control) {
+          control.disabled = !visible;
+          if (!visible && control.type === 'checkbox') control.checked = false;
+        });
+      };
+      if (source) source.addEventListener('change', refreshConditional);
+      refreshConditional();
+    });
+    var reset = form.querySelector('[data-ak-preview-reset]');
+    if (reset) reset.addEventListener('click', function () { window.setTimeout(refreshConfiguration, 0); });
+  });
 });
