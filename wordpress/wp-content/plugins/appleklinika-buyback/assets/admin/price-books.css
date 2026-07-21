@@ -66,6 +66,8 @@
 .ak-pricebook-entry h3 { margin: 8px 0 0; font-size: 16px; }
 .ak-pricebook-entry-actions { align-self: start; text-align: right; }
 .ak-pricebook-action-help { max-width: 370px; margin: 8px 0 0 auto; color: #50575e; font-size: 12px; line-height: 1.45; }
+.ak-discard-pricebook-form { display: inline; margin-left: 8px; }
+.ak-pricebook-discard-help { max-width: 370px; margin: 8px 0 0 auto; color: #50575e; font-size: 12px; line-height: 1.45; }
 .ak-pricebook-warning { margin: 10px 0 0; padding: 9px 10px; border-left: 4px solid #dba617; background: #fcf9e8; color: #3c434a; font-weight: 600; }
 .ak-pricebook-meta { margin: 9px 0 0; color: #50575e; }
 .ak-pricebook-technical { grid-column: 1 / -1; border-top: 1px solid #f0f0f1; padding-top: 10px; color: #50575e; font-size: 12px; }
@@ -152,4 +154,4 @@
 @media (max-width: 1200px) { .ak-preview-conditions { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 1100px) { .ak-preview-layout { grid-template-columns: 1fr; } .ak-preview-results { position: static; } }
 @media (max-width: 780px) { .ak-preview-panel, .ak-preview-offer-grid { grid-template-columns: 1fr; } }
-@media (max-width: 782px) { .ak-pricebook-entry { grid-template-columns: 1fr; } .ak-pricebook-entry-actions { text-align: left; } .ak-pricebook-action-help { margin-left: 0; } }
+@media (max-width: 782px) { .ak-pricebook-entry { grid-template-columns: 1fr; } .ak-pricebook-entry-actions { text-align: left; } .ak-pricebook-action-help, .ak-pricebook-discard-help { margin-left: 0; } .ak-discard-pricebook-form { margin-left: 8px; } }

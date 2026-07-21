@@ -10,6 +10,7 @@ require_once ABSPATH . 'wp-admin/includes/user.php';
 use AppleKlinika\Buyback\Application\Command\AddDraftPricingRule;
 use AppleKlinika\Buyback\Application\Command\CreateDraftPriceBook;
 use AppleKlinika\Buyback\Application\Command\ClonePriceBookToDraft;
+use AppleKlinika\Buyback\Application\Command\DiscardDraftPriceBook;
 use AppleKlinika\Buyback\Application\Command\DeleteDraftPricingRule;
 use AppleKlinika\Buyback\Application\Command\SaveDraftBasePriceMatrix;
 use AppleKlinika\Buyback\Application\Command\SaveDraftQuestionnaireConditions;
@@ -26,6 +27,7 @@ use AppleKlinika\Buyback\Application\Handler\AddDraftPricingRuleHandler;
 use AppleKlinika\Buyback\Application\Handler\ActivateDraftPriceBookHandler;
 use AppleKlinika\Buyback\Application\Handler\CreateDraftPriceBookHandler;
 use AppleKlinika\Buyback\Application\Handler\ClonePriceBookToDraftHandler;
+use AppleKlinika\Buyback\Application\Handler\DiscardDraftPriceBookHandler;
 use AppleKlinika\Buyback\Application\Handler\DeleteDraftPricingRuleHandler;
 use AppleKlinika\Buyback\Application\Handler\PreviewDraftPriceBookCalculationHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftBasePriceMatrixHandler;
@@ -38,6 +40,7 @@ use AppleKlinika\Buyback\Application\Handler\UpdateDraftPricingRuleHandler;
 use AppleKlinika\Buyback\Application\LocalDemo\LocalDemoQuestionnaire;
 use AppleKlinika\Buyback\Application\Pricing\OfferModeExampleCalculator;
 use AppleKlinika\Buyback\Application\Port\Clock;
+use AppleKlinika\Buyback\Application\Port\DraftPriceBookDiscardRepository;
 use AppleKlinika\Buyback\Domain\Exception\InvalidAggregateOperationException;
 use AppleKlinika\Buyback\Domain\Exception\InvalidValueObjectException;
 use AppleKlinika\Buyback\Domain\Exception\StaleAggregateVersionException;
@@ -64,6 +67,7 @@ use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\Schema;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\SchemaInspector;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\MySqlPriceBookActivationLock;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressPriceBookRepository;
+use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressDraftPriceBookDiscardRepository;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressPricingRuleRepository;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressTransactionManager;
 use AppleKlinika\Buyback\Infrastructure\WordPress\CapabilityManager;
@@ -158,6 +162,41 @@ final class PricingAdminFixedClock implements Clock
     public function now(): DateTimeImmutable
     {
         return $this->time;
+    }
+}
+
+final class ReferencedDraftPriceBookDiscardRepository implements DraftPriceBookDiscardRepository
+{
+    public function __construct(private readonly DraftPriceBookDiscardRepository $delegate)
+    {
+    }
+
+    public function hasBusinessReferences(PriceBookId $priceBookId): bool
+    {
+        return true;
+    }
+
+    public function discardDraftWithRules(PriceBookId $priceBookId): void
+    {
+        $this->delegate->discardDraftWithRules($priceBookId);
+    }
+}
+
+final class FailingDraftPriceBookDiscardRepository implements DraftPriceBookDiscardRepository
+{
+    public function __construct(private readonly DraftPriceBookDiscardRepository $delegate)
+    {
+    }
+
+    public function hasBusinessReferences(PriceBookId $priceBookId): bool
+    {
+        return false;
+    }
+
+    public function discardDraftWithRules(PriceBookId $priceBookId): void
+    {
+        $this->delegate->discardDraftWithRules($priceBookId);
+        throw new AppleKlinika\Buyback\Infrastructure\Persistence\Exception\PersistenceException('Forced discard failure.');
     }
 }
 
@@ -319,7 +358,7 @@ $createdUserIds = [];
 $guardTransientKeys = [];
 $clock = new PricingAdminFixedClock(new DateTimeImmutable('2026-07-15T12:00:00+00:00'));
 $transactions = new WordPressTransactionManager($wpdb);
-$books = new WordPressPriceBookRepository($wpdb);
+$books = new WordPressPriceBookRepository($wpdb, $transactions);
 $rules = new WordPressPricingRuleRepository($wpdb);
 $createBook = new CreateDraftPriceBookHandler($books, $transactions, $clock);
 $updateBook = new UpdateDraftPriceBookSettingsHandler($books, $clock);
@@ -544,6 +583,30 @@ try {
     $test->assert(count($rules->listForPriceBook($clone->id())) === count($rules->listForPriceBook($activeBook->id())), 'Clone preserves all source pricing rules');
     $test->assert($books->getById($activeBook->id())?->status()->isActive(), 'Clone leaves the active source immutable and active');
     $test->throws(fn () => $updateBook->handle(new UpdateDraftPriceBookSettings($retiredBook->id()->toInt(), 0, 'Forbidden retired edit', 0, 1, MinimumOfferPolicy::REJECT)), InvalidAggregateOperationException::class, 'Retired book mutation is rejected');
+
+    $discardRepository = new WordPressDraftPriceBookDiscardRepository($wpdb);
+    $discardDraft = new DiscardDraftPriceBookHandler($books, $discardRepository, $transactions);
+    $discardable = pricingCreateBook($createBook, $marker . '-DISCARD', $adminId);
+    pricingAddRule($addRule, $books, $discardable->id(), pricingDefinition(PricingRuleKind::BASE_PRICE, $marker . '-discard-base'));
+    $activeRulesBeforeDiscard = count($rules->listForPriceBook($activeBook->id()));
+    $discardDraft->handle(new DiscardDraftPriceBook($discardable->id()->toInt(), DiscardDraftPriceBook::CONFIRMATION));
+    $test->assert($books->getById($discardable->id()) === null && $rules->listForPriceBook($discardable->id()) === [], 'Discarding an unreferenced draft removes only that draft and its rules');
+    $test->assert($books->getById($activeBook->id())?->status()->isActive() && count($rules->listForPriceBook($activeBook->id())) === $activeRulesBeforeDiscard, 'Discarding a draft preserves other price books and their rules');
+    $test->throws(fn () => $discardDraft->handle(new DiscardDraftPriceBook($activeBook->id()->toInt(), DiscardDraftPriceBook::CONFIRMATION)), InvalidAggregateOperationException::class, 'Discard handler rejects an active price book');
+    $retiredForDiscard = $books->getById($retiredBook->id());
+    $test->throws(fn () => $discardDraft->handle(new DiscardDraftPriceBook($retiredForDiscard?->id()->toInt() ?? 0, DiscardDraftPriceBook::CONFIRMATION)), InvalidAggregateOperationException::class, 'Discard handler rejects an archived price book');
+    $test->throws(fn () => $discardDraft->handle(new DiscardDraftPriceBook(999999999, DiscardDraftPriceBook::CONFIRMATION)), AppleKlinika\Buyback\Application\Exception\PriceBookNotFoundException::class, 'Discard handler rejects an unknown price book');
+    $test->throws(fn () => $discardDraft->handle(new DiscardDraftPriceBook($clone->id()->toInt(), '')), InvalidArgumentException::class, 'Discard handler requires explicit permanent-deletion confirmation');
+    $referencedDraft = pricingCreateBook($createBook, $marker . '-REFERENCED', $adminId);
+    pricingAddRule($addRule, $books, $referencedDraft->id(), pricingDefinition(PricingRuleKind::BASE_PRICE, $marker . '-referenced-base'));
+    $referencedDiscard = new DiscardDraftPriceBookHandler($books, new ReferencedDraftPriceBookDiscardRepository($discardRepository), $transactions);
+    $test->throws(fn () => $referencedDiscard->handle(new DiscardDraftPriceBook($referencedDraft->id()->toInt(), DiscardDraftPriceBook::CONFIRMATION)), AppleKlinika\Buyback\Application\Exception\PriceBookHasBusinessReferencesException::class, 'Discard handler blocks a draft with historical or business references');
+    $test->assert($books->getById($referencedDraft->id()) !== null && count($rules->listForPriceBook($referencedDraft->id())) === 1, 'Reference-blocked discard leaves the draft and its rules intact');
+    $rollbackDraft = pricingCreateBook($createBook, $marker . '-DISCARD-ROLLBACK', $adminId);
+    pricingAddRule($addRule, $books, $rollbackDraft->id(), pricingDefinition(PricingRuleKind::BASE_PRICE, $marker . '-rollback-base'));
+    $failingDiscard = new DiscardDraftPriceBookHandler($books, new FailingDraftPriceBookDiscardRepository($discardRepository), $transactions);
+    $test->throws(fn () => $failingDiscard->handle(new DiscardDraftPriceBook($rollbackDraft->id()->toInt(), DiscardDraftPriceBook::CONFIRMATION)), AppleKlinika\Buyback\Infrastructure\Persistence\Exception\PersistenceException::class, 'A discard transaction failure rolls back both the draft and its rules');
+    $test->assert($books->getById($rollbackDraft->id()) !== null && count($rules->listForPriceBook($rollbackDraft->id())) === 1, 'Discard rollback leaves both the draft and its rules intact');
 
     $guard = new AdminSubmissionGuard();
     $token = $guard->issue();
@@ -792,6 +855,7 @@ try {
         $catalog,
         $createBook,
         new ClonePriceBookToDraftHandler($books, $rules, $transactions, $clock),
+        new DiscardDraftPriceBookHandler($books, new WordPressDraftPriceBookDiscardRepository($wpdb), $transactions),
         $saveMatrix,
         $saveConditions,
         $saveBatteryBands,
@@ -817,7 +881,7 @@ try {
     ob_start();
     $uiPage->render();
     $priceBookIndexHtml = (string) ob_get_clean();
-    $test->assert(str_contains($priceBookIndexHtml, 'Apple Klinika Felvásárlás – Árkönyvek') && str_contains($priceBookIndexHtml, 'Itt kezelheted a nyilvános felvásárlási kalkulátor árait és szabályait.') && str_contains($priceBookIndexHtml, 'Élő árkönyv') && str_contains($priceBookIndexHtml, 'Szerkesztés alatt') && str_contains($priceBookIndexHtml, 'Korábbi verziók') && str_contains($priceBookIndexHtml, 'Technikai részletek') && str_contains($priceBookIndexHtml, 'Új módosítás indítása') && str_contains($priceBookIndexHtml, 'Haladó beállítások'), 'Price-book index presents owner-facing sections, safe clone guidance and collapsed technical details');
+    $test->assert(str_contains($priceBookIndexHtml, 'Apple Klinika Felvásárlás – Árkönyvek') && str_contains($priceBookIndexHtml, 'Itt kezelheted a nyilvános felvásárlási kalkulátor árait és szabályait.') && str_contains($priceBookIndexHtml, 'Élő árkönyv') && str_contains($priceBookIndexHtml, 'Szerkesztés alatt') && str_contains($priceBookIndexHtml, 'Korábbi verziók') && str_contains($priceBookIndexHtml, 'Technikai részletek') && str_contains($priceBookIndexHtml, 'Új módosítás indítása') && str_contains($priceBookIndexHtml, 'Módosítás elvetése') && str_contains($priceBookIndexHtml, 'data-ak-discard-form') && str_contains($priceBookIndexHtml, 'Haladó beállítások'), 'Price-book index presents owner-facing sections, safe clone guidance and a POST-only draft discard action');
     $_GET = ['book_id' => (string) $matrixBook->id()->toInt(), 'tab' => 'base-prices'];
     ob_start();
     $uiPage->render();
