@@ -172,18 +172,32 @@ final class PricingEngine
     {
         $matching = array_values(array_filter($rules, fn (PricingRule $rule): bool => $this->isMatchingConditional($rule, $input)));
         $specificTargets = [];
+        $hasMatchingModelBatteryBand = false;
         foreach ($matching as $rule) {
             if ($rule->definition()->modelKey === $input->modelKey->value()) {
                 $specificTargets[$this->conditionTargetKey($rule)] = true;
+                if ($this->isBatteryBand($rule)) {
+                    $hasMatchingModelBatteryBand = true;
+                }
             }
         }
-        return array_values(array_filter($matching, function (PricingRule $rule) use ($kind, $specificTargets): bool {
+        return array_values(array_filter($matching, function (PricingRule $rule) use ($kind, $specificTargets, $hasMatchingModelBatteryBand): bool {
             $definition = $rule->definition();
             if ($definition->kind->code() !== $kind) {
                 return false;
             }
+            if ($hasMatchingModelBatteryBand && $definition->modelKey === null && $this->isBatteryBand($rule)) {
+                return false;
+            }
             return $definition->modelKey !== null || ! isset($specificTargets[$this->conditionTargetKey($rule)]);
         }));
+    }
+
+    private function isBatteryBand(PricingRule $rule): bool
+    {
+        $definition = $rule->definition();
+        return $definition->conditionKey === 'battery_health'
+            && $definition->operator?->code() === ComparisonOperator::BETWEEN;
     }
 
     private function isMatchingConditional(PricingRule $rule, PricingCalculationInput $input): bool

@@ -271,6 +271,29 @@ try {
     $model11Storage = $engine->calculate($modelBook, $modelRules, engineInput(['screen_condition' => 'damaged'], ServiceMode::HIGHER_OFFER, 'iphone_11_pro', 256));
     $test->assert($model11Storage->finalAmount?->amount() === 165000, 'Storage does not create a different model-level condition deduction');
 
+    $batteryBook = engineBook(700011, 0, 1);
+    $batteryRules = [
+        engineRule(201, $batteryBook->id(), PricingRuleKind::BASE_PRICE, 'battery-11-base-64', 10, true, ['model_key' => 'iphone_11_pro', 'storage_gb' => 64, 'amount' => 200000]),
+        engineRule(202, $batteryBook->id(), PricingRuleKind::BASE_PRICE, 'battery-11-base-256', 10, true, ['model_key' => 'iphone_11_pro', 'storage_gb' => 256, 'amount' => 200000]),
+        engineRule(203, $batteryBook->id(), PricingRuleKind::BASE_PRICE, 'battery-16-base', 10, true, ['model_key' => 'iphone_16_pro', 'amount' => 200000]),
+        engineRule(204, $batteryBook->id(), PricingRuleKind::BASE_PRICE, 'battery-13-base', 10, true, ['model_key' => 'iphone_13_pro', 'amount' => 200000]),
+        engineRule(205, $batteryBook->id(), PricingRuleKind::FIXED_DEDUCTION, 'legacy-battery-70-79', 20, true, ['condition_key' => 'battery_health', 'operator' => ComparisonOperator::BETWEEN, 'comparison' => [70, 79], 'amount' => 5000]),
+        engineRule(206, $batteryBook->id(), PricingRuleKind::FIXED_DEDUCTION, 'battery-11-70-79', 20, true, ['model_key' => 'iphone_11_pro', 'condition_key' => 'battery_health', 'operator' => ComparisonOperator::BETWEEN, 'comparison' => [70, 79], 'amount' => 9000]),
+        engineRule(207, $batteryBook->id(), PricingRuleKind::FIXED_DEDUCTION, 'battery-16-70-79', 20, true, ['model_key' => 'iphone_16_pro', 'condition_key' => 'battery_health', 'operator' => ComparisonOperator::BETWEEN, 'comparison' => [70, 79], 'amount' => 21000]),
+    ];
+    $battery11At79 = $engine->calculate($batteryBook, $batteryRules, engineInput(['battery_health' => 79], ServiceMode::HIGHER_OFFER, 'iphone_11_pro', 64));
+    $battery16At79 = $engine->calculate($batteryBook, $batteryRules, engineInput(['battery_health' => 79], ServiceMode::HIGHER_OFFER, 'iphone_16_pro', 128));
+    $battery11At70 = $engine->calculate($batteryBook, $batteryRules, engineInput(['battery_health' => 70], ServiceMode::HIGHER_OFFER, 'iphone_11_pro', 64));
+    $battery11AtUpperBoundary = $engine->calculate($batteryBook, $batteryRules, engineInput(['battery_health' => 79], ServiceMode::HIGHER_OFFER, 'iphone_11_pro', 256));
+    $batteryGlobalFallback = $engine->calculate($batteryBook, $batteryRules, engineInput(['battery_health' => 79], ServiceMode::HIGHER_OFFER, 'iphone_13_pro', 128));
+    $batteryUnmatched = $engine->calculate($batteryBook, $batteryRules, engineInput(['battery_health' => 80], ServiceMode::HIGHER_OFFER, 'iphone_11_pro', 64));
+    $batteryAfterModelDeletion = $engine->calculate($batteryBook, array_values(array_filter($batteryRules, static fn (PricingRule $rule): bool => $rule->definition()->code->code() !== 'battery-11-70-79')), engineInput(['battery_health' => 79], ServiceMode::HIGHER_OFFER, 'iphone_11_pro', 64));
+    $test->assert($battery11At79->finalAmount?->amount() === 191000 && $battery16At79->finalAmount?->amount() === 179000, 'Model-specific battery bands apply 9000 Ft to iPhone 11 Pro and 21000 Ft to iPhone 16 Pro at the same 79% health');
+    $test->assert($battery11At70->finalAmount?->amount() === 191000 && $battery11AtUpperBoundary->finalAmount?->amount() === 191000, 'Battery BETWEEN bands include both exact minimum and maximum boundaries and remain model-level across storage');
+    $test->assert($batteryGlobalFallback->finalAmount?->amount() === 195000, 'Legacy global battery band is the fallback when no model-specific battery band matches');
+    $test->assert($batteryAfterModelDeletion->finalAmount?->amount() === 195000, 'Deleting a model-specific battery override preserves the legacy global fallback');
+    $test->assert($batteryUnmatched->finalAmount?->amount() === 200000, 'An uncovered battery percentage uses the proven no-adjustment engine fallback');
+
     $missingBase = $engine->calculate($book, $rules, engineInput([], ServiceMode::FAST_ONLINE, 'iphone-14'));
     $test->assert($missingBase->outcome->code() === PricingOutcome::CONFIGURATION_ERROR && in_array('missing_base_price', $missingBase->reasonCodes, true), 'Missing base is a configuration error');
     $duplicateBase = $engine->calculate($book, array_merge($rules, [engineRule(9, $bookId, PricingRuleKind::BASE_PRICE, 'base-copy', 11, true, ['amount' => 190000])]), engineInput());

@@ -10,6 +10,7 @@ use AppleKlinika\Buyback\Application\Command\CreateDraftPriceBook;
 use AppleKlinika\Buyback\Application\Command\ClonePriceBookToDraft;
 use AppleKlinika\Buyback\Application\Command\SaveDraftBasePriceMatrix;
 use AppleKlinika\Buyback\Application\Command\SaveDraftQuestionnaireConditions;
+use AppleKlinika\Buyback\Application\Command\SaveDraftBatteryBands;
 use AppleKlinika\Buyback\Application\Command\DeleteDraftPricingRule;
 use AppleKlinika\Buyback\Application\Command\ToggleDraftPricingRule;
 use AppleKlinika\Buyback\Application\Command\UpdateDraftPriceBookSettings;
@@ -21,6 +22,7 @@ use AppleKlinika\Buyback\Application\Handler\CreateDraftPriceBookHandler;
 use AppleKlinika\Buyback\Application\Handler\ClonePriceBookToDraftHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftBasePriceMatrixHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftQuestionnaireConditionsHandler;
+use AppleKlinika\Buyback\Application\Handler\SaveDraftBatteryBandsHandler;
 use AppleKlinika\Buyback\Application\Handler\DeleteDraftPricingRuleHandler;
 use AppleKlinika\Buyback\Application\Handler\PreviewDraftPriceBookCalculationHandler;
 use AppleKlinika\Buyback\Application\Handler\ToggleDraftPricingRuleHandler;
@@ -71,6 +73,7 @@ final class PriceBooksPage
         private readonly ClonePriceBookToDraftHandler $cloneBook,
         private readonly SaveDraftBasePriceMatrixHandler $saveBasePriceMatrix,
         private readonly SaveDraftQuestionnaireConditionsHandler $saveQuestionnaireConditions,
+        private readonly SaveDraftBatteryBandsHandler $saveBatteryBands,
         private readonly UpdateDraftPriceBookSettingsHandler $updateBook,
         private readonly AddDraftPricingRuleHandler $addRule,
         private readonly UpdateDraftPricingRuleHandler $updateRule,
@@ -127,12 +130,14 @@ final class PriceBooksPage
         try {
             $this->authorization->assert(CapabilityManager::MANAGE_PRICE_BOOKS, $nonce);
             $this->dispatch($action, wp_unslash($_POST));
-            $this->redirect('success', $action, $this->postedInt('price_book_id'), $this->postedTab(), null, $this->postedConditionModel());
+            $this->redirect('success', $action, $this->postedInt('price_book_id'), $this->postedTab(), null, $this->postedModel());
         } catch (\Throwable $exception) {
-            $message = $action === 'save_questionnaire_conditions'
-                ? 'Az állapotlevonások mentése nem sikerült: ' . $exception->getMessage()
-                : null;
-            $this->redirect('error', 'validation', $this->postedInt('price_book_id'), $this->postedTab(), $message, $this->postedConditionModel());
+            $message = match ($action) {
+                'save_questionnaire_conditions' => 'Az állapotlevonások mentése nem sikerült: ' . $exception->getMessage(),
+                'save_battery_bands' => 'Az akkumulátorsávok mentése nem sikerült: ' . $exception->getMessage(),
+                default => null,
+            };
+            $this->redirect('error', 'validation', $this->postedInt('price_book_id'), $this->postedTab(), $message, $this->postedModel());
         }
     }
 
@@ -221,6 +226,12 @@ final class PriceBooksPage
         if ($action === 'save_questionnaire_conditions') {
             $conditions = isset($post['questionnaire_conditions']) && is_array($post['questionnaire_conditions']) ? $post['questionnaire_conditions'] : [];
             $this->saveQuestionnaireConditions->handle(new SaveDraftQuestionnaireConditions($bookId, $bookVersion, sanitize_key((string) ($post['condition_model_key'] ?? '')), $conditions));
+            return;
+        }
+
+        if ($action === 'save_battery_bands') {
+            $bands = isset($post['battery_bands']) && is_array($post['battery_bands']) ? array_values($post['battery_bands']) : [];
+            $this->saveBatteryBands->handle(new SaveDraftBatteryBands($bookId, $bookVersion, sanitize_key((string) ($post['battery_model_key'] ?? '')), $bands));
             return;
         }
 
@@ -345,7 +356,7 @@ final class PriceBooksPage
             return;
         }
         if ($tab === self::TAB_BATTERY) {
-            $this->renderUnavailableEditor('Akkumulátor', 'A dedikált akkumulátorsáv-szerkesztő ebben a Phase 3A admin felületben még nem készült el.');
+            $this->renderBatteryTab($book, $rules, false, $tab);
             return;
         }
         if ($tab === self::TAB_OFFER_MODES) {
@@ -567,6 +578,98 @@ final class PriceBooksPage
         echo '</section>';
     }
 
+    /** @param list<PricingRule> $rules */
+    private function renderBatteryTab(PriceBook $book, array $rules, bool $readOnly, string $tab): void
+    {
+        try {
+            $models = $this->catalog->iPhoneModels();
+        } catch (DeviceCatalogUnavailableException $exception) {
+            echo '<section class="ak-buyback-card"><h3>Akkumulátor</h3><div class="notice notice-error inline"><p>Az inventory készülékkatalógus nem érhető el, ezért az akkumulátorszabályok nem jeleníthetők meg.</p></div></section>';
+            return;
+        }
+        $model = $this->selectedConditionModel($models);
+        if ($model === null) {
+            echo '<section class="ak-buyback-card"><h3>Akkumulátor</h3><div class="notice notice-error inline"><p>A megadott iPhone modell nem szerepel az inventory készülékkatalógusban.</p></div></section>';
+            return;
+        }
+        $batteryQuestion = $this->questionnaire->questions()['battery_health'] ?? null;
+        if (! is_array($batteryQuestion) || ! isset($batteryQuestion['min'], $batteryQuestion['max'])) {
+            echo '<section class="ak-buyback-card"><h3>Akkumulátor</h3><div class="notice notice-error inline"><p>A nyilvános akkumulátor-kérdőív tartománya nem érhető el.</p></div></section>';
+            return;
+        }
+        $minimum = (int) $batteryQuestion['min'];
+        $maximum = (int) $batteryQuestion['max'];
+        $bands = $this->modelBatteryBands($rules, $model->modelKey);
+        $legacy = $this->legacyBatteryBands($rules);
+        $summary = $this->batterySummary($bands, $minimum, $maximum);
+
+        echo '<section class="ak-buyback-card ak-battery-editor"><h3>Az akkumulátor szabályai ehhez a modellhez</h3>';
+        echo '<form method="get" class="ak-battery-model-selector" data-ak-battery-model-form><input type="hidden" name="page" value="' . esc_attr(self::SLUG) . '"><input type="hidden" name="book_id" value="' . esc_attr((string) $book->id()?->toInt()) . '"><input type="hidden" name="tab" value="' . esc_attr($tab) . '"><label for="ak-battery-model">Modell<select name="model" id="ak-battery-model" data-ak-battery-model-select data-ak-current-value="' . esc_attr($model->modelKey) . '">';
+        foreach ($models as $item) {
+            echo '<option value="' . esc_attr($item->modelKey) . '" ' . selected($model->modelKey, $item->modelKey, false) . '>' . esc_html($item->label) . '</option>';
+        }
+        echo '</select></label><button type="submit" class="button">Modell betöltése</button></form>';
+        echo '<p>' . esc_html($readOnly ? 'Az akkumulátorszabályok itt csak olvashatók.' : 'Itt kizárólag a kiválasztott piszkozat és iPhone modell akkumulátorállapot-sávjai módosulnak. A százaléksávok között lehet hézag; ilyenkor a nem lefedett értékre nem alkalmazódik modellspecifikus akkumulátor-korrekció.') . '</p>';
+        echo '<div class="ak-battery-summary"><strong>' . esc_html($model->label) . '</strong> · Beállított sávok: <strong data-ak-battery-configured>' . esc_html((string) $summary['configured']) . '</strong> · Kézi bevizsgálás: <strong data-ak-battery-manual>' . esc_html((string) $summary['manual']) . '</strong> · Nem vásároljuk fel: <strong data-ak-battery-reject>' . esc_html((string) $summary['reject']) . '</strong> · Mentetlen módosítások: <strong data-ak-battery-changes>0</strong>';
+        echo '<br><strong>Lefedetlen tartomány:</strong> <span data-ak-battery-uncovered>' . esc_html($this->batteryRangeLabel($summary['uncovered'])) . '</span></div>';
+        if ($bands === []) {
+            echo '<div class="notice notice-info inline"><p>Ehhez a modellhez még nincs akkumulátorszabály beállítva.</p></div>';
+        }
+        if ($legacy !== []) {
+            echo '<div class="notice notice-warning inline"><p><strong>Örökölt globális szabály</strong></p><ul>';
+            foreach ($legacy as $rule) {
+                echo '<li>' . esc_html($this->batteryRuleDescription($rule)) . '</li>';
+            }
+            echo '</ul><p>Ez a szerkesztő nem írja át az örökölt globális szabályokat. Modellspecifikus, egyező akkumulátorsáv esetén az engine a modellspecifikus szabályt használja.</p></div>';
+        }
+        if (! $readOnly) {
+            echo '<form method="post" data-ak-battery-form data-ak-battery-min="' . esc_attr((string) $minimum) . '" data-ak-battery-max="' . esc_attr((string) $maximum) . '">';
+            $this->securityFields('save_battery_bands', $book);
+            $this->tabField($tab);
+            echo '<input type="hidden" name="battery_model_key" value="' . esc_attr($model->modelKey) . '"><div class="ak-battery-save ak-battery-save-top"><span data-ak-battery-change-message aria-live="polite">Nincs mentetlen változás.</span><button type="submit" class="button button-primary">Akkumulátorszabályok mentése – ' . esc_html($model->label) . '</button></div>';
+        }
+        echo '<div class="ak-battery-bands" data-ak-battery-bands>';
+        foreach ($bands as $index => $rule) {
+            $this->renderBatteryBandRow($rule, $index, $minimum, $maximum, $readOnly);
+        }
+        echo '</div>';
+        if (! $readOnly) {
+            echo '<template data-ak-battery-row-template>';
+            $this->renderBatteryBandRow(null, '__INDEX__', $minimum, $maximum, false);
+            echo '</template>';
+            echo '<p><button type="button" class="button" data-ak-battery-add>Új százaléksáv hozzáadása</button></p>';
+            echo '<div class="ak-battery-save ak-battery-save-bottom"><span data-ak-battery-change-message aria-live="polite">Nincs mentetlen változás.</span><button type="submit" class="button button-primary">Akkumulátorszabályok mentése – ' . esc_html($model->label) . '</button></div></form>';
+        }
+        echo '</section>';
+    }
+
+    private function renderBatteryBandRow(?PricingRule $rule, int|string $index, int $minimum, int $maximum, bool $readOnly): void
+    {
+        $range = $rule === null ? null : $rule->definition()->comparisonValue;
+        $bandMinimum = is_array($range) ? (int) $range[0] : $minimum;
+        $bandMaximum = is_array($range) ? (int) $range[1] : $maximum;
+        $action = $this->batteryAction($rule);
+        $value = $this->batteryValue($rule, $action);
+        $name = 'battery_bands[' . $index . ']';
+        $original = implode('|', [$bandMinimum, $bandMaximum, $action, $value ?? '']);
+        echo '<article class="ak-battery-band" data-ak-battery-row data-ak-battery-original="' . esc_attr($original) . '"' . ($rule !== null ? ' data-ak-battery-existing="1"' : '') . '><div class="ak-battery-band-heading"><strong>' . esc_html($rule === null ? 'Új százaléksáv' : 'Modellspecifikus szabály') . '</strong><span data-ak-battery-row-status>' . esc_html($rule === null ? 'Még nincs mentve' : 'Mentett sáv') . '</span></div>';
+        if ($readOnly) {
+            echo '<dl class="ak-battery-readonly"><dt>Százaléksáv</dt><dd>' . esc_html($bandMinimum . '–' . $bandMaximum . '%') . '</dd><dt>Következmény</dt><dd>' . esc_html($this->batteryActionLabel($action, $value)) . '</dd><dt>Forrás</dt><dd>Modellspecifikus szabály</dd></dl></article>';
+            return;
+        }
+        echo '<input type="hidden" name="' . esc_attr($name) . '[rule_id]" value="' . esc_attr($rule?->id() === null ? '' : (string) $rule->id()->toInt()) . '"><input type="hidden" name="' . esc_attr($name) . '[delete]" value="" data-ak-battery-delete>';
+        echo '<div class="ak-battery-band-fields"><label>Minimum (%)<input type="number" min="' . esc_attr((string) $minimum) . '" max="' . esc_attr((string) $maximum) . '" step="1" inputmode="numeric" name="' . esc_attr($name) . '[minimum]" value="' . esc_attr((string) $bandMinimum) . '" data-ak-battery-minimum required></label>';
+        echo '<label>Maximum (%)<input type="number" min="' . esc_attr((string) $minimum) . '" max="' . esc_attr((string) $maximum) . '" step="1" inputmode="numeric" name="' . esc_attr($name) . '[maximum]" value="' . esc_attr((string) $bandMaximum) . '" data-ak-battery-maximum required></label>';
+        echo '<label>Üzleti következmény<select name="' . esc_attr($name) . '[action]" data-ak-battery-action>';
+        foreach ($this->batteryActions() as $actionKey => $actionLabel) {
+            echo '<option value="' . esc_attr($actionKey) . '" ' . selected($action, $actionKey, false) . '>' . esc_html($actionLabel) . '</option>';
+        }
+        echo '</select></label>';
+        $needsValue = in_array($action, [SaveDraftBatteryBandsHandler::ACTION_FIXED, SaveDraftBatteryBandsHandler::ACTION_PERCENTAGE], true);
+        echo '<label data-ak-battery-value ' . ($needsValue ? '' : 'hidden') . '>Érték<div class="ak-price-input"><input type="number" min="0" max="' . esc_attr($action === SaveDraftBatteryBandsHandler::ACTION_PERCENTAGE ? '100' : (string) PHP_INT_MAX) . '" step="1" inputmode="numeric" name="' . esc_attr($name) . '[value]" value="' . esc_attr($value === null ? '' : (string) $value) . '" ' . ($needsValue ? '' : 'disabled') . ' data-ak-battery-value-input><span data-ak-battery-unit>' . esc_html($action === SaveDraftBatteryBandsHandler::ACTION_PERCENTAGE ? '%' : 'Ft') . '</span></div></label>';
+        echo '</div><p class="description">A sáv mindkét határértéket tartalmazza. Meglévő sáv törléséhez a gomb külön megerősítést kér.</p><p><button type="button" class="button-link-delete" data-ak-battery-remove>Sáv törlése</button></p></article>';
+    }
+
     private function renderUnavailableEditor(string $title, string $message): void
     {
         echo '<section class="ak-buyback-card"><h3>' . esc_html($title) . ' <span class="ak-development-badge">Fejlesztés alatt</span></h3><div class="notice notice-info inline"><p>' . esc_html($message) . '</p></div></section>';
@@ -584,12 +687,16 @@ final class PriceBooksPage
             $this->renderConditionsTab($book, $rules, true, $tab);
             return;
         }
+        if ($tab === self::TAB_BATTERY) {
+            $this->renderBatteryTab($book, $rules, true, $tab);
+            return;
+        }
         if ($tab === self::TAB_PREVIEW) {
             $this->renderPreviewPlaceholder();
             return;
         }
         $this->renderUnavailableEditor(
-            $tab === self::TAB_BATTERY ? 'Akkumulátor' : 'Ajánlattípusok',
+            'Ajánlattípusok',
             'Ez a felület fejlesztés alatt áll; az aktív és archivált árkönyvek itt is csak olvashatók.'
         );
     }
@@ -852,7 +959,7 @@ final class PriceBooksPage
         echo '<nav class="nav-tab-wrapper"><a class="nav-tab" href="' . esc_url(admin_url('admin.php?page=' . DiagnosticsPage::SLUG)) . '">Diagnosztika</a><a class="nav-tab' . ($bookId === 0 ? ' nav-tab-active' : '') . '" href="' . esc_url(admin_url('admin.php?page=' . self::SLUG)) . '">Árkönyvek</a>';
         if ($bookId > 0) {
             foreach ([self::TAB_BASE_PRICES => 'Alapárak', self::TAB_CONDITIONS => 'Állapotlevonások', self::TAB_BATTERY => 'Akkumulátor', self::TAB_OFFER_MODES => 'Ajánlattípusok', self::TAB_PREVIEW => 'Tesztkalkulátor'] as $value => $label) {
-                $status = in_array($value, [self::TAB_BASE_PRICES, self::TAB_CONDITIONS], true) ? '' : ' <span class="ak-tab-status">Fejlesztés alatt</span>';
+                $status = in_array($value, [self::TAB_BASE_PRICES, self::TAB_CONDITIONS, self::TAB_BATTERY], true) ? '' : ' <span class="ak-tab-status">Fejlesztés alatt</span>';
                 echo '<a class="nav-tab' . ($tab === $value ? ' nav-tab-active' : '') . '" href="' . esc_url($this->tabUrl($bookId, $value)) . '">' . esc_html($label) . $status . '</a>';
             }
         }
@@ -921,6 +1028,143 @@ final class PriceBooksPage
         return $label . ': ' . number_format_i18n($value) . ($action === SaveDraftQuestionnaireConditionsHandler::ACTION_PERCENTAGE ? '%' : ' Ft');
     }
 
+    /** @return array<string,string> */
+    private function batteryActions(): array
+    {
+        return [
+            SaveDraftBatteryBandsHandler::ACTION_NONE => 'Nincs változás',
+            SaveDraftBatteryBandsHandler::ACTION_FIXED => 'Fix levonás',
+            SaveDraftBatteryBandsHandler::ACTION_PERCENTAGE => 'Százalékos levonás',
+            SaveDraftBatteryBandsHandler::ACTION_MANUAL_REVIEW => 'Kézi bevizsgálás',
+            SaveDraftBatteryBandsHandler::ACTION_HARD_REJECT => 'Nem vásároljuk fel',
+        ];
+    }
+
+    private function batteryAction(?PricingRule $rule): string
+    {
+        if ($rule === null) {
+            return SaveDraftBatteryBandsHandler::ACTION_NONE;
+        }
+        return match ($rule->definition()->kind->code()) {
+            PricingRuleKind::FIXED_DEDUCTION => SaveDraftBatteryBandsHandler::ACTION_FIXED,
+            PricingRuleKind::MULTIPLIER => SaveDraftBatteryBandsHandler::ACTION_PERCENTAGE,
+            PricingRuleKind::MANUAL_REVIEW => SaveDraftBatteryBandsHandler::ACTION_MANUAL_REVIEW,
+            PricingRuleKind::HARD_REJECT => SaveDraftBatteryBandsHandler::ACTION_HARD_REJECT,
+            default => SaveDraftBatteryBandsHandler::ACTION_NONE,
+        };
+    }
+
+    private function batteryValue(?PricingRule $rule, string $action): ?int
+    {
+        if ($rule === null) {
+            return null;
+        }
+        if ($action === SaveDraftBatteryBandsHandler::ACTION_FIXED) {
+            return $rule->definition()->amount?->amount();
+        }
+        if ($action === SaveDraftBatteryBandsHandler::ACTION_PERCENTAGE) {
+            $basisPoints = $rule->definition()->multiplier?->value();
+            return $basisPoints === null ? null : max(0, intdiv(10000 - $basisPoints, 100));
+        }
+        return null;
+    }
+
+    private function batteryActionLabel(string $action, ?int $value): string
+    {
+        $label = $this->batteryActions()[$action] ?? 'Nincs változás';
+        if ($value === null) {
+            return $label;
+        }
+        return $label . ': ' . number_format_i18n($value) . ($action === SaveDraftBatteryBandsHandler::ACTION_PERCENTAGE ? '%' : ' Ft');
+    }
+
+    /** @param list<PricingRule> $rules @return list<PricingRule> */
+    private function modelBatteryBands(array $rules, string $modelKey): array
+    {
+        $bands = array_values(array_filter($rules, static function (PricingRule $rule) use ($modelKey): bool {
+            $definition = $rule->definition();
+            return $definition->enabled
+                && $definition->modelKey === $modelKey
+                && $definition->conditionKey === 'battery_health'
+                && $definition->operator?->code() === ComparisonOperator::BETWEEN
+                && is_array($definition->comparisonValue)
+                && count($definition->comparisonValue) === 2
+                && in_array($definition->kind->code(), [PricingRuleKind::FIXED_DEDUCTION, PricingRuleKind::MULTIPLIER, PricingRuleKind::MANUAL_REVIEW, PricingRuleKind::HARD_REJECT], true);
+        }));
+        usort($bands, static fn (PricingRule $left, PricingRule $right): int => [(int) $left->definition()->comparisonValue[0], (int) $left->definition()->comparisonValue[1]] <=> [(int) $right->definition()->comparisonValue[0], (int) $right->definition()->comparisonValue[1]]);
+        return $bands;
+    }
+
+    /** @param list<PricingRule> $rules @return list<PricingRule> */
+    private function legacyBatteryBands(array $rules): array
+    {
+        return array_values(array_filter($rules, static fn (PricingRule $rule): bool => $rule->definition()->enabled && $rule->definition()->modelKey === null && $rule->definition()->conditionKey === 'battery_health'));
+    }
+
+    /** @param list<PricingRule> $bands @return array{configured:int,manual:int,reject:int,uncovered:list<array{minimum:int,maximum:int}>} */
+    private function batterySummary(array $bands, int $minimum, int $maximum): array
+    {
+        $manual = 0;
+        $reject = 0;
+        $covered = [];
+        foreach ($bands as $rule) {
+            $action = $this->batteryAction($rule);
+            if ($action === SaveDraftBatteryBandsHandler::ACTION_MANUAL_REVIEW) {
+                ++$manual;
+            }
+            if ($action === SaveDraftBatteryBandsHandler::ACTION_HARD_REJECT) {
+                ++$reject;
+            }
+            $range = $rule->definition()->comparisonValue;
+            $covered[] = ['minimum' => (int) $range[0], 'maximum' => (int) $range[1]];
+        }
+        usort($covered, static fn (array $left, array $right): int => [$left['minimum'], $left['maximum']] <=> [$right['minimum'], $right['maximum']]);
+        $uncovered = [];
+        $next = $minimum;
+        foreach ($covered as $range) {
+            if ($range['minimum'] > $next) {
+                $uncovered[] = ['minimum' => $next, 'maximum' => min($maximum, $range['minimum'] - 1)];
+            }
+            $next = max($next, $range['maximum'] + 1);
+        }
+        if ($next <= $maximum) {
+            $uncovered[] = ['minimum' => $next, 'maximum' => $maximum];
+        }
+        return ['configured' => count($bands), 'manual' => $manual, 'reject' => $reject, 'uncovered' => $uncovered];
+    }
+
+    /** @param list<array{minimum:int,maximum:int}> $ranges */
+    private function batteryRangeLabel(array $ranges): string
+    {
+        if ($ranges === []) {
+            return 'Nincs – a publikus tartomány teljesen lefedett.';
+        }
+        return implode(', ', array_map(static fn (array $range): string => $range['minimum'] . '–' . $range['maximum'] . '%', $ranges));
+    }
+
+    private function batteryRuleDescription(PricingRule $rule): string
+    {
+        $definition = $rule->definition();
+        $range = $definition->comparisonValue;
+        $scope = is_array($range) && count($range) === 2
+            ? (int) $range[0] . '–' . (int) $range[1] . '%'
+            : $this->batteryComparisonLabel($definition->operator?->code(), $range);
+        return $scope . ': ' . $this->batteryActionLabel($this->batteryAction($rule), $this->batteryValue($rule, $this->batteryAction($rule)));
+    }
+
+    private function batteryComparisonLabel(?string $operator, mixed $value): string
+    {
+        $label = match ($operator) {
+            ComparisonOperator::LESS_THAN => 'kevesebb mint',
+            ComparisonOperator::LESS_OR_EQUAL => 'legfeljebb',
+            ComparisonOperator::GREATER_THAN => 'több mint',
+            ComparisonOperator::GREATER_OR_EQUAL => 'legalább',
+            ComparisonOperator::EQUALS => 'pontosan',
+            default => 'Akkumulátorállapot',
+        };
+        return $label . ' ' . (is_scalar($value) ? (string) $value . '%' : '');
+    }
+
     /** @param list<DeviceCatalogItem> $models */
     private function selectedConditionModel(array $models): ?DeviceCatalogItem
     {
@@ -965,7 +1209,7 @@ final class PriceBooksPage
         if ($message !== null && $message !== '') {
             $args['ak_message'] = $message;
         }
-        if ($bookId > 0 && $tab === self::TAB_CONDITIONS && $model !== null && $model !== '') {
+        if ($bookId > 0 && in_array($tab, [self::TAB_CONDITIONS, self::TAB_BATTERY], true) && $model !== null && $model !== '') {
             $args['model'] = $model;
         }
         wp_safe_redirect(add_query_arg($args, admin_url('admin.php')));
@@ -976,7 +1220,11 @@ final class PriceBooksPage
     private function postedInt(string $key): int { return isset($_POST[$key]) ? absint($_POST[$key]) : 0; }
     private function tabField(string $tab): void { echo '<input type="hidden" name="editor_tab" value="' . esc_attr($tab) . '">'; }
     private function postedTab(): ?string { return isset($_POST['editor_tab']) ? $this->normalizeTab(sanitize_key((string) wp_unslash($_POST['editor_tab']))) : null; }
-    private function postedConditionModel(): ?string { return isset($_POST['condition_model_key']) ? sanitize_key((string) wp_unslash($_POST['condition_model_key'])) : null; }
+    private function postedModel(): ?string
+    {
+        $key = $this->postedTab() === self::TAB_BATTERY ? 'battery_model_key' : 'condition_model_key';
+        return isset($_POST[$key]) ? sanitize_key((string) wp_unslash($_POST[$key])) : null;
+    }
     private function resolveTab(): string { return $this->normalizeTab(sanitize_key((string) ($_GET['tab'] ?? ''))); }
     private function normalizeTab(string $tab): string { return in_array($tab, self::EDITOR_TABS, true) ? $tab : self::TAB_BASE_PRICES; }
     private function tabUrl(int $bookId, string $tab): string { return add_query_arg(['page' => self::SLUG, 'book_id' => $bookId, 'tab' => $tab], admin_url('admin.php')); }

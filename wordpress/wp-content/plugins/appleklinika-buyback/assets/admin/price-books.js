@@ -128,4 +128,114 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     refresh();
   });
+
+  document.querySelectorAll('[data-ak-battery-form]').forEach(function (form) {
+    var dirty = false;
+    var editor = form.closest('.ak-battery-editor') || form;
+    var bands = form.querySelector('[data-ak-battery-bands]');
+    var template = form.querySelector('[data-ak-battery-row-template]');
+    var nextIndex = form.querySelectorAll('[data-ak-battery-row]').length;
+    var rowValue = function (row) {
+      var minimum = row.querySelector('[data-ak-battery-minimum]');
+      var maximum = row.querySelector('[data-ak-battery-maximum]');
+      var action = row.querySelector('[data-ak-battery-action]');
+      var value = row.querySelector('[data-ak-battery-value-input]');
+      return [minimum ? minimum.value.trim() : '', maximum ? maximum.value.trim() : '', action ? action.value : '', value && !value.disabled ? value.value.trim() : ''].join('|');
+    };
+    var needsValue = function (action) { return action === 'fixed' || action === 'percentage'; };
+    var refreshRow = function (row) {
+      var action = row.querySelector('[data-ak-battery-action]');
+      var valueWrap = row.querySelector('[data-ak-battery-value]');
+      var value = row.querySelector('[data-ak-battery-value-input]');
+      var unit = row.querySelector('[data-ak-battery-unit]');
+      if (!action || !valueWrap || !value) return;
+      var required = needsValue(action.value);
+      valueWrap.hidden = !required;
+      value.disabled = !required;
+      if (!required) value.value = '';
+      value.max = action.value === 'percentage' ? '100' : String(Number.MAX_SAFE_INTEGER);
+      if (unit) unit.textContent = action.value === 'percentage' ? '%' : 'Ft';
+    };
+    var refresh = function () {
+      var configured = 0;
+      var manual = 0;
+      var reject = 0;
+      var changes = 0;
+      form.querySelectorAll('[data-ak-battery-row]').forEach(function (row) {
+        if (row.dataset.akBatteryDeleted === '1') {
+          changes += 1;
+          return;
+        }
+        refreshRow(row);
+        var action = row.querySelector('[data-ak-battery-action]');
+        if (action && action.value !== 'none') configured += 1;
+        if (action && action.value === 'manual_review') manual += 1;
+        if (action && action.value === 'hard_reject') reject += 1;
+        var changed = row.dataset.akBatteryOriginal !== rowValue(row);
+        row.classList.toggle('is-changed', changed);
+        if (changed) changes += 1;
+      });
+      [['[data-ak-battery-configured]', configured], ['[data-ak-battery-manual]', manual], ['[data-ak-battery-reject]', reject], ['[data-ak-battery-changes]', changes]].forEach(function (item) {
+        editor.querySelectorAll(item[0]).forEach(function (target) { target.textContent = item[1]; });
+      });
+      form.querySelectorAll('[data-ak-battery-change-message]').forEach(function (target) {
+        target.textContent = changes > 0 ? changes + ' mentetlen módosítás van.' : 'Nincs mentetlen változás.';
+      });
+      dirty = changes > 0;
+    };
+    var bindRow = function (row) {
+      row.querySelectorAll('[data-ak-battery-minimum], [data-ak-battery-maximum], [data-ak-battery-action], [data-ak-battery-value-input]').forEach(function (control) {
+        control.addEventListener('change', refresh);
+        control.addEventListener('input', refresh);
+      });
+      var remove = row.querySelector('[data-ak-battery-remove]');
+      if (remove) {
+        remove.addEventListener('click', function () {
+          if (!window.confirm('Biztosan törlöd ezt az akkumulátorsávot? A mentésig a törlés még nem végleges.')) return;
+          var deleteInput = row.querySelector('[data-ak-battery-delete]');
+          if (row.dataset.akBatteryExisting === '1' && deleteInput) {
+            deleteInput.value = '1';
+            row.dataset.akBatteryDeleted = '1';
+            row.classList.add('is-deleting');
+            row.hidden = true;
+          } else {
+            row.remove();
+          }
+          refresh();
+        });
+      }
+      refreshRow(row);
+    };
+    form.querySelectorAll('[data-ak-battery-row]').forEach(bindRow);
+    var add = form.querySelector('[data-ak-battery-add]');
+    if (add && bands && template) {
+      add.addEventListener('click', function () {
+        var wrapper = document.createElement('div');
+        wrapper.innerHTML = template.innerHTML.replaceAll('__INDEX__', String(nextIndex++));
+        var row = wrapper.firstElementChild;
+        if (!row) return;
+        bands.appendChild(row);
+        bindRow(row);
+        refresh();
+      });
+    }
+    var modelSelect = editor.querySelector('[data-ak-battery-model-select]');
+    if (modelSelect) {
+      modelSelect.addEventListener('change', function (event) {
+        if (dirty && !window.confirm('Mentetlen akkumulátorszabály-módosítások vannak. Biztosan másik modellt töltesz be?')) {
+          event.preventDefault();
+          modelSelect.value = modelSelect.dataset.akCurrentValue || '';
+          return;
+        }
+        modelSelect.closest('form').submit();
+      });
+    }
+    form.addEventListener('submit', function () { dirty = false; });
+    window.addEventListener('beforeunload', function (event) {
+      if (!dirty) return;
+      event.preventDefault();
+      event.returnValue = '';
+    });
+    refresh();
+  });
 });

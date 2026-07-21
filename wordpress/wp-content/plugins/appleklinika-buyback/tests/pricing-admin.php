@@ -13,6 +13,7 @@ use AppleKlinika\Buyback\Application\Command\ClonePriceBookToDraft;
 use AppleKlinika\Buyback\Application\Command\DeleteDraftPricingRule;
 use AppleKlinika\Buyback\Application\Command\SaveDraftBasePriceMatrix;
 use AppleKlinika\Buyback\Application\Command\SaveDraftQuestionnaireConditions;
+use AppleKlinika\Buyback\Application\Command\SaveDraftBatteryBands;
 use AppleKlinika\Buyback\Application\Command\ToggleDraftPricingRule;
 use AppleKlinika\Buyback\Application\Command\UpdateDraftPriceBookSettings;
 use AppleKlinika\Buyback\Application\Command\UpdateDraftPricingRule;
@@ -28,6 +29,7 @@ use AppleKlinika\Buyback\Application\Handler\DeleteDraftPricingRuleHandler;
 use AppleKlinika\Buyback\Application\Handler\PreviewDraftPriceBookCalculationHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftBasePriceMatrixHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftQuestionnaireConditionsHandler;
+use AppleKlinika\Buyback\Application\Handler\SaveDraftBatteryBandsHandler;
 use AppleKlinika\Buyback\Application\Handler\ToggleDraftPricingRuleHandler;
 use AppleKlinika\Buyback\Application\Handler\UpdateDraftPriceBookSettingsHandler;
 use AppleKlinika\Buyback\Application\Handler\UpdateDraftPricingRuleHandler;
@@ -252,6 +254,25 @@ function pricingConditionSubmission(LocalDemoQuestionnaire $questionnaire): arra
         }
     }
     return $submission;
+}
+
+/** @return array<string,mixed> */
+function pricingBatteryBand(?PricingRule $rule, int $minimum, int $maximum, string $action, string $value = '', bool $delete = false): array
+{
+    return [
+        'rule_id' => $rule?->id()?->toInt() === null ? '' : (string) $rule->id()->toInt(),
+        'minimum' => (string) $minimum,
+        'maximum' => (string) $maximum,
+        'action' => $action,
+        'value' => $value,
+        'delete' => $delete ? '1' : '',
+    ];
+}
+
+/** @param list<PricingRule> $rules @return list<PricingRule> */
+function pricingModelBatteryRules(array $rules, string $modelKey): array
+{
+    return array_values(array_filter($rules, static fn (PricingRule $rule): bool => $rule->definition()->modelKey === $modelKey && $rule->definition()->conditionKey === 'battery_health' && $rule->definition()->operator?->code() === ComparisonOperator::BETWEEN));
 }
 
 /** @return array{0:int,1:bool} */
@@ -604,6 +625,7 @@ try {
     $test->assert(count($rules->listForPriceBook($matrixBook->id())) === $ruleCountBeforeInvalidPair, 'Invalid matrix submissions do not mutate unrelated rules');
     $questionnaire = new LocalDemoQuestionnaire();
     $saveConditions = new SaveDraftQuestionnaireConditionsHandler($books, $rules, $transactions, $clock, $questionnaire, $catalog);
+    $saveBatteryBands = new SaveDraftBatteryBandsHandler($books, $rules, $transactions, $clock, $questionnaire, $catalog);
     $publicQuestionKeys = [];
     foreach ($questionnaire->panelOrder() as $panel) {
         if (in_array($panel, ['model', 'battery', 'offers', 'review'], true)) {
@@ -664,6 +686,50 @@ try {
     $matrixCurrent = $books->getById($matrixBook->id());
     $test->throws(fn () => $saveConditions->handle(new SaveDraftQuestionnaireConditions($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, 'iphone_11_pro', $invalidConditionSubmission)), InvalidArgumentException::class, 'Condition editor does not make immutable network rejection configurable');
     $test->throws(fn () => $saveConditions->handle(new SaveDraftQuestionnaireConditions($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, 'iphone_not_in_inventory', $conditionSubmission)), InvalidArgumentException::class, 'Condition editor rejects an unknown inventory model key');
+
+    $batteryQuestion = $questionnaire->questions()['battery_health'] ?? [];
+    $test->assert(($batteryQuestion['type'] ?? null) === 'range' && ($batteryQuestion['min'] ?? null) === 70 && ($batteryQuestion['max'] ?? null) === 100, 'Battery editor uses the public questionnaire battery key and integer 70–100 percentage range');
+    $modelKeys = array_map(static fn ($item): string => $item->modelKey, $catalog->iPhoneModels());
+    $test->assert(in_array('iphone_11_pro', $modelKeys, true) && in_array('iphone_16_pro', $modelKeys, true), 'Battery editor model selector source is the inventory-backed device catalog');
+    $batteryRulesBefore = $rules->listForPriceBook($matrixBook->id());
+    $nonBatteryBefore = array_values(array_filter($batteryRulesBefore, static fn (PricingRule $rule): bool => $rule->definition()->conditionKey !== 'battery_health' || $rule->definition()->modelKey === null));
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $saveBatteryBands->handle(new SaveDraftBatteryBands($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, 'iphone_11_pro', [pricingBatteryBand(null, 70, 79, SaveDraftBatteryBandsHandler::ACTION_FIXED, '9000')]));
+    $iphone11Bands = pricingModelBatteryRules($rules->listForPriceBook($matrixBook->id()), 'iphone_11_pro');
+    $iphone11Band = $iphone11Bands[0] ?? null;
+    $test->assert(count($iphone11Bands) === 1 && $iphone11Band?->definition()->amount?->amount() === 9000 && $iphone11Band?->definition()->comparisonValue === [70, 79], 'Battery editor creates a model-specific 70–79% fixed-deduction band');
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $saveBatteryBands->handle(new SaveDraftBatteryBands($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, 'iphone_16_pro', [pricingBatteryBand(null, 70, 79, SaveDraftBatteryBandsHandler::ACTION_FIXED, '21000')]));
+    $iphone16Bands = pricingModelBatteryRules($rules->listForPriceBook($matrixBook->id()), 'iphone_16_pro');
+    $iphone16Band = $iphone16Bands[0] ?? null;
+    $test->assert(count($iphone16Bands) === 1 && $iphone16Band?->definition()->amount?->amount() === 21000, 'Two models keep different battery deductions for the same 79% value');
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $saveBatteryBands->handle(new SaveDraftBatteryBands($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, 'iphone_11_pro', [pricingBatteryBand($iphone11Band, 70, 79, SaveDraftBatteryBandsHandler::ACTION_FIXED, '10000')]));
+    $iphone11Band = pricingModelBatteryRules($rules->listForPriceBook($matrixBook->id()), 'iphone_11_pro')[0] ?? null;
+    $test->assert($iphone11Band?->definition()->amount?->amount() === 10000, 'Battery editor updates one selected model band in place');
+    $test->assert((pricingModelBatteryRules($rules->listForPriceBook($matrixBook->id()), 'iphone_16_pro')[0] ?? null)?->definition()->amount?->amount() === 21000, 'Saving iPhone 11 Pro does not modify iPhone 16 Pro battery rules');
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $test->throws(fn () => $saveBatteryBands->handle(new SaveDraftBatteryBands($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, 'iphone_11_pro', [pricingBatteryBand($iphone11Band, 70, 79, SaveDraftBatteryBandsHandler::ACTION_FIXED, '10000'), pricingBatteryBand(null, 79, 90, SaveDraftBatteryBandsHandler::ACTION_FIXED, '1')])), InvalidArgumentException::class, 'Overlapping battery bands are rejected including their shared boundary');
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $test->throws(fn () => $saveBatteryBands->handle(new SaveDraftBatteryBands($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, 'iphone_11_pro', [pricingBatteryBand($iphone11Band, 70, 79, SaveDraftBatteryBandsHandler::ACTION_FIXED, '10000'), pricingBatteryBand(null, 70, 79, SaveDraftBatteryBandsHandler::ACTION_FIXED, '1')])), InvalidArgumentException::class, 'Duplicate identical battery bands are rejected');
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $test->throws(fn () => $saveBatteryBands->handle(new SaveDraftBatteryBands($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, 'iphone_11_pro', [pricingBatteryBand($iphone11Band, 90, 80, SaveDraftBatteryBandsHandler::ACTION_FIXED, '1')])), InvalidArgumentException::class, 'Reversed battery boundaries are rejected');
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $test->throws(fn () => $saveBatteryBands->handle(new SaveDraftBatteryBands($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, 'iphone_11_pro', [pricingBatteryBand($iphone11Band, 69, 79, SaveDraftBatteryBandsHandler::ACTION_FIXED, '1')])), InvalidArgumentException::class, 'Battery boundaries outside the public questionnaire range are rejected');
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $test->throws(fn () => $saveBatteryBands->handle(new SaveDraftBatteryBands($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, 'iphone_11_pro', [pricingBatteryBand($iphone11Band, 70, 79, 'invalid', '1')])), InvalidArgumentException::class, 'Unknown battery action is rejected');
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $saveBatteryBands->handle(new SaveDraftBatteryBands($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, 'iphone_11_pro', [pricingBatteryBand($iphone11Band, 70, 79, SaveDraftBatteryBandsHandler::ACTION_MANUAL_REVIEW, '999') ]));
+    $iphone11Band = pricingModelBatteryRules($rules->listForPriceBook($matrixBook->id()), 'iphone_11_pro')[0] ?? null;
+    $test->assert($iphone11Band?->definition()->amount === null && $iphone11Band?->definition()->multiplier === null && $iphone11Band?->definition()->kind->code() === PricingRuleKind::MANUAL_REVIEW, 'Changing action server-side clears stale incompatible financial values');
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $saveBatteryBands->handle(new SaveDraftBatteryBands($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, 'iphone_11_pro', [pricingBatteryBand($iphone11Band, 70, 79, SaveDraftBatteryBandsHandler::ACTION_FIXED, '9000') ]));
+    $iphone11Band = pricingModelBatteryRules($rules->listForPriceBook($matrixBook->id()), 'iphone_11_pro')[0] ?? null;
+    $test->throws(fn () => $saveBatteryBands->handle(new SaveDraftBatteryBands($matrixBook->id()->toInt(), $books->getById($matrixBook->id())?->version()->value() ?? -1, 'not_inventory', [pricingBatteryBand(null, 70, 79, SaveDraftBatteryBandsHandler::ACTION_FIXED, '1')])), InvalidArgumentException::class, 'Unknown inventory model is rejected by the battery handler');
+    $test->throws(fn () => $saveBatteryBands->handle(new SaveDraftBatteryBands($activeBook->id()->toInt(), $books->getById($activeBook->id())?->version()->value() ?? -1, 'iphone_11_pro', [])), InvalidAggregateOperationException::class, 'Battery handler rejects crafted edits to an active price book');
+    $test->throws(fn () => $saveBatteryBands->handle(new SaveDraftBatteryBands($retiredBook->id()->toInt(), $books->getById($retiredBook->id())?->version()->value() ?? -1, 'iphone_11_pro', [])), InvalidAggregateOperationException::class, 'Battery handler rejects crafted edits to an archived price book');
+    $nonBatteryAfter = array_values(array_filter($rules->listForPriceBook($matrixBook->id()), static fn (PricingRule $rule): bool => $rule->definition()->conditionKey !== 'battery_health' || $rule->definition()->modelKey === null));
+    $test->assert(serialize(array_map(static fn (PricingRule $rule): string => $rule->definition()->code->code(), $nonBatteryAfter)) === serialize(array_map(static fn (PricingRule $rule): string => $rule->definition()->code->code(), $nonBatteryBefore)), 'Battery saves preserve base-price, Conditions, offer-mode, system and legacy global rules');
     $uiPage = new PriceBooksPage(
         $books,
         $rules,
@@ -672,6 +738,7 @@ try {
         new ClonePriceBookToDraftHandler($books, $rules, $transactions, $clock),
         $saveMatrix,
         $saveConditions,
+        $saveBatteryBands,
         $updateBook,
         $addRule,
         $updateRule,
@@ -699,6 +766,20 @@ try {
     $uiPage->render();
     $conditionsHtml = (string) ob_get_clean();
     $test->assert(str_contains($conditionsHtml, 'Hálózatfüggetlen a készülék?') && str_contains($conditionsHtml, 'Művelet') && str_contains($conditionsHtml, 'Rendszerszabály') && ! str_contains($conditionsHtml, 'Az állapotlevonások felhasználóbarát szerkesztője még nem készült el.') && ! str_contains($conditionsHtml, 'Szabálykód') && ! str_contains($conditionsHtml, 'Összehasonlítás értéke') && ! str_contains($conditionsHtml, 'Diagnosztikai azonosító'), 'Normal Conditions tab renders the business questionnaire editor without raw technical fields');
+    $_GET = ['book_id' => (string) $matrixBook->id()->toInt(), 'tab' => 'battery', 'model' => 'iphone_11_pro'];
+    ob_start();
+    $uiPage->render();
+    $batteryHtml = (string) ob_get_clean();
+    $test->assert(str_contains($batteryHtml, 'Az akkumulátor szabályai ehhez a modellhez') && str_contains($batteryHtml, 'Akkumulátorszabályok mentése – iPhone 11 Pro') && str_contains($batteryHtml, 'name="model"') && str_contains($batteryHtml, 'iphone_11_pro') && str_contains($batteryHtml, 'selected'), 'Battery tab server-renders the selected inventory model and a model-labelled save action');
+    $test->assert(str_contains($batteryHtml, 'Új százaléksáv hozzáadása') && str_contains($batteryHtml, 'Minimum (%)') && str_contains($batteryHtml, 'Maximum (%)') && str_contains($batteryHtml, 'Üzleti következmény') && ! str_contains($batteryHtml, 'Szabálykód') && ! str_contains($batteryHtml, 'Prioritás') && ! str_contains($batteryHtml, 'Összehasonlítás értéke'), 'Battery UI exposes business band fields without raw technical pricing fields');
+    $_GET = ['book_id' => (string) $activeBook->id()->toInt(), 'tab' => 'battery', 'model' => 'iphone_11_pro'];
+    ob_start();
+    $uiPage->render();
+    $activeBatteryHtml = (string) ob_get_clean();
+    $test->assert(str_contains($activeBatteryHtml, 'name="model"') && ! str_contains($activeBatteryHtml, 'data-ak-battery-form') && ! str_contains($activeBatteryHtml, 'battery_bands[') && ! str_contains($activeBatteryHtml, 'Akkumulátorszabályok mentése'), 'Active price-book Battery tab is inspection-only with no editable inputs or save action');
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $saveBatteryBands->handle(new SaveDraftBatteryBands($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, 'iphone_11_pro', [pricingBatteryBand($iphone11Band, 70, 79, SaveDraftBatteryBandsHandler::ACTION_NONE, '', true)]));
+    $test->assert(pricingModelBatteryRules($rules->listForPriceBook($matrixBook->id()), 'iphone_11_pro') === [] && count(pricingModelBatteryRules($rules->listForPriceBook($matrixBook->id()), 'iphone_16_pro')) === 1, 'Explicit deletion removes only the selected model battery band and preserves other models');
     $_GET = ['book_id' => (string) $matrixBook->id()->toInt(), 'tab' => 'preview'];
     ob_start();
     $uiPage->render();
