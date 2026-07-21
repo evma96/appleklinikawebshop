@@ -11,6 +11,7 @@ use AppleKlinika\Buyback\Application\Command\ClonePriceBookToDraft;
 use AppleKlinika\Buyback\Application\Command\SaveDraftBasePriceMatrix;
 use AppleKlinika\Buyback\Application\Command\SaveDraftQuestionnaireConditions;
 use AppleKlinika\Buyback\Application\Command\SaveDraftBatteryBands;
+use AppleKlinika\Buyback\Application\Command\SaveDraftOfferModeModifiers;
 use AppleKlinika\Buyback\Application\Command\DeleteDraftPricingRule;
 use AppleKlinika\Buyback\Application\Command\ToggleDraftPricingRule;
 use AppleKlinika\Buyback\Application\Command\UpdateDraftPriceBookSettings;
@@ -23,6 +24,7 @@ use AppleKlinika\Buyback\Application\Handler\ClonePriceBookToDraftHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftBasePriceMatrixHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftQuestionnaireConditionsHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftBatteryBandsHandler;
+use AppleKlinika\Buyback\Application\Handler\SaveDraftOfferModeModifiersHandler;
 use AppleKlinika\Buyback\Application\Handler\DeleteDraftPricingRuleHandler;
 use AppleKlinika\Buyback\Application\Handler\PreviewDraftPriceBookCalculationHandler;
 use AppleKlinika\Buyback\Application\Handler\ToggleDraftPricingRuleHandler;
@@ -35,6 +37,7 @@ use AppleKlinika\Buyback\Application\Port\PriceBookRepository;
 use AppleKlinika\Buyback\Application\Port\PricingRuleRepository;
 use AppleKlinika\Buyback\Application\LocalDemo\LocalDemoQuestionnaire;
 use AppleKlinika\Buyback\Application\Pricing\DeviceCatalogItem;
+use AppleKlinika\Buyback\Application\Pricing\OfferModeExampleCalculator;
 use AppleKlinika\Buyback\Application\Pricing\PriceBookActivationReadinessService;
 use AppleKlinika\Buyback\Application\Exception\MultipleActivePriceBooksException;
 use AppleKlinika\Buyback\Application\Exception\NoActivePriceBookException;
@@ -50,6 +53,7 @@ use AppleKlinika\Buyback\Domain\Pricing\PricingOutcome;
 use AppleKlinika\Buyback\Domain\Pricing\PricingRule;
 use AppleKlinika\Buyback\Domain\Pricing\PricingRuleId;
 use AppleKlinika\Buyback\Domain\Pricing\PricingRuleKind;
+use AppleKlinika\Buyback\Domain\Buyback\OfferModeDefinition;
 use AppleKlinika\Buyback\Infrastructure\WordPress\CapabilityManager;
 
 final class PriceBooksPage
@@ -74,6 +78,8 @@ final class PriceBooksPage
         private readonly SaveDraftBasePriceMatrixHandler $saveBasePriceMatrix,
         private readonly SaveDraftQuestionnaireConditionsHandler $saveQuestionnaireConditions,
         private readonly SaveDraftBatteryBandsHandler $saveBatteryBands,
+        private readonly SaveDraftOfferModeModifiersHandler $saveOfferModeModifiers,
+        private readonly OfferModeExampleCalculator $offerModeExamples,
         private readonly UpdateDraftPriceBookSettingsHandler $updateBook,
         private readonly AddDraftPricingRuleHandler $addRule,
         private readonly UpdateDraftPricingRuleHandler $updateRule,
@@ -135,6 +141,7 @@ final class PriceBooksPage
             $message = match ($action) {
                 'save_questionnaire_conditions' => 'Az állapotlevonások mentése nem sikerült: ' . $exception->getMessage(),
                 'save_battery_bands' => 'Az akkumulátorsávok mentése nem sikerült: ' . $exception->getMessage(),
+                'save_offer_mode_modifiers' => 'Az ajánlattípusok mentése nem sikerült: ' . $exception->getMessage(),
                 default => null,
             };
             $this->redirect('error', 'validation', $this->postedInt('price_book_id'), $this->postedTab(), $message, $this->postedModel());
@@ -232,6 +239,12 @@ final class PriceBooksPage
         if ($action === 'save_battery_bands') {
             $bands = isset($post['battery_bands']) && is_array($post['battery_bands']) ? array_values($post['battery_bands']) : [];
             $this->saveBatteryBands->handle(new SaveDraftBatteryBands($bookId, $bookVersion, sanitize_key((string) ($post['battery_model_key'] ?? '')), $bands));
+            return;
+        }
+
+        if ($action === 'save_offer_mode_modifiers') {
+            $modifiers = isset($post['offer_mode_modifiers']) && is_array($post['offer_mode_modifiers']) ? array_values($post['offer_mode_modifiers']) : [];
+            $this->saveOfferModeModifiers->handle(new SaveDraftOfferModeModifiers($bookId, $bookVersion, $modifiers));
             return;
         }
 
@@ -360,7 +373,7 @@ final class PriceBooksPage
             return;
         }
         if ($tab === self::TAB_OFFER_MODES) {
-            $this->renderUnavailableEditor('Ajánlattípusok', 'A négy átvételi mód dedikált szerkesztője ebben a Phase 3A admin felületben még nem készült el.');
+            $this->renderOfferModesTab($book, $rules, false, $tab);
             return;
         }
         $this->renderPreviewPlaceholder();
@@ -670,6 +683,80 @@ final class PriceBooksPage
         echo '</div><p class="description">A sáv mindkét határértéket tartalmazza. Meglévő sáv törléséhez a gomb külön megerősítést kér.</p><p><button type="button" class="button-link-delete" data-ak-battery-remove>Sáv törlése</button></p></article>';
     }
 
+    /** @param list<PricingRule> $rules */
+    private function renderOfferModesTab(PriceBook $book, array $rules, bool $readOnly, string $tab): void
+    {
+        $modeRules = [];
+        $duplicates = [];
+        foreach ($rules as $rule) {
+            $definition = $rule->definition();
+            if ($definition->kind->code() !== PricingRuleKind::MODE_ADJUSTMENT || ! in_array($definition->serviceMode, OfferModeDefinition::keys(), true)) {
+                continue;
+            }
+            if (isset($modeRules[$definition->serviceMode])) {
+                $duplicates[$definition->serviceMode] = true;
+            }
+            $modeRules[$definition->serviceMode] = $rule;
+        }
+        $configured = count($modeRules);
+        echo '<section class="ak-buyback-card ak-offer-modes-editor"><h3>Ajánlattípusok</h3>';
+        echo '<p>' . esc_html($readOnly ? 'Az ajánlattípusok módosítói itt csak olvashatók.' : 'A négy átvételi mód az egész árkönyvre érvényes. A mentés csak ezeknek a piszkozat-szabályait módosítja; modellhez és tárhelyhez nem kötődik.') . '</p>';
+        echo '<div class="ak-offer-mode-summary"><strong><span data-ak-offer-configured>' . esc_html((string) $configured) . '</span> / 4</strong> beállítva · <strong><span data-ak-offer-missing>' . esc_html((string) (4 - $configured)) . '</span></strong> nincs beállítva · <strong><span data-ak-offer-changes>0</span></strong> mentetlen módosítás</div>';
+        if ($duplicates !== []) {
+            echo '<div class="notice notice-error inline"><p>Egy vagy több ajánlattípushoz több szabály tartozik. A szerkesztés biztonsági okból nem elérhető, amíg ezt külön nem rendezik.</p></div>';
+            $readOnly = true;
+        }
+        if (! $readOnly) {
+            echo '<form method="post" data-ak-offer-mode-form>';
+            $this->securityFields('save_offer_mode_modifiers', $book);
+            $this->tabField($tab);
+            echo '<div class="ak-offer-mode-save ak-offer-mode-save-top"><span data-ak-offer-change-message aria-live="polite">Nincs mentetlen változás.</span><button type="submit" class="button button-primary">Ajánlattípusok mentése</button></div>';
+        }
+        echo '<div class="ak-offer-mode-list">';
+        foreach (OfferModeDefinition::all() as $mode => $meta) {
+            $this->renderOfferModeRow($mode, $meta, $modeRules[$mode] ?? null, $readOnly);
+        }
+        echo '</div>';
+        if (! $readOnly) {
+            echo '<div class="ak-offer-mode-save ak-offer-mode-save-bottom"><span data-ak-offer-change-message aria-live="polite">Nincs mentetlen változás.</span><button type="submit" class="button button-primary">Ajánlattípusok mentése</button></div></form>';
+        }
+        echo '</section>';
+    }
+
+    /** @param array{label:string,description:string,process:string} $meta */
+    private function renderOfferModeRow(string $mode, array $meta, ?PricingRule $rule, bool $readOnly): void
+    {
+        $type = $rule?->definition()->amount !== null ? SaveDraftOfferModeModifiersHandler::TYPE_AMOUNT : SaveDraftOfferModeModifiersHandler::TYPE_MULTIPLIER;
+        $value = $type === SaveDraftOfferModeModifiersHandler::TYPE_AMOUNT
+            ? $rule?->definition()->amount?->amount()
+            : ($rule?->definition()->multiplier === null ? null : $this->offerModePercentage($rule->definition()->multiplier->value()));
+        $original = $rule === null ? 'missing' : 'configured|' . $type . '|' . ($value ?? '');
+        $examples = $this->offerModeExamples->examples($mode, $rule?->definition());
+        echo '<article class="ak-offer-mode-row" data-ak-offer-mode-row data-ak-offer-original="' . esc_attr($original) . '"><div class="ak-offer-mode-copy"><h4>' . esc_html($meta['label']) . '</h4><p>' . esc_html($meta['description']) . '</p><p class="description">' . esc_html($meta['process']) . '</p><p class="ak-offer-mode-examples"><strong>Példa korrigált készülékértékre:</strong> 50 000 Ft → ' . esc_html(number_format_i18n($examples[50000])) . ' Ft · 300 000 Ft → ' . esc_html(number_format_i18n($examples[300000])) . ' Ft</p></div>';
+        if ($readOnly) {
+            echo '<div class="ak-offer-mode-current"><strong>' . esc_html($rule === null ? 'Nincs külön módosító (0)' : $this->offerModeValueLabel($rule)) . '</strong><p>' . esc_html($rule === null ? 'Nincs beállítva' : 'Árkönyvszintű szabály') . '</p></div></article>';
+            return;
+        }
+        echo '<input type="hidden" name="offer_mode_modifiers[' . esc_attr($mode) . '][mode]" value="' . esc_attr($mode) . '">';
+        echo '<label class="ak-offer-mode-type">Korrekció típusa<select name="offer_mode_modifiers[' . esc_attr($mode) . '][type]" data-ak-offer-type><option value="amount" ' . selected($type, SaveDraftOfferModeModifiersHandler::TYPE_AMOUNT, false) . '>Fix összeg</option><option value="multiplier" ' . selected($type, SaveDraftOfferModeModifiersHandler::TYPE_MULTIPLIER, false) . '>Százalékos</option></select></label>';
+        echo '<label class="ak-offer-mode-value">Érték<div class="ak-price-input"><input type="number" min="' . esc_attr($type === SaveDraftOfferModeModifiersHandler::TYPE_AMOUNT ? (string) -PHP_INT_MAX : '-100') . '" max="' . esc_attr($type === SaveDraftOfferModeModifiersHandler::TYPE_AMOUNT ? (string) PHP_INT_MAX : '400') . '" step="' . esc_attr($type === SaveDraftOfferModeModifiersHandler::TYPE_AMOUNT ? '1' : '0.01') . '" inputmode="decimal" name="offer_mode_modifiers[' . esc_attr($mode) . '][value]" value="' . esc_attr($value === null ? '' : (string) $value) . '" data-ak-offer-value><span data-ak-offer-unit>' . esc_html($type === SaveDraftOfferModeModifiersHandler::TYPE_AMOUNT ? 'Ft' : '%') . '</span></div><small data-ak-offer-help>' . esc_html($type === SaveDraftOfferModeModifiersHandler::TYPE_AMOUNT ? 'Előjeles egész Ft: mínusz csökkent, plusz növel.' : 'Előjeles százalék: -100%–+400%, legfeljebb két tizedessel.') . '</small></label>';
+        echo '<label class="ak-offer-mode-remove"><input type="checkbox" name="offer_mode_modifiers[' . esc_attr($mode) . '][remove]" value="1" data-ak-offer-remove> Nincs módosítás (0)</label>';
+        echo '</article>';
+    }
+
+    private function offerModeValueLabel(PricingRule $rule): string
+    {
+        $definition = $rule->definition();
+        return $definition->amount !== null
+            ? number_format_i18n($definition->amount->amount()) . ' Ft fix korrekció'
+            : $this->offerModePercentage($definition->multiplier?->value() ?? 0) . '% százalékos korrekció';
+    }
+
+    private function offerModePercentage(int $basisPoints): string
+    {
+        return $this->basisPointsPercent($basisPoints - \AppleKlinika\Buyback\Domain\Pricing\BasisPointsMultiplier::ONE);
+    }
+
     private function renderUnavailableEditor(string $title, string $message): void
     {
         echo '<section class="ak-buyback-card"><h3>' . esc_html($title) . ' <span class="ak-development-badge">Fejlesztés alatt</span></h3><div class="notice notice-info inline"><p>' . esc_html($message) . '</p></div></section>';
@@ -691,14 +778,14 @@ final class PriceBooksPage
             $this->renderBatteryTab($book, $rules, true, $tab);
             return;
         }
+        if ($tab === self::TAB_OFFER_MODES) {
+            $this->renderOfferModesTab($book, $rules, true, $tab);
+            return;
+        }
         if ($tab === self::TAB_PREVIEW) {
             $this->renderPreviewPlaceholder();
             return;
         }
-        $this->renderUnavailableEditor(
-            'Ajánlattípusok',
-            'Ez a felület fejlesztés alatt áll; az aktív és archivált árkönyvek itt is csak olvashatók.'
-        );
     }
 
     /** @param list<PricingRule> $rules */
@@ -959,7 +1046,7 @@ final class PriceBooksPage
         echo '<nav class="nav-tab-wrapper"><a class="nav-tab" href="' . esc_url(admin_url('admin.php?page=' . DiagnosticsPage::SLUG)) . '">Diagnosztika</a><a class="nav-tab' . ($bookId === 0 ? ' nav-tab-active' : '') . '" href="' . esc_url(admin_url('admin.php?page=' . self::SLUG)) . '">Árkönyvek</a>';
         if ($bookId > 0) {
             foreach ([self::TAB_BASE_PRICES => 'Alapárak', self::TAB_CONDITIONS => 'Állapotlevonások', self::TAB_BATTERY => 'Akkumulátor', self::TAB_OFFER_MODES => 'Ajánlattípusok', self::TAB_PREVIEW => 'Tesztkalkulátor'] as $value => $label) {
-                $status = in_array($value, [self::TAB_BASE_PRICES, self::TAB_CONDITIONS, self::TAB_BATTERY], true) ? '' : ' <span class="ak-tab-status">Fejlesztés alatt</span>';
+                $status = $value === self::TAB_PREVIEW ? ' <span class="ak-tab-status">Fejlesztés alatt</span>' : '';
                 echo '<a class="nav-tab' . ($tab === $value ? ' nav-tab-active' : '') . '" href="' . esc_url($this->tabUrl($bookId, $value)) . '">' . esc_html($label) . $status . '</a>';
             }
         }
@@ -1311,13 +1398,7 @@ final class PriceBooksPage
 
     private function serviceModeLabel(string $mode): string
     {
-        return match ($mode) {
-            'in_store_instant' => 'Azonnali személyes felvásárlás',
-            'fast_online' => 'Gyors felvásárlás',
-            'higher_offer' => 'Magasabb ajánlat',
-            'trade_in' => 'Azonnali beszámítás',
-            default => $mode,
-        };
+        return OfferModeDefinition::all()[$mode]['label'] ?? $mode;
     }
 
     private function outcomeLabel(string $outcome): string

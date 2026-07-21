@@ -8,8 +8,11 @@ require_once ABSPATH . 'wp-admin/includes/plugin.php';
 require_once ABSPATH . 'wp-admin/includes/user.php';
 
 use AppleKlinika\Buyback\Application\Handler\PreviewDraftPriceBookCalculationHandler;
+use AppleKlinika\Buyback\Application\LocalDemo\LocalDemoQuestionnaire;
+use AppleKlinika\Buyback\Application\Pricing\OfferModeExampleCalculator;
 use AppleKlinika\Buyback\Application\Query\PreviewDraftPriceBookCalculation;
 use AppleKlinika\Buyback\Domain\Buyback\DeviceCategory;
+use AppleKlinika\Buyback\Domain\Buyback\OfferModeDefinition;
 use AppleKlinika\Buyback\Domain\Buyback\ServiceMode;
 use AppleKlinika\Buyback\Domain\Exception\InvalidValueObjectException;
 use AppleKlinika\Buyback\Domain\Pricing\BasisPointsMultiplier;
@@ -294,6 +297,43 @@ try {
     $test->assert($batteryAfterModelDeletion->finalAmount?->amount() === 195000, 'Deleting a model-specific battery override preserves the legacy global fallback');
     $test->assert($batteryUnmatched->finalAmount?->amount() === 200000, 'An uncovered battery percentage uses the proven no-adjustment engine fallback');
 
+    $precedenceBook = engineBook(700021, 0, 1);
+    $precedenceRules = [
+        engineRule(501, $precedenceBook->id(), PricingRuleKind::BASE_PRICE, 'precedence-base-11', 10, true, ['model_key' => 'iphone_11', 'amount' => 100000]),
+        engineRule(502, $precedenceBook->id(), PricingRuleKind::BASE_PRICE, 'precedence-base-13', 10, true, ['model_key' => 'iphone_13_pro', 'amount' => 100000]),
+        engineRule(503, $precedenceBook->id(), PricingRuleKind::BASE_PRICE, 'precedence-base-16', 10, true, ['model_key' => 'iphone_16_pro', 'amount' => 100000]),
+        engineRule(504, $precedenceBook->id(), PricingRuleKind::MANUAL_REVIEW, 'precedence-global-battery-below-80', 20, true, ['condition_key' => 'battery_health', 'operator' => ComparisonOperator::LESS_THAN, 'comparison' => 80, 'label' => 'Globális akkumulátor-bevizsgálás']),
+        engineRule(505, $precedenceBook->id(), PricingRuleKind::FIXED_DEDUCTION, 'precedence-model-battery-70-79', 21, true, ['model_key' => 'iphone_11', 'condition_key' => 'battery_health', 'operator' => ComparisonOperator::BETWEEN, 'comparison' => [70, 79], 'amount' => 20000]),
+        engineRule(506, $precedenceBook->id(), PricingRuleKind::MANUAL_REVIEW, 'precedence-model-battery-80-89', 22, true, ['model_key' => 'iphone_11', 'condition_key' => 'battery_health', 'operator' => ComparisonOperator::BETWEEN, 'comparison' => [80, 89], 'label' => 'iPhone 11 akkumulátor-bevizsgálás']),
+        engineRule(507, $precedenceBook->id(), PricingRuleKind::FIXED_DEDUCTION, 'precedence-global-battery-80-89', 23, true, ['condition_key' => 'battery_health', 'operator' => ComparisonOperator::BETWEEN, 'comparison' => [80, 89], 'amount' => 5000]),
+        engineRule(508, $precedenceBook->id(), PricingRuleKind::FIXED_DEDUCTION, 'precedence-global-screen-damaged', 30, true, ['condition_key' => 'screen_condition', 'operator' => ComparisonOperator::EQUALS, 'comparison' => 'damaged', 'amount' => 10000]),
+        engineRule(509, $precedenceBook->id(), PricingRuleKind::FIXED_DEDUCTION, 'precedence-model-screen-damaged', 31, true, ['model_key' => 'iphone_11', 'condition_key' => 'screen_condition', 'operator' => ComparisonOperator::EQUALS, 'comparison' => 'damaged', 'amount' => 25000]),
+        engineRule(510, $precedenceBook->id(), PricingRuleKind::FIXED_DEDUCTION, 'precedence-global-frame-good', 32, true, ['condition_key' => 'frame_condition', 'operator' => ComparisonOperator::EQUALS, 'comparison' => 'good', 'amount' => 5000]),
+    ];
+    $precedenceAt79 = $engine->calculate($precedenceBook, $precedenceRules, engineInput(['battery_health' => 79], ServiceMode::HIGHER_OFFER, 'iphone_11', 128));
+    $test->assert($precedenceAt79->outcome->code() === PricingOutcome::OFFERED && $precedenceAt79->finalAmount?->amount() === 80000, 'A matching iPhone 11 70–79% model battery rule overrides the legacy global below-80 manual-review fallback with exactly 20000 Ft');
+    $test->assert(array_column($precedenceAt79->toArray()['matched_rules'], 'rule_code') === ['precedence-base-11', 'precedence-model-battery-70-79'], 'Suppressed global battery fallback is absent from the effective 79% rule set, so no duplicate deduction or manual review remains');
+    $precedenceAt84 = $engine->calculate($precedenceBook, $precedenceRules, engineInput(['battery_health' => 84], ServiceMode::HIGHER_OFFER, 'iphone_11', 128));
+    $test->assert($precedenceAt84->outcome->code() === PricingOutcome::MANUAL_REVIEW && $precedenceAt84->reasonCodes === ['precedence-model-battery-80-89'], 'A matching model-specific battery manual-review rule overrides a global fixed battery fallback');
+    $precedenceGlobalFallback = $engine->calculate($precedenceBook, $precedenceRules, engineInput(['battery_health' => 79], ServiceMode::HIGHER_OFFER, 'iphone_13_pro', 128));
+    $test->assert($precedenceGlobalFallback->outcome->code() === PricingOutcome::MANUAL_REVIEW && $precedenceGlobalFallback->reasonCodes === ['precedence-global-battery-below-80'], 'A global battery fallback still applies when the current model has no exact matching rule');
+    $differentBandRules = array_values(array_filter($precedenceRules, static fn (PricingRule $rule): bool => $rule->definition()->code->code() !== 'precedence-model-battery-70-79'));
+    $differentBandFallback = $engine->calculate($precedenceBook, $differentBandRules, engineInput(['battery_health' => 79], ServiceMode::HIGHER_OFFER, 'iphone_11', 128));
+    $test->assert($differentBandFallback->outcome->code() === PricingOutcome::MANUAL_REVIEW && $differentBandFallback->reasonCodes === ['precedence-global-battery-below-80'], 'A model-specific battery rule in a different range does not suppress a matching global fallback');
+    $precedence16 = $engine->calculate($precedenceBook, $precedenceRules, engineInput(['battery_health' => 79], ServiceMode::HIGHER_OFFER, 'iphone_16_pro', 128));
+    $test->assert($precedence16->outcome->code() === PricingOutcome::MANUAL_REVIEW && $precedence16->reasonCodes === ['precedence-global-battery-below-80'], 'iPhone 16 Pro does not receive the iPhone 11-specific battery rule');
+    $precedenceConditions = $engine->calculate($precedenceBook, $precedenceRules, engineInput(['battery_health' => 95, 'screen_condition' => 'damaged', 'frame_condition' => 'good'], ServiceMode::HIGHER_OFFER, 'iphone_11', 128));
+    $test->assert($precedenceConditions->finalAmount?->amount() === 70000, 'A model-specific questionnaire condition overrides its matching global fallback while an unrelated global condition still applies');
+    $test->assert(array_column($precedenceConditions->toArray()['matched_rules'], 'rule_code') === ['precedence-base-11', 'precedence-model-screen-damaged', 'precedence-global-frame-good'], 'Effective questionnaire-condition rules contain no duplicate global fallback deduction');
+    $questionnaire = new LocalDemoQuestionnaire();
+    $lockedState = $questionnaire->defaults();
+    $lockedState['network_status'] = 'locked';
+    $test->assert($questionnaire->eligibilityError($lockedState) !== null, 'Immutable network-lock rejection remains outside and unaffected by configurable pricing-rule precedence');
+    $noneKnownState = $questionnaire->defaults();
+    $noneKnownState['service_history'] = 'none_known';
+    $noneKnownState['affected_parts'] = ['battery'];
+    $test->assert($questionnaire->sanitize($noneKnownState)['affected_parts'] === [], 'Immutable none_known service-history dependency remains unaffected by configurable pricing-rule precedence');
+
     $missingBase = $engine->calculate($book, $rules, engineInput([], ServiceMode::FAST_ONLINE, 'iphone-14'));
     $test->assert($missingBase->outcome->code() === PricingOutcome::CONFIGURATION_ERROR && in_array('missing_base_price', $missingBase->reasonCodes, true), 'Missing base is a configuration error');
     $duplicateBase = $engine->calculate($book, array_merge($rules, [engineRule(9, $bookId, PricingRuleKind::BASE_PRICE, 'base-copy', 11, true, ['amount' => 190000])]), engineInput());
@@ -326,6 +366,26 @@ try {
     $test->assert($modeResult->amountAfterModeAdjustment?->amount() === 183150, 'Mode multiplier uses integer basis points');
     $neutralMode = $engine->calculate($book, array_slice($rules, 0, 3), engineInput([], ServiceMode::HIGHER_OFFER));
     $test->assert($neutralMode->amountAfterModeAdjustment?->amount() === 166500, 'Missing mode adjustment is neutral');
+    $negativeFixedMode = engineRule(52, $bookId, PricingRuleKind::MODE_ADJUSTMENT, 'mode-fixed-negative', 40, true, ['service_mode' => ServiceMode::FAST_ONLINE, 'amount' => -5000]);
+    $negativeFixedResult = $engine->calculate($book, array_merge(array_slice($rules, 0, 3), [$negativeFixedMode]), engineInput([], ServiceMode::FAST_ONLINE));
+    $test->assert($negativeFixedResult->amountAfterModeAdjustment?->amount() === 161500, 'Signed fixed mode modifier is applied after all condition and battery adjustments');
+    $negativePercentMode = engineRule(53, $bookId, PricingRuleKind::MODE_ADJUSTMENT, 'mode-percent-negative', 40, true, ['service_mode' => ServiceMode::FAST_ONLINE, 'multiplier' => 9500]);
+    $negativePercentResult = $engine->calculate($book, array_merge(array_slice($rules, 0, 3), [$negativePercentMode]), engineInput([], ServiceMode::FAST_ONLINE));
+    $test->assert($negativePercentResult->amountAfterModeAdjustment?->amount() === 158175, 'A -5% mode correction uses the corrected value, not the base price');
+    $exampleCalculator = new OfferModeExampleCalculator($engine);
+    $test->assert($exampleCalculator->examples(ServiceMode::FAST_ONLINE, $negativeFixedMode->definition()) === [50000 => 45000, 300000 => 295000], 'Fixed offer-mode examples are calculated by the real engine without persistence');
+    $test->assert($exampleCalculator->examples(ServiceMode::TRADE_IN, $modeMultiplier->definition()) === [50000 => 55000, 300000 => 330000], 'Percentage offer-mode examples are calculated by the real engine without persistence');
+    $modeReferenceBook = engineBook(700020, 0, 1);
+    $modeReferenceId = $modeReferenceBook->id();
+    $modeReferenceRules = [engineRule(401, $modeReferenceId, PricingRuleKind::BASE_PRICE, 'mode-reference-base', 10, true, ['amount' => 100000])];
+    foreach ([ServiceMode::IN_STORE_INSTANT => 9500, ServiceMode::FAST_ONLINE => 9000, ServiceMode::HIGHER_OFFER => 10000, ServiceMode::TRADE_IN => 10500] as $mode => $basisPoints) {
+        $modeReferenceRules[] = engineRule(402 + count($modeReferenceRules), $modeReferenceId, PricingRuleKind::MODE_ADJUSTMENT, 'mode-reference-' . $mode, 40, true, ['service_mode' => $mode, 'multiplier' => $basisPoints]);
+    }
+    $modeReferenceAmounts = [];
+    foreach (OfferModeDefinition::keys() as $mode) {
+        $modeReferenceAmounts[$mode] = $engine->calculate($modeReferenceBook, $modeReferenceRules, engineInput([], $mode))->finalAmount?->amount();
+    }
+    $test->assert($modeReferenceAmounts === [ServiceMode::IN_STORE_INSTANT => 95000, ServiceMode::FAST_ONLINE => 90000, ServiceMode::HIGHER_OFFER => 100000, ServiceMode::TRADE_IN => 105000], 'All four canonical offer modes use the real engine in its documented calculation order');
     $duplicateMode = $engine->calculate($book, array_merge($rules, [engineRule(51, $bookId, PricingRuleKind::MODE_ADJUSTMENT, 'fast-copy', 41, true, ['service_mode' => ServiceMode::FAST_ONLINE, 'amount' => 1])]), engineInput());
     $test->assert(in_array('duplicate_mode_adjustment', $duplicateMode->reasonCodes, true), 'Duplicate mode adjustment is a configuration error');
     foreach (ServiceMode::supportedCodes() as $mode) {
@@ -391,6 +451,17 @@ try {
     }
     $test->assert($books->getById($persistedBook->id())->version()->value() === $bookVersionPersisted, 'Preview does not modify persisted price book');
     $test->assert($ruleRepository->getById($persistedRule->id())->version()->value() === $ruleVersionPersisted, 'Preview does not modify persisted rule');
+    $persistedPrecedenceBook = $books->createDraft(PriceBook::createDraft($books->nextAvailableVersionNumber(), $marker . '-PRECEDENCE', new CurrencyCode('HUF'), new Money(0, 'HUF'), 1, new MinimumOfferPolicy(MinimumOfferPolicy::MANUAL_REVIEW), new PricingActorId(max(1, $originalUser)), $now));
+    $persistedPrecedenceDefinitions = [
+        engineRule(601, $persistedPrecedenceBook->id(), PricingRuleKind::BASE_PRICE, 'qa-precedence-base-11', 10, true, ['model_key' => 'iphone_11', 'amount' => 100000])->definition(),
+        engineRule(602, $persistedPrecedenceBook->id(), PricingRuleKind::MANUAL_REVIEW, 'qa-precedence-global-below-80', 20, true, ['condition_key' => 'battery_health', 'operator' => ComparisonOperator::LESS_THAN, 'comparison' => 80, 'label' => 'Globális akkumulátor-bevizsgálás'])->definition(),
+        engineRule(603, $persistedPrecedenceBook->id(), PricingRuleKind::FIXED_DEDUCTION, 'qa-precedence-model-70-79', 21, true, ['model_key' => 'iphone_11', 'condition_key' => 'battery_health', 'operator' => ComparisonOperator::BETWEEN, 'comparison' => [70, 79], 'amount' => 20000])->definition(),
+    ];
+    foreach ($persistedPrecedenceDefinitions as $definition) {
+        $ruleRepository->insert(PricingRule::create($persistedPrecedenceBook->id(), $definition, $now));
+    }
+    $persistedPrecedence = $engine->calculate($persistedPrecedenceBook, $ruleRepository->listForPriceBook($persistedPrecedenceBook->id()), engineInput(['battery_health' => 79], ServiceMode::HIGHER_OFFER, 'iphone_11', 128));
+    $test->assert($persistedPrecedence->outcome->code() === PricingOutcome::OFFERED && $persistedPrecedence->finalAmount?->amount() === 80000, 'Real production repositories, ConditionMatcher, PricingEngine and PricingCalculationInput resolve persisted iPhone 11 battery precedence without a manual-review fallback');
     $during = engineCounts($wpdb, $tables);
     $test->assert($during[Schema::REQUESTS] === $before[Schema::REQUESTS], 'Preview creates no request');
     $test->assert($during[Schema::SNAPSHOTS] === $before[Schema::SNAPSHOTS], 'Preview creates no snapshot');

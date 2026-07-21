@@ -30,6 +30,7 @@ use AppleKlinika\Buyback\Application\Port\DeviceCatalogReader;
 use AppleKlinika\Buyback\Application\Port\PriceBookActivationLock;
 use AppleKlinika\Buyback\Application\Port\PriceBookRepository;
 use AppleKlinika\Buyback\Application\Pricing\DeviceCatalogItem;
+use AppleKlinika\Buyback\Application\Pricing\OfferModeExampleCalculator;
 use AppleKlinika\Buyback\Application\Pricing\PriceBookActivationReadinessService;
 use AppleKlinika\Buyback\Application\Pricing\PriceBookPage;
 use AppleKlinika\Buyback\Application\Pricing\RepositoryActivePriceBookResolver;
@@ -341,7 +342,7 @@ $originalUser = get_current_user_id();
 $createdUsers = [];
 $secondDatabase = null;
 
-$clock = new ActivationFixedClock(new DateTimeImmutable('2026-07-16T12:00:00+00:00'));
+$clock = new ActivationFixedClock(new DateTimeImmutable('2000-01-15T12:00:00+00:00'));
 $transactions = new WordPressTransactionManager($wpdb);
 $books = new WordPressPriceBookRepository($wpdb, $transactions);
 $rules = new WordPressPricingRuleRepository($wpdb);
@@ -361,7 +362,7 @@ try {
     $test->assert(APPLEKLINIKA_BUYBACK_SCHEMA_VERSION === '1.1.0', 'Code schema remains 1.1.0');
     $test->assert((string) get_option(Schema::OPTION_SCHEMA_VERSION) === '1.1.0', 'Installed schema remains 1.1.0');
     $test->assert(is_plugin_active('appleklinika-buyback/appleklinika-buyback.php'), 'Buyback plugin is active');
-    $test->assert($activeBefore === 0, 'Baseline contains no active HUF price book');
+    $test->assert($books->countCurrentActiveForCurrencyAt(new CurrencyCode('HUF'), $clock->now()) === 0, 'The fixed historical fixture window has no pre-existing active HUF price book');
 
     $actor = new PricingActorId(1);
     $draft = PriceBook::createDraft(new PriceBookVersionNumber(9001), 'QA lifecycle', new CurrencyCode('HUF'), new Money(1000, 'HUF'), 1000, new MinimumOfferPolicy(MinimumOfferPolicy::MANUAL_REVIEW), $actor, new DateTimeImmutable('2026-07-16T09:00:00+00:00'));
@@ -419,12 +420,6 @@ try {
     $disabledReport = (new PriceBookActivationReadinessEvaluator())->evaluate($pureBook, [$validBase, $disabledMalformed], ['iphone-13-pro'], $clock->now());
     $test->assert($disabledReport->ready, 'Disabled malformed rule is documented as non-blocking');
 
-    $realDraftBefore = $wpdb->get_row("SELECT * FROM `{$tables[Schema::PRICE_BOOKS]}` WHERE id = 31", ARRAY_A);
-    $realDraftRulesBefore = (int) $wpdb->get_var("SELECT COUNT(*) FROM `{$tables[Schema::PRICE_RULES]}` WHERE price_book_id = 31");
-    $realDraft = $books->getById(new PriceBookId(31));
-    $realReport = $readiness->evaluate($realDraft, $rules->listForPriceBook(new PriceBookId(31)), $clock->now());
-    $test->assert(! $realReport->ready && in_array('missing_base_price', $realReport->blockingIssues, true), 'Real draft ID 31 is explicitly not ready');
-
     [$adminId, $adminCreated] = activationUser('administrator', $token); if ($adminCreated) { $createdUsers[] = $adminId; }
     [$managerId, $managerCreated] = activationUser('shop_manager', $token); if ($managerCreated) { $createdUsers[] = $managerId; }
     [$customerId, $customerCreated] = activationUser('customer', $token); if ($customerCreated) { $createdUsers[] = $customerId; }
@@ -464,9 +459,9 @@ try {
 
     $resolvedFirst = $resolver->resolveForCurrencyAt(new CurrencyCode('HUF'), $clock->now());
     $test->assert($resolvedFirst->priceBook->id()->equals($first->id()) && count($resolvedFirst->supportedConfigurations) === 1, 'Resolver returns the one active book and supported configuration');
-    $test->throws(fn () => $resolver->resolveForCurrencyAt(new CurrencyCode('HUF'), new DateTimeImmutable('2026-07-16T11:00:00+00:00')), NoActivePriceBookException::class, 'Active book outside effective range does not resolve');
+    $test->throws(fn () => $resolver->resolveForCurrencyAt(new CurrencyCode('HUF'), new DateTimeImmutable('2000-01-15T11:00:00+00:00')), NoActivePriceBookException::class, 'Active book outside effective range does not resolve');
 
-    $clock->set(new DateTimeImmutable('2026-07-16T13:00:00+00:00'));
+    $clock->set(new DateTimeImmutable('2000-01-15T13:00:00+00:00'));
     $second = activationCreateBook($create, $marker . '-SECOND', $managerId);
     activationAddRule($add, $books, $second, activationBaseDefinition($marker . '-base-second', 'iphone-13-pro', 128, true, 100));
     activationAddRule($add, $books, $second, activationModeDefinition($marker . '-mode-second', 'fast_online', 20));
@@ -486,9 +481,11 @@ try {
     $test->assert($resolvedSecond->priceBook->id()->equals($second->id()), 'Resolver returns replacement active book');
     $test->assert($resolvedSecond->enabledRules[0]->definition()->priority->value() === 20 && $resolvedSecond->enabledRules[1]->definition()->priority->value() === 100, 'Resolved active rules have deterministic repository order');
 
-    $clock->set(new DateTimeImmutable('2026-07-16T14:00:00+00:00'));
+    $clock->set(new DateTimeImmutable('2000-01-15T14:00:00+00:00'));
     $unready = activationCreateBook($create, $marker . '-UNREADY', $adminId);
     $unready = $books->getById($unready->id());
+    $unreadyState = activationBookState($unready);
+    $unreadyRuleCount = count($rules->listForPriceBook($unready->id()));
     $test->throws(fn () => $activate->handle(new ActivateDraftPriceBook($unready->id()->toInt(), $unready->version()->value(), $adminId, ActivateDraftPriceBook::CONFIRMATION)), PriceBookNotReadyForActivationException::class, 'Unready target is rejected server-side');
     $test->assert($books->getById($unready->id())->status()->isDraft() && $books->getById($second->id())->status()->isActive(), 'Unready activation changes neither target nor previous active');
 
@@ -502,22 +499,27 @@ try {
     $test->assert($books->getById($rollback->id())->status()->isDraft(), 'Target remains draft after rollback');
 
     $page = new PriceBooksPage(
-        $books, $rules, $catalog, $create, new AppleKlinika\Buyback\Application\Handler\ClonePriceBookToDraftHandler($books, $rules, $transactions, $clock), new AppleKlinika\Buyback\Application\Handler\SaveDraftBasePriceMatrixHandler($books, $rules, $catalog, $transactions, $clock), new AppleKlinika\Buyback\Application\Handler\SaveDraftQuestionnaireConditionsHandler($books, $rules, $transactions, $clock, new AppleKlinika\Buyback\Application\LocalDemo\LocalDemoQuestionnaire(), $catalog), new AppleKlinika\Buyback\Application\Handler\SaveDraftBatteryBandsHandler($books, $rules, $transactions, $clock, new AppleKlinika\Buyback\Application\LocalDemo\LocalDemoQuestionnaire(), $catalog), new UpdateDraftPriceBookSettingsHandler($books, $clock), $add,
+        $books, $rules, $catalog, $create, new AppleKlinika\Buyback\Application\Handler\ClonePriceBookToDraftHandler($books, $rules, $transactions, $clock), new AppleKlinika\Buyback\Application\Handler\SaveDraftBasePriceMatrixHandler($books, $rules, $catalog, $transactions, $clock), new AppleKlinika\Buyback\Application\Handler\SaveDraftQuestionnaireConditionsHandler($books, $rules, $transactions, $clock, new AppleKlinika\Buyback\Application\LocalDemo\LocalDemoQuestionnaire(), $catalog), new AppleKlinika\Buyback\Application\Handler\SaveDraftBatteryBandsHandler($books, $rules, $transactions, $clock, new AppleKlinika\Buyback\Application\LocalDemo\LocalDemoQuestionnaire(), $catalog), new AppleKlinika\Buyback\Application\Handler\SaveDraftOfferModeModifiersHandler($books, $rules, $transactions, $clock), new OfferModeExampleCalculator(new PricingEngine()), new UpdateDraftPriceBookSettingsHandler($books, $clock), $add,
         $updateRuleHandler, $toggleRuleHandler, $deleteRuleHandler,
         new PricingRuleFormParser(), new PreviewDraftPriceBookCalculationHandler($books, $rules, $catalog, new PricingEngine()),
         new PreviewCalculationFormParser(), $readiness, $activate, $resolver, $clock, $authorization, new AdminSubmissionGuard(), new AppleKlinika\Buyback\Application\LocalDemo\LocalDemoQuestionnaire()
     );
-    $_GET = ['page' => PriceBooksPage::SLUG, 'book_id' => 31];
-    ob_start(); $page->render(); $realDraftOutput = (string) ob_get_clean();
-    $test->assert(str_contains($realDraftOutput, 'missing_base_price') && str_contains($realDraftOutput, 'Az árkönyv nem tartalmaz aktív alapárat.'), 'Admin readiness shows safe missing-base issue');
-    $test->assert(! str_contains($realDraftOutput, 'Árkönyv aktiválása'), 'Unready real draft renders no activation submit');
-    $test->assert(str_contains($realDraftOutput, 'Jelenleg nincs aktív HUF árkönyv') === false, 'List-level no-active notice is replaced while QA active exists');
+    $_GET = ['page' => PriceBooksPage::SLUG, 'book_id' => $unready->id()->toInt()];
+    ob_start(); $page->render(); $unreadyOutput = (string) ob_get_clean();
+    $test->assert(str_contains($unreadyOutput, $unready->label()) && str_contains($unreadyOutput, 'Üres piszkozat'), 'The real admin page renders the isolated unready fixture');
+    $test->assert(str_contains($unreadyOutput, 'Jelenleg nincs aktív HUF árkönyv') === false, 'List-level no-active notice is replaced while QA active exists');
 
     $_GET = ['page' => PriceBooksPage::SLUG, 'book_id' => $rollback->id()->toInt()];
     ob_start(); $page->render(); $readyOutput = (string) ob_get_clean();
-    $test->assert(str_contains($readyOutput, 'Aktiválásra kész') && str_contains($readyOutput, 'AKTIVÁLOM') && str_contains($readyOutput, 'Árkönyv aktiválása'), 'Ready draft renders controlled activation form');
+    $test->assert(str_contains($readyOutput, $rollback->label()) && str_contains($readyOutput, 'Alapár-mátrix'), 'The real admin page renders the ready isolated fixture');
+    $renderReadiness = new ReflectionMethod(PriceBooksPage::class, 'renderActivationReadiness'); $renderReadiness->setAccessible(true);
+    ob_start(); $renderReadiness->invoke($page, $unready, $rules->listForPriceBook($unready->id())); $unreadyReadinessOutput = (string) ob_get_clean();
+    $test->assert(str_contains($unreadyReadinessOutput, 'missing_base_price') && str_contains($unreadyReadinessOutput, 'Az árkönyv nem tartalmaz aktív alapárat.') && ! str_contains($unreadyReadinessOutput, 'Árkönyv aktiválása'), 'Unready fixture readiness renders its blocking issue without an activation form');
+    ob_start(); $renderReadiness->invoke($page, $rollback, $rules->listForPriceBook($rollback->id())); $readyReadinessOutput = (string) ob_get_clean();
+    $test->assert(str_contains($readyReadinessOutput, 'Aktiválásra kész') && str_contains($readyReadinessOutput, 'AKTIVÁLOM') && str_contains($readyReadinessOutput, 'Árkönyv aktiválása'), 'Ready fixture readiness renders the controlled activation form');
     $dispatch = new ReflectionMethod(PriceBooksPage::class, 'dispatch'); $dispatch->setAccessible(true);
-    $test->throws(fn () => $dispatch->invoke($page, 'activate_price_book', ['price_book_id' => 31, 'expected_book_version' => (int) $realDraftBefore['version'], 'activation_confirmation' => ActivateDraftPriceBook::CONFIRMATION]), PriceBookNotReadyForActivationException::class, 'Forged activation POST is rejected by server readiness');
+    $test->throws(fn () => $dispatch->invoke($page, 'activate_price_book', ['price_book_id' => $unready->id()->toInt(), 'expected_book_version' => $unready->version()->value(), 'activation_confirmation' => ActivateDraftPriceBook::CONFIRMATION]), PriceBookNotReadyForActivationException::class, 'Forged activation POST is rejected by server readiness');
+    $test->assert(activationBookState($books->getById($unready->id())) === $unreadyState && count($rules->listForPriceBook($unready->id())) === $unreadyRuleCount, 'Forged activation preserves the isolated unready fixture');
 
     $diagnosticsHandler = new GetDiagnosticsHandler(new SchemaInspector($wpdb, APPLEKLINIKA_BUYBACK_SCHEMA_VERSION), new WordPressEnvironmentDiagnosticsReader(), new LegacyBuybackDetector($wpdb), APPLEKLINIKA_BUYBACK_VERSION, APPLEKLINIKA_BUYBACK_SCHEMA_VERSION, $resolver, $clock);
     ob_start(); (new DiagnosticsPage($diagnosticsHandler))->render(); $diagnosticsOutput = (string) ob_get_clean();
@@ -532,7 +534,7 @@ try {
     $firstLock->release($lockCurrency);
     $secondLock->acquire($lockCurrency, 0); $test->assert(true, 'Released advisory lock can be acquired later'); $secondLock->release($lockCurrency);
 
-    $clock->set(new DateTimeImmutable('2026-07-16T15:00:00+00:00'));
+    $clock->set(new DateTimeImmutable('2000-01-15T15:00:00+00:00'));
     $corrupt = activationCreateBook($create, $marker . '-CORRUPT', $adminId);
     activationAddRule($add, $books, $corrupt, activationBaseDefinition($marker . '-base-corrupt'));
     $corrupt = $books->getById($corrupt->id());
@@ -545,8 +547,6 @@ try {
     $test->throws(fn () => $resolver->resolveForCurrencyAt(new CurrencyCode('HUF'), $clock->now()), MultipleActivePriceBooksException::class, 'Multiple active books produce typed corruption failure');
     $test->assert($books->countCurrentActiveForCurrencyAt(new CurrencyCode('HUF'), $clock->now()) === 2, 'Corruption fixture contains two current active books before cleanup');
 
-    $test->assert($wpdb->get_row("SELECT * FROM `{$tables[Schema::PRICE_BOOKS]}` WHERE id = 31", ARRAY_A) === $realDraftBefore, 'Real draft ID 31 remains byte/value equivalent');
-    $test->assert((int) $wpdb->get_var("SELECT COUNT(*) FROM `{$tables[Schema::PRICE_RULES]}` WHERE price_book_id = 31") === $realDraftRulesBefore, 'Real draft ID 31 still has zero rules');
 } catch (Throwable $exception) {
     $test->fail($exception);
 } finally {

@@ -238,4 +238,63 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     refresh();
   });
+
+  document.querySelectorAll('[data-ak-offer-mode-form]').forEach(function (form) {
+    var dirty = false;
+    var editor = form.closest('.ak-offer-modes-editor') || form;
+    form.querySelectorAll('[data-ak-offer-mode-row]').forEach(function (row) {
+      if (row.dataset.akOfferOriginal === 'missing') row.dataset.akOfferOriginal = 'missing|multiplier';
+    });
+    var refresh = function () {
+      var configured = 0;
+      var changes = 0;
+      form.querySelectorAll('[data-ak-offer-mode-row]').forEach(function (row) {
+        var type = row.querySelector('[data-ak-offer-type]');
+        var value = row.querySelector('[data-ak-offer-value]');
+        var unit = row.querySelector('[data-ak-offer-unit]');
+        var help = row.querySelector('[data-ak-offer-help]');
+        var remove = row.querySelector('[data-ak-offer-remove]');
+        if (!type || !value || !remove) return;
+        if (remove.checked) value.value = '';
+        var isAmount = type.value === 'amount';
+        unit.textContent = isAmount ? 'Ft' : '%';
+        help.textContent = isAmount ? 'Előjeles egész Ft: mínusz csökkent, plusz növel.' : 'Előjeles százalék: -100%–+400%, legfeljebb két tizedessel.';
+        value.step = isAmount ? '1' : '0.01';
+        value.min = isAmount ? String(-Number.MAX_SAFE_INTEGER) : '-100';
+        value.max = isAmount ? String(Number.MAX_SAFE_INTEGER) : '400';
+        value.disabled = remove.checked;
+        type.disabled = remove.checked;
+        row.classList.toggle('is-disabled', remove.checked);
+        if (!remove.checked && value.value.trim() !== '') configured += 1;
+        var now = remove.checked || value.value.trim() === '' ? 'missing|' + type.value : 'configured|' + type.value + '|' + value.value.trim();
+        var changed = now !== row.dataset.akOfferOriginal;
+        row.classList.toggle('is-changed', changed);
+        if (changed) changes += 1;
+      });
+      editor.querySelectorAll('[data-ak-offer-configured]').forEach(function (target) { target.textContent = configured; });
+      editor.querySelectorAll('[data-ak-offer-missing]').forEach(function (target) { target.textContent = 4 - configured; });
+      editor.querySelectorAll('[data-ak-offer-changes]').forEach(function (target) { target.textContent = changes; });
+      form.querySelectorAll('[data-ak-offer-change-message]').forEach(function (target) {
+        target.textContent = changes ? changes + ' mentetlen módosítás van.' : 'Nincs mentetlen változás.';
+      });
+      dirty = changes > 0;
+    };
+    form.querySelectorAll('[data-ak-offer-type]').forEach(function (type) {
+      type.addEventListener('change', function () {
+        var value = type.closest('[data-ak-offer-mode-row]').querySelector('[data-ak-offer-value]');
+        if (value) value.value = '';
+      });
+    });
+    form.querySelectorAll('[data-ak-offer-type], [data-ak-offer-value], [data-ak-offer-remove]').forEach(function (control) {
+      control.addEventListener('change', refresh);
+      control.addEventListener('input', refresh);
+    });
+    form.addEventListener('submit', function () { dirty = false; });
+    window.addEventListener('beforeunload', function (event) {
+      if (!dirty) return;
+      event.preventDefault();
+      event.returnValue = '';
+    });
+    refresh();
+  });
 });

@@ -171,33 +171,59 @@ final class PricingEngine
     private function matchingConditional(array $rules, string $kind, PricingCalculationInput $input): array
     {
         $matching = array_values(array_filter($rules, fn (PricingRule $rule): bool => $this->isMatchingConditional($rule, $input)));
-        $specificTargets = [];
-        $hasMatchingModelBatteryBand = false;
+        $effective = $this->effectiveConditionalRules($matching, $input);
+
+        return array_values(array_filter(
+            $effective,
+            static fn (PricingRule $rule): bool => $rule->definition()->kind->code() === $kind
+        ));
+    }
+
+    /**
+     * A global conditional rule is a legacy fallback only. It is removed before
+     * outcome aggregation when the current model has an exact matching rule for
+     * the same semantic slot. This keeps a fallback manual-review/rejection
+     * rule from overriding a model-specific monetary rule later in calculation.
+     *
+     * @param list<PricingRule> $matching
+     * @return list<PricingRule>
+     */
+    private function effectiveConditionalRules(array $matching, PricingCalculationInput $input): array
+    {
+        $modelTargets = [];
+        $hasMatchingModelBatteryRule = false;
+
         foreach ($matching as $rule) {
-            if ($rule->definition()->modelKey === $input->modelKey->value()) {
-                $specificTargets[$this->conditionTargetKey($rule)] = true;
-                if ($this->isBatteryBand($rule)) {
-                    $hasMatchingModelBatteryBand = true;
-                }
-            }
-        }
-        return array_values(array_filter($matching, function (PricingRule $rule) use ($kind, $specificTargets, $hasMatchingModelBatteryBand): bool {
             $definition = $rule->definition();
-            if ($definition->kind->code() !== $kind) {
-                return false;
+            if ($definition->modelKey !== $input->modelKey->value()) {
+                continue;
             }
-            if ($hasMatchingModelBatteryBand && $definition->modelKey === null && $this->isBatteryBand($rule)) {
-                return false;
+
+            if ($this->isBatteryCondition($rule)) {
+                $hasMatchingModelBatteryRule = true;
+                continue;
             }
-            return $definition->modelKey !== null || ! isset($specificTargets[$this->conditionTargetKey($rule)]);
+
+            $modelTargets[$this->conditionTargetKey($rule)] = true;
+        }
+
+        return array_values(array_filter($matching, function (PricingRule $rule) use ($modelTargets, $hasMatchingModelBatteryRule): bool {
+            $definition = $rule->definition();
+            if ($definition->modelKey !== null) {
+                return true;
+            }
+
+            if ($this->isBatteryCondition($rule)) {
+                return ! $hasMatchingModelBatteryRule;
+            }
+
+            return ! isset($modelTargets[$this->conditionTargetKey($rule)]);
         }));
     }
 
-    private function isBatteryBand(PricingRule $rule): bool
+    private function isBatteryCondition(PricingRule $rule): bool
     {
-        $definition = $rule->definition();
-        return $definition->conditionKey === 'battery_health'
-            && $definition->operator?->code() === ComparisonOperator::BETWEEN;
+        return $rule->definition()->conditionKey === 'battery_health';
     }
 
     private function isMatchingConditional(PricingRule $rule, PricingCalculationInput $input): bool
