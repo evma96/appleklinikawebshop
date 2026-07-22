@@ -72,6 +72,8 @@
   align-items: center;
   gap: 14px;
   margin: 0 0 18px;
+  padding: 8px 0;
+  background: #fff;
 }
 
 .ak-buyback-demo__back {
@@ -371,6 +373,9 @@
 
 .ak-buyback-demo__visual {
   display: grid;
+  position: sticky;
+  top: 24px;
+  align-self: start;
   justify-items: center;
   gap: 8px;
   min-width: 0;
@@ -380,7 +385,7 @@
 .ak-buyback-demo__visual-image {
   display: grid;
   width: min(100%, 390px);
-  height: 410px;
+  aspect-ratio: 4 / 5;
   place-items: center;
   overflow: hidden;
   border: 1px solid var(--ak-border);
@@ -388,8 +393,8 @@
   background: var(--ak-surface);
 }
 
-.ak-buyback-demo__visual-image { transition: opacity .18s ease; }
-.ak-buyback-demo__visual-image.is-transitioning { opacity: .72; }
+.ak-buyback-demo__visual { transition: opacity .18s ease; }
+.ak-buyback-demo__visual.is-transitioning { opacity: .72; }
 
 .ak-buyback-demo__visual-image img {
   width: 100%;
@@ -763,10 +768,11 @@
   }
 
   .ak-buyback-demo__visual-image {
-    height: 300px;
+    width: min(100%, 360px);
   }
 
   .ak-buyback-demo__visual {
+    position: static;
     order: 0;
   }
 
@@ -790,6 +796,9 @@
   }
 
   .ak-buyback-demo__navigation {
+    position: sticky;
+    top: 0;
+    z-index: 5;
     grid-template-columns: 38px minmax(0, 1fr) auto;
     gap: 9px;
   }
@@ -842,7 +851,7 @@
   }
 
   .ak-buyback-demo__visual-image {
-    height: 230px;
+    width: min(100%, 300px);
   }
 
   .ak-buyback-demo__battery-guidance {
@@ -861,6 +870,16 @@
 
   .ak-buyback-demo__demo-notice {
     flex-direction: column;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ak-buyback-demo *,
+  .ak-buyback-demo *::before,
+  .ak-buyback-demo *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
+    animation-duration: 1ms !important;
   }
 }
 

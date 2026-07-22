@@ -532,6 +532,7 @@ try {
     $diagnosticsHandler = new GetDiagnosticsHandler(new SchemaInspector($wpdb, APPLEKLINIKA_BUYBACK_SCHEMA_VERSION), new WordPressEnvironmentDiagnosticsReader(), new LegacyBuybackDetector($wpdb), APPLEKLINIKA_BUYBACK_VERSION, APPLEKLINIKA_BUYBACK_SCHEMA_VERSION, $resolver, $clock);
     ob_start(); (new DiagnosticsPage($diagnosticsHandler))->render(); $diagnosticsOutput = (string) ob_get_clean();
     $test->assert(str_contains($diagnosticsOutput, 'Aktív HUF árkönyv') && str_contains($diagnosticsOutput, $secondActive->label()), 'Diagnostics renders current active book safely');
+    $test->assert(str_contains($diagnosticsOutput, 'Publikus állapotillusztrációk') && str_contains($diagnosticsOutput, 'assets/images/buyback-states/screen/flawless.webp'), 'Diagnostics lists every visual state from the shared read-only catalogue');
 
     $secondDatabase = new wpdb(DB_USER, DB_PASSWORD, DB_NAME, DB_HOST);
     $firstLock = new MySqlPriceBookActivationLock($wpdb);
