@@ -418,9 +418,9 @@ try {
 
 $test->assert($strictExit === 1, 'Strict CLI exits non-zero for the real manual-mapping record');
 $test->assert(is_plugin_active('appleklinika-buyback/appleklinika-buyback.php'), 'Plugin remains active');
-$test->assert(APPLEKLINIKA_BUYBACK_VERSION === '0.7.0', 'Plugin code version is 0.7.0');
-$test->assert(APPLEKLINIKA_BUYBACK_SCHEMA_VERSION === '1.1.0', 'Code schema is 1.1.0');
-$test->assert(get_option(Schema::OPTION_SCHEMA_VERSION) === '1.1.0', 'Installed schema is 1.1.0');
+$test->assert(APPLEKLINIKA_BUYBACK_VERSION === '0.8.0', 'Plugin code version is 0.8.0');
+$test->assert(APPLEKLINIKA_BUYBACK_SCHEMA_VERSION === '1.2.0', 'Code schema is 1.2.0');
+$test->assert(get_option(Schema::OPTION_SCHEMA_VERSION) === '1.2.0', 'Installed schema is 1.2.0');
 
 $countsAfter = legacyRowCounts($wpdb);
 $legacyHashAfter = legacyMetaHash($wpdb);

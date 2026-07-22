@@ -36,12 +36,14 @@ use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressPriceBook
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressDraftPriceBookDiscardRepository;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressPricingRuleRepository;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressTransactionManager;
+use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressPublicBuybackRequestStore;
 use AppleKlinika\Buyback\Infrastructure\Inventory\WordPressDeviceCatalogReader;
 use AppleKlinika\Buyback\Infrastructure\Time\SystemClock;
 use AppleKlinika\Buyback\Interfaces\Admin\AdminAuthorization;
 use AppleKlinika\Buyback\Interfaces\Admin\AdminSubmissionGuard;
 use AppleKlinika\Buyback\Interfaces\Admin\DiagnosticsPage;
 use AppleKlinika\Buyback\Interfaces\Admin\PriceBooksPage;
+use AppleKlinika\Buyback\Interfaces\Admin\BuybackRequestsPage;
 use AppleKlinika\Buyback\Interfaces\Admin\PreviewCalculationFormParser;
 use AppleKlinika\Buyback\Interfaces\Admin\PricingRuleFormParser;
 use AppleKlinika\Buyback\Domain\Pricing\PricingEngine;
@@ -56,6 +58,7 @@ final class Plugin
         private readonly MigrationRunner $migrationRunner,
         private readonly DiagnosticsPage $diagnosticsPage,
         private readonly PriceBooksPage $priceBooksPage,
+        private readonly BuybackRequestsPage $requestsPage,
         private readonly LocalDemoModule $localDemoModule
     ) {
     }
@@ -121,6 +124,7 @@ final class Plugin
                 new AdminSubmissionGuard(),
                 $questionnaire
             ),
+            new BuybackRequestsPage(new WordPressPublicBuybackRequestStore($wpdb)),
             LocalDemoModule::create()
         );
     }
@@ -153,6 +157,7 @@ final class Plugin
 
         $this->diagnosticsPage->register();
         $this->priceBooksPage->register();
+        $this->requestsPage->register();
         $this->localDemoModule->register();
         $this->registerCli();
     }
