@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AppleKlinika\Buyback\Interfaces\Frontend;
 
 use AppleKlinika\Buyback\Application\LocalDemo\LocalDemoQuestionnaire;
+use AppleKlinika\Buyback\Application\LocalDemo\VisualStateCatalogue;
 use AppleKlinika\Buyback\Application\Pricing\RepositoryActivePriceBookResolver;
 use AppleKlinika\Buyback\Domain\Buyback\DeviceCategory;
 use AppleKlinika\Buyback\Domain\Buyback\OfferModeDefinition;
@@ -88,11 +89,11 @@ final class LocalDemoCalculatorPage
         }
 
         $selectedModel = (string) $state['model_key'];
-        $firstModelKey = array_key_first($models);
-        $initialImage = $models[$selectedModel]['image_url'] ?? ($firstModelKey !== null ? ($models[$firstModelKey]['image_url'] ?? '') : '');
         $initialLabel = $labels[$selectedModel] ?? '';
         $initialPanel = $state['show_results'] ? 'offers' : $state['panel'];
         $flow = array_merge(['entry'], $this->questionnaire->panelOrder());
+        $visualCatalogue = new VisualStateCatalogue($this->questionnaire);
+        $visualPayload = $this->visualPayload($visualCatalogue);
 
         ob_start();
         ?>
@@ -100,7 +101,7 @@ final class LocalDemoCalculatorPage
             class="ak-buyback-demo"
             data-initial-panel="<?php echo esc_attr($initialPanel); ?>"
             data-panel-order="<?php echo esc_attr((string) wp_json_encode($flow)); ?>"
-            data-visual-assets-base="<?php echo esc_url(APPLEKLINIKA_BUYBACK_URL . 'assets/images/buyback-states/'); ?>"
+            data-visual-catalogue="<?php echo esc_attr((string) wp_json_encode($visualPayload, JSON_UNESCAPED_SLASHES)); ?>"
         >
             <header class="ak-buyback-demo__header">
                 <span class="ak-buyback-demo__badge">KÉSZÜLÉKFELVÁSÁRLÁS</span>
@@ -128,10 +129,10 @@ final class LocalDemoCalculatorPage
 
                 <?php $this->renderEntryPanel(); ?>
                 <?php $this->renderModelPanel($models, $state); ?>
-                <?php $this->renderConfigurationPanel($models, $state, $initialImage); ?>
+                <?php $this->renderConfigurationPanel($models, $state, $visualPayload['fallback']); ?>
                 <?php foreach ($this->questionnaire->panelOrder() as $panelKey) : ?>
                     <?php if (in_array($panelKey, ['model', 'configuration', 'offers', 'review'], true)) { continue; } ?>
-                    <?php $this->renderQuestionnairePanel($panelKey, $state['answers'], $initialImage); ?>
+                    <?php $this->renderQuestionnairePanel($panelKey, $state['answers'], $visualPayload['fallback']); ?>
                 <?php endforeach; ?>
             </form>
 
@@ -311,7 +312,7 @@ final class LocalDemoCalculatorPage
     }
 
     /** @param array<string,array{label:string,image_url:string,storages:list<int>,teaser:?int}> $models @param array<string,mixed> $state */
-    private function renderConfigurationPanel(array $models, array $state, string $initialImage): void
+    private function renderConfigurationPanel(array $models, array $state, array $fallbackVisual): void
     {
         $allStorages = [];
         foreach ($models as $model) {
@@ -323,7 +324,7 @@ final class LocalDemoCalculatorPage
         ?>
         <section class="ak-buyback-demo__panel" data-demo-panel="configuration" data-step-title="Konfiguráció" hidden>
             <div class="ak-buyback-demo__split">
-                <?php $this->renderVisual($initialImage, 'Kiválasztott iPhone'); ?>
+                <?php $this->renderVisual($fallbackVisual); ?>
                 <div class="ak-buyback-demo__question">
                     <span class="ak-buyback-demo__eyebrow">2. Konfiguráció</span>
                     <h3>Mekkora a készülék tárhelye?</h3>
@@ -360,7 +361,7 @@ final class LocalDemoCalculatorPage
     }
 
     /** @param array<string,mixed> $answers */
-    private function renderQuestionnairePanel(string $panelKey, array $answers, string $initialImage): void
+    private function renderQuestionnairePanel(string $panelKey, array $answers, array $fallbackVisual): void
     {
         $panel = $this->questionnaire->panel($panelKey);
         $questions = $this->questionnaire->questionsForPanel($panelKey);
@@ -371,7 +372,7 @@ final class LocalDemoCalculatorPage
         ?>
         <section class="ak-buyback-demo__panel" data-demo-panel="<?php echo esc_attr($panelKey); ?>" data-step-title="<?php echo esc_attr($panel['short']); ?>" hidden>
             <div class="ak-buyback-demo__split">
-                <?php $this->renderVisual($initialImage, 'A kiválasztott iPhone'); ?>
+                <?php $this->renderVisual($fallbackVisual); ?>
                 <div class="ak-buyback-demo__question">
                     <span class="ak-buyback-demo__eyebrow"><?php echo esc_html($panel['step'] . '. ' . $panel['short']); ?></span>
                     <h3><?php echo esc_html($panel['title']); ?></h3>
@@ -419,7 +420,7 @@ final class LocalDemoCalculatorPage
                     $id = 'ak-demo-' . sanitize_html_class($key . '-' . $option);
                     $checked = in_array((string) $option, $selectedValues, true);
                     ?>
-                    <label class="ak-buyback-demo__choice-card" data-choice-key="<?php echo esc_attr($key); ?>" data-choice-value="<?php echo esc_attr((string) $option); ?>" data-visual-key="<?php echo esc_attr($this->visualKey($key, (string) $option)); ?>">
+                    <label class="ak-buyback-demo__choice-card" data-choice-key="<?php echo esc_attr($key); ?>" data-choice-value="<?php echo esc_attr((string) $option); ?>" data-visual-key="<?php echo esc_attr((string) ($meta['visual_key'] ?? '')); ?>">
                         <input
                             id="<?php echo esc_attr($id); ?>"
                             type="<?php echo $isMulti ? 'checkbox' : 'radio'; ?>"
@@ -499,8 +500,8 @@ final class LocalDemoCalculatorPage
                 <p><?php echo esc_html($modelLabel . ' · ' . $storageLabel); ?></p>
             </div>
             <div class="ak-buyback-demo__demo-notice">
-                <strong>HELYI DEMÓ</strong>
-                <span>Ez egy helyi, tesztelési célú előzetes ajánlat. Az összegek nem minősülnek végleges kereskedelmi ajánlatnak. A végleges összeget a készülék bevizsgálása után lehet meghatározni.</span>
+                <strong>ELŐZETES AJÁNLAT</strong>
+                <span>A feltüntetett összeg a megadott információk alapján készült. A végleges ajánlatot a készülék személyes bevizsgálása után tudjuk megerősíteni.</span>
             </div>
             <fieldset class="ak-buyback-demo__mode-fieldset" data-offer-group>
                 <legend class="screen-reader-text">Ajánlattípus kiválasztása</legend>
@@ -586,8 +587,8 @@ final class LocalDemoCalculatorPage
                 </article>
             </div>
             <div class="ak-buyback-demo__demo-notice">
-                <strong>HELYI DEMÓ</strong>
-                <span>A folytatás jelenleg csak bemutató. Nem jön létre felvásárlási kérelem, ügyféladat vagy rendelés.</span>
+                <strong>FOLYTATÁS HAMAROSAN</strong>
+                <span>Az előzetes ajánlat elkészült. A felvásárlási igény online leadása hamarosan elérhető lesz.</span>
             </div>
             <div class="ak-buyback-demo__panel-actions">
                 <button class="ak-buyback-demo__secondary" type="button" data-demo-back data-demo-target="offers">Vissza és módosítás</button>
@@ -678,34 +679,32 @@ final class LocalDemoCalculatorPage
         };
     }
 
-    private function visualKey(string $question, string $option): string
+    /** @param array{visual_key:string,question_key:string,answer_key:string,question_label:string,answer_label:string,panel:string,view_type:string,expected_path:string,fallback_path:string,alt:string,active_url:string,asset_exists:bool} $visual */
+    private function renderVisual(array $visual): void
     {
-        $group = match ($question) {
-            'screen_condition' => 'screen',
-            'frame_condition' => 'frame',
-            'back_glass_condition' => 'back-glass',
-            default => '',
-        };
-        if ($group === '') {
-            return '';
-        }
-        $state = match ($option) {
-            'like_new' => 'flawless',
-            'excellent' => 'minor-wear',
-            'very_good' => 'heavier-wear',
-            'good' => 'strongly-worn',
-            'damaged' => $group === 'back-glass' ? 'cracked' : ($group === 'screen' ? 'cracked' : 'damaged'),
-            default => 'flawless',
-        };
-        return $group . '/' . $state;
+        echo '<aside class="ak-buyback-demo__visual" data-demo-visual data-visual-key="' . esc_attr($visual['visual_key']) . '" data-visual-view="' . esc_attr($visual['view_type']) . '" aria-label="A készülék állapotának illusztrációja">';
+        echo '<div class="ak-buyback-demo__visual-image"><img src="' . esc_url($visual['active_url']) . '" alt="' . esc_attr($visual['alt']) . '" loading="eager" data-demo-device-image></div>';
+        echo '<strong data-demo-visual-label>' . esc_html($visual['answer_label']) . '</strong><span data-demo-visual-description>A készülék állapotának szemléltetése</span></aside>';
     }
 
-    private function renderVisual(string $image, string $alt): void
+    /** @return array{assets:array<string,array<string,mixed>>,fallback:array<string,mixed>} */
+    private function visualPayload(VisualStateCatalogue $catalogue): array
     {
-        echo '<div class="ak-buyback-demo__visual" aria-hidden="true"><div class="ak-buyback-demo__visual-image" data-demo-visual>';
-        echo '<img src="' . esc_url($image) . '" alt="' . esc_attr($alt) . '" loading="lazy" data-demo-device-image' . ($image === '' ? ' hidden' : '') . '>';
-        echo '<span class="ak-buyback-demo__image-fallback" data-demo-device-fallback' . ($image !== '' ? ' hidden' : '') . '><span></span>iPhone</span>';
-        echo '</div><strong data-demo-visual-label>A kiválasztott iPhone</strong><span>Az illusztráció a katalógus valódi termékképe.</span></div>';
+        $resolve = static function (array $entry): array {
+            $expected = APPLEKLINIKA_BUYBACK_PATH . '/' . $entry['expected_path'];
+            $exists = is_file($expected);
+            $activePath = $exists ? $entry['expected_path'] : $entry['fallback_path'];
+            $entry['asset_exists'] = $exists;
+            $entry['active_url'] = APPLEKLINIKA_BUYBACK_URL . $activePath;
+            $entry['fallback_url'] = APPLEKLINIKA_BUYBACK_URL . $entry['fallback_path'];
+
+            return $entry;
+        };
+
+        return [
+            'assets' => array_map($resolve, $catalogue->entries()),
+            'fallback' => $resolve($catalogue->fallback()),
+        ];
     }
 
     private function renderImage(string $url, string $alt): void

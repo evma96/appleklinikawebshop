@@ -31,6 +31,7 @@ use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\Schema;
 use AppleKlinika\Buyback\Infrastructure\WordPress\WordPressLocalDemoProductReader;
 use AppleKlinika\Buyback\Interfaces\Frontend\LocalDemoCalculatorPage;
 use AppleKlinika\Buyback\Domain\Pricing\PricingEngine;
+use AppleKlinika\Buyback\Application\LocalDemo\VisualStateCatalogue;
 
 final class PublicActiveBookTestRunner
 {
@@ -227,6 +228,13 @@ $runner->assert(str_contains($html, 'KÉSZÜLÉKFELVÁSÁRLÁS'), 'Public runtim
 $runner->assert(! str_contains($html, 'A helyi demó árkönyve nem aktív.'), 'Public runtime does not emit the demo-book availability error');
 $runner->assert(str_contains($html, 'data-storages="64,128,256"'), 'Priced iPhone 11 exposes only 64/128/256 GB');
 $runner->assert(! str_contains($html, 'value="iphone_13_pro"'), 'Inventory model without an active Base price remains hidden');
+$runner->assert(str_contains($html, 'data-visual-catalogue='), 'Public runtime receives the server-generated visual-state catalogue');
+$runner->assert(str_contains($html, 'assets/images/buyback-states/screen/flawless.webp'), 'Public payload contains the stable final visual asset paths');
+$runner->assert(str_contains($html, 'assets/images/buyback-states/_demo/flawless.svg'), 'Missing final visual files keep the safe temporary fallback in the public payload');
+$runner->assert(! str_contains($html, 'data-visual-assets-base'), 'Public rendering does not expose the old JavaScript asset-path builder');
+$runner->assert(! str_contains($html, 'demo asset') && ! str_contains($html, 'Current demo asset'), 'Public rendering contains no customer-facing demo asset wording');
+$runner->assert(! str_contains($html, 'HELYI DEMÓ') && ! str_contains($html, 'tesztelési célú') && ! str_contains(mb_strtolower($html), 'helyi demó'), 'Public rendering contains no internal demo wording');
+$runner->assert(count((new VisualStateCatalogue(new LocalDemoQuestionnaire()))->entries()) === 15, 'All public visual states remain available without changing pricing');
 
 $_SERVER['REQUEST_METHOD'] = 'POST';
 $_POST = [
@@ -242,6 +250,7 @@ $runner->assert(str_contains($craftedColorHtml, 'Válassz az ehhez a modellhez e
 $_POST['color_key'] = 'black';
 $validColorHtml = $page->render();
 $runner->assert(! str_contains($validColorHtml, 'Válassz az ehhez a modellhez elérhető színek közül.'), 'A canonical iPhone 11 inventory color is accepted server-side');
+$runner->assert(str_contains($validColorHtml, 'ELŐZETES AJÁNLAT') && ! str_contains($validColorHtml, 'HELYI DEMÓ') && ! str_contains($validColorHtml, 'tesztelési célú'), 'Public offer result uses customer-facing wording without internal demo text');
 $_POST = [];
 $_SERVER['REQUEST_METHOD'] = 'GET';
 

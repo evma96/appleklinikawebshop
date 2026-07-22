@@ -11,11 +11,12 @@ add_action('after_setup_theme', static function (): void {
 });
 
 add_action('wp_enqueue_scripts', static function (): void {
+    $frontendCssPath = get_stylesheet_directory() . '/assets/css/frontend.css';
     wp_enqueue_style(
         'appleklinika-theme',
         get_stylesheet_directory_uri() . '/assets/css/frontend.css',
         [],
-        '0.1.206'
+        md5_file($frontendCssPath) ?: null
     );
 
     if (function_exists('is_checkout') && is_checkout()) {

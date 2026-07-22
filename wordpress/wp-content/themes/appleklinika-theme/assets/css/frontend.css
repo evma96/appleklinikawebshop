@@ -6437,6 +6437,26 @@ body.woocommerce-cart .wc-block-components-totals-coupon__button {
 }
 
 @media (max-width: 900px) {
+  .ak-header-top {
+    grid-template-columns: 180px minmax(0, 1fr) 150px;
+    gap: 12px;
+  }
+
+  .ak-header-logo img {
+    width: 180px;
+  }
+
+  .ak-product-search,
+  .ak-product-search input[type="search"] {
+    min-width: 0;
+  }
+
+  .ak-header-actions .ak-header-pill {
+    width: 150px;
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
   .ak-hero,
   .ak-trust {
     grid-template-columns: 1fr;

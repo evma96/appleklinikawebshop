@@ -7,6 +7,8 @@ namespace AppleKlinika\Buyback\Interfaces\Admin;
 use AppleKlinika\Buyback\Application\Diagnostics\DiagnosticsReport;
 use AppleKlinika\Buyback\Application\Diagnostics\GetDiagnosticsHandler;
 use AppleKlinika\Buyback\Application\Diagnostics\GetDiagnosticsQuery;
+use AppleKlinika\Buyback\Application\LocalDemo\LocalDemoQuestionnaire;
+use AppleKlinika\Buyback\Application\LocalDemo\VisualStateCatalogue;
 use AppleKlinika\Buyback\Infrastructure\WordPress\CapabilityManager;
 
 final class DiagnosticsPage
@@ -57,10 +59,35 @@ final class DiagnosticsPage
 
         $this->renderSystemTable($report);
         $this->renderPricingTable($report);
+        $this->renderVisualStateGallery();
         $this->renderSchemaTable($report);
         $this->renderLegacyTable($report);
 
         echo '</div>';
+    }
+
+    private function renderVisualStateGallery(): void
+    {
+        $catalogue = new VisualStateCatalogue(new LocalDemoQuestionnaire());
+
+        echo '<h2>Publikus állapotillusztrációk</h2>';
+        echo '<p>Csak olvasási ellenőrző nézet. A végleges WebP fájlok a megadott útvonalra helyezhetők; hiányuk esetén a publikus felület biztonságos átmeneti illusztrációt használ.</p>';
+        echo '<table class="widefat striped"><thead><tr><th>Állapot</th><th>Forrás</th><th>Nézet</th><th>Végleges fájl</th><th>Jelenlegi asset</th><th>Állapot</th></tr></thead><tbody>';
+
+        foreach ($catalogue->entries() as $entry) {
+            $exists = is_file(APPLEKLINIKA_BUYBACK_PATH . '/' . $entry['expected_path']);
+            $fallbackExists = is_file(APPLEKLINIKA_BUYBACK_PATH . '/' . $entry['fallback_path']);
+            echo '<tr>';
+            echo '<td>' . esc_html($entry['answer_label']) . '</td>';
+            echo '<td>' . esc_html($entry['question_label'] . ' → ' . $entry['answer_label']) . '</td>';
+            echo '<td>' . esc_html($this->viewTypeLabel($entry['view_type'])) . '</td>';
+            echo '<td><code>' . esc_html($entry['expected_path']) . '</code></td>';
+            echo '<td><code>' . esc_html($exists ? $entry['expected_path'] : $entry['fallback_path']) . '</code></td>';
+            echo '<td>' . esc_html($exists ? 'Végleges fájl elérhető' : ($fallbackExists ? 'Átmeneti fallback aktív' : 'Hiányzik')) . '</td>';
+            echo '</tr>';
+        }
+
+        echo '</tbody></table>';
     }
 
     private function renderPricingTable(DiagnosticsReport $report): void
@@ -147,5 +174,14 @@ final class DiagnosticsPage
     private function row(string $label, string $value): void
     {
         echo '<tr><th scope="row">' . esc_html($label) . '</th><td>' . esc_html($value) . '</td></tr>';
+    }
+
+    private function viewTypeLabel(string $viewType): string
+    {
+        return match ($viewType) {
+            'angled-edge' => 'Döntött él / keret',
+            'rear' => 'Hátlap',
+            default => 'Elölnézet / kijelző',
+        };
     }
 }

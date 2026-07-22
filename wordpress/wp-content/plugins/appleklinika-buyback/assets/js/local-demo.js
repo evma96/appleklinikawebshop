@@ -11,9 +11,7 @@
   const progress = root.querySelector('[data-demo-progress]');
   const progressText = root.querySelector('[data-demo-progress-text]');
   const progressBar = progress ? progress.parentElement : null;
-  const visualImages = root.querySelectorAll('[data-demo-device-image]');
-  const visualFallbacks = root.querySelectorAll('[data-demo-device-fallback]');
-  const visualLabels = root.querySelectorAll('[data-demo-visual-label]');
+  const visualPanels = root.querySelectorAll('[data-demo-visual]');
   const modelCards = Array.from(root.querySelectorAll('[data-model-card]'));
   const storageCards = Array.from(root.querySelectorAll('[data-storage-card]'));
   const colorPicker = root.querySelector('[data-color-picker]');
@@ -30,6 +28,15 @@
   const reviewModeHeadline = root.querySelector('[data-review-mode-headline]');
   const reviewModeDescription = root.querySelector('[data-review-mode-description]');
   const reviewModeProcess = root.querySelector('[data-review-mode-process]');
+  const warnedVisualStates = new Set();
+  let visualCatalogue = { assets: {}, fallback: {} };
+
+  try {
+    const catalogue = JSON.parse(root.dataset.visualCatalogue || '{}');
+    if (catalogue && catalogue.assets && catalogue.fallback) visualCatalogue = catalogue;
+  } catch (error) {
+    console.warn('[Apple Klinika Buyback] A vizuális állapotkatalógus nem olvasható; a semleges illusztráció marad aktív.');
+  }
 
   let flow = panels.map((panel) => panel.dataset.demoPanel);
   try {
@@ -56,42 +63,76 @@
     const card = selectedModelCard();
     const storage = selectedStorage();
     const label = card ? card.dataset.label : '';
-    const image = card ? card.dataset.image : '';
     const storageLabel = storage ? (storage.value === '1024' ? '1 TB' : storage.value + ' GB') : '';
 
     if (crumb) {
       crumb.textContent = label ? label + (storageLabel ? ' · ' + storageLabel : '') : 'Készülék kiválasztása';
     }
-    visualLabels.forEach((node) => { node.textContent = label || 'A kiválasztott iPhone'; });
-    visualImages.forEach((node) => {
-      if (image) {
-        node.src = image;
-        node.dataset.baseImage = image;
-        node.alt = label;
-        node.hidden = false;
-      } else {
-        node.hidden = true;
+  }
+
+  function visualEntry(key) {
+    if (!key) return visualCatalogue.fallback;
+    return visualCatalogue.assets[key] || visualCatalogue.fallback;
+  }
+
+  function warnForMissingVisual(entry, key) {
+    if (entry.asset_exists || warnedVisualStates.has(key)) return;
+    warnedVisualStates.add(key);
+    console.warn('[Apple Klinika Buyback] Hiányzó végleges állapotillusztráció: ' + entry.expected_path + '. Az átmeneti Apple Klinika fallback látható.');
+  }
+
+  function preloadVisualGroup(key) {
+    const group = key.split('/')[0];
+    if (!group) return;
+    Object.entries(visualCatalogue.assets).forEach(([assetKey, entry]) => {
+      if (assetKey.split('/')[0] !== group || !entry.active_url || entry.preloaded) return;
+      entry.preloaded = true;
+      const image = new Image();
+      image.src = entry.active_url;
+    });
+  }
+
+  function applyVisual(entry, key) {
+    visualPanels.forEach((visual) => {
+      const image = visual.querySelector('[data-demo-device-image]');
+      const label = visual.querySelector('[data-demo-visual-label]');
+      const description = visual.querySelector('[data-demo-visual-description]');
+      if (!image) return;
+      visual.dataset.visualKey = key || entry.visual_key || 'device/fallback';
+      visual.dataset.visualView = entry.view_type || 'front';
+      if (label) label.textContent = entry.answer_label || 'Kiválasztott iPhone';
+      if (description) description.textContent = entry.question_label || 'A készülék állapotának szemléltetése';
+      image.alt = entry.alt || 'iPhone állapotillusztráció';
+      image.onerror = () => {
+        if (image.src !== entry.fallback_url) {
+          console.warn('[Apple Klinika Buyback] Az állapotillusztráció nem tölthető be; a fallback jelenik meg.');
+          image.src = entry.fallback_url;
+        }
+      };
+      if (image.src !== entry.active_url) {
+        visual.classList.add('is-transitioning');
+        image.src = entry.active_url;
+        window.setTimeout(() => visual.classList.remove('is-transitioning'), 180);
       }
     });
-    visualFallbacks.forEach((node) => { node.hidden = Boolean(image); });
+    warnForMissingVisual(entry, key || entry.visual_key || 'device/fallback');
   }
 
   function updateConditionVisual(input) {
     const choice = input && input.closest('[data-visual-key]');
     const key = choice ? choice.dataset.visualKey : '';
-    root.querySelectorAll('[data-demo-visual]').forEach((visual) => {
-      visual.dataset.visualKey = key || 'device/fallback';
-      visual.classList.add('is-transitioning');
-      window.setTimeout(() => visual.classList.remove('is-transitioning'), 180);
-    });
     if (!key) return;
-    const tier = key.endsWith('/flawless') ? 'flawless' : key.endsWith('/minor-wear') ? 'minor-wear' : key.endsWith('/heavier-wear') ? 'heavier-wear' : key.endsWith('/strongly-worn') ? 'strongly-worn' : 'damaged';
-    root.querySelectorAll('[data-demo-device-image]').forEach((image) => {
-      const base = root.dataset.visualAssetsBase || '';
-      image.alt = 'iPhone állapotillusztráció: ' + key;
-      image.onerror = () => { image.onerror = () => { image.src = image.dataset.baseImage || ''; }; image.src = base + '_demo/' + tier + '.svg'; };
-      image.src = base + key + '.svg';
-    });
+    applyVisual(visualEntry(key), key);
+    preloadVisualGroup(key);
+  }
+
+  function syncVisualForPanel(panel) {
+    const selected = panel ? panel.querySelector('[data-visual-key]:not([data-visual-key=""]) input:checked') : null;
+    if (selected) {
+      updateConditionVisual(selected);
+      return;
+    }
+    applyVisual(visualEntry(''), '');
   }
 
   function updateStorageAvailability() {
@@ -208,8 +249,7 @@
     current = name;
     updateProgress(name);
     updateDeviceContext();
-    const selectedVisual = target.querySelector('[data-visual-key] input:checked');
-    if (selectedVisual) updateConditionVisual(selectedVisual);
+    syncVisualForPanel(target);
 
     if (focusHeading) {
       const heading = target.querySelector('h3');
@@ -493,4 +533,6 @@
   const existingOffer = selectedOfferCard();
   if (existingOffer) selectOffer(existingOffer);
   show(current, false);
+  window.addEventListener('pageshow', () => syncVisualForPanel(panelFor(current)));
+  window.addEventListener('popstate', () => syncVisualForPanel(panelFor(current)));
 }());

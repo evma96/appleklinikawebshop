@@ -70,7 +70,7 @@ final class LocalDemoQuestionnaire
                 'panel' => 'configuration',
                 'type' => 'single',
                 'label' => 'Hálózatfüggetlen a készülék?',
-                'helper' => 'A jelenlegi helyi demó kizárólag hálózatfüggetlen iPhone készülékekre ad automatikus előzetes ajánlatot.',
+                'helper' => 'A felvásárlási folyamat kizárólag hálózatfüggetlen iPhone készülékekre ad automatikus előzetes ajánlatot.',
                 'default' => 'unlocked',
                 'options' => [
                     'unlocked' => [
@@ -222,6 +222,37 @@ final class LocalDemoQuestionnaire
             $this->questions(),
             static fn (array $question): bool => $question['panel'] === $panel
         );
+    }
+
+    /**
+     * The public visual-state contract is owned by the same questionnaire as
+     * the customer-facing answers.  It is presentation metadata only: none of
+     * these values are accepted by, or passed to, pricing.
+     *
+     * @return list<array{panel:string,question_key:string,question_label:string,answer_key:string,answer_label:string,visual_key:string}>
+     */
+    public function visualStateAnswers(): array
+    {
+        $states = [];
+
+        foreach ($this->questions() as $questionKey => $question) {
+            foreach (($question['options'] ?? []) as $answerKey => $answer) {
+                if (! isset($answer['visual_key']) || $answer['visual_key'] === '') {
+                    continue;
+                }
+
+                $states[] = [
+                    'panel' => (string) $question['panel'],
+                    'question_key' => (string) $questionKey,
+                    'question_label' => (string) $question['label'],
+                    'answer_key' => (string) $answerKey,
+                    'answer_label' => (string) $answer['label'],
+                    'visual_key' => (string) $answer['visual_key'],
+                ];
+            }
+        }
+
+        return $states;
     }
 
     /**
@@ -484,11 +515,11 @@ final class LocalDemoQuestionnaire
             'helper' => 'Nézd meg kikapcsolt és bekapcsolt állapotban, erős fényben is.',
             'default' => 'excellent',
             'options' => [
-                'like_new' => ['label' => 'Hibátlan', 'helper' => 'Nem látható karc, repedés vagy más használati nyom.'],
-                'excellent' => ['label' => 'Apró használati nyomok', 'helper' => 'Néhány nagyon apró, bekapcsolt kijelzőn alig észrevehető felületi karc látható.'],
-                'very_good' => ['label' => 'Intenzívebb használati nyomok', 'helper' => 'Több látható karc vagy kopás található rajta, repedés nélkül.'],
-                'good' => ['label' => 'Erősen kopott', 'helper' => 'Mélyebb vagy számos karc látható, amelyek használat közben is észrevehetők.'],
-                'damaged' => ['label' => 'Törött vagy repedt', 'helper' => 'A kijelző repedt, törött vagy olyan súlyosan sérült, hogy működési kockázatot jelent.'],
+                'like_new' => ['label' => 'Hibátlan', 'helper' => 'Nem látható karc, repedés vagy más használati nyom.', 'visual_key' => 'screen/flawless'],
+                'excellent' => ['label' => 'Apró használati nyomok', 'helper' => 'Néhány nagyon apró, bekapcsolt kijelzőn alig észrevehető felületi karc látható.', 'visual_key' => 'screen/minor-wear'],
+                'very_good' => ['label' => 'Intenzívebb használati nyomok', 'helper' => 'Több látható karc vagy kopás található rajta, repedés nélkül.', 'visual_key' => 'screen/heavier-wear'],
+                'good' => ['label' => 'Erősen kopott', 'helper' => 'Mélyebb vagy számos karc látható, amelyek használat közben is észrevehetők.', 'visual_key' => 'screen/strongly-worn'],
+                'damaged' => ['label' => 'Törött vagy repedt', 'helper' => 'A kijelző repedt, törött vagy olyan súlyosan sérült, hogy működési kockázatot jelent.', 'visual_key' => 'screen/cracked'],
             ],
         ];
     }
@@ -503,11 +534,11 @@ final class LocalDemoQuestionnaire
             'helper' => 'Vizsgáld meg a sarkokat, az éleket és a gombok környékét.',
             'default' => 'excellent',
             'options' => [
-                'like_new' => ['label' => 'Hibátlan', 'helper' => 'A keret újszerű, karcolás, kopás vagy horpadás nélkül.'],
-                'excellent' => ['label' => 'Apró használati nyomok', 'helper' => 'Néhány alig észrevehető felületi karc vagy apró pont látható.'],
-                'very_good' => ['label' => 'Intenzívebb használati nyomok', 'helper' => 'Több látható karc, festékkopás vagy kisebb ütődés található rajta.'],
-                'good' => ['label' => 'Erősen használt', 'helper' => 'Jelentős kopás, mélyebb karcok vagy kisebb horpadások láthatók.'],
-                'damaged' => ['label' => 'Sérült vagy deformált', 'helper' => 'A keret repedt, erősen horpadt, hajlott vagy láthatóan deformált.'],
+                'like_new' => ['label' => 'Hibátlan', 'helper' => 'A keret újszerű, karcolás, kopás vagy horpadás nélkül.', 'visual_key' => 'frame/flawless'],
+                'excellent' => ['label' => 'Apró használati nyomok', 'helper' => 'Néhány alig észrevehető felületi karc vagy apró pont látható.', 'visual_key' => 'frame/minor-wear'],
+                'very_good' => ['label' => 'Intenzívebb használati nyomok', 'helper' => 'Több látható karc, festékkopás vagy kisebb ütődés található rajta.', 'visual_key' => 'frame/heavier-wear'],
+                'good' => ['label' => 'Erősen használt', 'helper' => 'Jelentős kopás, mélyebb karcok vagy kisebb horpadások láthatók.', 'visual_key' => 'frame/strongly-worn'],
+                'damaged' => ['label' => 'Sérült vagy deformált', 'helper' => 'A keret repedt, erősen horpadt, hajlott vagy láthatóan deformált.', 'visual_key' => 'frame/damaged'],
             ],
         ];
     }
@@ -522,11 +553,11 @@ final class LocalDemoQuestionnaire
             'helper' => 'Nézd meg erős fényben, több szögből a karcokat, lepattanásokat és repedéseket.',
             'default' => 'excellent',
             'options' => [
-                'like_new' => ['label' => 'Hibátlan', 'helper' => 'Nem látható karc, lepattanás vagy repedés.'],
-                'excellent' => ['label' => 'Apró használati nyomok', 'helper' => 'Néhány nagyon apró, alig észrevehető felületi karc látható.'],
-                'very_good' => ['label' => 'Intenzívebb használati nyomok', 'helper' => 'Több látható karc vagy kopás található rajta, repedés nélkül.'],
-                'good' => ['label' => 'Erősen használt', 'helper' => 'Mélyebb karcok, kopás vagy kisebb lepattanás látható, de a hátlap nem törött.'],
-                'damaged' => ['label' => 'Törött vagy repedt', 'helper' => 'A hátlap üvege repedt, törött vagy jelentősen sérült.'],
+                'like_new' => ['label' => 'Hibátlan', 'helper' => 'Nem látható karc, lepattanás vagy repedés.', 'visual_key' => 'back-glass/flawless'],
+                'excellent' => ['label' => 'Apró használati nyomok', 'helper' => 'Néhány nagyon apró, alig észrevehető felületi karc látható.', 'visual_key' => 'back-glass/minor-wear'],
+                'very_good' => ['label' => 'Intenzívebb használati nyomok', 'helper' => 'Több látható karc vagy kopás található rajta, repedés nélkül.', 'visual_key' => 'back-glass/heavier-wear'],
+                'good' => ['label' => 'Erősen használt', 'helper' => 'Mélyebb karcok, kopás vagy kisebb lepattanás látható, de a hátlap nem törött.', 'visual_key' => 'back-glass/strongly-worn'],
+                'damaged' => ['label' => 'Törött vagy repedt', 'helper' => 'A hátlap üvege repedt, törött vagy jelentősen sérült.', 'visual_key' => 'back-glass/cracked'],
             ],
         ];
     }
