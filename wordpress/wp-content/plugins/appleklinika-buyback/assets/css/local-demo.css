@@ -690,6 +690,40 @@
   font-size: 13px;
 }
 
+.ak-buyback-demo__submission-form,
+.ak-buyback-demo__contact-card {
+  margin-top: 1.5rem;
+}
+
+.ak-buyback-demo__contact-card {
+  padding: 1.5rem;
+  border: 1px solid #d9dde4;
+  border-radius: 18px;
+  background: #fff;
+}
+
+.ak-buyback-demo__contact-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.ak-buyback-demo__contact-grid label { display: grid; gap: .4rem; font-weight: 700; }
+.ak-buyback-demo__contact-grid input,
+.ak-buyback-demo__contact-grid textarea { width: 100%; box-sizing: border-box; border: 1px solid #aeb7c4; border-radius: 9px; padding: .7rem; font: inherit; }
+.ak-buyback-demo__contact-grid--wide { grid-column: 1 / -1; }
+.ak-buyback-demo__privacy-notice { padding: 1rem; background: #f4f7fa; border-radius: 12px; font-size: .9rem; }
+.ak-buyback-demo__privacy-notice h5 { margin: 0 0 .45rem; }
+.ak-buyback-demo__privacy-check { display: flex; gap: .55rem; align-items: flex-start; font-weight: 700; }
+.ak-buyback-demo__honeypot { position: absolute !important; left: -9999px !important; opacity: 0 !important; }
+.ak-buyback-demo__submission-device { margin: 1rem 0; }
+
+@media (max-width: 640px) {
+  .ak-buyback-demo__contact-grid { grid-template-columns: 1fr; }
+  .ak-buyback-demo__contact-grid--wide { grid-column: auto; }
+}
+
 .ak-buyback-demo__summary-grid {
   display: grid;
   grid-template-columns: 0.8fr 1.2fr;

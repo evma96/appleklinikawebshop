@@ -9,6 +9,7 @@ use AppleKlinika\Buyback\Application\Handler\AddDraftPricingRuleHandler;
 use AppleKlinika\Buyback\Application\Handler\CreateDraftPriceBookHandler;
 use AppleKlinika\Buyback\Application\LocalDemo\LocalDemoHostGuard;
 use AppleKlinika\Buyback\Application\LocalDemo\LocalDemoQuestionnaire;
+use AppleKlinika\Buyback\Application\PublicRequest\PublicBuybackRequestSubmission;
 use AppleKlinika\Buyback\Application\Pricing\PriceBookActivationReadinessService;
 use AppleKlinika\Buyback\Application\Pricing\RepositoryActivePriceBookResolver;
 use AppleKlinika\Buyback\Domain\Pricing\PriceBookActivationReadinessEvaluator;
@@ -18,6 +19,11 @@ use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\MySqlPriceBookActi
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressPriceBookRepository;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressPricingRuleRepository;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressTransactionManager;
+use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressBuybackRequestMapper;
+use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressBuybackRequestRepository;
+use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressDomainEventStore;
+use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressPublicBuybackRequestStore;
+use AppleKlinika\Buyback\Infrastructure\Identifier\WordPressRequestNumberGenerator;
 use AppleKlinika\Buyback\Infrastructure\Time\SystemClock;
 use AppleKlinika\Buyback\Interfaces\Frontend\LocalDemoCalculatorPage;
 
@@ -41,6 +47,8 @@ final class LocalDemoModule
         $readiness = new PriceBookActivationReadinessService($catalog, new PriceBookActivationReadinessEvaluator());
         $activation = new ActivateDraftPriceBookHandler($books, $rules, $readiness, new MySqlPriceBookActivationLock($wpdb), $transactions, $clock);
         $localProducts = new WordPressLocalDemoProductReader();
+        $requests = new WordPressBuybackRequestRepository($wpdb, new WordPressBuybackRequestMapper());
+        $publicStore = new WordPressPublicBuybackRequestStore($wpdb);
         $seeder = new LocalDemoSeeder(
             $books,
             $rules,
@@ -50,7 +58,20 @@ final class LocalDemoModule
             $localProducts,
             new WordPressLocalDemoPageGateway()
         );
-        return new self($seeder, new LocalDemoCalculatorPage(new RepositoryActivePriceBookResolver($books, $rules), new PricingEngine(), $catalog, $localProducts, new LocalDemoQuestionnaire()));
+        $resolver = new RepositoryActivePriceBookResolver($books, $rules);
+        $questionnaire = new LocalDemoQuestionnaire();
+        $submission = new PublicBuybackRequestSubmission(
+            $resolver,
+            new PricingEngine(),
+            $questionnaire,
+            $requests,
+            $publicStore,
+            new WordPressDomainEventStore($wpdb, new WordPressBuybackRequestMapper()),
+            new WordPressRequestNumberGenerator($requests, $clock),
+            $transactions,
+            $clock
+        );
+        return new self($seeder, new LocalDemoCalculatorPage($resolver, new PricingEngine(), $catalog, $localProducts, $questionnaire, $submission, $publicStore));
     }
 
     public function register(): void

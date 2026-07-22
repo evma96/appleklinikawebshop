@@ -28,6 +28,9 @@
   const reviewModeHeadline = root.querySelector('[data-review-mode-headline]');
   const reviewModeDescription = root.querySelector('[data-review-mode-description]');
   const reviewModeProcess = root.querySelector('[data-review-mode-process]');
+  const submissionMode = root.querySelector('[data-selected-offer-mode]');
+  const publicSubmit = root.querySelector('[data-public-submit]');
+  const publicSubmitMessage = root.querySelector('[data-public-submit-message]');
   const warnedVisualStates = new Set();
   let visualCatalogue = { assets: {}, fallback: {} };
 
@@ -226,6 +229,9 @@
     if (input) input.checked = true;
     root.querySelectorAll('[data-mode-card]').forEach((item) => item.classList.toggle('is-selected', item === card));
     if (offerContinue) offerContinue.disabled = false;
+    if (submissionMode && input) submissionMode.value = input.value;
+    if (publicSubmit) publicSubmit.disabled = false;
+    if (publicSubmitMessage) publicSubmitMessage.hidden = true;
     if (modeMessage) modeMessage.hidden = false;
     updateOfferReview(card);
   }
