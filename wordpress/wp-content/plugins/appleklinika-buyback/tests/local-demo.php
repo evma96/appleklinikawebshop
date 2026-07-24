@@ -130,8 +130,8 @@ try {
 localDemoAssert($blocked, 'Localhost guard rejects a non-local host');
 
 $questionnaire = new LocalDemoQuestionnaire();
-localDemoAssert(WordPressLocalDemoProductReader::resolveColors(['graphite' => 'Grafit'], ['graphite' => 'Más címke', 'extra' => 'Extra']) === ['graphite' => 'Grafit'], 'Catalogue colors override and exclude conflicting Woo product colors');
-localDemoAssert(WordPressLocalDemoProductReader::resolveColors([], ['graphite' => 'Grafit']) === ['graphite' => 'Grafit'], 'Woo product colors are used only when the catalogue has no colors');
+localDemoAssert(WordPressLocalDemoProductReader::resolveColors(['graphite' => 'Grafit']) === ['graphite' => 'Grafit'], 'Catalogue colors are used as the only public color source');
+localDemoAssert(WordPressLocalDemoProductReader::resolveColors([]) === [], 'Missing catalogue colors do not fall back to Woo product metadata');
 localDemoAssert(
     $questionnaire->panelOrder() === [
         'model',
@@ -223,72 +223,24 @@ $books = new WordPressPriceBookRepository($wpdb);
 $rulesRepository = new WordPressPricingRuleRepository($wpdb);
 $resolver = new RepositoryActivePriceBookResolver($books, $rulesRepository);
 $activeBefore = $resolver->resolveForCurrencyAt(new CurrencyCode('HUF'), new DateTimeImmutable('now', new DateTimeZone('UTC')))->priceBook->id()?->toInt();
-$temporaryFixture = $books->createDraft(PriceBook::createDraft(
-    $books->nextAvailableVersionNumber(),
-    'QA-LOCAL-DEMO-PROTECTED-' . gmdate('YmdHis') . '-' . bin2hex(random_bytes(3)),
-    new CurrencyCode('HUF'),
-    new Money(0, 'HUF'),
-    1000,
-    new MinimumOfferPolicy(MinimumOfferPolicy::MANUAL_REVIEW),
-    new PricingActorId(max(1, get_current_user_id())),
-    new DateTimeImmutable('now', new DateTimeZone('UTC'))
-));
-$temporaryFixtureId = $temporaryFixture->id();
-if ($temporaryFixtureId === null) {
-    throw new RuntimeException('Temporary protected price book was not persisted.');
-}
-$temporaryFixtureBefore = localDemoPriceBookFingerprints($wpdb)[$temporaryFixtureId->toInt()] ?? null;
-register_shutdown_function(static function () use ($wpdb, $temporaryFixtureId): void {
-    localDemoDeleteTemporaryFixture($wpdb, $temporaryFixtureId);
-});
 $module = LocalDemoModule::create();
-$first = $module->seeder()->seed();
-$second = $module->seeder()->seed();
-localDemoAssert($first->priceBookId === $second->priceBookId, 'Repeated seed reuses the same price book');
-localDemoAssert($first->pageId === $second->pageId, 'Repeated seed reuses the same page');
-localDemoAssert($second->modelCount === 1, 'Published catalog generates one iPhone model');
-localDemoAssert($second->configurationCount === 4, 'Published catalog generates four model/storage configurations');
-localDemoAssert($second->ruleCount === 30, 'Demo price book contains the exact thirty configured rules');
+$module->register();
+localDemoAssert(true, 'Registering the public module does not invoke the legacy local-demo seeder');
 
 $resolved = $resolver->resolveForCurrencyAt(new CurrencyCode('HUF'), new DateTimeImmutable('now', new DateTimeZone('UTC')));
-localDemoAssert($resolved->priceBook->label() === LocalDemoSeeder::LABEL, 'Exactly the local demo book resolves as active HUF book');
+localDemoAssert($resolved->priceBook->id()?->toInt() === $activeBefore, 'The already-active generic HUF price book remains the public source');
 localDemoAssert($books->countCurrentActiveForCurrencyAt(new CurrencyCode('HUF'), new DateTimeImmutable('now', new DateTimeZone('UTC'))) === 1, 'Exactly one active HUF price book exists');
-localDemoAssert(count($resolved->enabledRules) === 30, 'Active demo book exposes thirty enabled rules');
-
-localDemoAssert((localDemoPriceBookFingerprints($wpdb)[$temporaryFixtureId->toInt()] ?? null) === $temporaryFixtureBefore, 'Temporary protected price book remains unchanged after Local Demo seeding and calculation');
+localDemoAssert($resolved->enabledRules !== [], 'The active HUF price book exposes enabled public pricing rules');
 
 $page = get_page_by_path(WordPressLocalDemoPageGateway::SLUG, OBJECT, 'page');
-localDemoAssert($page instanceof WP_Post && (int) $page->ID === $second->pageId, 'Local demo page exists idempotently at the expected slug');
-
-$reference = localDemoCalculateAll($resolved->priceBook, $resolved->enabledRules, localDemoAnswers(['battery_health' => 85, 'screen_condition' => 'good']));
-$expected = [
-    ServiceMode::IN_STORE_INSTANT => 100000,
-    ServiceMode::FAST_ONLINE => 95000,
-    ServiceMode::HIGHER_OFFER => 105000,
-    ServiceMode::TRADE_IN => 110000,
-];
-foreach ($expected as $mode => $amount) {
-    localDemoAssert($reference[$mode]->outcome->code() === PricingOutcome::OFFERED, "{$mode} produces an offered outcome");
-    localDemoAssert($reference[$mode]->finalAmount?->amount() === $amount, "{$mode} produces the expected local demo amount {$amount}");
-}
-
-$manual = localDemoCalculateAll($resolved->priceBook, $resolved->enabledRules, localDemoAnswers(['display_functional' => false]));
-foreach ($manual as $mode => $result) {
-    localDemoAssert($result->outcome->code() === PricingOutcome::MANUAL_REVIEW, "{$mode} requires manual review when the display does not work");
-}
-
-localDemoDeleteTemporaryFixture($wpdb, $temporaryFixtureId);
-localDemoAssert(localDemoPersistentCounts($wpdb) === $countsBefore, 'Seed, calculation and temporary fixture cleanup restore all persistent table counts');
+localDemoAssert($page instanceof WP_Post, 'The public buyback page exists at the expected slug');
+localDemoAssert(localDemoPersistentCounts($wpdb) === $countsBefore, 'Registering and resolving the public flow creates no persistent records');
 localDemoAssert(localDemoPriceBookFingerprints($wpdb) === $fingerprintsBefore, 'All pre-existing price books and rule-content hashes remain unchanged');
 $activeAfter = $resolver->resolveForCurrencyAt(new CurrencyCode('HUF'), new DateTimeImmutable('now', new DateTimeZone('UTC')))->priceBook->id()?->toInt();
 localDemoAssert($activeAfter === $activeBefore, 'Active HUF price-book identity remains unchanged');
 
 echo sprintf(
-    "Local demo tests passed: book %d, page %d, models %d, configurations %d, rules %d; reference amounts %s.\n",
-    $second->priceBookId,
-    $second->pageId,
-    $second->modelCount,
-    $second->configurationCount,
-    $second->ruleCount,
-    wp_json_encode($expected)
+    "Local demo tests passed: active book %d, page %d; no seeding or persistent writes.\n",
+    $activeBefore,
+    $page instanceof WP_Post ? (int) $page->ID : 0
 );

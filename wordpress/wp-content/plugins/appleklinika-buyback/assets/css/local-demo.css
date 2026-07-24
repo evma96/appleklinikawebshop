@@ -66,6 +66,150 @@
   line-height: 1.6;
 }
 
+body.ak-buyback-demo-page.ak-buyback-entry-active .ak-buyback-demo__navigation {
+  display: none;
+}
+
+body.ak-buyback-demo-page.ak-buyback-entry-active .ak-buyback-demo {
+  width: min(960px, calc(100% - 40px));
+}
+
+.ak-buyback-demo__entry {
+  padding: clamp(28px, 5vw, 56px);
+  border: 1px solid var(--ak-border);
+  border-radius: 20px;
+  background: linear-gradient(145deg, #fff 0%, var(--ak-surface) 100%);
+  box-shadow: 0 22px 60px rgba(16, 24, 40, 0.08);
+}
+
+.ak-buyback-demo__entry-intro {
+  max-width: 680px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.ak-buyback-demo__entry-intro h2 {
+  margin: 12px 0 10px;
+  font-size: clamp(30px, 4vw, 46px);
+  line-height: 1.1;
+}
+
+.ak-buyback-demo__entry-intro p,
+.ak-buyback-demo__entry-coming {
+  margin: 0;
+  color: var(--ak-muted);
+  line-height: 1.6;
+}
+
+.ak-buyback-demo__entry-family-grid {
+  display: grid;
+  max-width: 440px;
+  margin: 32px auto 0;
+}
+
+.ak-buyback-demo__entry-family {
+  position: relative;
+  display: grid;
+  grid-template-columns: 118px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  width: 100%;
+  padding: 16px;
+  border: 1px solid var(--ak-border);
+  border-radius: 16px;
+  background: #fff;
+  color: var(--ak-navy);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.ak-buyback-demo__entry-family:hover,
+.ak-buyback-demo__entry-family[aria-pressed="true"] {
+  border-color: #f29aa6;
+  box-shadow: 0 12px 28px rgba(16, 24, 40, 0.1);
+  transform: translateY(-1px);
+}
+
+.ak-buyback-demo__entry-family:focus-visible {
+  outline: 3px solid rgba(214, 0, 28, 0.24);
+  outline-offset: 4px;
+}
+
+.ak-buyback-demo__entry-family-media {
+  display: grid;
+  width: 118px;
+  height: 100px;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--ak-surface);
+}
+
+.ak-buyback-demo__entry-family-image {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  object-fit: contain !important;
+  object-position: center !important;
+}
+
+.ak-buyback-demo__entry-family-copy {
+  display: grid;
+  gap: 5px;
+}
+
+.ak-buyback-demo__entry-family-copy strong {
+  font-size: 21px;
+}
+
+.ak-buyback-demo__entry-family-copy span {
+  color: var(--ak-red);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.ak-buyback-demo__entry-family-arrow {
+  color: var(--ak-red);
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.ak-buyback-demo__entry-coming {
+  margin-top: 16px;
+  font-size: 13px;
+  text-align: center;
+}
+
+.ak-buyback-demo__entry-benefits {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 34px;
+}
+
+.ak-buyback-demo__entry-benefits article {
+  padding: 18px;
+  border: 1px solid var(--ak-border);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.ak-buyback-demo__entry-benefits h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.ak-buyback-demo__entry-benefits p {
+  margin: 0;
+  color: var(--ak-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
 .ak-buyback-demo__navigation {
   display: grid;
   grid-template-columns: 42px minmax(180px, auto) minmax(120px, 1fr) auto;
@@ -258,6 +402,17 @@
   gap: 16px;
 }
 
+.ak-buyback-demo__model-no-results {
+  margin: 18px 0 0;
+  color: var(--ak-muted);
+  font-weight: 700;
+  text-align: center;
+}
+
+.ak-buyback-demo__model-no-results[hidden] {
+  display: none;
+}
+
 .ak-buyback-demo__device-card,
 .ak-buyback-demo__choice-card {
   position: relative;
@@ -275,6 +430,8 @@
   border-radius: 16px;
   background: #fff;
   text-align: center;
+  overflow: hidden;
+  isolation: isolate;
 }
 
 .ak-buyback-demo__device-card:hover,
@@ -303,26 +460,50 @@
   opacity: 0;
 }
 
-.ak-buyback-demo__device-image {
+.ak-buyback-demo__device-media {
+  position: relative;
   display: grid;
   width: 100%;
   height: 210px;
   place-items: center;
   border-radius: 12px;
   background: var(--ak-surface);
+  overflow: hidden;
 }
 
-.ak-buyback-demo__device-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
+.ak-buyback-demo__device-media > .ak-buyback-demo__model-media-image {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: none !important;
+  max-height: none !important;
+  margin: 0 !important;
+  align-self: stretch;
+  justify-self: stretch;
+  object-fit: contain !important;
+  object-position: center !important;
+  position: static !important;
+  transform: none !important;
 }
 
-.ak-buyback-demo__device-card > strong {
+.ak-buyback-demo__device-media > .ak-buyback-demo__image-fallback {
+  display: grid !important;
+  place-items: center;
+}
+
+.ak-buyback-demo__device-info {
+  display: grid;
+  gap: 3px;
+  justify-items: center;
+}
+
+.ak-buyback-demo__device-info > strong {
   font-size: 17px;
 }
 
-.ak-buyback-demo__device-card > small {
+.ak-buyback-demo__device-info > small {
   color: var(--ak-red);
   font-size: 13px;
   font-weight: 800;
@@ -454,6 +635,10 @@
   line-height: 1.4;
 }
 
+.ak-buyback-demo__choice-description[hidden] {
+  display: none;
+}
+
 .ak-buyback-demo__choice-card small {
   margin-top: 4px;
   color: var(--ak-red);
@@ -468,6 +653,10 @@
 }
 
 .ak-buyback-demo__choice-card[hidden] {
+  display: none;
+}
+
+.ak-buyback-demo__device-card[hidden] {
   display: none;
 }
 
@@ -730,6 +919,44 @@
   .ak-buyback-demo__contact-grid--wide { grid-column: auto; }
 }
 
+@media (max-width: 900px) {
+  body.ak-buyback-demo-page.ak-buyback-entry-active .ak-buyback-demo {
+    width: min(100% - 28px, 960px);
+    margin-top: 24px;
+  }
+
+  .ak-buyback-demo__entry {
+    padding: 26px 18px;
+  }
+
+  .ak-buyback-demo__entry-intro {
+    text-align: left;
+  }
+
+  .ak-buyback-demo__entry-family-grid {
+    max-width: none;
+    margin-top: 24px;
+  }
+
+  .ak-buyback-demo__entry-benefits {
+    grid-template-columns: 1fr;
+    margin-top: 26px;
+  }
+}
+
+@media (max-width: 480px) {
+  .ak-buyback-demo__entry-family {
+    grid-template-columns: 88px minmax(0, 1fr) auto;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .ak-buyback-demo__entry-family-media {
+    width: 88px;
+    height: 84px;
+  }
+}
+
 .ak-buyback-demo__summary-grid {
   display: grid;
   grid-template-columns: 0.8fr 1.2fr;
@@ -795,6 +1022,91 @@
   margin: 0;
   font-weight: 750;
   text-align: right;
+}
+
+.ak-buyback-demo__customer-summary {
+  margin-top: 22px;
+  padding: 20px;
+  border: 1px solid var(--ak-border);
+  border-radius: 14px;
+  background: var(--ak-surface);
+}
+
+.ak-buyback-demo__customer-summary-heading h4 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.ak-buyback-demo__customer-summary-heading p {
+  margin: 6px 0 0;
+  color: var(--ak-muted);
+  font-size: 13px;
+}
+
+.ak-buyback-demo__customer-summary-device {
+  display: grid;
+  gap: 4px;
+  margin-top: 18px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.ak-buyback-demo__customer-summary-device strong {
+  font-size: 17px;
+}
+
+.ak-buyback-demo__customer-summary-device span {
+  color: var(--ak-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.ak-buyback-demo__customer-summary-section,
+.ak-buyback-demo__customer-summary-offer {
+  margin-top: 18px;
+}
+
+.ak-buyback-demo__customer-summary-section h5,
+.ak-buyback-demo__customer-summary-offer h5 {
+  margin: 0 0 7px;
+  font-size: 13px;
+}
+
+.ak-buyback-demo__customer-summary dl,
+.ak-buyback-demo__customer-summary dl div {
+  margin: 0;
+}
+
+.ak-buyback-demo__customer-summary dl div {
+  display: grid;
+  grid-template-columns: minmax(0, 0.4fr) minmax(0, 0.6fr);
+  gap: 14px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--ak-border);
+  font-size: 12px;
+}
+
+.ak-buyback-demo__customer-summary dt {
+  color: var(--ak-muted);
+}
+
+.ak-buyback-demo__customer-summary dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-weight: 750;
+  text-align: right;
+}
+
+.ak-buyback-demo__customer-summary-offer {
+  padding-top: 16px;
+  border-top: 1px solid var(--ak-border);
+}
+
+.ak-buyback-demo__customer-summary-offer strong {
+  display: block;
+  color: var(--ak-red);
+  font-size: 17px;
 }
 
 @media (max-width: 900px) {
@@ -882,7 +1194,7 @@
     min-height: 238px;
   }
 
-  .ak-buyback-demo__device-image {
+  .ak-buyback-demo__device-media {
     height: 150px;
   }
 
@@ -1122,6 +1434,350 @@
   display: grid;
   grid-template-columns: minmax(240px, 0.7fr) minmax(280px, 0.9fr);
   gap: 16px;
+}
+
+/* Desktop contained-wizard layout: page chrome stays outside; only answer content may scroll. */
+body.ak-buyback-demo-page.ak-buyback-wizard-active header.wp-block-template-part,
+body.ak-buyback-demo-page.ak-buyback-offer-active header.wp-block-template-part {
+  height: 72px;
+  min-height: 72px;
+  overflow: hidden;
+}
+
+body.ak-buyback-demo-page.ak-buyback-wizard-active header.wp-block-template-part .ak-site-header,
+body.ak-buyback-demo-page.ak-buyback-wizard-active header.wp-block-template-part .ak-header-shell,
+body.ak-buyback-demo-page.ak-buyback-wizard-active header.wp-block-template-part .ak-header-top,
+body.ak-buyback-demo-page.ak-buyback-offer-active header.wp-block-template-part .ak-site-header,
+body.ak-buyback-demo-page.ak-buyback-offer-active header.wp-block-template-part .ak-header-shell,
+body.ak-buyback-demo-page.ak-buyback-offer-active header.wp-block-template-part .ak-header-top {
+  min-height: 72px;
+  height: 72px;
+}
+
+body.ak-buyback-demo-page.ak-buyback-wizard-active header.wp-block-template-part .ak-header-shell,
+body.ak-buyback-demo-page.ak-buyback-wizard-active header.wp-block-template-part .ak-header-top,
+body.ak-buyback-demo-page.ak-buyback-offer-active header.wp-block-template-part .ak-header-shell,
+body.ak-buyback-demo-page.ak-buyback-offer-active header.wp-block-template-part .ak-header-top {
+  display: flex;
+  align-items: center;
+}
+
+body.ak-buyback-demo-page.ak-buyback-wizard-active header.wp-block-template-part .ak-header-top,
+body.ak-buyback-demo-page.ak-buyback-offer-active header.wp-block-template-part .ak-header-top {
+  width: min(980px, calc(100% - 32px));
+  margin: 0 auto;
+  justify-content: flex-start;
+}
+
+body.ak-buyback-demo-page.ak-buyback-wizard-active header.wp-block-template-part .ak-header-logo,
+body.ak-buyback-demo-page.ak-buyback-offer-active header.wp-block-template-part .ak-header-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+
+body.ak-buyback-demo-page.ak-buyback-wizard-active header.wp-block-template-part .ak-header-logo img,
+body.ak-buyback-demo-page.ak-buyback-offer-active header.wp-block-template-part .ak-header-logo img {
+  width: auto;
+  height: 34px;
+}
+
+body.ak-buyback-demo-page.ak-buyback-wizard-active header.wp-block-template-part .ak-header-logo::after,
+body.ak-buyback-demo-page.ak-buyback-offer-active header.wp-block-template-part .ak-header-logo::after {
+  content: 'Vissza a webshopba';
+  color: #475467;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+body.ak-buyback-demo-page.ak-buyback-wizard-active header.wp-block-template-part .ak-product-search,
+body.ak-buyback-demo-page.ak-buyback-wizard-active header.wp-block-template-part .ak-header-actions,
+body.ak-buyback-demo-page.ak-buyback-wizard-active header.wp-block-template-part .ak-category-nav,
+body.ak-buyback-demo-page.ak-buyback-wizard-active header.wp-block-template-part p,
+body.ak-buyback-demo-page.ak-buyback-offer-active header.wp-block-template-part .ak-product-search,
+body.ak-buyback-demo-page.ak-buyback-offer-active header.wp-block-template-part .ak-header-actions,
+body.ak-buyback-demo-page.ak-buyback-offer-active header.wp-block-template-part .ak-category-nav,
+body.ak-buyback-demo-page.ak-buyback-offer-active header.wp-block-template-part p {
+  display: none;
+}
+
+body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__header,
+body.ak-buyback-demo-page.ak-buyback-offer-active .ak-buyback-demo__header {
+  display: none;
+}
+
+@media (min-width: 901px) {
+  html:has(body.ak-buyback-demo-page.ak-buyback-wizard-active) {
+    overflow: hidden;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active {
+    overflow: hidden;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active main {
+    display: flex;
+    height: var(--ak-buyback-available-height);
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-footer-shell {
+    display: none;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active footer {
+    display: none;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active main > .entry-content {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    margin: 0 !important;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    width: min(960px, calc(100% - 48px));
+    height: min(680px, calc(var(--ak-buyback-available-height) - 36px));
+    margin: auto;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__form {
+    display: contents;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__navigation {
+    gap: 10px;
+    margin: 0 0 8px;
+    padding: 5px 0;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__back {
+    width: 36px;
+    height: 36px;
+    font-size: 19px;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__panel {
+    min-height: 0;
+    height: 100%;
+    padding: 20px;
+    border-radius: 16px;
+    box-shadow: 0 14px 38px rgba(16, 24, 40, 0.08);
+    overflow: hidden;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__panel[data-demo-panel="model"] {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    gap: 12px;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__panel[data-demo-panel="model"][hidden] {
+    display: none;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__model-content {
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__model-content .ak-buyback-demo__panel-heading {
+    margin: 0 auto 10px;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__model-content .ak-buyback-demo__search {
+    width: 100%;
+    margin: 0 auto 10px;
+    justify-self: center;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__model-content .ak-buyback-demo__search input {
+    min-height: 44px;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__model-content .ak-buyback-demo__device-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 280px));
+    min-height: 0;
+    overflow-y: auto;
+    align-content: start;
+    justify-content: center;
+    padding-right: 0;
+    scrollbar-gutter: stable;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__model-content .ak-buyback-demo__device-card {
+    min-height: 220px;
+    grid-template-rows: 140px auto;
+    width: 100%;
+    gap: 5px;
+    padding: 12px;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__model-content .ak-buyback-demo__device-media {
+    height: 140px;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__wizard-shell {
+    grid-template-columns: minmax(260px, 0.82fr) minmax(0, 1.18fr);
+    grid-template-rows: minmax(0, 1fr);
+    align-items: stretch;
+    gap: 28px;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__visual {
+    position: static;
+    align-self: stretch;
+    grid-template-rows: minmax(0, 1fr) auto auto;
+    gap: 6px;
+    height: 100%;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__visual-image {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    max-width: none;
+    max-height: none;
+    align-self: center;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__visual-image img {
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: 100%;
+    max-height: 100%;
+    padding: 0;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__visual > strong {
+    min-height: 20px;
+    font-size: 15px;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__visual > span {
+    min-height: 17px;
+    font-size: 11px;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__question--questionnaire {
+    display: grid;
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__question--configuration {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__configuration-content {
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+    padding-right: 6px;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__question h3 {
+    margin: 4px 0 5px;
+    font-size: clamp(21px, 1.8vw, 27px);
+    line-height: 1.18;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__question > p,
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__question-helper {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__question-stack {
+    min-height: 0;
+    margin-top: 12px;
+    padding-right: 7px;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+    gap: 14px;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__question-group .ak-buyback-demo__choice-grid {
+    margin-top: 9px;
+    gap: 8px;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__choice-grid--liquid-contact {
+    grid-template-columns: 1fr;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__question-group legend,
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__question-group > h4 {
+    font-size: 15px;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__choice-card {
+    min-height: 50px;
+    gap: 2px;
+    padding: 7px 11px;
+    border-radius: 10px;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__choice-card strong {
+    font-size: 14px;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__choice-card span,
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__choice-card small {
+    font-size: 10px;
+    line-height: 1.18;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__panel-actions {
+    flex: 0 0 auto;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--ak-border);
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__primary,
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__secondary {
+    min-height: 42px;
+    padding: 0 16px;
+  }
+
+  @media (max-height: 820px) {
+    body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__visual-image {
+      width: 100%;
+      height: 100%;
+      max-width: none;
+      max-height: none;
+    }
+  }
+}
+
+@media (max-width: 900px) {
+  .ak-buyback-demo__customer-summary dl div {
+    grid-template-columns: 1fr;
+    gap: 3px;
+  }
+
+  .ak-buyback-demo__customer-summary dd {
+    text-align: left;
+  }
 }
 
 .ak-buyback-demo__summary-card--answers {

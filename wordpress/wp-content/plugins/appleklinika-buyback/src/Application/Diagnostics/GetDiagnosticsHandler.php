@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AppleKlinika\Buyback\Application\Diagnostics;
 
 use AppleKlinika\Buyback\Application\Port\EnvironmentDiagnosticsReader;
+use AppleKlinika\Buyback\Application\Port\BuybackMailDiagnosticsReader;
 use AppleKlinika\Buyback\Application\Port\LegacyDiagnosticsReader;
 use AppleKlinika\Buyback\Application\Port\SchemaDiagnosticsReader;
 use AppleKlinika\Buyback\Application\Port\ActivePriceBookResolver;
@@ -22,7 +23,8 @@ final class GetDiagnosticsHandler
         private readonly string $pluginVersion,
         private readonly string $codeSchemaVersion,
         private readonly ActivePriceBookResolver $activePriceBookResolver,
-        private readonly Clock $clock
+        private readonly Clock $clock,
+        private readonly ?BuybackMailDiagnosticsReader $mailReader = null
     ) {
     }
 
@@ -62,7 +64,8 @@ final class GetDiagnosticsHandler
             $this->schemaReader->tables(),
             $this->environmentReader->summary(),
             $this->legacyReader->summary(),
-            $pricing
+            $pricing,
+            $this->mailReader?->summary() ?? ['configured' => false, 'host' => '–', 'port' => '–', 'encryption' => '–', 'username' => '–', 'from' => '–', 'admin' => '–', 'missing' => ['SMTP diagnosztika nem elérhető'], 'last_customer' => 'Nincs adat', 'last_admin' => 'Nincs adat']
         );
     }
 }

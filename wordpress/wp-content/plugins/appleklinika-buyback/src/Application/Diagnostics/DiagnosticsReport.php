@@ -31,6 +31,7 @@ final class DiagnosticsReport
      *     supported_configuration_count: int,
      *     effective_from: string|null
      * } $pricing
+     * @param array{configured:bool,host:string,port:string,encryption:string,username:string,from:string,admin:string,missing:list<string>,last_customer:string,last_admin:string} $mail
      */
     public function __construct(
         public readonly string $pluginVersion,
@@ -40,7 +41,8 @@ final class DiagnosticsReport
         public readonly array $tables,
         public readonly array $environment,
         public readonly array $legacy,
-        public readonly array $pricing
+        public readonly array $pricing,
+        public readonly array $mail
     ) {
     }
 }

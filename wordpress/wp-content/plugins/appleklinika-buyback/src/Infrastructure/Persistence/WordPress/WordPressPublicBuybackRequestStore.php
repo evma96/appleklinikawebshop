@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace AppleKlinika\Buyback\Infrastructure\Persistence\WordPress;
 
+use AppleKlinika\Buyback\Application\Port\PublicRequestMailEventStore;
 use AppleKlinika\Buyback\Domain\Buyback\BuybackRequestId;
 use AppleKlinika\Buyback\Infrastructure\Persistence\Exception\PersistenceException;
 
 /** Persistence adapter for the public request fields, immutable snapshot and operational event log. */
-final class WordPressPublicBuybackRequestStore
+final class WordPressPublicBuybackRequestStore implements PublicRequestMailEventStore
 {
     private readonly string $requests;
     private readonly string $snapshots;
@@ -111,6 +112,24 @@ final class WordPressPublicBuybackRequestStore
         if ($result === false) {
             throw new PersistenceException('Could not persist the buyback operational event.');
         }
+    }
+
+    /** @return array{last_customer:string,last_admin:string} */
+    public function recentMailStatuses(): array
+    {
+        $rows = $this->database->get_results(
+            "SELECT event_type, created_at FROM `{$this->events}` WHERE event_type IN ('mail_customer_sent', 'mail_customer_failed', 'mail_admin_sent', 'mail_admin_failed') ORDER BY id DESC",
+            ARRAY_A
+        );
+        $status = ['last_customer' => 'Nincs kísérlet', 'last_admin' => 'Nincs kísérlet'];
+        foreach (is_array($rows) ? $rows : [] as $row) {
+            $type = (string) ($row['event_type'] ?? '');
+            $key = str_starts_with($type, 'mail_customer_') ? 'last_customer' : (str_starts_with($type, 'mail_admin_') ? 'last_admin' : null);
+            if ($key !== null && $status[$key] === 'Nincs kísérlet') {
+                $status[$key] = ((string) ($row['created_at'] ?? '')) . ' — ' . (str_ends_with($type, '_sent') ? 'Sikeres' : 'Sikertelen');
+            }
+        }
+        return $status;
     }
 
     /** @return list<array<string,mixed>> */

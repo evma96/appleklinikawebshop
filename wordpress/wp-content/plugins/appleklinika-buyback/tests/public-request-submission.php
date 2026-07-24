@@ -54,6 +54,7 @@ $color = 'black';
 $test->assert(isset($catalog[$model]['colors'][$color]), 'The active inventory supplies the iPhone 11 Black color for the isolated request fixture');
 $resolved = (new RepositoryActivePriceBookResolver($books, $rules))->resolveForCurrencyAt(new AppleKlinika\Buyback\Domain\Pricing\CurrencyCode('HUF'), $clock->now());
 $token = bin2hex(random_bytes(32));
+$manualToken = bin2hex(random_bytes(32));
 $input = [
     'idempotency_token' => $token,
     'full_name' => 'QA PUBLIC REQUEST',
@@ -89,10 +90,41 @@ try {
     $payload = is_string($snapshot) ? json_decode($snapshot, true) : null;
     $test->assert(is_array($payload) && isset($payload['offers']['fast_online'], $payload['questionnaire']['canonical_answers'], $payload['price_book']['rules_hash']), 'Immutable snapshot contains recalculated offers, canonical answers and rule hash');
     $test->assert((int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM `{$tables[Schema::EVENTS]}` WHERE request_id = %d", $requestId)) === 1, 'Exactly one initial event is persisted before notifications');
+
+    $forcedManual = $input;
+    $forcedManual['idempotency_token'] = bin2hex(random_bytes(32));
+    $forcedManual['selected_offer_mode'] = '';
+    $forcedManual['manual_review_requested'] = true;
+    try { $submission->submit($forcedManual, $catalog); $test->assert(false, 'A calculated result cannot be forged into a manual-review request'); } catch (PublicBuybackSubmissionException) { $test->assert(true, 'A calculated result cannot be forged into a manual-review request'); }
+
+    $manualInput = $input;
+    $manualInput['idempotency_token'] = $manualToken;
+    $manualInput['full_name'] = 'TESZT MANUÁLIS BEVIZSGÁLÁS';
+    $manualInput['email'] = 'qa-manual-review@local.invalid';
+    $manualInput['selected_offer_mode'] = '';
+    $manualInput['manual_review_requested'] = true;
+    $manualInput['questionnaire']['liquid_exposure'] = 'yes_unknown';
+    $manualInput['questionnaire']['screen_condition'] = 'damaged';
+    $manualInput['questionnaire']['frame_condition'] = 'damaged';
+    $manual = $submission->submit($manualInput, $catalog);
+    $test->assert($manual->manualReview && $manual->serviceMode === null && $manual->amountMinor === null, 'A manual-review request has no selected offer mode and no amount');
+    $test->assert($manual->manualReviewReasons === ['Lehetséges folyadékérintkezés', 'Törött vagy repedt kijelző', 'Sérült vagy deformált keret'], 'The manual-review request preserves deduplicated customer-facing reasons');
+    $manualDuplicate = $submission->submit($manualInput, $catalog);
+    $test->assert($manualDuplicate->alreadySubmitted && $manualDuplicate->serviceMode === null, 'The manual-review idempotency token cannot create a second request');
+    $manualRow = $store->findBySubmissionToken(hash('sha256', $manualToken));
+    $manualId = (int) ($manualRow['id'] ?? 0);
+    $manualSnapshot = $wpdb->get_var($wpdb->prepare("SELECT payload_json FROM `{$tables[Schema::SNAPSHOTS]}` WHERE request_id = %d AND snapshot_type = %s", $manualId, 'public_submission'));
+    $manualPayload = is_string($manualSnapshot) ? json_decode($manualSnapshot, true) : null;
+    $test->assert(is_array($manualPayload) && ($manualPayload['calculation']['status'] ?? null) === 'manual_review' && ($manualPayload['calculation_status'] ?? null) === 'manual_review' && array_key_exists('selected_offer_mode', $manualPayload) && $manualPayload['selected_offer_mode'] === null && array_key_exists('selected_amount', $manualPayload) && $manualPayload['selected_amount'] === null && array_key_exists('selected_final_amount_minor', $manualPayload) && $manualPayload['selected_final_amount_minor'] === null && ($manualPayload['manual_review_requested'] ?? false) === true && is_string($manualPayload['manual_review_requested_at'] ?? null), 'Manual-review snapshot records explicit no-offer intent, no amount and preserved state');
+    $forged = $manualInput;
+    $forged['manual_review_requested'] = false;
+    $forged['idempotency_token'] = bin2hex(random_bytes(32));
+    try { $submission->submit($forged, $catalog); $test->assert(false, 'A manual result cannot be submitted as a calculated offer'); } catch (PublicBuybackSubmissionException) { $test->assert(true, 'A manual result cannot be submitted as a calculated offer'); }
     $test->assert((int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'shop_order'") === $before[3], 'Submitting a request creates no WooCommerce order');
 } finally {
-    $row = $store->findBySubmissionToken(hash('sha256', $token));
-    if ($row !== null) {
+    foreach ([$token, $manualToken] as $cleanupToken) {
+        $row = $store->findBySubmissionToken(hash('sha256', $cleanupToken));
+        if ($row === null) { continue; }
         $requestId = (int) $row['id'];
         $wpdb->delete($tables[Schema::EVENTS], ['request_id' => $requestId], ['%d']);
         $wpdb->delete($tables[Schema::SNAPSHOTS], ['request_id' => $requestId], ['%d']);

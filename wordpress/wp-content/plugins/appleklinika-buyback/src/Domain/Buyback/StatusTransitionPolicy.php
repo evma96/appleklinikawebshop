@@ -88,7 +88,7 @@ final class StatusTransitionPolicy
     public function assertAllowed(
         BuybackStatus $from,
         BuybackStatus $to,
-        ServiceMode $serviceMode,
+        ?ServiceMode $serviceMode,
         TransitionContext $context
     ): void {
         if ($from->equals($to)) {
@@ -105,7 +105,7 @@ final class StatusTransitionPolicy
             $this->reject($from, $to, $context, 'actor is not allowed to perform this transition');
         }
 
-        if ($to->code() === BuybackStatus::COURIER_REQUESTED && ! $serviceMode->allowsCourier()) {
+        if ($to->code() === BuybackStatus::COURIER_REQUESTED && ($serviceMode === null || ! $serviceMode->allowsCourier())) {
             $this->reject($from, $to, $context, 'selected service mode does not permit courier handover');
         }
 
@@ -125,11 +125,11 @@ final class StatusTransitionPolicy
             }
         }
 
-        if ($to->code() === BuybackStatus::PAYOUT_PENDING && ! $serviceMode->requiresPayout()) {
+        if ($to->code() === BuybackStatus::PAYOUT_PENDING && ($serviceMode === null || ! $serviceMode->requiresPayout())) {
             $this->reject($from, $to, $context, 'trade-in requests cannot enter payout processing');
         }
 
-        if ($to->code() === BuybackStatus::TRADE_IN_PENDING && ! $serviceMode->isTradeIn()) {
+        if ($to->code() === BuybackStatus::TRADE_IN_PENDING && ($serviceMode === null || ! $serviceMode->isTradeIn())) {
             $this->reject($from, $to, $context, 'non-trade-in requests cannot enter trade-in processing');
         }
 

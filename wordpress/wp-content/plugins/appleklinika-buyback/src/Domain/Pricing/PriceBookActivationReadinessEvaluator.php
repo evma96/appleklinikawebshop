@@ -8,14 +8,18 @@ use AppleKlinika\Buyback\Domain\Buyback\ServiceMode;
 
 final class PriceBookActivationReadinessEvaluator
 {
-    private const SUPPORTED_IPHONE_STORAGE = [32, 64, 128, 256, 512, 1024];
+    private const SUPPORTED_IPHONE_STORAGE = [32, 64, 128, 256, 512, 1024, 2048];
 
     public function __construct(private readonly PriceBookValidator $validator = new PriceBookValidator())
     {
     }
 
-    /** @param list<PricingRule> $rules @param list<string> $knownIphoneModelKeys */
-    public function evaluate(PriceBook $book, array $rules, array $knownIphoneModelKeys, \DateTimeImmutable $at): PriceBookActivationReadinessReport
+    /**
+     * @param list<PricingRule> $rules
+     * @param list<string> $knownIphoneModelKeys
+     * @param array<string,true> $knownIphoneConfigurationKeys
+     */
+    public function evaluate(PriceBook $book, array $rules, array $knownIphoneModelKeys, array $knownIphoneConfigurationKeys, \DateTimeImmutable $at): PriceBookActivationReadinessReport
     {
         if ($book->id() === null) {
             throw new \InvalidArgumentException('Activation readiness requires a persisted price book.');
@@ -55,6 +59,10 @@ final class PriceBookActivationReadinessEvaluator
                     continue;
                 }
                 if ($definition->storage === null || ! in_array($definition->storage->gigabytes(), self::SUPPORTED_IPHONE_STORAGE, true)) {
+                    $blocking[] = 'invalid_storage';
+                    continue;
+                }
+                if (! isset($knownIphoneConfigurationKeys[$definition->modelKey . '|' . $definition->storage->gigabytes()])) {
                     $blocking[] = 'invalid_storage';
                     continue;
                 }

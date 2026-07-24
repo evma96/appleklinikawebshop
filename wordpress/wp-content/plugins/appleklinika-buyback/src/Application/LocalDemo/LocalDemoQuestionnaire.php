@@ -469,12 +469,55 @@ final class LocalDemoQuestionnaire
         return array_values(array_unique($reasons));
     }
 
+    /**
+     * Turns an effective pricing condition or questionnaire reason into the
+     * concise wording shown to a customer on the inspection-required result.
+     *
+     * @param array<string,mixed> $state
+     */
+    public function publicManualReviewReason(?string $conditionKey, string $reason, array $state): string
+    {
+        $state = $this->sanitize($state);
+
+        if ($conditionKey === null) {
+            $normalizedReason = function_exists('mb_strtolower') ? mb_strtolower($reason) : strtolower($reason);
+            if ($state['liquid_exposure'] === 'yes_unknown' && str_contains($normalizedReason, 'folyad')) {
+                return 'Lehetséges folyadékérintkezés';
+            }
+            if ($state['screen_condition'] === 'damaged' && str_contains($normalizedReason, 'kijelző')) {
+                return $this->answerLabel('screen_condition', $state['screen_condition']) . ' kijelző';
+            }
+            if ($state['frame_condition'] === 'damaged' && str_contains($normalizedReason, 'keret')) {
+                return $this->answerLabel('frame_condition', $state['frame_condition']) . ' keret';
+            }
+        }
+
+        return match ($conditionKey) {
+            'liquid_damage' => 'Lehetséges folyadékérintkezés',
+            'screen_condition' => $this->answerLabel('screen_condition', $state['screen_condition']) . ' kijelző',
+            'frame_condition' => $this->answerLabel('frame_condition', $state['frame_condition']) . ' keret',
+            'back_glass_condition' => $this->answerLabel('back_glass_condition', $state['back_glass_condition']) . ' hátlap',
+            'camera_lens_condition' => 'Sérült kameralencse',
+            'touch_functional' => 'Kijelzőérintési hiba',
+            'camera_functional' => 'Kamerahiba',
+            'face_id_functional' => 'Face ID hiba',
+            'replacement_parts' => 'Bizonytalan alkatrész- vagy szervizelőzmény',
+            default => match ($reason) {
+                'A lehetséges folyadék- vagy párakár kézi bevizsgálást igényel.' => 'Lehetséges folyadékérintkezés',
+                'A megjelölt kijelzőhiba egyedi bevizsgálást igényel.' => 'Kijelző működési hiba',
+                'A hanghiba egyedi bevizsgálást igényel.' => 'Hanghiba',
+                'Az alkatrész- és szervizelési előzmények kézi bevizsgálást igényelnek.' => 'Bizonytalan alkatrész- vagy szervizelőzmény',
+                default => $reason,
+            },
+        };
+    }
+
     /** @param array<string, mixed> $state @return array<string, array<string, string>> */
     public function summary(array $state, string $model, string $storage, string $color = ''): array
     {
         $state = $this->sanitize($state);
 
-        return [
+        $summary = [
             'Készülék' => ['Modell' => $model],
             'Konfiguráció' => [
                 'Tárhely' => $storage,
@@ -502,6 +545,7 @@ final class LocalDemoQuestionnaire
         if ($this->serviceHistoryRequiresAffectedParts($state)) {
             $summary['Alkatrész- és szervizelési előzmények']['Érintett alkatrészek'] = $this->answerLabels('affected_parts', (array) $state['affected_parts']);
         }
+
         return $summary;
     }
 

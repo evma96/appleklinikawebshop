@@ -44,7 +44,9 @@ final class WordPressBuybackRequestMapper
                 new DeviceCategory($this->requiredString($values, 'category')),
                 new ModelKey($this->requiredString($values, 'model_key')),
                 new DeviceDisplayName($this->requiredString($values, 'device_display_name')),
-                new ServiceMode($this->requiredString($values, 'service_mode')),
+                $this->nullableString($values, 'service_mode') === null
+                    ? null
+                    : new ServiceMode($this->nullableString($values, 'service_mode')),
                 $this->nullableString($values, 'handover_method') === null
                     ? null
                     : new HandoverMethod($this->nullableString($values, 'handover_method')),
@@ -79,7 +81,7 @@ final class WordPressBuybackRequestMapper
             'category' => $request->category->code(),
             'model_key' => $request->modelKey->value(),
             'device_display_name' => $request->deviceDisplayName->value(),
-            'service_mode' => $request->serviceMode->code(),
+            'service_mode' => $request->serviceMode?->code(),
             'handover_method' => $request->handoverMethod?->code(),
             'status' => BuybackStatus::DRAFT,
             'source' => $request->source->code(),
@@ -96,7 +98,7 @@ final class WordPressBuybackRequestMapper
     {
         return [
             'customer_id' => $request->customerId()?->toInt(),
-            'service_mode' => $request->serviceMode()->code(),
+            'service_mode' => $request->serviceMode()?->code(),
             'handover_method' => $request->handoverMethod()?->code(),
             'status' => $request->status()->code(),
             'version' => $request->version()->value(),

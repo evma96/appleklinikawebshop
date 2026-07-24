@@ -90,7 +90,8 @@ final class Plugin
             APPLEKLINIKA_BUYBACK_VERSION,
             APPLEKLINIKA_BUYBACK_SCHEMA_VERSION,
             $activeResolver,
-            $clock
+            $clock,
+            new WordPressBuybackMailDiagnosticsReader(BuybackSmtpConfiguration::fromEnvironment(), new WordPressPublicBuybackRequestStore($wpdb))
         );
 
         return new self(

@@ -223,7 +223,35 @@ function pricingTableStructureHash(wpdb $database, string $table): string
 {
     $columns = $database->get_results("SHOW FULL COLUMNS FROM `{$table}`", ARRAY_A);
     $indexes = $database->get_results("SHOW INDEX FROM `{$table}`", ARRAY_A);
-    return hash('sha256', serialize([$columns, $indexes]));
+    $stableIndexes = array_map(static function (array $index): array {
+        return [
+            'Non_unique' => $index['Non_unique'] ?? null,
+            'Key_name' => $index['Key_name'] ?? null,
+            'Seq_in_index' => $index['Seq_in_index'] ?? null,
+            'Column_name' => $index['Column_name'] ?? null,
+            'Collation' => $index['Collation'] ?? null,
+            'Sub_part' => $index['Sub_part'] ?? null,
+            'Packed' => $index['Packed'] ?? null,
+            'Null' => $index['Null'] ?? null,
+            'Index_type' => $index['Index_type'] ?? null,
+            'Comment' => $index['Comment'] ?? null,
+            'Index_comment' => $index['Index_comment'] ?? null,
+            'Ignored' => $index['Ignored'] ?? null,
+        ];
+    }, is_array($indexes) ? $indexes : []);
+
+    return hash('sha256', serialize([is_array($columns) ? $columns : [], $stableIndexes]));
+}
+
+/** @return list<array<string, mixed>> */
+function pricingEventRows(wpdb $database, string $table): array
+{
+    $rows = $database->get_results(
+        "SELECT id, request_id, event_type, from_status, to_status, actor_type, actor_id, public_summary, private_payload_json, correlation_id, idempotency_key, created_at FROM `{$table}` ORDER BY id ASC",
+        ARRAY_A
+    );
+
+    return is_array($rows) ? $rows : [];
 }
 
 /** @return list<string> */
@@ -352,6 +380,7 @@ $phaseOneStructureBefore = [];
 foreach ([Schema::REQUESTS, Schema::SNAPSHOTS, Schema::EVENTS] as $key) {
     $phaseOneStructureBefore[$key] = pricingTableStructureHash($wpdb, $tables[$key]);
 }
+$eventsBefore = pricingEventRows($wpdb, $tables[Schema::EVENTS]);
 $activeBefore = (int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM `{$tables[Schema::PRICE_BOOKS]}` WHERE status = %s", PriceBookStatus::ACTIVE));
 $originalUserId = get_current_user_id();
 $createdUserIds = [];
@@ -370,13 +399,13 @@ $deleteRule = new DeleteDraftPricingRuleHandler($books, $rules, $transactions, $
 try {
     $test->assert(is_plugin_active(AK_BUYBACK_PRICING_PLUGIN), 'Buyback plugin is active');
     $test->assert(APPLEKLINIKA_BUYBACK_VERSION === '0.8.0', 'Plugin code version is 0.8.0');
-    $test->assert(APPLEKLINIKA_BUYBACK_SCHEMA_VERSION === '1.2.0', 'Code schema version is 1.2.0');
+    $test->assert(APPLEKLINIKA_BUYBACK_SCHEMA_VERSION === '1.3.0', 'Code schema version is 1.3.0');
 
     update_option(Schema::OPTION_SCHEMA_VERSION, '1.0.0', false);
     Plugin::migrationRunner()->run();
-    $test->assert(get_option(Schema::OPTION_SCHEMA_VERSION) === '1.2.0', 'Migration advances schema 1.0.0 to 1.2.0');
+    $test->assert(get_option(Schema::OPTION_SCHEMA_VERSION) === '1.3.0', 'Migration advances schema 1.0.0 to 1.3.0');
     Plugin::migrationRunner()->run();
-    $test->assert(get_option(Schema::OPTION_SCHEMA_VERSION) === '1.2.0', 'Migration rerun is idempotent');
+    $test->assert(get_option(Schema::OPTION_SCHEMA_VERSION) === '1.3.0', 'Migration rerun is idempotent');
     $test->assert(pricingRowCounts($wpdb, $tables) === $countsBefore, 'Migration creates no automatic business rows');
 
     $inspector = new SchemaInspector($wpdb, APPLEKLINIKA_BUYBACK_SCHEMA_VERSION);
@@ -986,11 +1015,13 @@ try {
 $countsAfter = pricingRowCounts($wpdb, $tables);
 $legacyHashAfter = pricingLegacyHash($wpdb);
 $activeAfter = (int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM `{$tables[Schema::PRICE_BOOKS]}` WHERE status = %s", PriceBookStatus::ACTIVE));
+$eventsAfter = pricingEventRows($wpdb, $tables[Schema::EVENTS]);
 $test->assert($countsAfter === $countsBefore, 'All five Buyback table counts return to pre-test values');
+$test->assert($eventsAfter === $eventsBefore, 'Phase 1 retained event rows remain byte/value-equivalent after cleanup');
 $test->assert($legacyHashAfter === $legacyHashBefore, 'Legacy user-meta hash remains unchanged');
 $test->assert($activeAfter === $activeBefore, 'Active price-book count returns to pre-test value');
 $test->assert(hash('sha256', serialize(get_option('appleklinika_device_catalog', null))) === $catalogHashBefore, 'Inventory catalog hash remains unchanged after cleanup');
-$test->assert((string) get_option(Schema::OPTION_SCHEMA_VERSION) === '1.2.0', 'Installed schema ends at 1.2.0');
+$test->assert((string) get_option(Schema::OPTION_SCHEMA_VERSION) === '1.3.0', 'Installed schema ends at 1.3.0');
 $test->assert((string) get_option(Schema::OPTION_PLUGIN_VERSION) === '0.8.0', 'Installed plugin option ends at 0.8.0');
 $test->assert((int) $wpdb->get_var('SELECT @@in_transaction') === 0, 'Cleanup leaves no database transaction open');
 foreach ($phaseOneStructureBefore as $key => $signature) {

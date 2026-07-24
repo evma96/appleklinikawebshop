@@ -10,6 +10,7 @@ use AppleKlinika\Buyback\Application\Handler\CreateDraftPriceBookHandler;
 use AppleKlinika\Buyback\Application\LocalDemo\LocalDemoHostGuard;
 use AppleKlinika\Buyback\Application\LocalDemo\LocalDemoQuestionnaire;
 use AppleKlinika\Buyback\Application\PublicRequest\PublicBuybackRequestSubmission;
+use AppleKlinika\Buyback\Application\PublicRequest\DispatchBuybackRequestNotifications;
 use AppleKlinika\Buyback\Application\Pricing\PriceBookActivationReadinessService;
 use AppleKlinika\Buyback\Application\Pricing\RepositoryActivePriceBookResolver;
 use AppleKlinika\Buyback\Domain\Pricing\PriceBookActivationReadinessEvaluator;
@@ -49,6 +50,8 @@ final class LocalDemoModule
         $localProducts = new WordPressLocalDemoProductReader();
         $requests = new WordPressBuybackRequestRepository($wpdb, new WordPressBuybackRequestMapper());
         $publicStore = new WordPressPublicBuybackRequestStore($wpdb);
+        $mailConfiguration = BuybackSmtpConfiguration::fromEnvironment();
+        $mailer = new WordPressBuybackRequestMailer($mailConfiguration);
         $seeder = new LocalDemoSeeder(
             $books,
             $rules,
@@ -71,11 +74,12 @@ final class LocalDemoModule
             $transactions,
             $clock
         );
-        return new self($seeder, new LocalDemoCalculatorPage($resolver, new PricingEngine(), $catalog, $localProducts, $questionnaire, $submission, $publicStore));
+        return new self($seeder, new LocalDemoCalculatorPage($resolver, new PricingEngine(), $catalog, $localProducts, $questionnaire, $submission, $publicStore, new DispatchBuybackRequestNotifications($mailer, $publicStore, $clock), $mailer));
     }
 
     public function register(): void
     {
+        $this->page->registerMailTransport();
         $this->page->register();
     }
 
