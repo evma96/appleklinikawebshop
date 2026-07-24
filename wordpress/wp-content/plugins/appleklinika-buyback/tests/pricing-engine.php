@@ -213,8 +213,8 @@ $engine = new PricingEngine();
 
 try {
     $test->assert(APPLEKLINIKA_BUYBACK_VERSION === '0.8.0', 'Plugin version is 0.8.0');
-    $test->assert(APPLEKLINIKA_BUYBACK_SCHEMA_VERSION === '1.2.0', 'Schema code remains 1.2.0');
-    $test->assert((string) get_option(Schema::OPTION_SCHEMA_VERSION) === '1.2.0', 'Installed schema remains 1.2.0');
+    $test->assert(APPLEKLINIKA_BUYBACK_SCHEMA_VERSION === '1.3.0', 'Schema code remains 1.3.0');
+    $test->assert((string) get_option(Schema::OPTION_SCHEMA_VERSION) === '1.3.0', 'Installed schema remains 1.3.0');
 
     $validAnswers = ConditionAnswerCollection::fromAssociative(engineAnswers());
     $test->assert(count($validAnswers->all()) === count(ConditionDefinition::keys()), 'Valid full condition input is accepted');

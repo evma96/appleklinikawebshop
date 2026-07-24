@@ -62,9 +62,9 @@ final class PublicBuybackRequestSubmission
             return new PublicBuybackSubmissionResult(
                 (string) $existing['request_number'],
                 (string) $existing['device_display_name'],
-                (string) $existing['service_mode'],
+                $this->nullableString($existing, 'service_mode'),
                 null,
-                false,
+                $this->nullableString($existing, 'service_mode') === null,
                 true
             );
         }
@@ -86,7 +86,8 @@ final class PublicBuybackRequestSubmission
         $modelKey = $this->requiredString($input, 'model_key');
         $storage = (int) ($input['storage_gb'] ?? 0);
         $colorKey = $this->requiredString($input, 'color_key');
-        $selectedMode = $this->requiredString($input, 'selected_offer_mode');
+        $selectedMode = $this->nullableString($input, 'selected_offer_mode');
+        $manualReviewRequested = ($input['manual_review_requested'] ?? false) === true;
         $answers = is_array($input['questionnaire'] ?? null) ? $input['questionnaire'] : [];
         $errors = $this->questionnaire->validate($answers);
         if ($errors !== []) {
@@ -98,12 +99,6 @@ final class PublicBuybackRequestSubmission
         }
         if (! isset($catalog[$modelKey]['colors'][$colorKey])) {
             throw new PublicBuybackSubmissionException('A kiválasztott modell vagy szín már nem elérhető. Számolj újra.');
-        }
-
-        try {
-            $mode = new ServiceMode($selectedMode);
-        } catch (\Throwable) {
-            throw new PublicBuybackSubmissionException('Válassz egy érvényes ajánlattípust.');
         }
 
         $resolved = $this->resolver->resolveForCurrencyAt(new CurrencyCode('HUF'), $this->clock->now());
@@ -123,23 +118,38 @@ final class PublicBuybackRequestSubmission
         }
 
         $canonicalAnswers = $this->questionnaire->mapToConditions($answers);
-        $manualReasons = $this->questionnaire->manualReviewReasons($answers);
+        $questionnaireManualReasons = $this->questionnaire->manualReviewReasons($answers);
         $results = [];
         foreach (ServiceMode::supportedCodes() as $modeCode) {
             $currentMode = new ServiceMode($modeCode);
-            $results[$modeCode] = $manualReasons !== []
-                ? \AppleKlinika\Buyback\Domain\Pricing\PricingCalculationResult::manualReview($resolved->priceBook, $currentMode, $manualReasons)
-                : $this->engine->calculate($resolved->priceBook, $resolved->enabledRules, new PricingCalculationInput(
+            $calculated = $this->engine->calculate($resolved->priceBook, $resolved->enabledRules, new PricingCalculationInput(
                     new DeviceCategory('iphone'),
                     new PricingModelKey($modelKey),
                     new StorageCapacity($storage),
                     ConditionAnswerCollection::fromAssociative($canonicalAnswers),
                     $currentMode
                 ));
+            $results[$modeCode] = $this->manualResultIfRequired($resolved->priceBook, $currentMode, $questionnaireManualReasons, $calculated);
         }
-        $selected = $results[$mode->code()] ?? null;
-        if ($selected === null || in_array($selected->outcome->code(), [PricingOutcome::REJECTED, PricingOutcome::CONFIGURATION_ERROR], true)) {
+        $representative = $results[ServiceMode::FAST_ONLINE] ?? null;
+        if ($representative === null || in_array($representative->outcome->code(), [PricingOutcome::REJECTED, PricingOutcome::CONFIGURATION_ERROR], true)) {
             throw new PublicBuybackSubmissionException('Ehhez a készülékhez most nem küldhető be automatikus felvásárlási igény.');
+        }
+        $isManualReview = $representative->outcome->code() === PricingOutcome::MANUAL_REVIEW;
+        if ($manualReviewRequested !== $isManualReview || ($isManualReview && $selectedMode !== null)) {
+            throw new PublicBuybackSubmissionException('A felvásárlási igény állapota megváltozott. Kérjük, számold újra az ajánlatot.');
+        }
+        if (! $isManualReview && $selectedMode === null) {
+            throw new PublicBuybackSubmissionException('Válassz egy érvényes ajánlattípust.');
+        }
+        try {
+            $mode = $isManualReview ? null : new ServiceMode((string) $selectedMode);
+        } catch (\Throwable) {
+            throw new PublicBuybackSubmissionException('Válassz egy érvényes ajánlattípust.');
+        }
+        $selected = $isManualReview ? null : ($results[$mode->code()] ?? null);
+        if (! $isManualReview && ($selected === null || $selected->outcome->code() !== PricingOutcome::OFFERED)) {
+            throw new PublicBuybackSubmissionException('A kiválasztott ajánlat már nem érhető el. Kérjük, számold újra az ajánlatot.');
         }
 
         $device = (string) $catalog[$modelKey]['label'] . ' · ' . ($storage === 1024 ? '1 TB' : $storage . ' GB') . ' · ' . $catalog[$modelKey]['colors'][$colorKey];
@@ -151,10 +161,11 @@ final class PublicBuybackRequestSubmission
         );
         $now = $this->clock->now();
         $timestamp = $now->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s');
-        $amount = $selected->finalAmount?->amount();
+        $amount = $selected?->finalAmount?->amount();
+        $manualReasons = $isManualReview ? $this->publicManualReasons($representative, $answers) : [];
 
         try {
-            return $this->transactions->transactional(function () use ($tokenHash, $name, $email, $phone, $note, $modelKey, $device, $mode, $now, $timestamp, $canonicalAnswers, $publicSummary, $resolved, $results, $selected, $amount, $input): PublicBuybackSubmissionResult {
+            return $this->transactions->transactional(function () use ($tokenHash, $name, $email, $phone, $note, $modelKey, $device, $mode, $now, $timestamp, $canonicalAnswers, $publicSummary, $resolved, $results, $amount, $input, $isManualReview, $manualReasons): PublicBuybackSubmissionResult {
                 $request = $this->requests->insert(new NewBuybackRequest(
                     $this->numbers->generate(),
                     null,
@@ -178,17 +189,22 @@ final class PublicBuybackRequestSubmission
                     'questionnaire' => ['canonical_answers' => $canonicalAnswers, 'public_answers' => $publicSummary],
                     'price_book' => ['id' => $resolved->priceBook->id()?->toInt(), 'version' => $resolved->priceBook->versionNumber()->value(), 'rules_hash' => hash('sha256', serialize($resolved->enabledRules))],
                     'offers' => array_map(static fn ($result): array => $result->toArray(), $results),
-                    'selected_offer_mode' => $mode->code(),
+                    'calculation' => ['status' => $isManualReview ? PricingOutcome::MANUAL_REVIEW : PricingOutcome::OFFERED, 'reasons' => $manualReasons],
+                    'calculation_status' => $isManualReview ? PricingOutcome::MANUAL_REVIEW : PricingOutcome::OFFERED,
+                    'selected_offer_mode' => $mode?->code(),
+                    'selected_amount' => $amount,
                     'selected_final_amount_minor' => $amount,
-                    'manual_review' => $selected->outcome->code() === PricingOutcome::MANUAL_REVIEW,
+                    'manual_review_requested' => $isManualReview,
+                    'manual_review_requested_at' => $isManualReview ? $timestamp : null,
                     'privacy' => ['policy_url' => (string) ($input['privacy_url'] ?? ''), 'policy_marker' => (string) ($input['privacy_marker'] ?? ''), 'acknowledged' => true],
                 ], $timestamp);
-                return new PublicBuybackSubmissionResult($request->requestNumber()->value(), $device, $mode->code(), $amount, $selected->outcome->code() === PricingOutcome::MANUAL_REVIEW);
+                return new PublicBuybackSubmissionResult($request->requestNumber()->value(), $device, $mode?->code(), $amount, $isManualReview, false, $manualReasons);
             });
         } catch (\Throwable $exception) {
             $existing = $this->store->findBySubmissionToken($tokenHash);
             if ($existing !== null) {
-                return new PublicBuybackSubmissionResult((string) $existing['request_number'], (string) $existing['device_display_name'], (string) $existing['service_mode'], null, false, true);
+                $existingMode = $this->nullableString($existing, 'service_mode');
+                return new PublicBuybackSubmissionResult((string) $existing['request_number'], (string) $existing['device_display_name'], $existingMode, null, $existingMode === null, true);
             }
             if ($exception instanceof PublicBuybackSubmissionException) {
                 throw $exception;
@@ -215,5 +231,49 @@ final class PublicBuybackRequestSubmission
     private function isUsablePhone(string $phone): bool
     {
         return preg_match('/^[+0-9 ()-]{7,64}$/', $phone) === 1 && preg_match_all('/[0-9]/', $phone) >= 7;
+    }
+
+    private function manualResultIfRequired($book, ServiceMode $mode, array $questionnaireReasons, \AppleKlinika\Buyback\Domain\Pricing\PricingCalculationResult $calculated): \AppleKlinika\Buyback\Domain\Pricing\PricingCalculationResult
+    {
+        if ($calculated->outcome->code() !== PricingOutcome::MANUAL_REVIEW && $questionnaireReasons === []) {
+            return $calculated;
+        }
+
+        if ($calculated->outcome->code() === PricingOutcome::REJECTED || $calculated->outcome->code() === PricingOutcome::CONFIGURATION_ERROR) {
+            return $calculated;
+        }
+
+        return \AppleKlinika\Buyback\Domain\Pricing\PricingCalculationResult::manualReview(
+            $book,
+            $mode,
+            array_merge($calculated->reasonCodes, $questionnaireReasons),
+            $calculated->matchedRules,
+            $calculated->breakdown,
+            $calculated->calculatorVersion
+        );
+    }
+
+    /** @return list<string> */
+    private function publicManualReasons(\AppleKlinika\Buyback\Domain\Pricing\PricingCalculationResult $result, array $answers): array
+    {
+        $reasons = [];
+        foreach ($result->matchedRules as $rule) {
+            $reasons[] = $this->questionnaire->publicManualReviewReason(
+                null,
+                $rule->publicLabel ?? '',
+                $answers
+            );
+        }
+        $matchedCodes = array_map(static fn ($rule): string => $rule->ruleCode, $result->matchedRules);
+        foreach ($result->reasonCodes as $reason) {
+            if ($reason === '' || in_array($reason, $matchedCodes, true)) {
+                continue;
+            }
+            $reasons[] = $reason === 'below_minimum_offer'
+                ? 'Az előzetes ajánlat pontosításához személyes bevizsgálás szükséges.'
+                : $this->questionnaire->publicManualReviewReason(null, $reason, $answers);
+        }
+
+        return array_values(array_unique(array_filter($reasons, static fn (string $reason): bool => $reason !== '')));
     }
 }

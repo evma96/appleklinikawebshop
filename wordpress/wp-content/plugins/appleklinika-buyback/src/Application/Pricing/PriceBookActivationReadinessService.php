@@ -22,9 +22,13 @@ final class PriceBookActivationReadinessService
     {
         try {
             $modelKeys = array_map(static fn (DeviceCatalogItem $item): string => $item->modelKey, $this->catalog->iPhoneModels());
-            return $this->evaluator->evaluate($book, $rules, $modelKeys, $at);
+            $configurationKeys = [];
+            foreach ($this->catalog->iPhoneConfigurations() as $configuration) {
+                $configurationKeys[$configuration->modelKey . '|' . $configuration->storageGb] = true;
+            }
+            return $this->evaluator->evaluate($book, $rules, $modelKeys, $configurationKeys, $at);
         } catch (DeviceCatalogUnavailableException $exception) {
-            $report = $this->evaluator->evaluate($book, $rules, [], $at);
+            $report = $this->evaluator->evaluate($book, $rules, [], [], $at);
             $issues = array_values(array_unique([...$report->blockingIssues, 'catalog_unavailable']));
             sort($issues, SORT_STRING);
             return new PriceBookActivationReadinessReport(

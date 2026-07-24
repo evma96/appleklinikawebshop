@@ -224,17 +224,40 @@ $runner->assert(($catalog['iphone_11']['colors'] ?? null) === [
     'product_red' => '(PRODUCT)RED',
     'white' => 'Fehér (White)',
 ], 'iPhone 11 colors come from the canonical inventory catalogue');
-$runner->assert(str_contains($html, 'KÉSZÜLÉKFELVÁSÁRLÁS'), 'Public runtime renders the generic buyback heading');
+$runner->assert(str_contains($html, 'Milyen Apple készüléket adnál el?') && str_contains($html, 'Válaszd ki a készülék típusát, és néhány lépésben megmutatjuk az előzetes felvásárlási ajánlatot.'), 'Public runtime renders the dedicated Buyback entry introduction');
+$runner->assert(substr_count($html, 'data-entry-family="iphone"') === 1 && ! str_contains($html, 'data-entry-family="ipad"') && ! str_contains($html, 'data-entry-family="macbook"'), 'Only the genuinely supported iPhone family is interactive on entry');
+$runner->assert(str_contains($html, 'Gyors előzetes ajánlat') && str_contains($html, 'Átlátható állapotfelmérés') && str_contains($html, 'Személyes bevizsgálás'), 'Entry page explains only the currently supported Buyback process');
 $runner->assert(! str_contains($html, 'A helyi demó árkönyve nem aktív.'), 'Public runtime does not emit the demo-book availability error');
 $runner->assert(str_contains($html, 'data-storages="64,128,256"'), 'Priced iPhone 11 exposes only 64/128/256 GB');
 $runner->assert(! str_contains($html, 'value="iphone_13_pro"'), 'Inventory model without an active Base price remains hidden');
 $runner->assert(str_contains($html, 'data-visual-catalogue='), 'Public runtime receives the server-generated visual-state catalogue');
+$runner->assert(str_contains($html, 'ak-buyback-demo__wizard-shell') && str_contains($html, 'data-demo-wizard-shell'), 'Public questionnaire panels expose one stable desktop wizard shell');
+$runner->assert(str_contains($html, 'ak-buyback-demo__visual-image') && str_contains($html, 'data-demo-device-image'), 'Public questionnaire panels retain a stable visual image container');
+$runner->assert(! str_contains($html, 'Add el vagy számíttasd be Apple készüléked'), 'Entry page removes the obsolete duplicate generic title');
+$modelPanel = substr($html, (int) strpos($html, 'data-demo-panel="model"'), (int) strpos($html, 'data-demo-panel="configuration"') - (int) strpos($html, 'data-demo-panel="model"'));
+$runner->assert(str_contains($modelPanel, 'data-model-content') && str_contains($modelPanel, 'data-wizard-action-bar') && str_contains($modelPanel, 'Tovább a tárhelyhez'), 'Model selection keeps its action bar outside the scrollable model content');
+$runner->assert(str_contains($modelPanel, 'Keress a modell nevére, vagy válassz a kártyák közül.') && str_contains($modelPanel, 'data-demo-target="entry"'), 'Model catalogue keeps the requested help text and Back route to the entry page');
+$runner->assert(str_contains($modelPanel, 'Akár 80 000 Ft'), 'Model catalogue maximum amount comes from the active model Base-price rules');
+$runner->assert(str_contains($modelPanel, 'data-model-key="iphone_11"') && str_contains($modelPanel, 'data-model-media') && str_contains($modelPanel, 'ak-buyback-demo__model-media-image'), 'Every rendered public model retains its canonical key and keeps its image inside a dedicated media wrapper');
+$runner->assert(str_contains($modelPanel, 'data-model-no-results') && ! str_contains($modelPanel, 'ak-buyback-demo__device-image'), 'Model filtering has a public no-result state and no legacy detached media wrapper');
+$runner->assert(str_contains($html, 'ak-buyback-demo__choice-description') && str_contains($html, 'aria-expanded="true"') && str_contains($html, 'aria-expanded="false"'), 'Single-select answers render selected-description accessibility state');
+$liquidPanelStart = (int) strpos($html, 'data-demo-panel="liquid_contact"');
+$screenPanelStart = (int) strpos($html, 'data-demo-panel="screen_cosmetic"');
+$liquidPanel = substr($html, $liquidPanelStart, $screenPanelStart - $liquidPanelStart);
+$runner->assert(str_contains($liquidPanel, 'ak-buyback-demo__choice-grid--liquid-contact'), 'Liquid-contact keeps its dedicated vertical answer layout hook');
 $runner->assert(str_contains($html, 'assets/images/buyback-states/screen/flawless.webp'), 'Public payload contains the stable final visual asset paths');
 $runner->assert(str_contains($html, 'assets/images/buyback-states/_demo/flawless.svg'), 'Missing final visual files keep the safe temporary fallback in the public payload');
 $runner->assert(! str_contains($html, 'data-visual-assets-base'), 'Public rendering does not expose the old JavaScript asset-path builder');
 $runner->assert(! str_contains($html, 'demo asset') && ! str_contains($html, 'Current demo asset'), 'Public rendering contains no customer-facing demo asset wording');
 $runner->assert(! str_contains($html, 'HELYI DEMÓ') && ! str_contains($html, 'tesztelési célú') && ! str_contains(mb_strtolower($html), 'helyi demó'), 'Public rendering contains no internal demo wording');
 $runner->assert(count((new VisualStateCatalogue(new LocalDemoQuestionnaire()))->entries()) === 15, 'All public visual states remain available without changing pricing');
+$defaultSummary = (new LocalDemoQuestionnaire())->summary((new LocalDemoQuestionnaire())->defaults(), 'iPhone 11', '64 GB', 'Fekete');
+$runner->assert(! isset($defaultSummary['Alkatrész- és szervizelési előzmények']['Érintett alkatrészek']), 'Hidden affected-part values are omitted when service history does not require them');
+$serviceSummaryState = (new LocalDemoQuestionnaire())->defaults();
+$serviceSummaryState['service_history'] = 'used_original';
+$serviceSummaryState['affected_parts'] = ['battery', 'display'];
+$serviceSummary = (new LocalDemoQuestionnaire())->summary($serviceSummaryState, 'iPhone 11', '64 GB', 'Fekete');
+$runner->assert(($serviceSummary['Alkatrész- és szervizelési előzmények']['Érintett alkatrészek'] ?? '') === 'Akkumulátor, Kijelző', 'Relevant affected parts render as clean public multi-select labels');
 
 $_SERVER['REQUEST_METHOD'] = 'POST';
 $_POST = [
@@ -251,6 +274,14 @@ $_POST['color_key'] = 'black';
 $validColorHtml = $page->render();
 $runner->assert(! str_contains($validColorHtml, 'Válassz az ehhez a modellhez elérhető színek közül.'), 'A canonical iPhone 11 inventory color is accepted server-side');
 $runner->assert(str_contains($validColorHtml, 'ELŐZETES AJÁNLAT') && ! str_contains($validColorHtml, 'HELYI DEMÓ') && ! str_contains($validColorHtml, 'tesztelési célú'), 'Public offer result uses customer-facing wording without internal demo text');
+$offersPanelStart = (int) strpos($validColorHtml, '<section class="ak-buyback-demo__panel ak-buyback-demo__panel--offers"');
+$reviewPanelStart = (int) strpos($validColorHtml, '<section class="ak-buyback-demo__panel ak-buyback-demo__panel--review"');
+$offersPanel = substr($validColorHtml, $offersPanelStart, $reviewPanelStart - $offersPanelStart);
+$runner->assert(substr_count($offersPanel, 'data-customer-summary') === 1 && str_contains($offersPanel, 'A készüléked összefoglalója') && str_contains($offersPanel, 'Ellenőrizd, hogy minden megadott adat helyes-e.'), 'Offer page renders one customer-readable review summary from the public state');
+$runner->assert(str_contains($offersPanel, 'ak-buyback-demo__customer-summary-device') && str_contains($offersPanel, 'ak-buyback-demo__customer-summary-section') && str_contains($offersPanel, 'ak-buyback-demo__customer-summary-offer') && ! str_contains($offersPanel, 'ak-buyback-demo__customer-summary-groups'), 'Offer summary uses one ordered top-to-bottom review layout');
+$runner->assert(str_contains($offersPanel, 'Folyadékérintkezés') && str_contains($offersPanel, 'Hálózatfüggetlen') && ! str_contains($offersPanel, 'visual_key'), 'Offer summary presents public labels without technical visual metadata');
+$runner->assert(str_contains($offersPanel, 'data-offer-summary-selection') && str_contains($offersPanel, 'Még nincs kiválasztva.'), 'Offer summary has one selected-offer row before a choice is made');
+$runner->assert(str_contains($offersPanel, 'Tovább az adatok megadásához') && ! str_contains($offersPanel, 'Tovább az összefoglalóhoz'), 'Offer CTA names the existing contact-data next step');
 $_POST = [];
 $_SERVER['REQUEST_METHOD'] = 'GET';
 

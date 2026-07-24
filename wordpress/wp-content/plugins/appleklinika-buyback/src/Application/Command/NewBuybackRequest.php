@@ -26,15 +26,19 @@ final class NewBuybackRequest
         public readonly DeviceCategory $category,
         public readonly ModelKey $modelKey,
         public readonly DeviceDisplayName $deviceDisplayName,
-        public readonly ServiceMode $serviceMode,
+        public readonly ?ServiceMode $serviceMode,
         public readonly ?HandoverMethod $handoverMethod,
         public readonly RequestSource $source,
         public readonly ?LegacyReference $legacyReference,
         public readonly \DateTimeImmutable $createdAt,
         ?string $demoMarker = null
     ) {
-        if ($handoverMethod !== null) {
+        if ($handoverMethod !== null && $serviceMode !== null) {
             (new HandoverMethodPolicy())->assertCompatible($serviceMode, $handoverMethod);
+        }
+
+        if ($handoverMethod !== null && $serviceMode === null) {
+            throw new InvalidValueObjectException('A manual-review request cannot select a handover method.');
         }
 
         $normalized = $demoMarker === null ? null : trim($demoMarker);

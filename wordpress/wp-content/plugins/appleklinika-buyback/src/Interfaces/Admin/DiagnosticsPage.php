@@ -58,6 +58,7 @@ final class DiagnosticsPage
         echo '<p>Ez az oldal kizárólag olvasási célú rendszerállapotot mutat. Nem tartalmaz importálási vagy módosítási műveletet.</p>';
 
         $this->renderSystemTable($report);
+        $this->renderMailTable($report);
         $this->renderPricingTable($report);
         $this->renderVisualStateGallery();
         $this->renderSchemaTable($report);
@@ -122,6 +123,25 @@ final class DiagnosticsPage
         $this->row('Migráció állapota', $report->migrationStatus);
         $this->row('Aktív téma', $report->environment['active_theme']);
         $this->row('WooCommerce aktív', $report->environment['woocommerce_active'] ? 'Igen' : 'Nem');
+        echo '</tbody></table>';
+    }
+
+    private function renderMailTable(DiagnosticsReport $report): void
+    {
+        echo '<h2>Buyback e-mail kézbesítés</h2>';
+        if (! $report->mail['configured']) {
+            echo '<div class="notice notice-warning inline"><p>Az SMTP nincs teljesen konfigurálva. A felvásárlási igény mentése nem sérül, de e-mail értesítés nem kerül elküldésre. Hiányzó vagy hibás értékek: ' . esc_html(implode(', ', $report->mail['missing'])) . '.</p></div>';
+        }
+        echo '<table class="widefat striped"><tbody>';
+        $this->row('SMTP konfigurálva', $report->mail['configured'] ? 'Igen' : 'Nem');
+        $this->row('SMTP host', $report->mail['host']);
+        $this->row('Port', $report->mail['port']);
+        $this->row('Titkosítás', $report->mail['encryption']);
+        $this->row('SMTP felhasználó', $report->mail['username']);
+        $this->row('Feladó', $report->mail['from']);
+        $this->row('Admin címzett', $report->mail['admin']);
+        $this->row('Utolsó ügyfélértesítés', $report->mail['last_customer']);
+        $this->row('Utolsó admin értesítés', $report->mail['last_admin']);
         echo '</tbody></table>';
     }
 

@@ -35,6 +35,7 @@ use AppleKlinika\Buyback\Application\Pricing\PriceBookActivationReadinessService
 use AppleKlinika\Buyback\Application\Pricing\PriceBookPage;
 use AppleKlinika\Buyback\Application\Pricing\RepositoryActivePriceBookResolver;
 use AppleKlinika\Buyback\Domain\Exception\InvalidAggregateOperationException;
+use AppleKlinika\Buyback\Domain\Exception\InvalidValueObjectException;
 use AppleKlinika\Buyback\Domain\Exception\StaleAggregateVersionException;
 use AppleKlinika\Buyback\Domain\Pricing\BasisPointsMultiplier;
 use AppleKlinika\Buyback\Domain\Pricing\ComparisonOperator;
@@ -367,8 +368,8 @@ $activate = new ActivateDraftPriceBookHandler($books, $rules, $readiness, $realL
 
 try {
     $test->assert(APPLEKLINIKA_BUYBACK_VERSION === '0.8.0', 'Plugin code version is 0.8.0');
-    $test->assert(APPLEKLINIKA_BUYBACK_SCHEMA_VERSION === '1.2.0', 'Code schema remains 1.2.0');
-    $test->assert((string) get_option(Schema::OPTION_SCHEMA_VERSION) === '1.2.0', 'Installed schema remains 1.2.0');
+    $test->assert(APPLEKLINIKA_BUYBACK_SCHEMA_VERSION === '1.3.0', 'Code schema remains 1.3.0');
+    $test->assert((string) get_option(Schema::OPTION_SCHEMA_VERSION) === '1.3.0', 'Installed schema remains 1.3.0');
     $test->assert(is_plugin_active('appleklinika-buyback/appleklinika-buyback.php'), 'Buyback plugin is active');
     $test->assert($books->countCurrentActiveForCurrencyAt(new CurrencyCode('HUF'), $clock->now()) === 0, 'The fixed historical fixture window has no pre-existing active HUF price book');
 
@@ -392,40 +393,65 @@ try {
     $test->assert(activationBookState($draft) === $retiredState, 'Invalid retired mutations preserve lifecycle state');
 
     $pureBook = activationDraft();
-    $empty = (new PriceBookActivationReadinessEvaluator())->evaluate($pureBook, [], ['iphone-13-pro'], $clock->now());
+    $knownConfigurations = ['iphone-13-pro|128' => true];
+    $empty = (new PriceBookActivationReadinessEvaluator())->evaluate($pureBook, [], ['iphone-13-pro'], $knownConfigurations, $clock->now());
     $test->assert(! $empty->ready && in_array('missing_base_price', $empty->blockingIssues, true), 'Empty book fails with missing_base_price');
     $validBase = activationRule($pureBook->id(), activationBaseDefinition('pure-base'), 1);
-    $ready = (new PriceBookActivationReadinessEvaluator())->evaluate($pureBook, [$validBase], ['iphone-13-pro'], $clock->now());
+    $ready = (new PriceBookActivationReadinessEvaluator())->evaluate($pureBook, [$validBase], ['iphone-13-pro'], $knownConfigurations, $clock->now());
     $test->assert($ready->ready && $ready->enabledBasePriceCount === 1 && $ready->supportedConfigurationCount() === 1, 'One valid iPhone base price is activation-ready');
     $test->assert(count(array_filter($ready->warnings, static fn (string $warning): bool => str_starts_with($warning, 'missing_mode_adjustment_'))) === 4, 'Missing mode adjustments are neutral warnings');
     $unknown = activationRule($pureBook->id(), activationBaseDefinition('unknown-base', 'iphone-unknown'), 2);
-    $unknownReport = (new PriceBookActivationReadinessEvaluator())->evaluate($pureBook, [$unknown], ['iphone-13-pro'], $clock->now());
+    $unknownReport = (new PriceBookActivationReadinessEvaluator())->evaluate($pureBook, [$unknown], ['iphone-13-pro'], $knownConfigurations, $clock->now());
     $test->assert(! $unknownReport->ready && in_array('unknown_model_key', $unknownReport->blockingIssues, true), 'Unknown model blocks readiness');
     $nonIphone = activationRule($pureBook->id(), activationUnsafeDefinition(['category' => 'macbook']), 3);
-    $nonIphoneReport = (new PriceBookActivationReadinessEvaluator())->evaluate($pureBook, [$nonIphone], ['iphone-13-pro'], $clock->now());
+    $nonIphoneReport = (new PriceBookActivationReadinessEvaluator())->evaluate($pureBook, [$nonIphone], ['iphone-13-pro'], $knownConfigurations, $clock->now());
     $test->assert(! $nonIphoneReport->ready && in_array('unsupported_category', $nonIphoneReport->blockingIssues, true), 'Non-iPhone base rule blocks readiness');
     $badStorage = activationRule($pureBook->id(), activationBaseDefinition('bad-storage', 'iphone-13-pro', 16), 4);
-    $badStorageReport = (new PriceBookActivationReadinessEvaluator())->evaluate($pureBook, [$badStorage], ['iphone-13-pro'], $clock->now());
+    $badStorageReport = (new PriceBookActivationReadinessEvaluator())->evaluate($pureBook, [$badStorage], ['iphone-13-pro'], $knownConfigurations, $clock->now());
     $test->assert(! $badStorageReport->ready && in_array('invalid_storage', $badStorageReport->blockingIssues, true), 'Unsupported storage blocks readiness');
+    $canonicalTwoTb = activationRule($pureBook->id(), activationBaseDefinition('canonical-2048', 'iphone_17_pro_max', 2048), 40);
+    $canonicalTwoTbReport = (new PriceBookActivationReadinessEvaluator())->evaluate($pureBook, [$canonicalTwoTb], ['iphone_17_pro_max'], ['iphone_17_pro_max|2048' => true], $clock->now());
+    $test->assert($canonicalTwoTbReport->ready && $canonicalTwoTbReport->supportedConfigurationCount() === 1, 'Canonical iPhone 17 Pro Max 2048 GB base price passes readiness');
+    $actualInventoryTwoTbReport = (new PriceBookActivationReadinessService(new \AppleKlinika\Buyback\Infrastructure\Inventory\WordPressDeviceCatalogReader(), new PriceBookActivationReadinessEvaluator()))->evaluate($pureBook, [$canonicalTwoTb], $clock->now());
+    $test->assert($actualInventoryTwoTbReport->ready, 'The real canonical inventory accepts iPhone 17 Pro Max 2048 GB for activation readiness');
+    $unsupportedTwoTb = activationRule($pureBook->id(), activationBaseDefinition('unsupported-2048', 'iphone-13-pro', 2048), 41);
+    $unsupportedTwoTbReport = (new PriceBookActivationReadinessEvaluator())->evaluate($pureBook, [$unsupportedTwoTb], ['iphone-13-pro'], $knownConfigurations, $clock->now());
+    $test->assert(! $unsupportedTwoTbReport->ready && in_array('invalid_storage', $unsupportedTwoTbReport->blockingIssues, true), 'A known model without canonical 2048 GB support remains invalid');
+    foreach ([1536, 3072] as $unsupportedCapacity) {
+        $unsupportedCapacityRule = activationRule($pureBook->id(), activationBaseDefinition('unsupported-' . $unsupportedCapacity, 'iphone-13-pro', $unsupportedCapacity), 50 + $unsupportedCapacity);
+        $unsupportedCapacityReport = (new PriceBookActivationReadinessEvaluator())->evaluate($pureBook, [$unsupportedCapacityRule], ['iphone-13-pro'], ['iphone-13-pro|' . $unsupportedCapacity => true], $clock->now());
+        $test->assert(! $unsupportedCapacityReport->ready && in_array('invalid_storage', $unsupportedCapacityReport->blockingIssues, true), $unsupportedCapacity . ' GB remains invalid even when a caller claims a configuration exists');
+    }
+    $test->throws(fn () => new StorageCapacity(0), InvalidValueObjectException::class, 'Zero storage capacity remains invalid');
+    $test->throws(fn () => new StorageCapacity(-1), InvalidValueObjectException::class, 'Negative storage capacity remains invalid');
+    $legacyCapacities = [32, 64, 128, 256, 512, 1024];
+    $legacyRules = [];
+    $legacyConfigurations = [];
+    foreach ($legacyCapacities as $index => $capacity) {
+        $legacyRules[] = activationRule($pureBook->id(), activationBaseDefinition('legacy-capacity-' . $capacity, 'iphone-13-pro', $capacity), 70 + $index);
+        $legacyConfigurations['iphone-13-pro|' . $capacity] = true;
+    }
+    $legacyCapacityReport = (new PriceBookActivationReadinessEvaluator())->evaluate($pureBook, $legacyRules, ['iphone-13-pro'], $legacyConfigurations, $clock->now());
+    $test->assert($legacyCapacityReport->ready && $legacyCapacityReport->supportedConfigurationCount() === count($legacyCapacities), 'All previously supported capacities remain valid when canonical');
     $malformed = activationRule($pureBook->id(), activationUnsafeDefinition(['amount' => null]), 5);
-    $malformedReport = (new PriceBookActivationReadinessEvaluator())->evaluate($pureBook, [$malformed], ['iphone-13-pro'], $clock->now());
+    $malformedReport = (new PriceBookActivationReadinessEvaluator())->evaluate($pureBook, [$malformed], ['iphone-13-pro'], $knownConfigurations, $clock->now());
     $test->assert(! $malformedReport->ready && in_array('invalid_rule_shape', $malformedReport->blockingIssues, true), 'Malformed enabled rule blocks readiness');
     $unknownCondition = activationRule($pureBook->id(), activationUnsafeDefinition([
         'kind' => new AppleKlinika\Buyback\Domain\Pricing\PricingRuleKind(PricingRuleKind::FIXED_DEDUCTION),
         'modelKey' => null, 'storage' => null, 'conditionKey' => 'unknown_condition',
         'operator' => new ComparisonOperator(ComparisonOperator::EQUALS), 'comparisonValue' => true,
     ]), 6);
-    $unknownConditionReport = (new PriceBookActivationReadinessEvaluator())->evaluate($pureBook, [$validBase, $unknownCondition], ['iphone-13-pro'], $clock->now());
+    $unknownConditionReport = (new PriceBookActivationReadinessEvaluator())->evaluate($pureBook, [$validBase, $unknownCondition], ['iphone-13-pro'], $knownConfigurations, $clock->now());
     $test->assert(! $unknownConditionReport->ready && in_array('unknown_condition_key', $unknownConditionReport->blockingIssues, true), 'Unknown condition key blocks readiness');
     $duplicate = activationRule($pureBook->id(), activationBaseDefinition('pure-base-duplicate'), 7);
-    $duplicateReport = (new PriceBookActivationReadinessEvaluator())->evaluate($pureBook, [$validBase, $duplicate], ['iphone-13-pro'], $clock->now());
+    $duplicateReport = (new PriceBookActivationReadinessEvaluator())->evaluate($pureBook, [$validBase, $duplicate], ['iphone-13-pro'], $knownConfigurations, $clock->now());
     $test->assert(! $duplicateReport->ready && in_array('duplicate_base_price', $duplicateReport->blockingIssues, true), 'Duplicate base configuration blocks readiness');
     $modeA = activationRule($pureBook->id(), activationModeDefinition('mode-a', 'fast_online'), 8);
     $modeB = activationRule($pureBook->id(), activationModeDefinition('mode-b', 'fast_online'), 9);
-    $duplicateMode = (new PriceBookActivationReadinessEvaluator())->evaluate($pureBook, [$validBase, $modeA, $modeB], ['iphone-13-pro'], $clock->now());
+    $duplicateMode = (new PriceBookActivationReadinessEvaluator())->evaluate($pureBook, [$validBase, $modeA, $modeB], ['iphone-13-pro'], $knownConfigurations, $clock->now());
     $test->assert(! $duplicateMode->ready && in_array('duplicate_mode_adjustment', $duplicateMode->blockingIssues, true), 'Duplicate mode adjustment blocks readiness');
     $disabledMalformed = activationRule($pureBook->id(), activationUnsafeDefinition(['amount' => null, 'enabled' => false]), 10);
-    $disabledReport = (new PriceBookActivationReadinessEvaluator())->evaluate($pureBook, [$validBase, $disabledMalformed], ['iphone-13-pro'], $clock->now());
+    $disabledReport = (new PriceBookActivationReadinessEvaluator())->evaluate($pureBook, [$validBase, $disabledMalformed], ['iphone-13-pro'], $knownConfigurations, $clock->now());
     $test->assert($disabledReport->ready, 'Disabled malformed rule is documented as non-blocking');
 
     [$adminId, $adminCreated] = activationUser('administrator', $token); if ($adminCreated) { $createdUsers[] = $adminId; }

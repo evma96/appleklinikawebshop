@@ -52,7 +52,7 @@ final class BuybackRequestsPage
         echo '<table class="widefat striped"><thead><tr><th>Hivatkozás</th><th>Beküldve</th><th>Ügyfél</th><th>Elérhetőség</th><th>Készülék</th><th>Ajánlattípus</th><th>Státusz</th></tr></thead><tbody>';
         foreach ($rows as $row) {
             $link = add_query_arg(['page' => self::SLUG, 'request_id' => (int) $row['id']], admin_url('admin.php'));
-            $mode = OfferModeDefinition::all()[(string) $row['service_mode']]['label'] ?? (string) $row['service_mode'];
+            $mode = $this->requestIntentLabel($row);
             echo '<tr><td><a href="' . esc_url($link) . '">' . esc_html((string) $row['request_number']) . '</a></td><td>' . esc_html((string) $row['submitted_at']) . '</td><td>' . esc_html((string) $row['customer_name']) . '</td><td>' . esc_html((string) $row['customer_email']) . '<br>' . esc_html((string) $row['customer_phone']) . '</td><td>' . esc_html((string) $row['device_display_name']) . '</td><td>' . esc_html($mode) . '</td><td>' . esc_html((string) $row['status']) . '</td></tr>';
         }
         echo '</tbody></table>';
@@ -70,15 +70,27 @@ final class BuybackRequestsPage
         $request = $detail['request'];
         echo '<h2>' . esc_html((string) $request['request_number']) . '</h2>';
         echo '<table class="widefat"><tbody>';
-        foreach (['customer_name' => 'Név', 'customer_email' => 'E-mail', 'customer_phone' => 'Telefonszám', 'device_display_name' => 'Készülék', 'service_mode' => 'Ajánlattípus', 'status' => 'Státusz', 'submitted_at' => 'Beküldve'] as $key => $label) {
+        foreach (['customer_name' => 'Név', 'customer_email' => 'E-mail', 'customer_phone' => 'Telefonszám', 'device_display_name' => 'Készülék', 'status' => 'Státusz', 'submitted_at' => 'Beküldve'] as $key => $label) {
             echo '<tr><th>' . esc_html($label) . '</th><td>' . esc_html((string) ($request[$key] ?? '')) . '</td></tr>';
         }
+        echo '<tr><th>Igény típusa</th><td>' . esc_html($this->requestIntentLabel($request)) . '</td></tr>';
         echo '</tbody></table>';
         $snapshot = $detail['snapshot'];
         if ($snapshot !== null) {
             $payload = json_decode((string) $snapshot['payload_json'], true);
             echo '<h2>Rögzített számítási pillanatkép</h2>';
             echo '<p>Checksum: <code>' . esc_html((string) $snapshot['checksum']) . '</code></p>';
+            if (is_array($payload) && (($payload['calculation']['status'] ?? $payload['calculation_status'] ?? null) === 'manual_review')) {
+                echo '<h3>Személyes bevizsgálás szükséges</h3><p>Ehhez az igényhez nem tartozik kiválasztott ajánlattípus vagy előzetes összeg.</p>';
+                $reasons = is_array($payload['calculation']['reasons'] ?? null) ? $payload['calculation']['reasons'] : [];
+                if ($reasons !== []) {
+                    echo '<h4>Rögzített okok</h4><ul>';
+                    foreach ($reasons as $reason) {
+                        echo '<li>' . esc_html((string) $reason) . '</li>';
+                    }
+                    echo '</ul>';
+                }
+            }
             echo '<pre style="white-space:pre-wrap;max-width:100%;overflow:auto">' . esc_html((string) wp_json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) . '</pre>';
         }
         echo '<h2>Eseménytörténet</h2><ul>';
@@ -86,5 +98,16 @@ final class BuybackRequestsPage
             echo '<li><strong>' . esc_html((string) $event['created_at']) . '</strong> — ' . esc_html((string) $event['event_type']) . ' ' . esc_html((string) ($event['public_summary'] ?? '')) . '</li>';
         }
         echo '</ul>';
+    }
+
+    /** @param array<string,mixed> $request */
+    private function requestIntentLabel(array $request): string
+    {
+        $mode = $request['service_mode'] ?? null;
+        if ($mode === null || $mode === '') {
+            return 'Személyes bevizsgálást kérek';
+        }
+
+        return OfferModeDefinition::all()[(string) $mode]['label'] ?? (string) $mode;
     }
 }

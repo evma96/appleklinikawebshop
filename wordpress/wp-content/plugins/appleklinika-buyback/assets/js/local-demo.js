@@ -11,8 +11,11 @@
   const progress = root.querySelector('[data-demo-progress]');
   const progressText = root.querySelector('[data-demo-progress-text]');
   const progressBar = progress ? progress.parentElement : null;
+  const storefrontLogo = document.querySelector('header .ak-header-logo');
   const visualPanels = root.querySelectorAll('[data-demo-visual]');
   const modelCards = Array.from(root.querySelectorAll('[data-model-card]'));
+  const modelGrid = root.querySelector('[data-model-grid]');
+  const modelNoResults = root.querySelector('[data-model-no-results]');
   const storageCards = Array.from(root.querySelectorAll('[data-storage-card]'));
   const colorPicker = root.querySelector('[data-color-picker]');
   const colorOptions = root.querySelector('[data-color-options]');
@@ -22,6 +25,7 @@
   const networkInputs = Array.from(root.querySelectorAll('input[name="questionnaire[network_status]"]'));
   const modeInputs = Array.from(root.querySelectorAll('[data-mode-input]'));
   const offerContinue = root.querySelector('[data-offer-continue]');
+  const offerSummarySelection = root.querySelector('[data-offer-summary-selection]');
   const modeMessage = root.querySelector('[data-mode-message]');
   const finalMessage = root.querySelector('[data-final-message]');
   const reviewModeTitle = root.querySelector('[data-review-mode-title]');
@@ -56,6 +60,56 @@
   const panelFor = (name) => panels.find((panel) => panel.dataset.demoPanel === name);
   const selectedModel = () => root.querySelector('input[name="model_key"]:checked');
   const selectedStorage = () => root.querySelector('input[name="storage_gb"]:checked');
+
+  function syncModelProgression() {
+    const button = panelFor('model')?.querySelector('[data-demo-next]');
+    if (button) button.disabled = !selectedModel();
+  }
+
+  function syncSingleChoiceDescriptions(group) {
+    if (!group || group.dataset.questionType !== 'single') return;
+    group.querySelectorAll('input[type="radio"]').forEach((input) => {
+      const card = input.closest('.ak-buyback-demo__choice-card');
+      const description = card?.querySelector('[data-choice-description], .ak-buyback-demo__choice-description');
+      if (!description) return;
+      const expanded = input.checked;
+      description.hidden = !expanded;
+      input.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+      if (expanded) {
+        input.setAttribute('aria-describedby', description.id);
+      } else {
+        input.removeAttribute('aria-describedby');
+      }
+    });
+  }
+
+  function syncWizardViewport() {
+    const main = root.closest('main');
+    if (!main) return;
+    const availableHeight = Math.max(0, Math.floor(window.innerHeight - main.getBoundingClientRect().top));
+    root.style.setProperty('--ak-buyback-available-height', availableHeight + 'px');
+  }
+
+  function syncStorefrontHeader(contained) {
+    if (!storefrontLogo) return;
+    if (!storefrontLogo.dataset.buybackOriginalLabel) {
+      storefrontLogo.dataset.buybackOriginalLabel = storefrontLogo.getAttribute('aria-label') || '';
+    }
+    storefrontLogo.setAttribute('aria-label', contained ? 'Vissza a webshopba' : storefrontLogo.dataset.buybackOriginalLabel);
+  }
+
+  function syncWizardPageState() {
+    const contained = !['entry', 'offers', 'review'].includes(current);
+    const compactHeader = !['entry', 'review'].includes(current);
+    document.body.classList.toggle('ak-buyback-entry-active', current === 'entry');
+    document.body.classList.toggle('ak-buyback-wizard-active', contained);
+    document.body.classList.toggle('ak-buyback-offer-active', current === 'offers');
+    syncStorefrontHeader(compactHeader);
+    if (contained) {
+      window.scrollTo(0, 0);
+      syncWizardViewport();
+    }
+  }
 
   function selectedModelCard() {
     const input = selectedModel();
@@ -216,6 +270,11 @@
   }
 
   function updateOfferReview(card) {
+    if (offerSummarySelection) {
+      offerSummarySelection.textContent = card
+        ? [card.dataset.modeTitle, card.dataset.modeHeadline].filter(Boolean).join(' · ')
+        : 'Még nincs kiválasztva.';
+    }
     if (!card) return;
     if (reviewModeTitle) reviewModeTitle.textContent = card.dataset.modeTitle || '';
     if (reviewModeHeadline) reviewModeHeadline.textContent = card.dataset.modeHeadline || '—';
@@ -253,6 +312,7 @@
 
     panels.forEach((panel) => { panel.hidden = panel !== target; });
     current = name;
+    syncWizardPageState();
     updateProgress(name);
     updateDeviceContext();
     syncVisualForPanel(target);
@@ -263,7 +323,9 @@
         heading.setAttribute('tabindex', '-1');
         heading.focus({ preventScroll: true });
       }
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (!document.body.classList.contains('ak-buyback-wizard-active') || window.matchMedia('(max-width: 900px)').matches) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     }
   }
 
@@ -347,7 +409,8 @@
       }
     }
 
-    if (current === 'offers' && !selectedOfferCard()) {
+    const manualReviewRoute = panel.querySelector('[data-manual-review-route]');
+    if (current === 'offers' && !manualReviewRoute && !selectedOfferCard()) {
       if (modeMessage) {
         modeMessage.textContent = 'Válassz egy ajánlattípust a folytatáshoz.';
         modeMessage.hidden = false;
@@ -385,6 +448,7 @@
   root.addEventListener('click', (event) => {
     const next = event.target.closest('[data-demo-next]');
     if (next) {
+      if (next.matches('[data-entry-family]')) next.setAttribute('aria-pressed', 'true');
       if (!validateCurrentPanel()) return;
       show(nextName(next), true);
       return;
@@ -428,7 +492,10 @@
 
   modelCards.forEach((card) => {
     const input = card.querySelector('input');
-    input.addEventListener('change', updateStorageAvailability);
+    input.addEventListener('change', () => {
+      updateStorageAvailability();
+      syncModelProgression();
+    });
   });
 
   root.querySelectorAll('input[name="storage_gb"]').forEach((input) => input.addEventListener('change', updateDeviceContext));
@@ -465,9 +532,14 @@
   if (search) {
     search.addEventListener('input', () => {
       const query = search.value.trim().toLocaleLowerCase('hu-HU');
+      let visibleCount = 0;
       modelCards.forEach((card) => {
-        card.hidden = !card.dataset.searchText.includes(query);
+        const visible = card.dataset.searchText.includes(query);
+        card.hidden = !visible;
+        if (visible) visibleCount += 1;
       });
+      if (modelNoResults) modelNoResults.hidden = visibleCount !== 0;
+      if (modelGrid) modelGrid.scrollTop = 0;
     });
   }
 
@@ -519,7 +591,10 @@
   root.querySelectorAll('[data-question] input').forEach((input) => {
     input.addEventListener('change', () => {
       const group = input.closest('[data-question]');
-      if (group) clearQuestionError(group);
+      if (group) {
+        clearQuestionError(group);
+        syncSingleChoiceDescriptions(group);
+      }
       updateConditionVisual(input);
     });
   });
@@ -535,10 +610,13 @@
   }
 
   updateStorageAvailability();
+  syncModelProgression();
+  root.querySelectorAll('[data-question-type="single"]').forEach(syncSingleChoiceDescriptions);
   updateConditionalQuestions();
   const existingOffer = selectedOfferCard();
   if (existingOffer) selectOffer(existingOffer);
   show(current, false);
+  window.addEventListener('resize', syncWizardViewport);
   window.addEventListener('pageshow', () => syncVisualForPanel(panelFor(current)));
   window.addEventListener('popstate', () => syncVisualForPanel(panelFor(current)));
 }());

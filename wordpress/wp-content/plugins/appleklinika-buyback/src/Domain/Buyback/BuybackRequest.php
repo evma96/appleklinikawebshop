@@ -21,7 +21,7 @@ final class BuybackRequest
         private readonly DeviceCategory $category,
         private readonly ModelKey $modelKey,
         private readonly DeviceDisplayName $deviceDisplayName,
-        private ServiceMode $serviceMode,
+        private ?ServiceMode $serviceMode,
         private ?HandoverMethod $handoverMethod,
         private BuybackStatus $status,
         private readonly RequestSource $source,
@@ -41,7 +41,7 @@ final class BuybackRequest
         DeviceCategory $category,
         ModelKey $modelKey,
         DeviceDisplayName $deviceDisplayName,
-        ServiceMode $serviceMode,
+        ?ServiceMode $serviceMode,
         RequestSource $source,
         \DateTimeImmutable $createdAt,
         ?CustomerId $customerId = null,
@@ -73,7 +73,7 @@ final class BuybackRequest
         DeviceCategory $category,
         ModelKey $modelKey,
         DeviceDisplayName $deviceDisplayName,
-        ServiceMode $serviceMode,
+        ?ServiceMode $serviceMode,
         ?HandoverMethod $handoverMethod,
         BuybackStatus $status,
         RequestSource $source,
@@ -120,7 +120,7 @@ final class BuybackRequest
     {
         $this->assertDraftMutation('select service mode');
 
-        if ($this->serviceMode->equals($serviceMode)) {
+        if ($this->serviceMode !== null && $this->serviceMode->equals($serviceMode)) {
             return;
         }
 
@@ -138,6 +138,10 @@ final class BuybackRequest
         \DateTimeImmutable $at
     ): void {
         $this->assertDraftMutation('select handover method');
+        if ($this->serviceMode === null) {
+            throw new InvalidAggregateOperationException('A manual-review request cannot select a handover method.');
+        }
+
         $policy->assertCompatible($this->serviceMode, $handoverMethod);
 
         if ($this->handoverMethod !== null && $this->handoverMethod->equals($handoverMethod)) {
@@ -202,7 +206,7 @@ final class BuybackRequest
         return $this->deviceDisplayName;
     }
 
-    public function serviceMode(): ServiceMode
+    public function serviceMode(): ?ServiceMode
     {
         return $this->serviceMode;
     }

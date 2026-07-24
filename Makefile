@@ -2,7 +2,7 @@
 
 COMPOSE := docker compose
 
-.PHONY: install up down test test-unit test-integration test-inventory-catalog test-buyback test-buyback-domain test-buyback-persistence test-buyback-legacy test-buyback-pricing-admin test-buyback-condition-admin test-buyback-battery-admin test-buyback-offer-mode-admin test-buyback-pricing-engine test-buyback-pricebook-activation test-buyback-public-active-book test-buyback-visual-states test-buyback-public-request test-buyback-local-demo lint format static quality quality-fix check
+.PHONY: install up down test test-unit test-integration test-inventory-catalog test-buyback test-buyback-domain test-buyback-persistence test-buyback-legacy test-buyback-pricing-admin test-buyback-condition-admin test-buyback-battery-admin test-buyback-offer-mode-admin test-buyback-pricing-engine test-buyback-pricebook-activation test-buyback-public-active-book test-buyback-visual-states test-buyback-public-request test-buyback-mail-notifications test-buyback-local-demo lint format static quality quality-fix check
 
 install:
 	@if [ ! -f .env ]; then cp .env.example .env; fi
@@ -60,6 +60,9 @@ test-buyback-visual-states:
 
 test-buyback-public-request:
 	$(COMPOSE) exec -T wordpress php /var/www/html/wp-content/plugins/appleklinika-buyback/tests/public-request-submission.php
+
+test-buyback-mail-notifications:
+	$(COMPOSE) exec -T wordpress php /var/www/html/wp-content/plugins/appleklinika-buyback/tests/mail-notifications.php
 
 test-buyback-local-demo:
 	$(COMPOSE) exec -T wordpress php /var/www/html/wp-content/plugins/appleklinika-buyback/tests/local-demo.php
