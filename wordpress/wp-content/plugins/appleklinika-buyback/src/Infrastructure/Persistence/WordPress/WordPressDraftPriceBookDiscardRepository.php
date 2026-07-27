@@ -48,7 +48,7 @@ final class WordPressDraftPriceBookDiscardRepository implements DraftPriceBookDi
         return false;
     }
 
-    public function discardDraftWithRules(PriceBookId $priceBookId): void
+    public function discardDraftWithRules(PriceBookId $priceBookId): int
     {
         $ruleResult = $this->database->delete($this->priceRules, ['price_book_id' => $priceBookId->toInt()], ['%d']);
         if ($ruleResult === false) {
@@ -63,5 +63,7 @@ final class WordPressDraftPriceBookDiscardRepository implements DraftPriceBookDi
         if ($bookResult !== 1) {
             throw new PersistenceException('Could not remove the draft price book.');
         }
+
+        return (int) $ruleResult;
     }
 }

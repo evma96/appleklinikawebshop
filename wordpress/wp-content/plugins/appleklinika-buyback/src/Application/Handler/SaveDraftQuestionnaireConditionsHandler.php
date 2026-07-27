@@ -26,11 +26,13 @@ use AppleKlinika\Buyback\Domain\Shared\Money;
 /** Reconciles only the draft's deterministic public-questionnaire condition rules. */
 final class SaveDraftQuestionnaireConditionsHandler
 {
+    public const ACTION_SYSTEM_DEFAULT = 'system_default';
     public const ACTION_NONE = 'none';
     public const ACTION_FIXED = 'fixed';
     public const ACTION_PERCENTAGE = 'percentage';
     public const ACTION_MANUAL_REVIEW = 'manual_review';
     public const ACTION_HARD_REJECT = 'hard_reject';
+    public const ACTION_INHERIT = 'inherit';
 
     public function __construct(
         private readonly PriceBookRepository $books,
@@ -54,14 +56,18 @@ final class SaveDraftQuestionnaireConditionsHandler
             $this->assertSupportedModel($command->modelKey);
 
             $submitted = $this->validatedSubmission($command->conditions);
+            $componentSubmitted = $command->serviceHistoryComponents === []
+                ? []
+                : $this->validatedComponentSubmission($command->serviceHistoryComponents);
             $existing = $this->existingRules($bookId, $this->rules->listForPriceBook($bookId));
+            $existingComponents = $this->existingComponentRules($bookId, $this->rules->listForPriceBook($bookId));
             $changed = false;
             $at = $this->clock->now();
 
             foreach ($submitted as $item) {
                 $identity = self::ruleCode($bookId->toInt(), $command->modelKey, $item['question_key'], $item['answer_key']);
                 $rule = $existing[$identity] ?? null;
-                if ($item['action'] === self::ACTION_NONE) {
+                if ($item['action'] === self::ACTION_SYSTEM_DEFAULT) {
                     if ($rule !== null && $rule->id() !== null) {
                         $this->rules->deleteDraftRule($bookId, $rule->id(), $rule->version());
                         $changed = true;
@@ -73,6 +79,35 @@ final class SaveDraftQuestionnaireConditionsHandler
                 if ($rule === null) {
                     if (! $this->rules->isCodeUnique($bookId, $definition->code)) {
                         throw new \InvalidArgumentException('Az állapotválaszhoz tartozó szabályazonosító már foglalt. Frissítsd az oldalt és próbáld újra.');
+                    }
+                    $this->rules->insert(PricingRule::create($bookId, $definition, $at));
+                    $changed = true;
+                    continue;
+                }
+                if ($this->sameDefinition($rule->definition(), $definition)) {
+                    continue;
+                }
+                $expectedRuleVersion = $rule->version();
+                $rule->update($definition, $at);
+                $this->rules->update($rule, $expectedRuleVersion);
+                $changed = true;
+            }
+
+            foreach ($componentSubmitted as $item) {
+                $identity = self::componentRuleCode($bookId->toInt(), $command->modelKey, $item['service_history_key'], $item['component_key']);
+                $rule = $existingComponents[$identity] ?? null;
+                if ($item['action'] === self::ACTION_INHERIT) {
+                    if ($rule !== null && $rule->id() !== null) {
+                        $this->rules->deleteDraftRule($bookId, $rule->id(), $rule->version());
+                        $changed = true;
+                    }
+                    continue;
+                }
+
+                $definition = $this->componentDefinition($bookId->toInt(), $command->modelKey, $item);
+                if ($rule === null) {
+                    if (! $this->rules->isCodeUnique($bookId, $definition->code)) {
+                        throw new \InvalidArgumentException('Az alkatrészhez tartozó szervizelőzmény-szabályazonosító már foglalt. Frissítsd az oldalt és próbáld újra.');
                     }
                     $this->rules->insert(PricingRule::create($bookId, $definition, $at));
                     $changed = true;
@@ -104,6 +139,11 @@ final class SaveDraftQuestionnaireConditionsHandler
         return 'questionnaire-condition-' . $priceBookId . '-' . substr(hash('sha256', $questionKey . "\0" . $answerKey), 0, 16);
     }
 
+    public static function componentRuleCode(int $priceBookId, string $modelKey, string $serviceHistoryKey, string $componentKey): string
+    {
+        return 'service-history-component-' . $priceBookId . '-' . substr(hash('sha256', $modelKey . "\0" . $serviceHistoryKey . "\0" . $componentKey), 0, 16);
+    }
+
     /** @param list<PricingRule> $rules @return array<string,PricingRule> */
     private function existingRules(PriceBookId $bookId, array $rules): array
     {
@@ -115,6 +155,23 @@ final class SaveDraftQuestionnaireConditionsHandler
             }
             if (isset($existing[$code])) {
                 throw new \RuntimeException('Egy kérdőívválaszhoz több állapotlevonási szabály tartozik. A mentés biztonsági okból leállt.');
+            }
+            $existing[$code] = $rule;
+        }
+        return $existing;
+    }
+
+    /** @param list<PricingRule> $rules @return array<string,PricingRule> */
+    private function existingComponentRules(PriceBookId $bookId, array $rules): array
+    {
+        $existing = [];
+        foreach ($rules as $rule) {
+            $code = $rule->definition()->code->code();
+            if (! str_starts_with($code, 'service-history-component-' . $bookId->toInt() . '-')) {
+                continue;
+            }
+            if (isset($existing[$code])) {
+                throw new \RuntimeException('Egy szervizelőzmény–alkatrész párhoz több szabály tartozik. A mentés biztonsági okból leállt.');
             }
             $existing[$code] = $rule;
         }
@@ -181,12 +238,74 @@ final class SaveDraftQuestionnaireConditionsHandler
     /** @return list<string> */
     private static function actions(): array
     {
-        return [self::ACTION_NONE, self::ACTION_FIXED, self::ACTION_PERCENTAGE, self::ACTION_MANUAL_REVIEW, self::ACTION_HARD_REJECT];
+        return [self::ACTION_SYSTEM_DEFAULT, self::ACTION_NONE, self::ACTION_FIXED, self::ACTION_PERCENTAGE, self::ACTION_MANUAL_REVIEW, self::ACTION_HARD_REJECT];
+    }
+
+    /** @return list<string> */
+    public static function componentActions(): array
+    {
+        return [self::ACTION_INHERIT, self::ACTION_NONE, self::ACTION_FIXED, self::ACTION_PERCENTAGE, self::ACTION_MANUAL_REVIEW, self::ACTION_HARD_REJECT];
+    }
+
+    /**
+     * @param array<string,mixed> $raw
+     * @return list<array{service_history_key:string,component_key:string,label:string,action:string,value:?int,priority:int}>
+     */
+    private function validatedComponentSubmission(array $raw): array
+    {
+        $metadata = $this->questionnaire->serviceHistoryComponentRuleMetadata();
+        $expected = [];
+        $priority = 6000;
+        foreach ($metadata['service_history'] as $history) {
+            foreach ($metadata['components'] as $component) {
+                $expected[$history['answer_key']][$component['component_key']] = [
+                    'service_history_key' => $history['answer_key'],
+                    'component_key' => $component['component_key'],
+                    'label' => $history['label'] . ' · ' . $component['label'],
+                    'allows_monetary' => $component['allows_monetary'],
+                    'priority' => $priority++,
+                ];
+            }
+        }
+
+        foreach ($raw as $historyKey => $components) {
+            if (! is_array($components) || ! isset($expected[$historyKey])) {
+                throw new \InvalidArgumentException('Ismeretlen szervizelőzményhez tartozó alkatrészszabály nem menthető.');
+            }
+            foreach ($components as $componentKey => $row) {
+                if (! is_array($row) || ! isset($expected[$historyKey][$componentKey])) {
+                    throw new \InvalidArgumentException('Ismeretlen szervizelőzményhez tartozó alkatrészszabály nem menthető.');
+                }
+            }
+        }
+
+        $validated = [];
+        foreach ($expected as $historyKey => $components) {
+            foreach ($components as $componentKey => $definition) {
+                $row = $raw[$historyKey][$componentKey] ?? null;
+                if (! is_array($row)) {
+                    throw new \InvalidArgumentException('Minden szervizelőzmény–alkatrész párhoz válassz műveletet.');
+                }
+                $action = $row['action'] ?? null;
+                if (! is_string($action) || ! in_array($action, self::componentActions(), true)) {
+                    throw new \InvalidArgumentException('Érvénytelen alkatrészhez tartozó szervizelőzmény-művelet.');
+                }
+                if (! $definition['allows_monetary'] && in_array($action, [self::ACTION_FIXED, self::ACTION_PERCENTAGE], true)) {
+                    throw new \InvalidArgumentException('Az Egyéb alkatrészhez automatikus pénzbeli levonás nem állítható be.');
+                }
+                $definition['action'] = $action;
+                $definition['value'] = $this->valueForAction($action, $row['value'] ?? null);
+                unset($definition['allows_monetary']);
+                $validated[] = $definition;
+            }
+        }
+
+        return $validated;
     }
 
     private function valueForAction(string $action, mixed $raw): ?int
     {
-        if (in_array($action, [self::ACTION_NONE, self::ACTION_MANUAL_REVIEW, self::ACTION_HARD_REJECT], true)) {
+        if (in_array($action, [self::ACTION_SYSTEM_DEFAULT, self::ACTION_INHERIT, self::ACTION_NONE, self::ACTION_MANUAL_REVIEW, self::ACTION_HARD_REJECT], true)) {
             if ($raw !== null && $raw !== '') {
                 throw new \InvalidArgumentException('Ehhez a művelethez nem tartozhat összeg vagy százalékos érték.');
             }
@@ -196,12 +315,12 @@ final class SaveDraftQuestionnaireConditionsHandler
             throw new \InvalidArgumentException('A levonás értéke nemnegatív egész szám legyen.');
         }
         $value = (string) $raw;
-        if (preg_match('/^(0|[1-9][0-9]*)$/', $value) !== 1 || (int) $value > PHP_INT_MAX) {
-            throw new \InvalidArgumentException('A levonás értéke nemnegatív egész szám legyen.');
+        if (preg_match('/^[1-9][0-9]*$/', $value) !== 1 || (int) $value > PHP_INT_MAX) {
+            throw new \InvalidArgumentException('A levonás értéke pozitív egész szám legyen.');
         }
         $number = (int) $value;
         if ($action === self::ACTION_PERCENTAGE && $number > 100) {
-            throw new \InvalidArgumentException('A százalékos levonás 0 és 100 közötti egész érték legyen.');
+            throw new \InvalidArgumentException('A százalékos levonás 1 és 100 közötti egész érték legyen.');
         }
         return $number;
     }
@@ -210,6 +329,7 @@ final class SaveDraftQuestionnaireConditionsHandler
     private function definition(int $priceBookId, string $modelKey, array $item): PricingRuleDefinition
     {
         $kind = match ($item['action']) {
+            self::ACTION_NONE => PricingRuleKind::NO_CHANGE,
             self::ACTION_FIXED => PricingRuleKind::FIXED_DEDUCTION,
             self::ACTION_PERCENTAGE => PricingRuleKind::MULTIPLIER,
             self::ACTION_MANUAL_REVIEW => PricingRuleKind::MANUAL_REVIEW,
@@ -239,6 +359,41 @@ final class SaveDraftQuestionnaireConditionsHandler
         );
     }
 
+    /** @param array{service_history_key:string,component_key:string,label:string,action:string,value:?int,priority:int} $item */
+    private function componentDefinition(int $priceBookId, string $modelKey, array $item): PricingRuleDefinition
+    {
+        $kind = match ($item['action']) {
+            self::ACTION_NONE => PricingRuleKind::NO_CHANGE,
+            self::ACTION_FIXED => PricingRuleKind::FIXED_DEDUCTION,
+            self::ACTION_PERCENTAGE => PricingRuleKind::MULTIPLIER,
+            self::ACTION_MANUAL_REVIEW => PricingRuleKind::MANUAL_REVIEW,
+            self::ACTION_HARD_REJECT => PricingRuleKind::HARD_REJECT,
+        };
+        $amount = $item['action'] === self::ACTION_FIXED ? new Money($item['value'] ?? 0, 'HUF') : null;
+        $multiplier = $item['action'] === self::ACTION_PERCENTAGE
+            ? new BasisPointsMultiplier((100 - ($item['value'] ?? 0)) * 100)
+            : null;
+
+        return new PricingRuleDefinition(
+            new PricingRuleCode(self::componentRuleCode($priceBookId, $modelKey, $item['service_history_key'], $item['component_key'])),
+            new PricingRuleKind($kind),
+            'iphone',
+            $modelKey,
+            null,
+            null,
+            'replacement_parts',
+            new ComparisonOperator(ComparisonOperator::EQUALS),
+            $item['service_history_key'],
+            $amount,
+            $multiplier,
+            new RulePriority($item['priority']),
+            true,
+            in_array($kind, [PricingRuleKind::MANUAL_REVIEW, PricingRuleKind::HARD_REJECT], true) ? $item['label'] : null,
+            null,
+            $item['component_key']
+        );
+    }
+
     private function sameDefinition(PricingRuleDefinition $left, PricingRuleDefinition $right): bool
     {
         return $left->kind->code() === $right->kind->code()
@@ -249,7 +404,8 @@ final class SaveDraftQuestionnaireConditionsHandler
             && $left->multiplier?->value() === $right->multiplier?->value()
             && $left->priority->value() === $right->priority->value()
             && $left->enabled === $right->enabled
-            && $left->publicLabel === $right->publicLabel;
+            && $left->publicLabel === $right->publicLabel
+            && $left->affectedComponentKey === $right->affectedComponentKey;
     }
 
     private function assertSupportedModel(string $modelKey): void

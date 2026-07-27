@@ -24,12 +24,12 @@ final class BuybackRequestsPage
 
     public function registerMenu(): void
     {
-        add_submenu_page('woocommerce', 'Apple Klinika Buyback – Beérkezett igények', 'Buyback – Beérkezett igények', CapabilityManager::MANAGE_PRICE_BOOKS, self::SLUG, [$this, 'render']);
+        add_submenu_page('woocommerce', 'Apple Klinika Buyback – Beérkezett igények', 'Buyback – Beérkezett igények', CapabilityManager::VIEW_BUYBACK_REQUESTS, self::SLUG, [$this, 'render']);
     }
 
     public function render(): void
     {
-        if (! current_user_can(CapabilityManager::MANAGE_PRICE_BOOKS)) {
+        if (! current_user_can(CapabilityManager::VIEW_BUYBACK_REQUESTS)) {
             wp_die(esc_html('Nincs jogosultságod a felvásárlási igények megtekintéséhez.'));
         }
         $detailId = isset($_GET['request_id']) ? absint($_GET['request_id']) : 0;

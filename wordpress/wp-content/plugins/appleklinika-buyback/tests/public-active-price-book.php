@@ -214,7 +214,13 @@ $runner->assert($resolver->resolveForCurrencyAt(new CurrencyCode('HUF'), $now)->
 $books->replace([$retired, $draft, $active]);
 $resolver = new RepositoryActivePriceBookResolver($books, new InMemoryPublicPricingRules([$active->id()->toInt() => $rules]));
 $page = new LocalDemoCalculatorPage($resolver, new PricingEngine(), new WordPressDeviceCatalogReader(), new WordPressLocalDemoProductReader(), new LocalDemoQuestionnaire());
+$_SERVER['REQUEST_METHOD'] = 'GET';
+$_GET = [];
+$_POST = [];
 $html = $page->render();
+$runner->assert(! str_contains($html, 'A munkamenet lejárt.') && ! str_contains($html, 'A biztonsági ellenőrzés sikertelen.'), 'A fresh public GET never renders a security-failure message');
+$storageLabel = new ReflectionMethod(LocalDemoCalculatorPage::class, 'storageLabel');
+$runner->assert($storageLabel->invoke($page, 1024) === '1 TB' && $storageLabel->invoke($page, 2048) === '2 TB' && $storageLabel->invoke($page, 512) === '512 GB', 'Customer-facing storage formatting uses TB only for the supported 1 TB and 2 TB capacities');
 $catalog = (new WordPressDeviceCatalogReader())->iPhoneCatalog();
 $runner->assert(($catalog['iphone_11']['colors'] ?? null) === [
     'black' => 'Fekete (Black)',
@@ -225,6 +231,7 @@ $runner->assert(($catalog['iphone_11']['colors'] ?? null) === [
     'white' => 'Fehér (White)',
 ], 'iPhone 11 colors come from the canonical inventory catalogue');
 $runner->assert(str_contains($html, 'Milyen Apple készüléket adnál el?') && str_contains($html, 'Válaszd ki a készülék típusát, és néhány lépésben megmutatjuk az előzetes felvásárlási ajánlatot.'), 'Public runtime renders the dedicated Buyback entry introduction');
+$runner->assert(str_contains($html, 'Jelenleg iPhone készülék felvásárlásában tudunk segíteni.') && ! str_contains($html, 'További Apple készüléktípusok támogatása később érkezik.'), 'Entry page uses the approved iPhone-only availability copy');
 $runner->assert(substr_count($html, 'data-entry-family="iphone"') === 1 && ! str_contains($html, 'data-entry-family="ipad"') && ! str_contains($html, 'data-entry-family="macbook"'), 'Only the genuinely supported iPhone family is interactive on entry');
 $runner->assert(str_contains($html, 'Gyors előzetes ajánlat') && str_contains($html, 'Átlátható állapotfelmérés') && str_contains($html, 'Személyes bevizsgálás'), 'Entry page explains only the currently supported Buyback process');
 $runner->assert(! str_contains($html, 'A helyi demó árkönyve nem aktív.'), 'Public runtime does not emit the demo-book availability error');
@@ -232,6 +239,8 @@ $runner->assert(str_contains($html, 'data-storages="64,128,256"'), 'Priced iPhon
 $runner->assert(! str_contains($html, 'value="iphone_13_pro"'), 'Inventory model without an active Base price remains hidden');
 $runner->assert(str_contains($html, 'data-visual-catalogue='), 'Public runtime receives the server-generated visual-state catalogue');
 $runner->assert(str_contains($html, 'ak-buyback-demo__wizard-shell') && str_contains($html, 'data-demo-wizard-shell'), 'Public questionnaire panels expose one stable desktop wizard shell');
+$configurationPanel = substr($html, (int) strpos($html, 'data-demo-panel="configuration"'), (int) strpos($html, 'data-demo-panel="liquid_contact"') - (int) strpos($html, 'data-demo-panel="configuration"'));
+$runner->assert(str_contains($configurationPanel, 'data-selected-model-configuration') && str_contains($configurationPanel, 'data-selected-model-image') && str_contains($configurationPanel, 'data-change-model') && str_contains($configurationPanel, 'Másik modellt választok'), 'Configuration panel provides one selected-device context and an in-flow return to the model catalogue');
 $runner->assert(str_contains($html, 'ak-buyback-demo__visual-image') && str_contains($html, 'data-demo-device-image'), 'Public questionnaire panels retain a stable visual image container');
 $runner->assert(! str_contains($html, 'Add el vagy számíttasd be Apple készüléked'), 'Entry page removes the obsolete duplicate generic title');
 $modelPanel = substr($html, (int) strpos($html, 'data-demo-panel="model"'), (int) strpos($html, 'data-demo-panel="configuration"') - (int) strpos($html, 'data-demo-panel="model"'));
@@ -239,7 +248,7 @@ $runner->assert(str_contains($modelPanel, 'data-model-content') && str_contains(
 $runner->assert(str_contains($modelPanel, 'Keress a modell nevére, vagy válassz a kártyák közül.') && str_contains($modelPanel, 'data-demo-target="entry"'), 'Model catalogue keeps the requested help text and Back route to the entry page');
 $runner->assert(str_contains($modelPanel, 'Akár 80 000 Ft'), 'Model catalogue maximum amount comes from the active model Base-price rules');
 $runner->assert(str_contains($modelPanel, 'data-model-key="iphone_11"') && str_contains($modelPanel, 'data-model-media') && str_contains($modelPanel, 'ak-buyback-demo__model-media-image'), 'Every rendered public model retains its canonical key and keeps its image inside a dedicated media wrapper');
-$runner->assert(str_contains($modelPanel, 'data-model-no-results') && ! str_contains($modelPanel, 'ak-buyback-demo__device-image'), 'Model filtering has a public no-result state and no legacy detached media wrapper');
+$runner->assert(str_contains($modelPanel, 'data-model-no-results') && str_contains($modelPanel, 'data-model-search-clear') && ! str_contains($modelPanel, 'ak-buyback-demo__device-image'), 'Model filtering has a compact public no-result state, a clear action, and no legacy detached media wrapper');
 $runner->assert(str_contains($html, 'ak-buyback-demo__choice-description') && str_contains($html, 'aria-expanded="true"') && str_contains($html, 'aria-expanded="false"'), 'Single-select answers render selected-description accessibility state');
 $liquidPanelStart = (int) strpos($html, 'data-demo-panel="liquid_contact"');
 $screenPanelStart = (int) strpos($html, 'data-demo-panel="screen_cosmetic"');
@@ -253,14 +262,18 @@ $runner->assert(! str_contains($html, 'HELYI DEMÓ') && ! str_contains($html, 't
 $runner->assert(count((new VisualStateCatalogue(new LocalDemoQuestionnaire()))->entries()) === 15, 'All public visual states remain available without changing pricing');
 $defaultSummary = (new LocalDemoQuestionnaire())->summary((new LocalDemoQuestionnaire())->defaults(), 'iPhone 11', '64 GB', 'Fekete');
 $runner->assert(! isset($defaultSummary['Alkatrész- és szervizelési előzmények']['Érintett alkatrészek']), 'Hidden affected-part values are omitted when service history does not require them');
+$noColorSummary = (new LocalDemoQuestionnaire())->summary((new LocalDemoQuestionnaire())->defaults(), 'iPhone 11', '64 GB');
+$runner->assert(($noColorSummary['Konfiguráció']['Szín'] ?? '') === 'Nincs megadva' && isset($noColorSummary['Állapot']['Folyadékérintkezés']) && ! isset($noColorSummary['Állapot']['Folyadék / pára']), 'Optional color and liquid-contact summary labels are customer-readable');
 $serviceSummaryState = (new LocalDemoQuestionnaire())->defaults();
 $serviceSummaryState['service_history'] = 'used_original';
 $serviceSummaryState['affected_parts'] = ['battery', 'display'];
 $serviceSummary = (new LocalDemoQuestionnaire())->summary($serviceSummaryState, 'iPhone 11', '64 GB', 'Fekete');
 $runner->assert(($serviceSummary['Alkatrész- és szervizelési előzmények']['Érintett alkatrészek'] ?? '') === 'Akkumulátor, Kijelző', 'Relevant affected parts render as clean public multi-select labels');
 
+$failureCounts = publicActiveBookCounts($wpdb);
 $_SERVER['REQUEST_METHOD'] = 'POST';
 $_POST = [
+    'ak_demo_action' => 'calculate',
     'ak_buyback_local_demo_nonce' => wp_create_nonce('ak_buyback_local_demo_calculate'),
     'model_key' => 'iphone_11',
     'storage_gb' => '64',
@@ -274,6 +287,32 @@ $_POST['color_key'] = 'black';
 $validColorHtml = $page->render();
 $runner->assert(! str_contains($validColorHtml, 'Válassz az ehhez a modellhez elérhető színek közül.'), 'A canonical iPhone 11 inventory color is accepted server-side');
 $runner->assert(str_contains($validColorHtml, 'ELŐZETES AJÁNLAT') && ! str_contains($validColorHtml, 'HELYI DEMÓ') && ! str_contains($validColorHtml, 'tesztelési célú'), 'Public offer result uses customer-facing wording without internal demo text');
+$_POST['color_key'] = '';
+$noColorHtml = $page->render();
+$runner->assert(! str_contains($noColorHtml, 'Válassz az ehhez a modellhez elérhető színek közül.') && str_contains($noColorHtml, 'Nincs megadva'), 'An omitted optional color is accepted and summarized naturally');
+$invalidNoncePost = $_POST;
+$invalidNoncePost['ak_buyback_local_demo_nonce'] = 'stale-or-invalid-nonce';
+$_POST = $invalidNoncePost;
+$invalidNonceHtml = $page->render();
+$runner->assert(str_contains($invalidNonceHtml, 'A biztonsági ellenőrzés sikertelen. Frissítsd az oldalt.'), 'An invalid or stale calculation nonce remains rejected safely');
+$runner->assert(publicActiveBookCounts($wpdb) === $failureCounts, 'A rejected calculation nonce creates no price book, rule, request, snapshot, or event');
+$_SERVER['REQUEST_METHOD'] = 'GET';
+$_POST = [];
+$_GET = [];
+$reloadedHtml = $page->render();
+$runner->assert(! str_contains($reloadedHtml, 'A biztonsági ellenőrzés sikertelen.'), 'A fresh reload clears the old calculation security message');
+$submissionErrorToken = wp_generate_uuid4();
+set_transient('ak_buyback_submission_error_' . $submissionErrorToken, 'A munkamenet lejárt. Frissítsd az oldalt, majd próbáld újra.', MINUTE_IN_SECONDS);
+$_GET = ['ak_buyback_submission_error' => $submissionErrorToken];
+$expiredSubmissionHtml = $page->render();
+$runner->assert(str_contains($expiredSubmissionHtml, 'A munkamenet lejárt. Frissítsd az oldalt, majd próbáld újra.') && str_contains($expiredSubmissionHtml, 'Újraindítás'), 'A stale submission nonce has accurate recovery copy and a restart action');
+$reloadedSubmissionHtml = $page->render();
+$runner->assert(! str_contains($reloadedSubmissionHtml, 'A munkamenet lejárt.'), 'The one-time submission error cannot persist after a refresh or history revisit');
+$_GET = ['ak_buyback_submission_error' => 'A biztonsági ellenőrzés sikertelen. Frissítsd az oldalt.'];
+$legacyErrorHtml = $page->render();
+$runner->assert(! str_contains($legacyErrorHtml, 'A biztonsági ellenőrzés sikertelen.'), 'A legacy error message in browser history is never rendered as trusted page state');
+$_GET = [];
+$runner->assert(publicActiveBookCounts($wpdb) === $failureCounts, 'Recovering from a rejected or expired nonce creates no public request data');
 $offersPanelStart = (int) strpos($validColorHtml, '<section class="ak-buyback-demo__panel ak-buyback-demo__panel--offers"');
 $reviewPanelStart = (int) strpos($validColorHtml, '<section class="ak-buyback-demo__panel ak-buyback-demo__panel--review"');
 $offersPanel = substr($validColorHtml, $offersPanelStart, $reviewPanelStart - $offersPanelStart);

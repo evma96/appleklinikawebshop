@@ -87,8 +87,16 @@ function localDemoAnswers(array $overrides = []): array
         'touch_functional' => true,
         'face_id_functional' => true,
         'camera_functional' => true,
+        'front_camera_functional' => true,
+        'rear_camera_functional' => true,
+        'audio_functional' => true,
         'charging_functional' => true,
         'liquid_damage' => false,
+        'network_unlocked' => true,
+        'display_yellowing' => false,
+        'display_deformed' => false,
+        'display_dead_pixels' => false,
+        'display_image_brightness_functional' => true,
         'motherboard_issue' => false,
         'screen_condition' => 'excellent',
         'frame_condition' => 'excellent',
@@ -184,7 +192,7 @@ $unknownRepairQuestionnaire = $healthyQuestionnaire;
 $unknownRepairQuestionnaire['service_history'] = 'unknown';
 $unknownRepairQuestionnaire['affected_parts'] = ['battery'];
 localDemoAssert($questionnaire->mapToConditions($unknownRepairQuestionnaire)['replacement_parts'] === 'unknown', 'Unknown repair maps to the existing unknown enum');
-localDemoAssert($questionnaire->manualReviewReasons($unknownRepairQuestionnaire) !== [], 'Unknown repair produces an explicit manual-review reason');
+localDemoAssert($questionnaire->manualReviewReasons($unknownRepairQuestionnaire) === [], 'Unknown repair delegates its commercial outcome to the centralized price-book policy');
 
 $damagedLensQuestionnaire = $healthyQuestionnaire;
 $damagedLensQuestionnaire['other_defects'] = ['camera_lens'];
@@ -200,12 +208,12 @@ localDemoAssert($exclusiveQuestionnaire['other_defects'] === ['none'], 'Exclusiv
 
 $lockedQuestionnaire = $healthyQuestionnaire;
 $lockedQuestionnaire['network_status'] = 'locked';
-localDemoAssert($questionnaire->eligibilityError($lockedQuestionnaire) !== null, 'Network-locked device is blocked by an explicit eligibility message');
+localDemoAssert($questionnaire->eligibilityError($lockedQuestionnaire) === null && $questionnaire->mapToConditions($lockedQuestionnaire)['network_unlocked'] === false, 'Network lock is delegated to the centralized price-book policy');
 
 $manualQuestionnaire = $healthyQuestionnaire;
 $manualQuestionnaire['display_defects'] = ['pixels'];
 $manualQuestionnaire['other_defects'] = ['audio'];
-localDemoAssert(count($questionnaire->manualReviewReasons($manualQuestionnaire)) === 2, 'Unsupported display and sound states produce explicit manual-review reasons');
+localDemoAssert($questionnaire->manualReviewReasons($manualQuestionnaire) === [] && $questionnaire->mapToConditions($manualQuestionnaire)['display_dead_pixels'] === true && $questionnaire->mapToConditions($manualQuestionnaire)['audio_functional'] === false, 'Display and sound commercial outcomes are delegated as canonical price-book conditions');
 
 $builder = new LocalDemoPriceMatrixBuilder();
 $synthetic = $builder->build([

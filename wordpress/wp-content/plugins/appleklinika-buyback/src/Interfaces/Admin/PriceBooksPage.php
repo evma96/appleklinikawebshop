@@ -9,6 +9,7 @@ use AppleKlinika\Buyback\Application\Command\ActivateDraftPriceBook;
 use AppleKlinika\Buyback\Application\Command\CreateDraftPriceBook;
 use AppleKlinika\Buyback\Application\Command\ClonePriceBookToDraft;
 use AppleKlinika\Buyback\Application\Command\DiscardDraftPriceBook;
+use AppleKlinika\Buyback\Application\Command\ProtectPriceBook;
 use AppleKlinika\Buyback\Application\Command\SaveDraftBasePriceMatrix;
 use AppleKlinika\Buyback\Application\Command\SaveDraftQuestionnaireConditions;
 use AppleKlinika\Buyback\Application\Command\SaveDraftBatteryBands;
@@ -25,6 +26,7 @@ use AppleKlinika\Buyback\Application\Handler\ActivateDraftPriceBookHandler;
 use AppleKlinika\Buyback\Application\Handler\CreateDraftPriceBookHandler;
 use AppleKlinika\Buyback\Application\Handler\ClonePriceBookToDraftHandler;
 use AppleKlinika\Buyback\Application\Handler\DiscardDraftPriceBookHandler;
+use AppleKlinika\Buyback\Application\Handler\ProtectPriceBookHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftBasePriceMatrixHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftQuestionnaireConditionsHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftBatteryBandsHandler;
@@ -39,6 +41,7 @@ use AppleKlinika\Buyback\Application\Port\ActivePriceBookResolver;
 use AppleKlinika\Buyback\Application\Port\Clock;
 use AppleKlinika\Buyback\Application\Port\PriceBookRepository;
 use AppleKlinika\Buyback\Application\Port\PricingRuleRepository;
+use AppleKlinika\Buyback\Application\Port\PriceBookLifecycleRepository;
 use AppleKlinika\Buyback\Application\LocalDemo\LocalDemoQuestionnaire;
 use AppleKlinika\Buyback\Application\Pricing\DeviceCatalogItem;
 use AppleKlinika\Buyback\Application\Pricing\OfferModeExampleCalculator;
@@ -47,6 +50,7 @@ use AppleKlinika\Buyback\Application\Exception\MultipleActivePriceBooksException
 use AppleKlinika\Buyback\Application\Exception\NoActivePriceBookException;
 use AppleKlinika\Buyback\Domain\Pricing\ComparisonOperator;
 use AppleKlinika\Buyback\Domain\Exception\InvalidAggregateOperationException;
+use AppleKlinika\Buyback\Domain\Exception\StaleAggregateVersionException;
 use AppleKlinika\Buyback\Domain\Pricing\ConditionDefinition;
 use AppleKlinika\Buyback\Domain\Pricing\CurrencyCode;
 use AppleKlinika\Buyback\Domain\Pricing\MinimumOfferPolicy;
@@ -58,6 +62,7 @@ use AppleKlinika\Buyback\Domain\Pricing\PricingOutcome;
 use AppleKlinika\Buyback\Domain\Pricing\PricingRule;
 use AppleKlinika\Buyback\Domain\Pricing\PricingRuleId;
 use AppleKlinika\Buyback\Domain\Pricing\PricingRuleKind;
+use AppleKlinika\Buyback\Domain\Pricing\SystemDefaultQuestionnairePolicy;
 use AppleKlinika\Buyback\Domain\Buyback\OfferModeDefinition;
 use AppleKlinika\Buyback\Infrastructure\WordPress\CapabilityManager;
 
@@ -100,7 +105,9 @@ final class PriceBooksPage
         private readonly Clock $clock,
         private readonly AdminAuthorization $authorization,
         private readonly AdminSubmissionGuard $submissionGuard,
-        private readonly LocalDemoQuestionnaire $questionnaire
+        private readonly LocalDemoQuestionnaire $questionnaire,
+        private readonly ?PriceBookLifecycleRepository $lifecycle = null,
+        private readonly ?ProtectPriceBookHandler $protectBook = null
     ) {
     }
 
@@ -113,12 +120,16 @@ final class PriceBooksPage
 
     public function registerMenu(): void
     {
-        add_submenu_page('woocommerce', 'Apple Klinika Buyback – Árkönyvek', 'Buyback – Árkönyvek', CapabilityManager::MANAGE_PRICE_BOOKS, self::SLUG, [$this, 'render']);
+        if (current_user_can('manage_woocommerce')) {
+            add_submenu_page('woocommerce', 'Apple Klinika Buyback – Árkönyvek', 'Buyback – Árkönyvek', CapabilityManager::VIEW_PRICE_BOOKS, self::SLUG, [$this, 'render']);
+            return;
+        }
+        add_menu_page('Apple Klinika Buyback – Árkönyvek', 'Buyback – Árkönyvek', CapabilityManager::VIEW_PRICE_BOOKS, self::SLUG, [$this, 'render'], 'dashicons-calculator', 58);
     }
 
     public function enqueueAssets(string $hook): void
     {
-        if ($hook !== 'woocommerce_page_' . self::SLUG) {
+        if (! in_array($hook, ['woocommerce_page_' . self::SLUG, 'toplevel_page_' . self::SLUG], true)) {
             return;
         }
         $cssPath = APPLEKLINIKA_BUYBACK_PATH . '/assets/admin/price-books.css';
@@ -140,15 +151,16 @@ final class PriceBooksPage
         $nonce = sanitize_text_field((string) wp_unslash($_POST['_ak_buyback_nonce'] ?? ''));
 
         try {
-            $this->authorization->assert(CapabilityManager::MANAGE_PRICE_BOOKS, $nonce);
+            $this->authorization->assert($this->capabilityForAction($action), $nonce);
             $this->dispatch($action, wp_unslash($_POST));
-            $this->redirect('success', $action, $action === 'discard_draft_price_book' ? 0 : $this->postedInt('price_book_id'), $this->postedTab(), null, $this->postedModel());
+            $this->redirect('success', $action, $action === 'discard_draft_price_book' || $action === 'clone_active_price_book' ? 0 : $this->postedInt('price_book_id'), $this->postedTab(), null, $this->postedModel());
         } catch (\Throwable $exception) {
             $message = match ($action) {
                 'save_questionnaire_conditions' => 'Az állapotlevonások mentése nem sikerült: ' . $exception->getMessage(),
                 'save_battery_bands' => 'Az akkumulátorsávok mentése nem sikerült: ' . $exception->getMessage(),
                 'save_offer_mode_modifiers' => 'Az ajánlattípusok mentése nem sikerült: ' . $exception->getMessage(),
                 'discard_draft_price_book' => $this->discardErrorMessage($exception),
+                'clone_active_price_book' => $this->cloneErrorMessage($exception),
                 default => null,
             };
             $this->redirect('error', 'validation', $this->postedInt('price_book_id'), $this->postedTab(), $message, $this->postedModel());
@@ -157,7 +169,7 @@ final class PriceBooksPage
 
     public function render(): void
     {
-        if (! current_user_can(CapabilityManager::MANAGE_PRICE_BOOKS)) {
+        if (! current_user_can(CapabilityManager::VIEW_PRICE_BOOKS)) {
             wp_die(esc_html('Nincs jogosultságod az árkönyvek kezeléséhez.'));
         }
 
@@ -204,23 +216,44 @@ final class PriceBooksPage
             }
             $clone = $this->cloneBook->handle(new ClonePriceBookToDraft(
                 $this->requiredPositiveInt($post, 'source_price_book_id'),
+                $this->requiredNonNegativeInt($post, 'expected_source_version'),
                 $actorId
             ));
-            $_POST['price_book_id'] = $clone->id()?->toInt() ?? 0;
-            $_POST['editor_tab'] = self::TAB_BASE_PRICES;
+            set_transient('ak_buyback_lifecycle_notice_' . $actorId, [
+                'type' => 'clone', 'label' => $clone->label(), 'id' => $clone->id()?->toInt() ?? 0,
+            ], MINUTE_IN_SECONDS);
             return;
         }
 
         if ($action === 'discard_draft_price_book') {
-            $this->discardDraft->handle(new DiscardDraftPriceBook(
+            $deleted = $this->discardDraft->handle(new DiscardDraftPriceBook(
                 $this->requiredPositiveInt($post, 'price_book_id'),
-                sanitize_text_field((string) ($post['discard_confirmation'] ?? ''))
+                sanitize_text_field((string) ($post['discard_confirmation'] ?? '')),
+                get_current_user_id()
             ));
+            set_transient('ak_buyback_lifecycle_notice_' . get_current_user_id(), ['type' => 'deletion'] + $deleted, MINUTE_IN_SECONDS);
+            return;
+        }
+
+        if ($action === 'protect_price_book') {
+            if ($this->protectBook === null) {
+                throw new \RuntimeException('A védett referencia kezelése átmenetileg nem érhető el.');
+            }
+            $protected = $this->protectBook->handle(new ProtectPriceBook(
+                $this->requiredPositiveInt($post, 'price_book_id'),
+                get_current_user_id(),
+                sanitize_text_field((string) ($post['protection_confirmation'] ?? ''))
+            ));
+            set_transient('ak_buyback_lifecycle_notice_' . get_current_user_id(), ['type' => 'protection'] + $protected, MINUTE_IN_SECONDS);
             return;
         }
 
         $bookId = $this->requiredPositiveInt($post, 'price_book_id');
         $bookVersion = $this->requiredNonNegativeInt($post, 'expected_book_version');
+
+        if ($this->lifecycle?->isProtected(new PriceBookId($bookId))) {
+            throw new \InvalidArgumentException('Védett referencia-árkönyv közvetlenül nem szerkeszthető. Készíts másolatot új piszkozathoz.');
+        }
 
         if ($action === 'update_price_book') {
             $this->updateBook->handle(new UpdateDraftPriceBookSettings(
@@ -247,7 +280,8 @@ final class PriceBooksPage
 
         if ($action === 'save_questionnaire_conditions') {
             $conditions = isset($post['questionnaire_conditions']) && is_array($post['questionnaire_conditions']) ? $post['questionnaire_conditions'] : [];
-            $this->saveQuestionnaireConditions->handle(new SaveDraftQuestionnaireConditions($bookId, $bookVersion, sanitize_key((string) ($post['condition_model_key'] ?? '')), $conditions));
+            $components = isset($post['service_history_components']) && is_array($post['service_history_components']) ? $post['service_history_components'] : [];
+            $this->saveQuestionnaireConditions->handle(new SaveDraftQuestionnaireConditions($bookId, $bookVersion, sanitize_key((string) ($post['condition_model_key'] ?? '')), $conditions, $components));
             return;
         }
 
@@ -264,12 +298,18 @@ final class PriceBooksPage
         }
 
         if ($action === 'activate_price_book') {
-            $this->activateBook->handle(new ActivateDraftPriceBook(
+            $target = $this->books->getById(new PriceBookId($bookId));
+            $previous = $this->books->list(1, 5, new PriceBookStatus(PriceBookStatus::ACTIVE))->items[0] ?? null;
+            $activated = $this->activateBook->handle(new ActivateDraftPriceBook(
                 $bookId,
                 $bookVersion,
                 get_current_user_id(),
                 sanitize_text_field((string) ($post['activation_confirmation'] ?? ''))
             ));
+            set_transient('ak_buyback_lifecycle_notice_' . get_current_user_id(), [
+                'type' => 'activation', 'new_id' => $activated->id()?->toInt(), 'new_label' => $activated->label(),
+                'previous_id' => $previous?->id()?->toInt(), 'previous_label' => $previous?->label(), 'currency' => $activated->currency()->code(),
+            ], MINUTE_IN_SECONDS);
             return;
         }
 
@@ -291,21 +331,37 @@ final class PriceBooksPage
         throw new \InvalidArgumentException('Ismeretlen árkönyv művelet.');
     }
 
+    private function capabilityForAction(string $action): string
+    {
+        return match ($action) {
+            'activate_price_book' => CapabilityManager::ACTIVATE_PRICE_BOOKS,
+            'discard_draft_price_book' => CapabilityManager::DELETE_PRICE_BOOK_DRAFTS,
+            'protect_price_book' => CapabilityManager::PROTECT_PRICE_BOOKS,
+            'create_price_book' => CapabilityManager::CREATE_PRICE_BOOK_DRAFTS,
+            'clone_active_price_book' => CapabilityManager::CLONE_PRICE_BOOKS,
+            default => CapabilityManager::EDIT_PRICE_BOOKS,
+        };
+    }
+
     private function renderIndex(): void
     {
         $active = $this->books->list(1, 5, new PriceBookStatus(PriceBookStatus::ACTIVE))->items;
         $drafts = $this->books->list(1, 50, new PriceBookStatus(PriceBookStatus::DRAFT))->items;
         $archived = $this->books->list(1, 20, new PriceBookStatus(PriceBookStatus::RETIRED))->items;
+        usort($drafts, static fn (PriceBook $left, PriceBook $right): int => $right->updatedAt() <=> $left->updatedAt() ?: $right->id()?->toInt() <=> $left->id()?->toInt());
         echo '<p class="ak-pricebook-intro">Itt kezelheted a nyilvános felvásárlási kalkulátor árait és szabályait.</p>';
-        echo '<section class="ak-buyback-card ak-pricebook-section ak-pricebook-section--active"><h2>Élő árkönyv</h2>';
-        echo '<p>Ezt használja jelenleg a nyilvános felvásárlási kalkulátor.</p>';
-        $this->renderPriceBookList($active, 'Jelenleg nincs aktív HUF árkönyv.');
-        echo '</section><section class="ak-buyback-card ak-pricebook-section"><h2>Szerkesztés alatt</h2>';
-        echo '<p>Ezek a módosítások még nem láthatók a weboldalon.</p>';
-        $this->renderPriceBookList($drafts, 'Még nincs szerkeszthető piszkozat.');
-        echo '</section><section class="ak-buyback-card ak-pricebook-section ak-pricebook-section--retired"><h2>Korábbi verziók</h2>';
-        echo '<p>Ezeket a felvásárlási kalkulátor már nem használja, de visszanézhetők.</p>';
-        $this->renderPriceBookList($archived, 'Nincs archivált árkönyv.');
+        $this->renderPriceBookTopSummary($active, $drafts);
+        echo '<section class="ak-buyback-card ak-pricebook-section ak-pricebook-section--active"><h2>Jelenleg használt árkönyv</h2>';
+        echo '<p>Ezt az árkönyvet használja jelenleg a felvásárlási kalkulátor.</p>';
+        $this->renderPriceBookList($active, 'Jelenleg nincs aktív HUF árkönyv.', 'active');
+        echo '</section><section class="ak-buyback-card ak-pricebook-section"><h2>Piszkozatok</h2>';
+        echo '<p>Ezek az árkönyvek még szerkeszthetők. A vásárlóknak addig nem jelennek meg, amíg valamelyiket aktívvá nem teszed.</p>';
+        $this->renderDraftFilters();
+        $this->renderPriceBookList($drafts, 'Még nincs szerkeszthető piszkozat.', 'draft');
+        echo '</section><section class="ak-buyback-card ak-pricebook-section ak-pricebook-section--retired"><details class="ak-previous-pricebooks"><summary>Korábban használt árkönyvek (' . esc_html((string) count($archived)) . ')</summary>';
+        echo '<p>Ezek az árkönyvek már nem módosíthatók, de megtekinthetők és új piszkozat készíthető belőlük.</p>';
+        $this->renderPriceBookList($archived, 'Nincs archivált árkönyv.', 'retired');
+        echo '</details>';
         echo '</section>';
         echo '<section class="ak-buyback-card ak-advanced-create"><details><summary>Haladó beállítások</summary><h2>Üres árkönyv létrehozása</h2><p class="description">Az üres árkönyv nem másolja át a jelenlegi élő árakat és szabályokat. A normál munkafolyamathoz használd az „Új módosítás indítása” gombot.</p><form method="post">';
         $this->securityFields('create_price_book');
@@ -319,55 +375,203 @@ final class PriceBooksPage
         echo '</form></details></section>';
     }
 
-    /** @param list<PriceBook> $books */
-    private function renderPriceBookList(array $books, string $emptyMessage): void
+    /** @param list<PriceBook> $active @param list<PriceBook> $drafts */
+    private function renderPriceBookTopSummary(array $active, array $drafts): void
     {
-        echo '<div class="ak-pricebook-list">';
+        $activeBook = $active[0] ?? null;
+        $protectedBook = null;
+        if ($this->lifecycle !== null) {
+            $protectedId = $this->lifecycle->protectedReferenceFor(new CurrencyCode('HUF'));
+            $protectedBook = $protectedId === null ? null : $this->books->getById($protectedId);
+        }
+
+        $activatable = 0;
+        foreach ($drafts as $draft) {
+            $rules = $this->rules->listForPriceBook($draft->id());
+            if ($this->readiness->evaluate($draft, $rules, $this->clock->now())->ready) {
+                ++$activatable;
+            }
+        }
+
+        echo '<section class="ak-pricebook-top-summary" aria-label="Árkönyv áttekintés"><dl>';
+        echo '<div><dt>Jelenleg aktív</dt><dd>' . esc_html($activeBook === null ? 'Nincs beállítva' : $this->ownerFacingTitle($activeBook, false)) . '</dd></div>';
+        echo '<div><dt>Védett alapárkönyv</dt><dd>' . esc_html($protectedBook === null ? 'Nincs beállítva' : $this->ownerFacingTitle($protectedBook, false)) . '</dd></div>';
+        echo '<div><dt>Piszkozatok</dt><dd>' . esc_html((string) count($drafts)) . '</dd></div>';
+        echo '<div><dt>Aktiválható</dt><dd>' . esc_html((string) $activatable) . '</dd></div>';
+        echo '<div><dt>Hiányos</dt><dd>' . esc_html((string) (count($drafts) - $activatable)) . '</dd></div>';
+        echo '</dl></section>';
+    }
+
+    private function renderDraftFilters(): void
+    {
+        echo '<div class="ak-pricebook-draft-filters" data-ak-draft-filters><div class="ak-pricebook-filter-buttons" role="group" aria-label="Piszkozatok szűrése">';
+        foreach (['all' => 'Összes', 'ready' => 'Aktiválható', 'incomplete' => 'Hiányos'] as $filter => $label) {
+            echo '<button type="button" class="button' . ($filter === 'all' ? ' is-active' : '') . '" data-ak-draft-filter="' . esc_attr($filter) . '" aria-pressed="' . ($filter === 'all' ? 'true' : 'false') . '">' . esc_html($label) . '</button>';
+        }
+        echo '</div><label class="screen-reader-text" for="ak-pricebook-draft-search">Keresés név vagy azonosító alapján…</label><input id="ak-pricebook-draft-search" type="search" data-ak-draft-search-input placeholder="Keresés név vagy azonosító alapján…"></div>';
+        echo '<p class="ak-pricebook-filter-empty" data-ak-draft-filter-empty hidden>Nincs a kiválasztott feltételeknek megfelelő piszkozat.</p>';
+    }
+
+    private function isLocalOnlyTestBook(PriceBook $book): bool
+    {
+        return preg_match('/(?:\blocal(?:\s+only)?\b|\bne\s+deployold\b)/iu', $book->label()) === 1;
+    }
+
+    private function conciseReadinessBlocker(\AppleKlinika\Buyback\Domain\Pricing\PriceBookActivationReadinessReport $readiness): string
+    {
+        $first = (string) $readiness->blockingIssues[0];
+        if ($first === 'missing_base_price') {
+            try {
+                $missing = max(0, count($this->catalog->iPhoneConfigurations()) - $readiness->enabledBasePriceCount);
+                return $missing > 0 ? $missing . ' alapár hiányzik.' : $this->readinessMessage($first);
+            } catch (DeviceCatalogUnavailableException) {
+                return $this->readinessMessage($first);
+            }
+        }
+        return $this->readinessMessage($first);
+    }
+
+    /** @param list<PriceBook> $books */
+    private function renderPriceBookList(array $books, string $emptyMessage, string $variant): void
+    {
+        echo '<div class="ak-pricebook-list ak-pricebook-list--' . esc_attr($variant) . '"' . ($variant === 'draft' ? ' data-ak-draft-list' : '') . '>';
         foreach ($books as $book) {
             $rules = $this->rules->listForPriceBook($book->id());
             $baseCount = $this->basePriceCount($rules);
             $isEmptyDraft = $baseCount === 0 && $book->status()->isDraft();
+            $isProtected = $this->lifecycle?->isProtected($book->id()) ?? false;
+            $readiness = $book->status()->isDraft() ? $this->readiness->evaluate($book, $rules, $this->clock->now()) : null;
             $statusClass = $book->status()->code();
-            echo '<article class="ak-pricebook-entry ak-pricebook-entry--' . esc_attr($statusClass) . '"><div class="ak-pricebook-entry-main">';
+            $confirmationPrefix = 'ak-pricebook-' . $book->id()->toInt();
+            $protectedReference = $this->lifecycle?->protectedReferenceFor($book->currency());
+            $replacesProtectedReference = $protectedReference !== null && ! $isProtected;
+            $draftReadiness = $readiness?->ready ? 'ready' : 'incomplete';
+            echo '<article class="ak-pricebook-entry ak-pricebook-entry--' . esc_attr($statusClass) . ' ak-pricebook-entry--' . esc_attr($variant) . '" data-ak-pricebook-card' . ($variant === 'draft' ? ' data-ak-draft-row data-ak-draft-readiness="' . esc_attr($draftReadiness) . '" data-ak-draft-search="' . esc_attr($book->label() . ' ' . $book->id()->toInt()) . '"' : '') . '><div class="ak-pricebook-entry-main">';
             echo '<span class="ak-status ak-status--' . esc_attr($statusClass) . '">' . esc_html($this->statusLabel($book)) . '</span>';
+            if ($isProtected) {
+                echo '<span class="ak-status ak-status--protected">Védett alapárkönyv</span>';
+            }
             echo '<h3>' . esc_html($this->ownerFacingTitle($book, $isEmptyDraft)) . '</h3>';
+            echo '<dl class="ak-pricebook-summary"><div><dt>Azonosító</dt><dd>#' . esc_html((string) $book->id()->toInt()) . '</dd></div><div><dt>Verzió</dt><dd>v' . esc_html((string) $book->versionNumber()->value()) . '</dd></div><div><dt>Pénznem</dt><dd>' . esc_html($book->currency()->code()) . '</dd></div><div><dt>Alapárak</dt><dd>' . esc_html((string) $baseCount) . '</dd></div><div><dt>Szabályok száma</dt><dd>' . esc_html((string) count($rules)) . '</dd></div>' . ($variant === 'draft' ? '<div><dt>Utoljára módosítva</dt><dd>' . esc_html($book->updatedAt()->format('Y-m-d H:i')) . '</dd></div>' : '') . '</dl>';
+            if ($book->status()->isActive() && $this->isLocalOnlyTestBook($book)) {
+                echo '<p class="ak-pricebook-warning">Tesztárakat tartalmaz – éles ajánlatadáshoz nem használható.</p>';
+            }
+            if ($isProtected) {
+                echo '<p class="ak-pricebook-protection-help">Ez az árkönyv nem törölhető és közvetlenül nem szerkeszthető. Új piszkozat azonban bármikor készíthető belőle.</p>';
+            }
             if ($isEmptyDraft) {
                 echo '<p class="ak-pricebook-warning">Ez a módosítás nem örökölte az élő árkönyv árait és szabályait.</p>';
             } elseif (! $book->status()->isActive()) {
                 echo '<p class="ak-pricebook-meta">' . esc_html($baseCount === 0 ? 'Nincs megadott alapár.' : $baseCount . ' alapár megadva.') . '</p>';
             }
+            if ($book->status()->isDraft() && $readiness !== null && ! $readiness->ready && $readiness->blockingIssues !== []) {
+                echo '<p class="ak-pricebook-blocker">' . esc_html($this->conciseReadinessBlocker($readiness)) . '</p>';
+            }
+            $deletionBlocker = $book->status()->isDraft() ? $this->draftDeletionBlocker($book, $isProtected) : null;
+            $canDeleteDraft = $book->status()->isDraft() && $deletionBlocker === null && current_user_can(CapabilityManager::DELETE_PRICE_BOOK_DRAFTS);
+            $canCloneDraft = $book->status()->isDraft() && current_user_can(CapabilityManager::CLONE_PRICE_BOOKS);
+            $canProtect = current_user_can(CapabilityManager::PROTECT_PRICE_BOOKS);
+            $showMoreActions = $canProtect || $canDeleteDraft || $canCloneDraft;
             echo '</div><div class="ak-pricebook-entry-actions">';
             if ($book->status()->isActive()) {
-                echo '<a class="button" href="' . esc_url($this->editUrl($book->id())) . '">Részletek megtekintése</a> ';
+                echo '<a class="button button-primary" href="' . esc_url($this->editUrl($book->id())) . '">Árkönyv megnyitása</a> ';
+                if (current_user_can(CapabilityManager::CLONE_PRICE_BOOKS)) {
+                    echo '<form method="post" class="ak-inline-form">';
+                    $this->securityFields('clone_active_price_book');
+                    echo '<input type="hidden" name="submission_token" value="' . esc_attr($this->submissionGuard->issue()) . '">';
+                    echo '<input type="hidden" name="source_price_book_id" value="' . esc_attr((string) $book->id()->toInt()) . '"><input type="hidden" name="expected_source_version" value="' . esc_attr((string) $book->version()->value()) . '">';
+                    echo '<button type="submit" class="button">Új piszkozat készítése ebből</button></form>';
+                }
+            } elseif ($book->status()->isDraft()) {
+                if (current_user_can(CapabilityManager::EDIT_PRICE_BOOKS) && ! $isProtected) {
+                    echo '<a class="button button-primary" href="' . esc_url($this->editUrl($book->id())) . '">Szerkesztés folytatása</a>';
+                } else {
+                    echo '<a class="button" href="' . esc_url($this->editUrl($book->id())) . '">Árkönyv megnyitása</a>';
+                }
+                if ($readiness->ready) {
+                    echo '<span class="ak-status ak-status--ready">Készen áll az aktiválásra</span>';
+                    if (current_user_can(CapabilityManager::ACTIVATE_PRICE_BOOKS) && ! $isProtected) {
+                        echo '<button type="button" class="button" data-ak-confirmation-trigger data-ak-confirmation-target="' . esc_attr($confirmationPrefix . '-activation') . '" aria-expanded="false">Aktiválás</button>';
+                        echo '<section class="ak-pricebook-confirmation" id="' . esc_attr($confirmationPrefix . '-activation') . '" data-ak-confirmation-panel hidden><h4>Árkönyv használatba vétele</h4><p>Biztosan ezt az árkönyvet szeretnéd aktívvá tenni? A jelenleg használt árkönyv automatikusan a korábban használt árkönyvek közé kerül.</p><form method="post">';
+                        $this->securityFields('activate_price_book', $book);
+                        echo '<input type="hidden" name="price_book_id" value="' . esc_attr((string) $book->id()->toInt()) . '"><input type="hidden" name="expected_book_version" value="' . esc_attr((string) $book->version()->value()) . '"><label>A megerősítéshez írd be az árkönyv pontos nevét:<input type="text" name="activation_confirmation" required></label><div class="ak-pricebook-confirmation-actions"><button type="submit" class="button button-primary">Beállítás aktív árkönyvként</button><button type="button" class="button-link" data-ak-confirmation-cancel>Mégse</button></div></form></section>';
+                    }
+                } else {
+                    echo '<span class="ak-status ak-status--not-ready">' . esc_html($isProtected ? 'Védett alapárkönyv' : 'Még nem aktiválható') . '</span>';
+                }
+                if ($deletionBlocker !== null) {
+                    echo '<p class="ak-pricebook-action-help">' . esc_html($deletionBlocker) . '</p>';
+                }
+            } else {
+                echo '<a class="button" href="' . esc_url($this->editUrl($book->id())) . '">Árkönyv megnyitása</a>';
+            }
+            if ($book->status()->isRetired() && current_user_can(CapabilityManager::CLONE_PRICE_BOOKS)) {
                 echo '<form method="post" class="ak-inline-form">';
                 $this->securityFields('clone_active_price_book');
-                echo '<input type="hidden" name="submission_token" value="' . esc_attr($this->submissionGuard->issue()) . '">';
-                echo '<input type="hidden" name="source_price_book_id" value="' . esc_attr((string) $book->id()->toInt()) . '">';
-                echo '<button type="submit" class="button button-primary">Új módosítás indítása</button></form>';
-                echo '<p class="ak-pricebook-action-help">Másolat készül a jelenlegi élő beállításokról, amelyet biztonságosan szerkeszthetsz és tesztelhetsz.</p>';
-            } elseif ($book->status()->isDraft()) {
-                echo '<a class="button button-primary" href="' . esc_url($this->editUrl($book->id())) . '">Szerkesztés folytatása</a>';
-                echo '<form method="post" class="ak-discard-pricebook-form" data-ak-discard-form data-ak-discard-title="' . esc_attr($this->ownerFacingTitle($book, $isEmptyDraft)) . '">';
-                $this->securityFields('discard_draft_price_book', $book);
-                echo '<input type="hidden" name="discard_confirmation" value=""><button type="submit" class="button-link-delete">Módosítás elvetése</button></form>';
-                echo '<p class="ak-pricebook-discard-help">A piszkozat és a benne lévő, még nem aktivált árak és szabályok végleg törlődnek.</p>';
-            } else {
-                echo '<a class="button" href="' . esc_url($this->editUrl($book->id())) . '">Részletek megtekintése</a>';
+                echo '<input type="hidden" name="submission_token" value="' . esc_attr($this->submissionGuard->issue()) . '"><input type="hidden" name="source_price_book_id" value="' . esc_attr((string) $book->id()->toInt()) . '"><input type="hidden" name="expected_source_version" value="' . esc_attr((string) $book->version()->value()) . '"><button type="submit" class="button">Új piszkozat készítése ebből</button></form>';
             }
-            echo '</div><details class="ak-pricebook-technical"><summary>Technikai részletek</summary><dl>';
-            echo '<dt>Tárolt név</dt><dd>' . esc_html($book->label()) . '</dd>';
-            echo '<dt>Belső állapot</dt><dd>' . esc_html($book->status()->code()) . '</dd>';
+            if ($showMoreActions) {
+                echo '<div class="ak-pricebook-more" data-ak-more-actions><button type="button" class="button" data-ak-more-trigger aria-expanded="false" aria-haspopup="menu">További műveletek</button><div class="ak-pricebook-more-menu" data-ak-more-menu role="menu" hidden>';
+                if ($canCloneDraft) {
+                    echo '<form method="post" class="ak-pricebook-more-form">';
+                    $this->securityFields('clone_active_price_book');
+                    echo '<input type="hidden" name="submission_token" value="' . esc_attr($this->submissionGuard->issue()) . '"><input type="hidden" name="source_price_book_id" value="' . esc_attr((string) $book->id()->toInt()) . '"><input type="hidden" name="expected_source_version" value="' . esc_attr((string) $book->version()->value()) . '"><button type="submit" class="button-link" role="menuitem">Új piszkozat készítése ebből</button></form>';
+                }
+                if ($canProtect) {
+                    $protectionAction = $replacesProtectedReference ? 'Védett alap áthelyezése ide' : 'Beállítás védett alapárkönyvként';
+                    echo '<button type="button" class="button-link" role="menuitem" data-ak-confirmation-trigger data-ak-confirmation-target="' . esc_attr($confirmationPrefix . '-protection') . '" aria-expanded="false">' . esc_html($protectionAction) . '</button>';
+                }
+                if ($canDeleteDraft) {
+                    echo '<button type="button" class="button-link-delete" role="menuitem" data-ak-confirmation-trigger data-ak-confirmation-target="' . esc_attr($confirmationPrefix . '-deletion') . '" aria-expanded="false">Piszkozat törlése</button>';
+                }
+                echo '</div></div>';
+            }
+            if ($canDeleteDraft) {
+                echo '<section class="ak-pricebook-confirmation ak-pricebook-confirmation--danger" id="' . esc_attr($confirmationPrefix . '-deletion') . '" data-ak-confirmation-panel hidden><h4>Piszkozat törlése</h4><p>A piszkozat és a hozzá tartozó felvásárlási szabályok véglegesen törlődnek. Ez a művelet nem vonható vissza.</p><form method="post">';
+                $this->securityFields('discard_draft_price_book', $book);
+                echo '<label>A megerősítéshez írd be az árkönyv pontos nevét:<input type="text" name="discard_confirmation" required></label><div class="ak-pricebook-confirmation-actions"><button type="submit" class="button-link-delete">Piszkozat végleges törlése</button><button type="button" class="button-link" data-ak-confirmation-cancel>Mégse</button></div></form></section>';
+            }
+            if ($canProtect) {
+                $protectionAction = $replacesProtectedReference ? 'Védett alap áthelyezése ide' : 'Beállítás védett alapárkönyvként';
+                echo '<section class="ak-pricebook-confirmation" id="' . esc_attr($confirmationPrefix . '-protection') . '" data-ak-confirmation-panel hidden><h4>Védett alapárkönyv beállítása</h4><p>Ez lesz a stabil kiinduló árkönyv. Nem lehet majd törölni vagy közvetlenül szerkeszteni, de új piszkozat bármikor készíthető belőle.</p>';
+                if ($replacesProtectedReference) {
+                    echo '<p>A jelenlegi védett alapárkönyv védelme megszűnik.</p>';
+                }
+                echo '<form method="post">';
+                $this->securityFields('protect_price_book', $book);
+                echo '<input type="hidden" name="price_book_id" value="' . esc_attr((string) $book->id()->toInt()) . '"><label>A megerősítéshez írd be az árkönyv pontos nevét:<input type="text" name="protection_confirmation" required></label><div class="ak-pricebook-confirmation-actions"><button type="submit" class="button">Beállítás védett alapárkönyvként</button><button type="button" class="button-link" data-ak-confirmation-cancel>Mégse</button></div></form></section>';
+            }
+            echo '</div><details class="ak-pricebook-technical"><summary>Részletes adatok</summary><dl>';
+            echo '<dt>Árkönyv neve</dt><dd>' . esc_html($book->label()) . '</dd>';
+            echo '<dt>Állapot</dt><dd>' . esc_html($this->statusLabel($book)) . '</dd>';
             echo '<dt>Verzió</dt><dd>v' . esc_html((string) $book->versionNumber()->value()) . '</dd>';
             echo '<dt>Azonosító</dt><dd>' . esc_html((string) $book->id()->toInt()) . '</dd>';
             echo '<dt>Pénznem</dt><dd>' . esc_html($book->currency()->code()) . '</dd>';
             echo '<dt>Szabályok száma</dt><dd>' . esc_html((string) count($rules)) . '</dd>';
-            echo '<dt>Frissítve</dt><dd>' . esc_html($book->updatedAt()->format('Y-m-d H:i')) . '</dd>';
+            echo '<dt>Aktiválhatóság</dt><dd>' . esc_html($readiness !== null ? ($readiness->ready ? 'Aktiválható' : 'Még nem aktiválható') : 'Nem értelmezhető') . '</dd>';
+            if ($readiness !== null && $readiness->blockingIssues !== []) {
+                echo '<dt>Az aktiválás feltételei</dt><dd><ul class="ak-pricebook-readiness-details">';
+                foreach ($readiness->blockingIssues as $issue) {
+                    echo '<li>' . esc_html($this->readinessMessage((string) $issue)) . '</li>';
+                }
+                echo '</ul></dd>';
+            }
+            echo '<dt>Létrehozva</dt><dd>' . esc_html($book->createdAt()->format('Y-m-d H:i')) . '</dd>';
+            echo '<dt>Utoljára módosítva</dt><dd>' . esc_html($book->updatedAt()->format('Y-m-d H:i')) . '</dd>';
             echo '</dl></details></article>';
         }
         if ($books === []) {
             echo '<p class="ak-pricebook-empty">' . esc_html($emptyMessage) . '</p>';
         }
         echo '</div>';
+    }
+
+    private function draftDeletionBlocker(PriceBook $book, bool $isProtected): ?string
+    {
+        if ($isProtected) return 'A védett alapárkönyv nem törölhető.';
+        if ($this->lifecycle?->hasEverBeenActive($book->id())) return 'Ezt az árkönyvet korábban már használták, ezért az előzmények megőrzése miatt nem törölhető.';
+        if ($this->lifecycle?->hasLifecycleDependencies($book->id())) return 'Az árkönyvre mentett felvásárlási igény hivatkozik.';
+        return null;
     }
 
     private function ownerFacingTitle(PriceBook $book, bool $isEmptyDraft): string
@@ -398,6 +602,8 @@ final class PriceBooksPage
             return;
         }
         $rules = $this->rules->listForPriceBook($id);
+        $isProtected = $this->lifecycle?->isProtected($id) ?? false;
+        $canEdit = current_user_can(CapabilityManager::EDIT_PRICE_BOOKS);
         echo '<p><a href="' . esc_url(admin_url('admin.php?page=' . self::SLUG)) . '">← Vissza az árkönyvekhez</a></p>';
         $lifecycleText = $book->status()->isDraft()
             ? 'Szerkeszthető piszkozat. Az itt mentett változtatások aktiválásig nem érintik a nyilvános felvásárlási árazást.'
@@ -408,8 +614,11 @@ final class PriceBooksPage
             echo '<div class="notice notice-warning inline"><p>Üres piszkozat – nem örökölte az aktív árkönyv árait.</p></div>';
         }
 
-        if (! $book->status()->isDraft()) {
-            echo '<div class="notice notice-info inline"><p>Ez az árkönyv csak olvasható. Aktív vagy archivált árkönyv és annak szabályai nem módosíthatók.</p></div>';
+        if (! $book->status()->isDraft() || $isProtected || ! $canEdit) {
+            $message = $isProtected
+                ? 'Ez az árkönyv nem törölhető és közvetlenül nem szerkeszthető. Új piszkozat azonban bármikor készíthető belőle.'
+                : (! $book->status()->isDraft() ? 'Az aktív és a korábban használt árkönyvek nem szerkeszthetők közvetlenül. Új piszkozathoz készíts másolatot.' : 'Ezt az árkönyvet csak megtekintheted.');
+            echo '<div class="notice notice-info inline"><p>' . esc_html($message) . '</p></div>';
             if ($tab === self::TAB_BASE_PRICES) {
                 $this->renderBasePriceMatrix($book, $rules, true, $tab);
             } else {
@@ -558,6 +767,7 @@ final class PriceBooksPage
             $rulesByCode[$rule->definition()->code->code()] = $rule;
         }
         $questions = $this->questionnaire->conditionEditorQuestions();
+        $componentMetadata = $this->questionnaire->serviceHistoryComponentRuleMetadata();
         $summary = ['total' => 0, 'configured' => 0, 'manual' => 0, 'reject' => 0];
         foreach ($questions as $question) {
             foreach ($question['options'] as $option) {
@@ -567,9 +777,8 @@ final class PriceBooksPage
                 ++$summary['total'];
                 $rule = $rulesByCode[SaveDraftQuestionnaireConditionsHandler::ruleCode($book->id()?->toInt() ?? 0, $model->modelKey, $question['question_key'], $option['answer_key'])] ?? null;
                 $legacy = $rulesByCode[SaveDraftQuestionnaireConditionsHandler::legacyRuleCode($book->id()?->toInt() ?? 0, $question['question_key'], $option['answer_key'])] ?? null;
-                if ($rule === null) { $rule = $legacy; }
-                $action = $this->conditionAction($rule);
-                if ($action !== SaveDraftQuestionnaireConditionsHandler::ACTION_NONE) {
+                $action = $rule === null ? SaveDraftQuestionnaireConditionsHandler::ACTION_SYSTEM_DEFAULT : $this->conditionAction($rule);
+                if ($action !== SaveDraftQuestionnaireConditionsHandler::ACTION_SYSTEM_DEFAULT) {
                     ++$summary['configured'];
                 }
                 if ($action === SaveDraftQuestionnaireConditionsHandler::ACTION_MANUAL_REVIEW) {
@@ -613,16 +822,19 @@ final class PriceBooksPage
             echo '<div class="ak-condition-rows">';
             foreach ($question['options'] as $option) {
                 if (! $option['configurable']) {
-                    echo '<div class="ak-condition-row ak-condition-system"><div><strong>' . esc_html($option['label']) . '</strong><p><span class="ak-system-label">Rendszerszabály</span> ' . esc_html($option['system_outcome'] ?? '') . '</p></div></div>';
+                    $isSafety = ($option['editor_kind'] ?? '') === 'safety';
+                    $label = $isSafety ? 'Rögzített biztonsági szabály' : 'Tájékoztató válasz';
+                    $class = $isSafety ? ' ak-condition-system--safety' : ' ak-condition-system--informational';
+                    echo '<div class="ak-condition-row ak-condition-system' . esc_attr($class) . '"><div><strong>' . esc_html($option['label']) . '</strong><p><span class="ak-system-label">' . esc_html($label) . '</span> ' . esc_html($option['system_outcome'] ?? '') . '</p></div></div>';
                     continue;
                 }
                 $rule = $rulesByCode[SaveDraftQuestionnaireConditionsHandler::ruleCode($book->id()?->toInt() ?? 0, $model->modelKey, $question['question_key'], $option['answer_key'])] ?? null;
                 $legacy = $rulesByCode[SaveDraftQuestionnaireConditionsHandler::legacyRuleCode($book->id()?->toInt() ?? 0, $question['question_key'], $option['answer_key'])] ?? null;
-                $action = $this->conditionAction($rule);
+                $action = $rule === null ? SaveDraftQuestionnaireConditionsHandler::ACTION_SYSTEM_DEFAULT : $this->conditionAction($rule);
                 $value = $this->conditionValue($rule, $action);
                 echo '<div class="ak-condition-row" data-ak-condition-row data-ak-condition-original-action="' . esc_attr($action) . '" data-ak-condition-original-value="' . esc_attr($value === null ? '' : (string) $value) . '"><div class="ak-condition-answer"><strong>' . esc_html($option['label']) . '</strong></div>';
                 if ($readOnly) {
-                    echo '<div class="ak-condition-current">' . esc_html($this->conditionActionLabel($action, $value)) . ($rule !== null ? '<p>Modellspecifikus beállítás</p>' : ($legacy !== null ? '<p>Örökölt globális szabály: ' . esc_html($this->conditionActionLabel($this->conditionAction($legacy), $this->conditionValue($legacy, $this->conditionAction($legacy)))) . '</p>' : '<p>Nincs beállított levonás</p>')) . '</div>';
+                    echo '<div class="ak-condition-current">' . esc_html($this->conditionActionLabel($action, $value)) . '<p>' . esc_html($this->conditionSourceLabel($rule, $legacy, $question['question_key'], $option['answer_key'])) . '</p></div>';
                 } else {
                     $name = 'questionnaire_conditions[' . $question['question_key'] . '][' . $option['answer_key'] . ']';
                     $needsValue = in_array($action, [SaveDraftQuestionnaireConditionsHandler::ACTION_FIXED, SaveDraftQuestionnaireConditionsHandler::ACTION_PERCENTAGE], true);
@@ -632,11 +844,21 @@ final class PriceBooksPage
                     }
                     echo '</select></label>';
                     echo '<label class="ak-condition-value" data-ak-condition-value ' . ($needsValue ? '' : 'hidden') . '>Érték<div class="ak-price-input"><input type="number" min="0" max="' . esc_attr($action === SaveDraftQuestionnaireConditionsHandler::ACTION_PERCENTAGE ? '100' : (string) PHP_INT_MAX) . '" step="1" inputmode="numeric" name="' . esc_attr($name) . '[value]" value="' . esc_attr($value === null ? '' : (string) $value) . '" ' . ($needsValue ? '' : 'disabled') . ' data-ak-condition-value-input><span data-ak-condition-unit>' . esc_html($action === SaveDraftQuestionnaireConditionsHandler::ACTION_PERCENTAGE ? '%' : 'Ft') . '</span></div></label>';
-                    if ($legacy !== null && $rule === null) {
-                        echo '<p class="ak-condition-inherited">Örökölt globális szabály: ' . esc_html($this->conditionActionLabel($this->conditionAction($legacy), $this->conditionValue($legacy, $this->conditionAction($legacy)))) . '</p>';
-                    }
+                    echo '<p class="ak-condition-inherited">' . esc_html($this->conditionSourceLabel($rule, $legacy, $question['question_key'], $option['answer_key'])) . '</p>';
                 }
                 echo '</div>';
+                if ($question['question_key'] === 'service_history' && $option['answer_key'] !== 'none_known') {
+                    $this->renderServiceHistoryComponentRules(
+                        $book,
+                        $model->modelKey,
+                        $option,
+                        $rule,
+                        $legacy,
+                        $componentMetadata['components'],
+                        $rulesByCode,
+                        $readOnly
+                    );
+                }
             }
             echo '</div></div>';
         }
@@ -687,7 +909,11 @@ final class PriceBooksPage
             echo '<div class="notice notice-info inline"><p>Ehhez a modellhez még nincs akkumulátorszabály beállítva.</p></div>';
         }
         if ($legacy !== []) {
-            echo '<div class="notice notice-warning inline"><p><strong>Örökölt globális szabály</strong></p><ul>';
+            echo '<div class="notice notice-warning inline"><p><strong>Örökölt globális szabály</strong></p>';
+            if ($bands === []) {
+                echo '<p>Ehhez a modellhez nincs külön akkumulátorsáv. Az alábbi globális szabályok ezért erre a modellre is érvényesek.</p>';
+            }
+            echo '<ul>';
             foreach ($legacy as $rule) {
                 echo '<li>' . esc_html($this->batteryRuleDescription($rule)) . '</li>';
             }
@@ -868,11 +1094,11 @@ final class PriceBooksPage
             }
             echo '</ul>';
         }
-        if ($report->ready) {
+        if ($report->ready && current_user_can(CapabilityManager::ACTIVATE_PRICE_BOOKS)) {
             echo '<div class="notice notice-warning inline"><p>Az aktiválás után az árkönyv és szabályai nem szerkeszthetők. Ha már van aktív HUF árkönyv, az automatikusan archiválásra kerül.</p></div>';
             echo '<form method="post" class="ak-activation-form">';
             $this->securityFields('activate_price_book', $book);
-            $this->textField('activation_confirmation', 'Megerősítés: AKTIVÁLOM', '', true);
+            $this->textField('activation_confirmation', 'Megerősítés: írd be pontosan ezt a nevet: ' . $book->label(), '', true);
             submit_button('Árkönyv aktiválása', 'primary');
             echo '</form>';
         } else {
@@ -1307,7 +1533,11 @@ final class PriceBooksPage
 
     private function renderTabs(int $bookId, string $tab): void
     {
-        echo '<nav class="nav-tab-wrapper"><a class="nav-tab" href="' . esc_url(admin_url('admin.php?page=' . DiagnosticsPage::SLUG)) . '">Diagnosztika</a><a class="nav-tab' . ($bookId === 0 ? ' nav-tab-active' : '') . '" href="' . esc_url(admin_url('admin.php?page=' . self::SLUG)) . '">Árkönyvek</a>';
+        echo '<nav class="nav-tab-wrapper">';
+        if (current_user_can(CapabilityManager::VIEW_DIAGNOSTICS)) {
+            echo '<a class="nav-tab" href="' . esc_url(admin_url('admin.php?page=' . DiagnosticsPage::SLUG)) . '">Diagnosztika</a>';
+        }
+        echo '<a class="nav-tab' . ($bookId === 0 ? ' nav-tab-active' : '') . '" href="' . esc_url(admin_url('admin.php?page=' . self::SLUG)) . '">Árkönyvek</a>';
         if ($bookId > 0) {
             foreach ([self::TAB_BASE_PRICES => 'Alapárak', self::TAB_CONDITIONS => 'Állapotlevonások', self::TAB_BATTERY => 'Akkumulátor', self::TAB_OFFER_MODES => 'Ajánlattípusok', self::TAB_PREVIEW => 'Tesztkalkulátor'] as $value => $label) {
                 $status = '';
@@ -1321,7 +1551,7 @@ final class PriceBooksPage
     {
         try {
             $resolved = $this->activePriceBookResolver->resolveForCurrencyAt(new CurrencyCode('HUF'), $this->clock->now());
-            echo '<div class="notice notice-success inline"><p><strong>Élő HUF árkönyv:</strong> ' . esc_html($this->ownerFacingTitle($resolved->priceBook, false)) . '.</p></div>';
+        echo '<div class="notice notice-success inline"><p><strong>Jelenleg használt HUF árkönyv:</strong> ' . esc_html($this->ownerFacingTitle($resolved->priceBook, false)) . '.</p></div>';
         } catch (NoActivePriceBookException $exception) {
             echo '<div class="notice notice-warning inline"><p>Jelenleg nincs aktív HUF árkönyv. A webshop felvásárlási kalkulátora ezért még nem használhat élő árazást.</p></div>';
         } catch (MultipleActivePriceBooksException $exception) {
@@ -1333,6 +1563,7 @@ final class PriceBooksPage
     private function conditionActions(): array
     {
         return [
+            SaveDraftQuestionnaireConditionsHandler::ACTION_SYSTEM_DEFAULT => 'Rendszer alapértelmezése',
             SaveDraftQuestionnaireConditionsHandler::ACTION_NONE => 'Nincs változás',
             SaveDraftQuestionnaireConditionsHandler::ACTION_FIXED => 'Fix levonás',
             SaveDraftQuestionnaireConditionsHandler::ACTION_PERCENTAGE => 'Százalékos levonás',
@@ -1341,12 +1572,85 @@ final class PriceBooksPage
         ];
     }
 
+    /** @return array<string,string> */
+    private function serviceHistoryComponentActions(bool $allowsMonetary): array
+    {
+        $actions = [
+            SaveDraftQuestionnaireConditionsHandler::ACTION_INHERIT => 'Örökli a szervizelőzmény szabályát',
+            SaveDraftQuestionnaireConditionsHandler::ACTION_NONE => 'Nincs változás',
+        ];
+        if ($allowsMonetary) {
+            $actions[SaveDraftQuestionnaireConditionsHandler::ACTION_FIXED] = 'Fix levonás';
+            $actions[SaveDraftQuestionnaireConditionsHandler::ACTION_PERCENTAGE] = 'Százalékos levonás';
+        }
+        $actions[SaveDraftQuestionnaireConditionsHandler::ACTION_MANUAL_REVIEW] = 'Személyes bevizsgálás';
+        $actions[SaveDraftQuestionnaireConditionsHandler::ACTION_HARD_REJECT] = 'Nem felvásárolható';
+        return $actions;
+    }
+
+    /**
+     * @param array{answer_key:string,label:string} $serviceHistory
+     * @param list<array{component_key:string,label:string,allows_monetary:bool}> $components
+     * @param array<string,PricingRule> $rulesByCode
+     */
+    private function renderServiceHistoryComponentRules(PriceBook $book, string $modelKey, array $serviceHistory, ?PricingRule $serviceRule, ?PricingRule $legacyServiceRule, array $components, array $rulesByCode, bool $readOnly): void
+    {
+        echo '<details class="ak-service-history-components" data-ak-service-history-components><summary>Alkatrészenkénti szabályok</summary><p class="description">A kiválasztott alkatrész ennél a szervizelőzménynél felülírhatja az örökölt következményt.</p><div class="ak-service-history-component-list">';
+        foreach ($components as $component) {
+            $rule = $rulesByCode[SaveDraftQuestionnaireConditionsHandler::componentRuleCode($book->id()?->toInt() ?? 0, $modelKey, $serviceHistory['answer_key'], $component['component_key'])] ?? null;
+            $action = $rule === null ? SaveDraftQuestionnaireConditionsHandler::ACTION_INHERIT : $this->conditionAction($rule);
+            $value = $this->conditionValue($rule, $action);
+            $name = 'service_history_components[' . $serviceHistory['answer_key'] . '][' . $component['component_key'] . ']';
+            $needsValue = in_array($action, [SaveDraftQuestionnaireConditionsHandler::ACTION_FIXED, SaveDraftQuestionnaireConditionsHandler::ACTION_PERCENTAGE], true);
+            echo '<article class="ak-service-history-component-row" data-ak-condition-row data-ak-condition-component="1" data-ak-condition-original-action="' . esc_attr($action) . '" data-ak-condition-original-value="' . esc_attr($value === null ? '' : (string) $value) . '"><div class="ak-service-history-component-copy"><strong>' . esc_html($component['label']) . '</strong><p class="ak-condition-inherited">' . esc_html($this->inheritedServiceHistoryResult($serviceRule, $legacyServiceRule, $serviceHistory['answer_key'])) . '</p></div>';
+            if ($readOnly) {
+                echo '<div class="ak-condition-current">' . esc_html($this->serviceHistoryComponentActionLabel($action, $value)) . '<p>' . esc_html($rule === null ? $this->inheritedServiceHistoryResult($serviceRule, $legacyServiceRule, $serviceHistory['answer_key']) : 'Forrás: Modell-specifikus alkatrészszabály') . '</p></div></article>';
+                continue;
+            }
+            echo '<label class="ak-condition-action">Művelet<select name="' . esc_attr($name) . '[action]" data-ak-condition-action>';
+            foreach ($this->serviceHistoryComponentActions($component['allows_monetary']) as $actionKey => $actionLabel) {
+                echo '<option value="' . esc_attr($actionKey) . '" ' . selected($action, $actionKey, false) . '>' . esc_html($actionLabel) . '</option>';
+            }
+            echo '</select></label>';
+            if ($component['allows_monetary']) {
+                echo '<label class="ak-condition-value" data-ak-condition-value ' . ($needsValue ? '' : 'hidden') . '>Érték<div class="ak-price-input"><input type="number" min="1" max="' . esc_attr($action === SaveDraftQuestionnaireConditionsHandler::ACTION_PERCENTAGE ? '100' : (string) PHP_INT_MAX) . '" step="1" inputmode="numeric" name="' . esc_attr($name) . '[value]" value="' . esc_attr($value === null ? '' : (string) $value) . '" ' . ($needsValue ? '' : 'disabled') . ' data-ak-condition-value-input><span data-ak-condition-unit>' . esc_html($action === SaveDraftQuestionnaireConditionsHandler::ACTION_PERCENTAGE ? '%' : 'Ft') . '</span></div></label>';
+            }
+            echo '</article>';
+        }
+        echo '</div></details>';
+    }
+
+    private function inheritedServiceHistoryResult(?PricingRule $modelRule, ?PricingRule $legacyRule, string $answerKey): string
+    {
+        $rule = $modelRule ?? $legacyRule;
+        if ($rule !== null) {
+            $action = $this->conditionAction($rule);
+            return 'Jelenlegi örökölt eredmény: ' . $this->conditionActionLabel($action, $this->conditionValue($rule, $action)) . '.';
+        }
+        $default = (new SystemDefaultQuestionnairePolicy())->entryFor('service_history', $answerKey);
+        $action = match ($default['default_action'] ?? PricingRuleKind::NO_CHANGE) {
+            PricingRuleKind::MANUAL_REVIEW => SaveDraftQuestionnaireConditionsHandler::ACTION_MANUAL_REVIEW,
+            PricingRuleKind::HARD_REJECT => SaveDraftQuestionnaireConditionsHandler::ACTION_HARD_REJECT,
+            default => SaveDraftQuestionnaireConditionsHandler::ACTION_NONE,
+        };
+        return 'Jelenlegi örökölt eredmény: ' . $this->conditionActionLabel($action, null) . '.';
+    }
+
+    private function serviceHistoryComponentActionLabel(string $action, ?int $value): string
+    {
+        if ($action === SaveDraftQuestionnaireConditionsHandler::ACTION_INHERIT) {
+            return 'Örökli a szervizelőzmény szabályát';
+        }
+        return $this->conditionActionLabel($action, $value);
+    }
+
     private function conditionAction(?PricingRule $rule): string
     {
         if ($rule === null) {
             return SaveDraftQuestionnaireConditionsHandler::ACTION_NONE;
         }
         return match ($rule->definition()->kind->code()) {
+            PricingRuleKind::NO_CHANGE => SaveDraftQuestionnaireConditionsHandler::ACTION_NONE,
             PricingRuleKind::FIXED_DEDUCTION => SaveDraftQuestionnaireConditionsHandler::ACTION_FIXED,
             PricingRuleKind::MULTIPLIER => SaveDraftQuestionnaireConditionsHandler::ACTION_PERCENTAGE,
             PricingRuleKind::MANUAL_REVIEW => SaveDraftQuestionnaireConditionsHandler::ACTION_MANUAL_REVIEW,
@@ -1377,6 +1681,25 @@ final class PriceBooksPage
             return $label;
         }
         return $label . ': ' . number_format_i18n($value) . ($action === SaveDraftQuestionnaireConditionsHandler::ACTION_PERCENTAGE ? '%' : ' Ft');
+    }
+
+    private function conditionSourceLabel(?PricingRule $modelRule, ?PricingRule $globalRule, string $questionKey, string $answerKey): string
+    {
+        if ($modelRule !== null) {
+            return 'Forrás: Modell-specifikus szabály · ' . $this->conditionActionLabel($this->conditionAction($modelRule), $this->conditionValue($modelRule, $this->conditionAction($modelRule)));
+        }
+        if ($globalRule !== null) {
+            return 'Forrás: Globális árkönyvszabály · ' . $this->conditionActionLabel($this->conditionAction($globalRule), $this->conditionValue($globalRule, $this->conditionAction($globalRule)));
+        }
+        $entry = (new SystemDefaultQuestionnairePolicy())->entryFor($questionKey, $answerKey);
+        if ($entry === null || $entry['default_action'] === PricingRuleKind::NO_CHANGE) {
+            return 'Forrás: Rendszer alapértelmezése · Nincs változás';
+        }
+        return 'Forrás: Rendszer alapértelmezése · ' . $this->conditionActionLabel(match ($entry['default_action']) {
+            PricingRuleKind::MANUAL_REVIEW => SaveDraftQuestionnaireConditionsHandler::ACTION_MANUAL_REVIEW,
+            PricingRuleKind::HARD_REJECT => SaveDraftQuestionnaireConditionsHandler::ACTION_HARD_REJECT,
+            default => SaveDraftQuestionnaireConditionsHandler::ACTION_NONE,
+        }, null);
     }
 
     /** @return array<string,string> */
@@ -1540,6 +1863,23 @@ final class PriceBooksPage
 
     private function renderNotice(): void
     {
+        $lifecycle = get_transient('ak_buyback_lifecycle_notice_' . get_current_user_id());
+        if (is_array($lifecycle)) {
+            delete_transient('ak_buyback_lifecycle_notice_' . get_current_user_id());
+            $message = match ($lifecycle['type'] ?? '') {
+                'activation' => 'Az új árkönyv használatba került: ' . (string) $lifecycle['new_label'] . '. A korábbi aktív árkönyv átkerült a korábban használt árkönyvek közé.',
+                'deletion' => 'A piszkozatot és a hozzá tartozó ' . (string) $lifecycle['deleted_rule_count'] . ' szabályt véglegesen töröltük.',
+                'protection' => (string) $lifecycle['label'] . ' mostantól védett alapárkönyv.',
+                'clone' => 'Az új piszkozat elkészült: ' . (string) $lifecycle['label'] . ' (azonosító: ' . (string) $lifecycle['id'] . ').',
+                default => '',
+            };
+            if ($message !== '') {
+                echo '<div class="notice notice-success is-dismissible"><p>' . esc_html($message) . '</p></div>';
+                if (($lifecycle['type'] ?? '') === 'clone') {
+                    return;
+                }
+            }
+        }
         if (! isset($_GET['ak_result'])) {
             return;
         }
@@ -1560,6 +1900,16 @@ final class PriceBooksPage
             $exception instanceof PriceBookHasBusinessReferencesException => 'A módosítás üzleti vagy történeti hivatkozást tartalmaz, ezért nem vethető el.',
             $exception instanceof \InvalidArgumentException => 'A végleges elvetést meg kell erősíteni.',
             default => 'A módosítás elvetése nem sikerült. Kérjük, próbáld újra.',
+        };
+    }
+
+    private function cloneErrorMessage(\Throwable $exception): string
+    {
+        return match (true) {
+            $exception instanceof StaleAggregateVersionException => 'Az árkönyv időközben megváltozott. Frissítsd az oldalt, majd próbáld újra.',
+            $exception instanceof PriceBookNotFoundException => 'A kiválasztott árkönyv már nem található.',
+            $exception instanceof \InvalidArgumentException => 'A másolási kérés érvénytelen.',
+            default => 'Az új piszkozat elkészítése nem sikerült. Kérjük, próbáld újra.',
         };
     }
 
@@ -1627,9 +1977,9 @@ final class PriceBooksPage
     private function statusLabel(PriceBook $book): string
     {
         return match ($book->status()->code()) {
-            PriceBookStatus::DRAFT => 'Szerkesztés alatt',
-            PriceBookStatus::ACTIVE => 'Élő',
-            PriceBookStatus::RETIRED => 'Korábbi verzió',
+            PriceBookStatus::DRAFT => 'Piszkozat',
+            PriceBookStatus::ACTIVE => 'Aktív',
+            PriceBookStatus::RETIRED => 'Korábbi',
             default => $book->status()->code(),
         };
     }
