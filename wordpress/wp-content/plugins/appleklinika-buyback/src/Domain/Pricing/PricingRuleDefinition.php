@@ -24,7 +24,8 @@ final class PricingRuleDefinition
         public readonly RulePriority $priority,
         public readonly bool $enabled,
         public readonly ?string $publicLabel,
-        public readonly ?string $internalNote
+        public readonly ?string $internalNote,
+        public readonly ?string $affectedComponentKey = null
     ) {
         if ($category !== 'iphone') {
             throw new InvalidValueObjectException('Phase 2A pricing rules are restricted to iPhone.');
@@ -40,6 +41,11 @@ final class PricingRuleDefinition
 
         if ($amount !== null && $amount->currency() !== 'HUF') {
             throw new InvalidValueObjectException('Phase 2A pricing amounts must use HUF.');
+        }
+
+        if ($affectedComponentKey !== null
+            && ($affectedComponentKey === '' || strlen($affectedComponentKey) > 64 || preg_match('/^[a-z0-9_]+$/', $affectedComponentKey) !== 1)) {
+            throw new InvalidValueObjectException('Affected component key is invalid.');
         }
 
         RuleShapeValidator::assertValid($this);

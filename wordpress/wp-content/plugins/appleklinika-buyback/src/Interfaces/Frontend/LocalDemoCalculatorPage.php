@@ -33,6 +33,7 @@ final class LocalDemoCalculatorPage
     private const NONCE_NAME = 'ak_buyback_local_demo_nonce';
     private const SUBMISSION_NONCE_ACTION = 'ak_buyback_public_request_submit';
     private const SUBMISSION_NONCE_NAME = 'ak_buyback_public_request_nonce';
+    private const SUBMISSION_ERROR_TRANSIENT_PREFIX = 'ak_buyback_submission_error_';
 
     public function __construct(
         private readonly RepositoryActivePriceBookResolver $resolver,
@@ -52,12 +53,24 @@ final class LocalDemoCalculatorPage
         add_shortcode('appleklinika_buyback_demo', [$this, 'render']);
         add_action('wp_enqueue_scripts', [$this, 'enqueue']);
         add_filter('body_class', [$this, 'bodyClass']);
+        add_action('template_redirect', [$this, 'disablePageCache'], 0);
         add_action('template_redirect', [$this, 'handleSubmission']);
     }
 
     public function registerMailTransport(): void
     {
         $this->mailer?->register();
+    }
+
+    /**
+     * The public page contains WordPress nonces, so a cached document can
+     * otherwise hand a later visitor an expired form token.
+     */
+    public function disablePageCache(): void
+    {
+        if (is_page(WordPressLocalDemoPageGateway::SLUG)) {
+            nocache_headers();
+        }
     }
 
     /** @param list<string> $classes @return list<string> */
@@ -93,7 +106,7 @@ final class LocalDemoCalculatorPage
 
         $nonce = sanitize_text_field((string) wp_unslash($_POST[self::SUBMISSION_NONCE_NAME] ?? ''));
         if (! wp_verify_nonce($nonce, self::SUBMISSION_NONCE_ACTION)) {
-            $this->redirectWithSubmissionError('A biztonsági ellenőrzés sikertelen. Frissítsd az oldalt, majd számold újra az ajánlatot.');
+            $this->redirectWithSubmissionError('A munkamenet lejárt. Frissítsd az oldalt, majd próbáld újra.');
         }
         if (trim((string) wp_unslash($_POST['website'] ?? '')) !== '') {
             $this->redirectWithSubmissionError('A felvásárlási igény nem küldhető el.');
@@ -148,8 +161,9 @@ final class LocalDemoCalculatorPage
 
     private function redirectWithSubmissionError(string $message): never
     {
-        set_transient('ak_buyback_submission_error_' . wp_generate_uuid4(), $message, MINUTE_IN_SECONDS);
-        wp_safe_redirect(add_query_arg('ak_buyback_submission_error', rawurlencode($message), get_permalink()));
+        $token = wp_generate_uuid4();
+        set_transient(self::SUBMISSION_ERROR_TRANSIENT_PREFIX . $token, $message, MINUTE_IN_SECONDS);
+        wp_safe_redirect(add_query_arg('ak_buyback_submission_error', rawurlencode($token), get_permalink()));
         exit;
     }
 
@@ -177,7 +191,7 @@ final class LocalDemoCalculatorPage
                 $catalog
             );
             $state = $this->requestState($resolved->supportedConfigurations, $catalog);
-            $submissionError = sanitize_text_field((string) ($_GET['ak_buyback_submission_error'] ?? ''));
+            $submissionError = $this->consumeSubmissionError();
         } catch (\Throwable $exception) {
             return '<div class="ak-buyback-demo"><div class="ak-buyback-demo__notice"><strong>FELVÁSÁRLÁSI KALKULÁTOR</strong><p>'
                 . esc_html($this->publicAvailabilityMessage($exception))
@@ -212,7 +226,7 @@ final class LocalDemoCalculatorPage
                     <?php foreach ($state['errors'] as $error) : ?><p><?php echo esc_html($error); ?></p><?php endforeach; ?>
                 </div>
             <?php endif; ?>
-            <?php if ($submissionError !== '') : ?><div class="ak-buyback-demo__errors" role="alert"><strong>Nem sikerült elküldeni az igényt.</strong><p><?php echo esc_html($submissionError); ?></p></div><?php endif; ?>
+            <?php if ($submissionError !== '') : ?><div class="ak-buyback-demo__errors" role="alert"><strong>Nem sikerült elküldeni az igényt.</strong><p><?php echo esc_html($submissionError); ?></p><p><a class="ak-buyback-demo__secondary ak-buyback-demo__primary--link" href="<?php echo esc_url(get_permalink()); ?>">Újraindítás</a></p></div><?php endif; ?>
 
             <form class="ak-buyback-demo__form" method="post" novalidate data-demo-form>
                 <?php wp_nonce_field(self::NONCE_ACTION, self::NONCE_NAME); ?>
@@ -321,7 +335,7 @@ final class LocalDemoCalculatorPage
             'show_results' => false,
         ];
 
-        if (strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) !== 'POST') {
+        if (strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) !== 'POST' || (string) ($_POST['ak_demo_action'] ?? '') !== 'calculate') {
             return $state;
         }
 
@@ -352,7 +366,7 @@ final class LocalDemoCalculatorPage
             $state['panel'] = $state['model_key'] === '' ? 'model' : 'configuration';
         }
 
-        if (! $this->colorExists($catalog, $state['model_key'], $state['color_key'])) {
+        if ($state['color_key'] !== '' && ! $this->colorExists($catalog, $state['model_key'], $state['color_key'])) {
             $state['errors'][] = 'Válassz az ehhez a modellhez elérhető színek közül.';
             $state['panel'] = $state['model_key'] === '' ? 'model' : 'configuration';
         }
@@ -375,6 +389,20 @@ final class LocalDemoCalculatorPage
         }
 
         return $state;
+    }
+
+    private function consumeSubmissionError(): string
+    {
+        $token = sanitize_text_field((string) ($_GET['ak_buyback_submission_error'] ?? ''));
+        if (preg_match('/^[a-f0-9-]{36}$/', $token) !== 1) {
+            return '';
+        }
+
+        $key = self::SUBMISSION_ERROR_TRANSIENT_PREFIX . $token;
+        $message = get_transient($key);
+        delete_transient($key);
+
+        return is_string($message) ? $message : '';
     }
 
     /** @param list<\AppleKlinika\Buyback\Domain\Pricing\SupportedPriceConfiguration> $configurations */
@@ -414,7 +442,7 @@ final class LocalDemoCalculatorPage
                     <span class="ak-buyback-demo__entry-family-arrow" aria-hidden="true">→</span>
                 </button>
             </div>
-            <p class="ak-buyback-demo__entry-coming">További Apple készüléktípusok támogatása később érkezik.</p>
+            <p class="ak-buyback-demo__entry-coming">Jelenleg iPhone készülék felvásárlásában tudunk segíteni.</p>
             <div class="ak-buyback-demo__entry-benefits" aria-label="A felvásárlás előnyei">
                 <article><h3>Gyors előzetes ajánlat</h3><p>Néhány kérdés alapján azonnal láthatod a lehetséges összegeket.</p></article>
                 <article><h3>Átlátható állapotfelmérés</h3><p>Lépésről lépésre megadhatod a készülék állapotát.</p></article>
@@ -431,7 +459,10 @@ final class LocalDemoCalculatorPage
         <section class="ak-buyback-demo__panel" data-demo-panel="model" data-step-title="Modell kiválasztása" hidden>
             <div class="ak-buyback-demo__model-content" data-model-content>
                 <div class="ak-buyback-demo__panel-heading"><span class="ak-buyback-demo__eyebrow">1. Készülék</span><h3>Válaszd ki az iPhone modelled</h3><p>Keress a modell nevére, vagy válassz a kártyák közül.</p></div>
-                <label class="ak-buyback-demo__search"><span class="screen-reader-text">Modell keresése</span><input type="search" placeholder="Keresés az iPhone modellek között" data-model-search></label>
+                <div class="ak-buyback-demo__model-search-row">
+                    <label class="ak-buyback-demo__search"><span class="screen-reader-text">Modell keresése</span><input type="search" placeholder="Keresés az iPhone modellek között" data-model-search></label>
+                    <button class="ak-buyback-demo__model-search-clear" type="button" data-model-search-clear hidden>Keresés törlése</button>
+                </div>
                 <div class="ak-buyback-demo__device-grid" data-model-grid>
                     <?php foreach ($models as $key => $model) : $id = 'ak-demo-model-' . sanitize_html_class($key); ?>
                         <label class="ak-buyback-demo__device-card" data-model-card data-model-key="<?php echo esc_attr($key); ?>" data-search-text="<?php echo esc_attr(strtolower($model['label'])); ?>" data-image="<?php echo esc_url($model['image_url']); ?>" data-label="<?php echo esc_attr($model['label']); ?>" data-storages="<?php echo esc_attr(implode(',', $model['storages'])); ?>" data-colors="<?php echo esc_attr((string) wp_json_encode($model['colors'])); ?>">
@@ -441,8 +472,8 @@ final class LocalDemoCalculatorPage
                             <span class="ak-buyback-demo__selected-mark">Kiválasztva</span>
                         </label>
                     <?php endforeach; ?>
+                    <p class="ak-buyback-demo__model-no-results" data-model-no-results hidden>Nincs a keresésnek megfelelő iPhone-modell.</p>
                 </div>
-                <p class="ak-buyback-demo__model-no-results" data-model-no-results hidden>Nincs a keresésnek megfelelő iPhone-modell.</p>
             </div>
             <?php $this->renderPanelActions('entry', 'configuration', 'Tovább a tárhelyhez'); ?>
         </section>
@@ -466,7 +497,12 @@ final class LocalDemoCalculatorPage
                 <div class="ak-buyback-demo__question ak-buyback-demo__question--configuration">
                     <div class="ak-buyback-demo__configuration-content" data-configuration-content>
                         <span class="ak-buyback-demo__eyebrow">2. Konfiguráció</span>
-                        <h3>Mekkora a készülék tárhelye?</h3>
+                        <div class="ak-buyback-demo__selected-model" data-selected-model-configuration hidden>
+                            <img alt="" data-selected-model-image hidden>
+                            <div><span>Választott készülék</span><h3 data-configuration-heading>iPhone konfigurációja</h3></div>
+                            <button class="ak-buyback-demo__secondary" type="button" data-change-model>Másik modellt választok</button>
+                        </div>
+                        <h4>Mekkora a készülék tárhelye?</h4>
                         <p>A tárhely méretét a Beállítások / Általános / Infó menüben ellenőrizheted.</p>
                         <div class="ak-buyback-demo__storage-grid">
                             <?php foreach ($allStorages as $storage) : $id = 'ak-demo-storage-' . $storage; ?>
@@ -477,7 +513,7 @@ final class LocalDemoCalculatorPage
                             <?php endforeach; ?>
                         </div>
                         <div class="ak-buyback-demo__color-picker" data-color-picker data-current-color="<?php echo esc_attr($state['color_key']); ?>" hidden>
-                            <h4>Szín</h4><p class="ak-buyback-demo__question-helper">Csak az ehhez a modellhez és tárhelyhez elérhető színek jelennek meg. A szín nem módosítja az ajánlatot.</p>
+                            <h4>Szín (nem kötelező)</h4><p class="ak-buyback-demo__question-helper">A szín megadása nem kötelező, és nem módosítja az előzetes ajánlatot.</p>
                             <div class="ak-buyback-demo__choice-grid ak-buyback-demo__choice-grid--two" data-color-options></div>
                         </div>
                         <div class="ak-buyback-demo__configuration-divider"></div>
@@ -622,7 +658,8 @@ final class LocalDemoCalculatorPage
                         new PricingModelKey($state['model_key']),
                         new StorageCapacity($state['storage_gb']),
                         $collection,
-                        $serviceMode
+                        $serviceMode,
+                        $this->questionnaire->affectedPartKeys($questionnaireAnswers)
                     )
                 );
             $result = $this->manualResultIfRequired($book, $serviceMode, $questionnaireManualReasons, $calculated);
@@ -805,7 +842,7 @@ final class LocalDemoCalculatorPage
                     <p>Az Apple Klinika a nevedet, e-mail-címedet, telefonszámodat, megjegyzésedet és a készülék megadott adatait a felvásárlási igény kezeléséhez és a kapcsolatfelvételhez kezeli. Az előzetes összeg automatizált számítás, nem végleges elfogadás; a végleges érték fizikai bevizsgálástól függ. Jogi alap: <?php echo esc_html($privacy['legal_basis']); ?>. A megőrzésről, jogaidról, panaszlehetőségről és esetleges adatfeldolgozókról a <a href="<?php echo esc_url($privacy['url']); ?>" target="_blank" rel="noopener">teljes adatkezelési tájékoztatóban</a> olvashatsz.</p>
                     <label class="ak-buyback-demo__privacy-check"><input type="checkbox" name="privacy_acknowledged" value="1" required> Elolvastam és tudomásul vettem az adatkezelési tájékoztatót.</label>
                 </div>
-                <p class="ak-buyback-demo__submission-device"><strong>Készülék:</strong> <?php echo esc_html($modelLabel . ' · ' . $storageLabel . ' · ' . $colorLabel); ?></p>
+                <p class="ak-buyback-demo__submission-device"><strong>Készülék:</strong> <?php echo esc_html(implode(' · ', array_filter([$modelLabel, $storageLabel, $colorLabel]))); ?></p>
                 <button class="ak-buyback-demo__primary" type="submit" data-public-submit<?php echo $manualReview ? '' : ' disabled'; ?>>Felvásárlási igény elküldése</button>
                 <?php if (! $manualReview) : ?><p class="ak-buyback-demo__mode-message" data-public-submit-message>Előbb válassz ajánlattípust az előző lépésben.</p><?php endif; ?>
             </div>
@@ -865,8 +902,16 @@ final class LocalDemoCalculatorPage
             'touch_functional' => true,
             'face_id_functional' => true,
             'camera_functional' => true,
+            'front_camera_functional' => true,
+            'rear_camera_functional' => true,
+            'audio_functional' => true,
             'charging_functional' => true,
             'liquid_damage' => false,
+            'network_unlocked' => true,
+            'display_yellowing' => false,
+            'display_deformed' => false,
+            'display_dead_pixels' => false,
+            'display_image_brightness_functional' => true,
             'motherboard_issue' => false,
             'screen_condition' => 'like_new',
             'frame_condition' => 'like_new',
@@ -954,7 +999,7 @@ final class LocalDemoCalculatorPage
             $configuration['Szín'] ?? '',
         ]));
         $conditionRows = [
-            'Folyadékérintkezés' => $condition['Folyadék / pára'] ?? '',
+            'Folyadékérintkezés' => $condition['Folyadékérintkezés'] ?? '',
             'Kijelző állapota' => $condition['Kijelző'] ?? '',
             'Kijelző működése' => $summary['Kijelzőhibák']['Megjelölt válaszok'] ?? '',
             'Keret' => $condition['Keret'] ?? '',
@@ -1021,9 +1066,10 @@ final class LocalDemoCalculatorPage
         $reasons = [];
         foreach ($result->matchedRules as $rule) {
             $reasons[] = $this->questionnaire->publicManualReviewReason(
-                null,
+                $rule->conditionKey,
                 $rule->publicLabel ?? '',
-                $answers
+                $answers,
+                $rule->affectedComponentKey
             );
         }
         $matchedCodes = array_map(static fn ($rule): string => $rule->ruleCode, $result->matchedRules);
@@ -1089,7 +1135,11 @@ final class LocalDemoCalculatorPage
 
     private function storageLabel(int $storage): string
     {
-        return $storage === 1024 ? '1 TB' : $storage . ' GB';
+        return match ($storage) {
+            1024 => '1 TB',
+            2048 => '2 TB',
+            default => $storage . ' GB',
+        };
     }
 
     private function deviceBreadcrumb(string $model, int $storage): string

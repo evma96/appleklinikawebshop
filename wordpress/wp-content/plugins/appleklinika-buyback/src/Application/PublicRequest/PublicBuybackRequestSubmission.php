@@ -127,7 +127,8 @@ final class PublicBuybackRequestSubmission
                     new PricingModelKey($modelKey),
                     new StorageCapacity($storage),
                     ConditionAnswerCollection::fromAssociative($canonicalAnswers),
-                    $currentMode
+                    $currentMode,
+                    $this->questionnaire->affectedPartKeys($answers)
                 ));
             $results[$modeCode] = $this->manualResultIfRequired($resolved->priceBook, $currentMode, $questionnaireManualReasons, $calculated);
         }
@@ -189,6 +190,7 @@ final class PublicBuybackRequestSubmission
                     'questionnaire' => ['canonical_answers' => $canonicalAnswers, 'public_answers' => $publicSummary],
                     'price_book' => ['id' => $resolved->priceBook->id()?->toInt(), 'version' => $resolved->priceBook->versionNumber()->value(), 'rules_hash' => hash('sha256', serialize($resolved->enabledRules))],
                     'offers' => array_map(static fn ($result): array => $result->toArray(), $results),
+                    'effective_rule_sources' => $this->effectiveRuleSources($results),
                     'calculation' => ['status' => $isManualReview ? PricingOutcome::MANUAL_REVIEW : PricingOutcome::OFFERED, 'reasons' => $manualReasons],
                     'calculation_status' => $isManualReview ? PricingOutcome::MANUAL_REVIEW : PricingOutcome::OFFERED,
                     'selected_offer_mode' => $mode?->code(),
@@ -253,15 +255,35 @@ final class PublicBuybackRequestSubmission
         );
     }
 
+    /** @param array<string,\AppleKlinika\Buyback\Domain\Pricing\PricingCalculationResult> $results @return array<string,list<array{rule_code:string,rule_kind:string,source:string,reason:?string,condition_key:?string,affected_component_key:?string}>> */
+    private function effectiveRuleSources(array $results): array
+    {
+        $sources = [];
+        foreach ($results as $mode => $result) {
+            $sources[$mode] = array_map(static function ($rule): array {
+                return [
+                    'rule_code' => $rule->ruleCode,
+                    'rule_kind' => $rule->ruleKind,
+                    'source' => $rule->source,
+                    'reason' => $rule->publicLabel,
+                    'condition_key' => $rule->conditionKey,
+                    'affected_component_key' => $rule->affectedComponentKey,
+                ];
+            }, $result->matchedRules);
+        }
+        return $sources;
+    }
+
     /** @return list<string> */
     private function publicManualReasons(\AppleKlinika\Buyback\Domain\Pricing\PricingCalculationResult $result, array $answers): array
     {
         $reasons = [];
         foreach ($result->matchedRules as $rule) {
             $reasons[] = $this->questionnaire->publicManualReviewReason(
-                null,
+                $rule->conditionKey,
                 $rule->publicLabel ?? '',
-                $answers
+                $answers,
+                $rule->affectedComponentKey
             );
         }
         $matchedCodes = array_map(static fn ($rule): string => $rule->ruleCode, $result->matchedRules);

@@ -183,6 +183,7 @@ final class WordPressPricingRuleRepository implements PricingRuleRepository
             'storage_gb' => $definition->storage?->gigabytes(),
             'service_mode' => $definition->serviceMode,
             'condition_key' => $definition->conditionKey,
+            'affected_component_key' => $definition->affectedComponentKey,
             'comparison_operator' => $definition->operator?->code(),
             'comparison_value_json' => $comparisonJson,
             'amount_minor' => $definition->amount?->amount(),
@@ -194,7 +195,7 @@ final class WordPressPricingRuleRepository implements PricingRuleRepository
             'version' => $rule->version()->value(),
             'created_at' => $this->date($rule->createdAt()),
             'updated_at' => $this->date($rule->updatedAt()),
-        ], ['%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%d', '%s', '%s', '%d', '%s', '%s']];
+        ], ['%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%d', '%s', '%s', '%d', '%s', '%s']];
     }
 
     /** @param array<string, mixed> $row */
@@ -219,7 +220,8 @@ final class WordPressPricingRuleRepository implements PricingRuleRepository
                 new RulePriority((int) $row['priority']),
                 (bool) $row['is_enabled'],
                 $row['public_label'] === null ? null : (string) $row['public_label'],
-                $row['internal_note'] === null ? null : (string) $row['internal_note']
+                $row['internal_note'] === null ? null : (string) $row['internal_note'],
+                $row['affected_component_key'] === null ? null : (string) $row['affected_component_key']
             ),
             new AggregateVersion((int) $row['version']),
             $this->parseDate((string) $row['created_at']),

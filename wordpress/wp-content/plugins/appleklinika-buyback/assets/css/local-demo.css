@@ -376,6 +376,31 @@ body.ak-buyback-demo-page.ak-buyback-entry-active .ak-buyback-demo {
   margin: 0 auto 26px;
 }
 
+.ak-buyback-demo__model-search-row {
+  display: flex;
+  width: min(680px, 100%);
+  gap: 10px;
+  margin: 0 auto 26px;
+}
+
+.ak-buyback-demo__model-search-row .ak-buyback-demo__search {
+  flex: 1;
+  min-width: 0;
+  max-width: none;
+  margin: 0;
+}
+
+.ak-buyback-demo__model-search-clear {
+  min-height: 52px;
+  padding: 0 14px;
+  border: 1px solid var(--ak-border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ak-navy);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .ak-buyback-demo__search input,
 .ak-buyback-demo__battery input[type="number"] {
   width: 100%;
@@ -403,7 +428,13 @@ body.ak-buyback-demo-page.ak-buyback-entry-active .ak-buyback-demo {
 }
 
 .ak-buyback-demo__model-no-results {
-  margin: 18px 0 0;
+  grid-column: 1 / -1;
+  width: min(100%, 520px);
+  margin: 8px auto;
+  padding: 16px;
+  border: 1px solid var(--ak-border);
+  border-radius: 12px;
+  background: var(--ak-surface);
   color: var(--ak-muted);
   font-weight: 700;
   text-align: center;
@@ -411,6 +442,46 @@ body.ak-buyback-demo-page.ak-buyback-entry-active .ak-buyback-demo {
 
 .ak-buyback-demo__model-no-results[hidden] {
   display: none;
+}
+
+.ak-buyback-demo__selected-model {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 18px;
+  padding: 12px;
+  border: 1px solid var(--ak-border);
+  border-radius: 12px;
+  background: var(--ak-surface);
+}
+
+.ak-buyback-demo__selected-model[hidden] {
+  display: none;
+}
+
+.ak-buyback-demo__selected-model img {
+  display: block;
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+}
+
+.ak-buyback-demo__selected-model span {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--ak-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ak-buyback-demo__selected-model h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.ak-buyback-demo__selected-model .ak-buyback-demo__secondary {
+  white-space: nowrap;
 }
 
 .ak-buyback-demo__device-card,
@@ -920,6 +991,24 @@ body.ak-buyback-demo-page.ak-buyback-entry-active .ak-buyback-demo {
 }
 
 @media (max-width: 900px) {
+  .ak-buyback-demo__panel[data-demo-panel="configuration"] .ak-buyback-demo__visual {
+    display: none;
+  }
+
+  .ak-buyback-demo__selected-model {
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+
+  .ak-buyback-demo__selected-model img {
+    width: 56px;
+    height: 56px;
+  }
+
+  .ak-buyback-demo__selected-model .ak-buyback-demo__secondary {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
   body.ak-buyback-demo-page.ak-buyback-entry-active .ak-buyback-demo {
     width: min(100% - 28px, 960px);
     margin-top: 24px;
@@ -1594,11 +1683,19 @@ body.ak-buyback-demo-page.ak-buyback-offer-active .ak-buyback-demo__header {
 
   body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__model-content .ak-buyback-demo__search {
     width: 100%;
-    margin: 0 auto 10px;
+    margin: 0;
     justify-self: center;
   }
 
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__model-search-row {
+    margin: 0 auto 10px;
+  }
+
   body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__model-content .ak-buyback-demo__search input {
+    min-height: 44px;
+  }
+
+  body.ak-buyback-demo-page.ak-buyback-wizard-active .ak-buyback-demo__model-search-clear {
     min-height: 44px;
   }
 

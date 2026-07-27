@@ -1,15 +1,104 @@
 document.addEventListener('DOMContentLoaded', function () {
-  document.querySelectorAll('[data-ak-discard-form]').forEach(function (form) {
-    form.addEventListener('submit', function (event) {
-      var title = form.dataset.akDiscardTitle || 'ezt a módosítást';
-      var message = 'Biztosan végleg elveted ezt a módosítást (' + title + ')? A piszkozatban lévő árak és szabályok nem állíthatók vissza.';
-      if (!window.confirm(message)) {
-        event.preventDefault();
-        return;
-      }
-      var confirmation = form.querySelector('[name="discard_confirmation"]');
-      if (confirmation) confirmation.value = 'DISCARD_DRAFT_PRICE_BOOK';
+  var closeMoreMenus = function (except) {
+    document.querySelectorAll('[data-ak-more-menu]').forEach(function (menu) {
+      if (menu === except) return;
+      menu.hidden = true;
+      var trigger = menu.closest('[data-ak-more-actions]')?.querySelector('[data-ak-more-trigger]');
+      if (trigger) trigger.setAttribute('aria-expanded', 'false');
     });
+  };
+  var closeConfirmationPanels = function (except, focusTrigger) {
+    document.querySelectorAll('[data-ak-confirmation-panel]').forEach(function (panel) {
+      if (panel !== except) panel.hidden = true;
+    });
+    document.querySelectorAll('[data-ak-confirmation-trigger]').forEach(function (trigger) {
+      if (!except || trigger.dataset.akConfirmationTarget !== except.id) trigger.setAttribute('aria-expanded', 'false');
+    });
+    if (focusTrigger) focusTrigger.focus();
+  };
+
+  document.querySelectorAll('[data-ak-confirmation-trigger]').forEach(function (trigger) {
+    trigger.addEventListener('click', function () {
+      var panel = document.getElementById(trigger.dataset.akConfirmationTarget || '');
+      var card = trigger.closest('[data-ak-pricebook-card]');
+      if (!panel || !card || !card.contains(panel)) return;
+      closeMoreMenus();
+      closeConfirmationPanels(panel);
+      panel.hidden = false;
+      trigger.setAttribute('aria-expanded', 'true');
+      var input = panel.querySelector('input[type="text"]');
+      if (input) input.focus();
+    });
+  });
+  document.querySelectorAll('[data-ak-confirmation-cancel]').forEach(function (cancel) {
+    cancel.addEventListener('click', function () {
+      var panel = cancel.closest('[data-ak-confirmation-panel]');
+      var card = cancel.closest('[data-ak-pricebook-card]');
+      var trigger = panel && card ? card.querySelector('[data-ak-confirmation-target="' + panel.id + '"]') : null;
+      closeConfirmationPanels(null, trigger);
+    });
+  });
+
+  document.querySelectorAll('[data-ak-more-actions]').forEach(function (wrap) {
+    var trigger = wrap.querySelector('[data-ak-more-trigger]');
+    var menu = wrap.querySelector('[data-ak-more-menu]');
+    if (!trigger || !menu) return;
+    trigger.addEventListener('click', function (event) {
+      event.stopPropagation();
+      var opening = menu.hidden;
+      closeMoreMenus(menu);
+      menu.hidden = !opening;
+      trigger.setAttribute('aria-expanded', opening ? 'true' : 'false');
+    });
+  });
+  document.addEventListener('click', function (event) {
+    if (!event.target.closest('[data-ak-more-actions]')) closeMoreMenus();
+  });
+  document.addEventListener('keydown', function (event) {
+    if (event.key !== 'Escape') return;
+    var openMenu = Array.prototype.find.call(document.querySelectorAll('[data-ak-more-menu]'), function (menu) { return !menu.hidden; });
+    if (openMenu) {
+      var trigger = openMenu.closest('[data-ak-more-actions]')?.querySelector('[data-ak-more-trigger]');
+      closeMoreMenus();
+      if (trigger) trigger.focus();
+      return;
+    }
+    var openPanel = Array.prototype.find.call(document.querySelectorAll('[data-ak-confirmation-panel]'), function (panel) { return !panel.hidden; });
+    if (openPanel) {
+      var trigger = document.querySelector('[data-ak-confirmation-target="' + openPanel.id + '"]');
+      closeConfirmationPanels(null, trigger);
+    }
+  });
+
+  document.querySelectorAll('[data-ak-draft-filters]').forEach(function (filters) {
+    var selected = 'all';
+    var search = filters.querySelector('[data-ak-draft-search-input]');
+    var empty = document.querySelector('[data-ak-draft-filter-empty]');
+    var refresh = function () {
+      var query = search ? search.value.trim().toLocaleLowerCase('hu') : '';
+      var visible = 0;
+      document.querySelectorAll('[data-ak-draft-row]').forEach(function (row) {
+        var matchesFilter = selected === 'all' || row.dataset.akDraftReadiness === selected;
+        var label = (row.dataset.akDraftSearch || '').toLocaleLowerCase('hu');
+        var matchesSearch = !query || label.includes(query);
+        row.hidden = !matchesFilter || !matchesSearch;
+        if (!row.hidden) visible += 1;
+      });
+      if (empty) empty.hidden = visible !== 0;
+    };
+    filters.querySelectorAll('[data-ak-draft-filter]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        selected = button.dataset.akDraftFilter || 'all';
+        filters.querySelectorAll('[data-ak-draft-filter]').forEach(function (item) {
+          var active = item === button;
+          item.classList.toggle('is-active', active);
+          item.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+        refresh();
+      });
+    });
+    if (search) search.addEventListener('input', refresh);
+    refresh();
   });
 
   document.querySelectorAll('.ak-rule-form').forEach(function (form) {
@@ -87,16 +176,21 @@ document.addEventListener('DOMContentLoaded', function () {
         var valueWrap = row.querySelector('[data-ak-condition-value]');
         var value = row.querySelector('[data-ak-condition-value-input]');
         var unit = row.querySelector('[data-ak-condition-unit]');
-        if (!action || !valueWrap || !value) return;
+        if (!action) return;
+        var isComponentRule = row.dataset.akConditionComponent === '1';
         var requiresValue = action.value === 'fixed' || action.value === 'percentage';
-        valueWrap.hidden = !requiresValue;
-        value.disabled = !requiresValue;
-        value.max = action.value === 'percentage' ? '100' : String(Number.MAX_SAFE_INTEGER);
-        if (unit) unit.textContent = action.value === 'percentage' ? '%' : 'Ft';
-        if (action.value !== 'none') configured += 1;
-        if (action.value === 'manual_review') manual += 1;
-        if (action.value === 'hard_reject') reject += 1;
-        var currentValue = requiresValue ? value.value.trim() : '';
+        if (valueWrap && value) {
+          valueWrap.hidden = !requiresValue;
+          value.disabled = !requiresValue;
+          value.max = action.value === 'percentage' ? '100' : String(Number.MAX_SAFE_INTEGER);
+          if (unit) unit.textContent = action.value === 'percentage' ? '%' : 'Ft';
+        }
+        if (!isComponentRule) {
+          if (action.value !== 'system_default') configured += 1;
+          if (action.value === 'manual_review') manual += 1;
+          if (action.value === 'hard_reject') reject += 1;
+        }
+        var currentValue = requiresValue && value ? value.value.trim() : '';
         if (action.value !== row.dataset.akConditionOriginalAction || currentValue !== row.dataset.akConditionOriginalValue) {
           changed = true;
           row.classList.add('is-changed');
@@ -118,7 +212,15 @@ document.addEventListener('DOMContentLoaded', function () {
       });
       dirty = changed;
     };
-    form.querySelectorAll('[data-ak-condition-action], [data-ak-condition-value-input]').forEach(function (control) {
+    form.querySelectorAll('[data-ak-condition-action]').forEach(function (control) {
+      control.addEventListener('change', function () {
+        var row = control.closest('[data-ak-condition-row]');
+        var value = row ? row.querySelector('[data-ak-condition-value-input]') : null;
+        if (value && control.value !== 'fixed' && control.value !== 'percentage') value.value = '';
+        refresh();
+      });
+    });
+    form.querySelectorAll('[data-ak-condition-value-input]').forEach(function (control) {
       control.addEventListener('change', refresh);
       control.addEventListener('input', refresh);
     });

@@ -110,10 +110,10 @@ foreach (array_keys($approvedFinalAssets) as $visualKey) {
 
 $approvedFrameAssets = [
     'frame/flawless' => ['label' => 'Hibátlan', 'hash' => '8367e1c95396b6863c335776c9b241e6f3e4fdafea8ae2424467fd9c0b1bc376'],
-    'frame/minor-wear' => ['label' => 'Apró használati nyomok', 'hash' => 'ec51e5bf31df2bd642a1d24726a926a65d734388326c93e43b5323e12af9e893'],
-    'frame/heavier-wear' => ['label' => 'Intenzívebb használati nyomok', 'hash' => 'fea80b19160ffee1796a79e3a839556acc16d91dd85dbb33a49e6c78e361d5ea'],
-    'frame/strongly-worn' => ['label' => 'Erősen használt', 'hash' => '6004153d5234e550d4d80391bfac4a5e06f20cd2325bb8e5eaba2fbff166452d'],
-    'frame/damaged' => ['label' => 'Sérült vagy deformált', 'hash' => '2d5fa3f39fe16875a00eeff533653e85234ce0150ae7e5d8ef3bca6be35aa14a'],
+    'frame/minor-wear' => ['label' => 'Apró használati nyomok', 'hash' => '19066f3dababdf6c5449c538a928d4da8d09e67b4cef84d5f24c00b8f95c6f58'],
+    'frame/heavier-wear' => ['label' => 'Intenzívebb használati nyomok', 'hash' => 'f36ddb62b3594b14124671895241e5712e84c10ab56d82ad935df4069d293124'],
+    'frame/strongly-worn' => ['label' => 'Erősen használt', 'hash' => '677268b440875336173fcc952938fea03f2705e569e3b52ce7a26625910c3a4b'],
+    'frame/damaged' => ['label' => 'Sérült vagy deformált', 'hash' => '378ed109bf9a0bcf9cc399f7c7dd17a12a270fc0d36e8d1ef48619ba8a929bb1'],
 ];
 $frameDimensions = [];
 foreach ($approvedFrameAssets as $visualKey => $approved) {

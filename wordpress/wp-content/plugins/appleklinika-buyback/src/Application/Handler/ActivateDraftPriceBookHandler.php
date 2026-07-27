@@ -12,6 +12,7 @@ use AppleKlinika\Buyback\Application\Exception\PriceBookNotReadyForActivationExc
 use AppleKlinika\Buyback\Application\Port\Clock;
 use AppleKlinika\Buyback\Application\Port\PriceBookActivationLock;
 use AppleKlinika\Buyback\Application\Port\PriceBookRepository;
+use AppleKlinika\Buyback\Application\Port\PriceBookLifecycleRepository;
 use AppleKlinika\Buyback\Application\Port\PricingRuleRepository;
 use AppleKlinika\Buyback\Application\Port\TransactionManager;
 use AppleKlinika\Buyback\Application\Pricing\PriceBookActivationReadinessService;
@@ -33,16 +34,13 @@ final class ActivateDraftPriceBookHandler
         private readonly PriceBookActivationReadinessService $readiness,
         private readonly PriceBookActivationLock $lock,
         private readonly TransactionManager $transactions,
-        private readonly Clock $clock
+        private readonly Clock $clock,
+        private readonly ?PriceBookLifecycleRepository $lifecycle = null
     ) {
     }
 
     public function handle(ActivateDraftPriceBook $command): PriceBook
     {
-        if ($command->confirmation !== ActivateDraftPriceBook::CONFIRMATION) {
-            throw new InvalidActivationConfirmationException('The exact activation confirmation is required.');
-        }
-
         $currency = new CurrencyCode('HUF');
         $this->lock->acquire($currency, self::LOCK_TIMEOUT_SECONDS);
         $failure = null;
@@ -56,6 +54,12 @@ final class ActivateDraftPriceBookHandler
                 }
                 if ($target->version()->value() !== $command->expectedVersion) {
                     throw new StaleAggregateVersionException($command->expectedVersion, $target->version()->value());
+                }
+                if (! hash_equals($target->label(), trim($command->confirmation))) {
+                    throw new InvalidActivationConfirmationException('A aktiválás megerősítéséhez írd be pontosan az árkönyv nevét.');
+                }
+                if ($this->lifecycle?->isProtected($id)) {
+                    throw new \InvalidArgumentException('Védett referencia-árkönyv nem aktiválható közvetlenül. Készíts róla másolatot.');
                 }
 
                 $target->assertDraftMutation();
@@ -71,6 +75,7 @@ final class ActivateDraftPriceBookHandler
                 }
 
                 $actor = new PricingActorId($command->actorId);
+                $previousPayload = null;
                 if ($active !== []) {
                     $previous = $active[0];
                     if ($previous->id()?->equals($id)) {
@@ -79,6 +84,7 @@ final class ActivateDraftPriceBookHandler
                     $previousVersion = $previous->version();
                     $previous->retire($actor, $at);
                     $this->books->saveRetired($previous, $previousVersion);
+                    $previousPayload = ['id' => $previous->id()?->toInt(), 'label' => $previous->label()];
                 }
 
                 $targetVersion = new AggregateVersion($command->expectedVersion);
@@ -87,6 +93,14 @@ final class ActivateDraftPriceBookHandler
 
                 if ($this->books->countCurrentActiveForCurrencyAt($currency, $at) !== 1) {
                     throw new PersistenceException('Activation must commit exactly one current active HUF price book.');
+                }
+
+                if ($this->lifecycle !== null) {
+                    $this->lifecycle->record('price_book_activated', $id, $command->actorId, [
+                        'currency' => $currency->code(),
+                        'new_active' => ['id' => $id->toInt(), 'label' => $target->label()],
+                        'previous_active' => $previousPayload,
+                    ], $at);
                 }
 
                 return $target;

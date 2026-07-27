@@ -368,8 +368,8 @@ $activate = new ActivateDraftPriceBookHandler($books, $rules, $readiness, $realL
 
 try {
     $test->assert(APPLEKLINIKA_BUYBACK_VERSION === '0.8.0', 'Plugin code version is 0.8.0');
-    $test->assert(APPLEKLINIKA_BUYBACK_SCHEMA_VERSION === '1.3.0', 'Code schema remains 1.3.0');
-    $test->assert((string) get_option(Schema::OPTION_SCHEMA_VERSION) === '1.3.0', 'Installed schema remains 1.3.0');
+    $test->assert(APPLEKLINIKA_BUYBACK_SCHEMA_VERSION === '1.5.0', 'Code schema remains 1.5.0');
+    $test->assert((string) get_option(Schema::OPTION_SCHEMA_VERSION) === '1.5.0', 'Installed schema remains 1.5.0');
     $test->assert(is_plugin_active('appleklinika-buyback/appleklinika-buyback.php'), 'Buyback plugin is active');
     $test->assert($books->countCurrentActiveForCurrencyAt(new CurrencyCode('HUF'), $clock->now()) === 0, 'The fixed historical fixture window has no pre-existing active HUF price book');
 
@@ -473,17 +473,17 @@ try {
     $test->throws(fn () => $activate->handle(new ActivateDraftPriceBook($first->id()->toInt(), $first->version()->value(), $adminId, 'ROSSZ')), InvalidActivationConfirmationException::class, 'Wrong confirmation changes nothing');
     $test->assert($books->getById($first->id())->status()->isDraft(), 'Wrong confirmation leaves target draft');
     $busyHandler = new ActivateDraftPriceBookHandler($books, $rules, $readiness, new AlwaysBusyActivationLock(), $transactions, $clock);
-    $test->throws(fn () => $busyHandler->handle(new ActivateDraftPriceBook($first->id()->toInt(), $first->version()->value(), $adminId, ActivateDraftPriceBook::CONFIRMATION)), PriceBookActivationBusyException::class, 'Lock acquisition failure is typed');
+    $test->throws(fn () => $busyHandler->handle(new ActivateDraftPriceBook($first->id()->toInt(), $first->version()->value(), $adminId, $first->label())), PriceBookActivationBusyException::class, 'Lock acquisition failure is typed');
     $test->assert($books->getById($first->id())->status()->isDraft(), 'Lock acquisition failure changes nothing');
-    $test->throws(fn () => $activate->handle(new ActivateDraftPriceBook($first->id()->toInt(), $first->version()->value() + 1, $adminId, ActivateDraftPriceBook::CONFIRMATION)), StaleAggregateVersionException::class, 'Stale expected version is rejected');
+    $test->throws(fn () => $activate->handle(new ActivateDraftPriceBook($first->id()->toInt(), $first->version()->value() + 1, $adminId, $first->label())), StaleAggregateVersionException::class, 'Stale expected version is rejected');
     $test->assert($books->getById($first->id())->status()->isDraft(), 'Stale version leaves target draft');
     $firstVersion = $first->version()->value();
-    $activate->handle(new ActivateDraftPriceBook($first->id()->toInt(), $firstVersion, $adminId, ActivateDraftPriceBook::CONFIRMATION));
+    $activate->handle(new ActivateDraftPriceBook($first->id()->toInt(), $firstVersion, $adminId, $first->label()));
     $firstActive = $books->getById($first->id());
     $test->assert($firstActive->status()->isActive(), 'Activation with no previous active makes target active');
     $test->assert($firstActive->activatedBy()?->value() === $adminId && $firstActive->activatedAt()?->format(DATE_ATOM) === $clock->now()->format(DATE_ATOM), 'Activation actor and timestamp persist');
     $test->assert($books->countCurrentActiveForCurrencyAt(new CurrencyCode('HUF'), $clock->now()) === 1, 'Exactly one current active remains');
-    $test->throws(fn () => $activate->handle(new ActivateDraftPriceBook($first->id()->toInt(), $firstVersion, $adminId, ActivateDraftPriceBook::CONFIRMATION)), StaleAggregateVersionException::class, 'POST replay cannot activate twice');
+    $test->throws(fn () => $activate->handle(new ActivateDraftPriceBook($first->id()->toInt(), $firstVersion, $adminId, $first->label())), StaleAggregateVersionException::class, 'POST replay cannot activate twice');
     $test->throws(fn () => $firstActive->updateSettings('No', new Money(1, 'HUF'), 1, new MinimumOfferPolicy(MinimumOfferPolicy::REJECT), $clock->now()), InvalidAggregateOperationException::class, 'Active settings are immutable');
     $test->throws(fn () => activationAddRule($add, $books, $firstActive, activationBaseDefinition($marker . '-active-forbidden')), InvalidAggregateOperationException::class, 'Active rules cannot be added');
     $firstActiveRule = $rules->listForPriceBook($first->id())[0];
@@ -500,7 +500,7 @@ try {
     activationAddRule($add, $books, $second, activationBaseDefinition($marker . '-base-second', 'iphone-13-pro', 128, true, 100));
     activationAddRule($add, $books, $second, activationModeDefinition($marker . '-mode-second', 'fast_online', 20));
     $second = $books->getById($second->id());
-    $activate->handle(new ActivateDraftPriceBook($second->id()->toInt(), $second->version()->value(), $managerId, ActivateDraftPriceBook::CONFIRMATION));
+    $activate->handle(new ActivateDraftPriceBook($second->id()->toInt(), $second->version()->value(), $managerId, $second->label()));
     $firstRetired = $books->getById($first->id());
     $secondActive = $books->getById($second->id());
     $test->assert($firstRetired->status()->isRetired() && $secondActive->status()->isActive(), 'Replacement retires previous and activates target atomically');
@@ -520,7 +520,7 @@ try {
     $unready = $books->getById($unready->id());
     $unreadyState = activationBookState($unready);
     $unreadyRuleCount = count($rules->listForPriceBook($unready->id()));
-    $test->throws(fn () => $activate->handle(new ActivateDraftPriceBook($unready->id()->toInt(), $unready->version()->value(), $adminId, ActivateDraftPriceBook::CONFIRMATION)), PriceBookNotReadyForActivationException::class, 'Unready target is rejected server-side');
+    $test->throws(fn () => $activate->handle(new ActivateDraftPriceBook($unready->id()->toInt(), $unready->version()->value(), $adminId, $unready->label())), PriceBookNotReadyForActivationException::class, 'Unready target is rejected server-side');
     $test->assert($books->getById($unready->id())->status()->isDraft() && $books->getById($second->id())->status()->isActive(), 'Unready activation changes neither target nor previous active');
 
     $rollback = activationCreateBook($create, $marker . '-ROLLBACK', $adminId);
@@ -528,7 +528,7 @@ try {
     $rollback = $books->getById($rollback->id());
     $failingRepository = new FailingActivationRepository($books);
     $failingHandler = new ActivateDraftPriceBookHandler($failingRepository, $rules, $readiness, $realLock, $transactions, $clock);
-    $test->throws(fn () => $failingHandler->handle(new ActivateDraftPriceBook($rollback->id()->toInt(), $rollback->version()->value(), $adminId, ActivateDraftPriceBook::CONFIRMATION)), PersistenceException::class, 'Forced target save failure rolls back transaction');
+    $test->throws(fn () => $failingHandler->handle(new ActivateDraftPriceBook($rollback->id()->toInt(), $rollback->version()->value(), $adminId, $rollback->label())), PersistenceException::class, 'Forced target save failure rolls back transaction');
     $test->assert($books->getById($second->id())->status()->isActive(), 'Previous active remains active after rollback');
     $test->assert($books->getById($rollback->id())->status()->isDraft(), 'Target remains draft after rollback');
 
@@ -550,9 +550,9 @@ try {
     ob_start(); $renderReadiness->invoke($page, $unready, $rules->listForPriceBook($unready->id())); $unreadyReadinessOutput = (string) ob_get_clean();
     $test->assert(str_contains($unreadyReadinessOutput, 'missing_base_price') && str_contains($unreadyReadinessOutput, 'Az árkönyv nem tartalmaz aktív alapárat.') && ! str_contains($unreadyReadinessOutput, 'Árkönyv aktiválása'), 'Unready fixture readiness renders its blocking issue without an activation form');
     ob_start(); $renderReadiness->invoke($page, $rollback, $rules->listForPriceBook($rollback->id())); $readyReadinessOutput = (string) ob_get_clean();
-    $test->assert(str_contains($readyReadinessOutput, 'Aktiválásra kész') && str_contains($readyReadinessOutput, 'AKTIVÁLOM') && str_contains($readyReadinessOutput, 'Árkönyv aktiválása'), 'Ready fixture readiness renders the controlled activation form');
+    $test->assert(str_contains($readyReadinessOutput, 'Aktiválásra kész') && str_contains($readyReadinessOutput, $rollback->label()) && str_contains($readyReadinessOutput, 'Árkönyv aktiválása'), 'Ready fixture readiness renders the exact-name activation form');
     $dispatch = new ReflectionMethod(PriceBooksPage::class, 'dispatch'); $dispatch->setAccessible(true);
-    $test->throws(fn () => $dispatch->invoke($page, 'activate_price_book', ['price_book_id' => $unready->id()->toInt(), 'expected_book_version' => $unready->version()->value(), 'activation_confirmation' => ActivateDraftPriceBook::CONFIRMATION]), PriceBookNotReadyForActivationException::class, 'Forged activation POST is rejected by server readiness');
+    $test->throws(fn () => $dispatch->invoke($page, 'activate_price_book', ['price_book_id' => $unready->id()->toInt(), 'expected_book_version' => $unready->version()->value(), 'activation_confirmation' => $unready->label()]), PriceBookNotReadyForActivationException::class, 'Forged activation POST is rejected by server readiness');
     $test->assert(activationBookState($books->getById($unready->id())) === $unreadyState && count($rules->listForPriceBook($unready->id())) === $unreadyRuleCount, 'Forged activation preserves the isolated unready fixture');
 
     $diagnosticsHandler = new GetDiagnosticsHandler(new SchemaInspector($wpdb, APPLEKLINIKA_BUYBACK_SCHEMA_VERSION), new WordPressEnvironmentDiagnosticsReader(), new LegacyBuybackDetector($wpdb), APPLEKLINIKA_BUYBACK_VERSION, APPLEKLINIKA_BUYBACK_SCHEMA_VERSION, $resolver, $clock);

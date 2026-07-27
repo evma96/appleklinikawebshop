@@ -6556,7 +6556,7 @@ body.woocommerce-cart .wc-block-components-totals-coupon__button {
     width: 100%;
   }
 
-  .ak-header-pill {
+  .ak-header-actions .ak-header-pill {
     min-height: 38px;
     padding: 6px 8px;
     box-sizing: border-box;
