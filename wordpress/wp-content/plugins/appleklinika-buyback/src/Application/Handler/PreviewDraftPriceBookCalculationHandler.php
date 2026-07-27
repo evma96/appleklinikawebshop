@@ -72,7 +72,7 @@ final class PreviewDraftPriceBookCalculationHandler
         $eligibilityError = $this->questionnaire->eligibilityError($state);
         $manualReasons = $this->questionnaire->manualReviewReasons($state);
         foreach (ServiceMode::supportedCodes() as $modeCode) {
-            $input = new PricingCalculationInput(new DeviceCategory(DeviceCategory::IPHONE), $model, $storage, $answers, new ServiceMode($modeCode));
+            $input = new PricingCalculationInput(new DeviceCategory(DeviceCategory::IPHONE), $model, $storage, $answers, new ServiceMode($modeCode), $this->questionnaire->affectedPartKeys($state));
             $results[$modeCode] = $eligibilityError !== null
                 ? \AppleKlinika\Buyback\Domain\Pricing\PricingCalculationResult::rejected($book, $input->serviceMode, [$eligibilityError])
                 : ($manualReasons !== []

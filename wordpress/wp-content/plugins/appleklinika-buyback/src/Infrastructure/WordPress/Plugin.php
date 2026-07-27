@@ -10,6 +10,7 @@ use AppleKlinika\Buyback\Application\Handler\ActivateDraftPriceBookHandler;
 use AppleKlinika\Buyback\Application\Handler\CreateDraftPriceBookHandler;
 use AppleKlinika\Buyback\Application\Handler\ClonePriceBookToDraftHandler;
 use AppleKlinika\Buyback\Application\Handler\DiscardDraftPriceBookHandler;
+use AppleKlinika\Buyback\Application\Handler\ProtectPriceBookHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftBasePriceMatrixHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftQuestionnaireConditionsHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftBatteryBandsHandler;
@@ -36,6 +37,7 @@ use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressPriceBook
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressDraftPriceBookDiscardRepository;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressPricingRuleRepository;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressTransactionManager;
+use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressPriceBookLifecycleRepository;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressPublicBuybackRequestStore;
 use AppleKlinika\Buyback\Infrastructure\Inventory\WordPressDeviceCatalogReader;
 use AppleKlinika\Buyback\Infrastructure\Time\SystemClock;
@@ -69,6 +71,7 @@ final class Plugin
 
         $transactions = new WordPressTransactionManager($wpdb);
         $books = new WordPressPriceBookRepository($wpdb, $transactions);
+        $lifecycle = new WordPressPriceBookLifecycleRepository($wpdb);
         $rules = new WordPressPricingRuleRepository($wpdb);
         $clock = new SystemClock();
         $catalog = new WordPressDeviceCatalogReader();
@@ -81,7 +84,8 @@ final class Plugin
             $readiness,
             new MySqlPriceBookActivationLock($wpdb),
             $transactions,
-            $clock
+            $clock,
+            $lifecycle
         );
         $handler = new GetDiagnosticsHandler(
             new SchemaInspector($wpdb, APPLEKLINIKA_BUYBACK_SCHEMA_VERSION),
@@ -102,8 +106,8 @@ final class Plugin
                 $rules,
                 $catalog,
                 new CreateDraftPriceBookHandler($books, $transactions, $clock),
-                new ClonePriceBookToDraftHandler($books, $rules, $transactions, $clock),
-                new DiscardDraftPriceBookHandler($books, new WordPressDraftPriceBookDiscardRepository($wpdb), $transactions),
+                new ClonePriceBookToDraftHandler($books, $rules, $transactions, $clock, $lifecycle),
+                new DiscardDraftPriceBookHandler($books, new WordPressDraftPriceBookDiscardRepository($wpdb), $transactions, $lifecycle, $clock),
                 new SaveDraftBasePriceMatrixHandler($books, $rules, $catalog, $transactions, $clock),
                 new SaveDraftQuestionnaireConditionsHandler($books, $rules, $transactions, $clock, $questionnaire, $catalog),
                 new SaveDraftBatteryBandsHandler($books, $rules, $transactions, $clock, $questionnaire, $catalog),
@@ -123,7 +127,9 @@ final class Plugin
                 $clock,
                 new AdminAuthorization(),
                 new AdminSubmissionGuard(),
-                $questionnaire
+                $questionnaire,
+                $lifecycle,
+                new ProtectPriceBookHandler($books, $lifecycle, $transactions, $clock)
             ),
             new BuybackRequestsPage(new WordPressPublicBuybackRequestStore($wpdb)),
             LocalDemoModule::create()
@@ -157,6 +163,7 @@ final class Plugin
         }
 
         $this->diagnosticsPage->register();
+        (new RestrictedPriceEditorAdminAccess())->register();
         $this->priceBooksPage->register();
         $this->requestsPage->register();
         $this->localDemoModule->register();

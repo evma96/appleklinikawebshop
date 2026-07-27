@@ -35,6 +35,11 @@ final class RuleShapeValidator
         self::required($rule->storage === null && $rule->serviceMode === null, 'Conditional rule contains conflicting target fields.');
         ConditionDefinition::assertValid($rule->conditionKey, $rule->operator, $rule->comparisonValue);
 
+        if ($rule->affectedComponentKey !== null) {
+            self::required($rule->conditionKey === 'replacement_parts', 'Affected-component rules require service-history condition.');
+            self::required($rule->operator->code() === ComparisonOperator::EQUALS, 'Affected-component rules require exact service-history matching.');
+        }
+
         if ($kind === PricingRuleKind::FIXED_DEDUCTION) {
             self::required($rule->amount !== null && $rule->multiplier === null, 'Fixed deduction requires only an amount.');
             self::required($rule->amount->amount() >= 0, 'Fixed deduction amount cannot be negative.');
@@ -49,6 +54,11 @@ final class RuleShapeValidator
         if (in_array($kind, [PricingRuleKind::HARD_REJECT, PricingRuleKind::MANUAL_REVIEW], true)) {
             self::required($rule->amount === null && $rule->multiplier === null, 'Review/reject rules cannot contain financial values.');
             self::required($rule->publicLabel !== null && trim($rule->publicLabel) !== '', 'Review/reject rules require a public label.');
+            return;
+        }
+
+        if ($kind === PricingRuleKind::NO_CHANGE) {
+            self::required($rule->amount === null && $rule->multiplier === null && $rule->publicLabel === null, 'No-change rules cannot contain financial values or customer copy.');
             return;
         }
 

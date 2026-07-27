@@ -292,8 +292,8 @@ $policy = new StatusTransitionPolicy();
 
 try {
     $test->assert(is_plugin_active(AK_BUYBACK_PERSISTENCE_PLUGIN), 'Buyback plugin is active');
-    $test->assert(APPLEKLINIKA_BUYBACK_SCHEMA_VERSION === '1.3.0', 'Code schema version is 1.3.0');
-    $test->assert($schemaVersionBefore === '1.3.0', 'Installed schema version is 1.3.0');
+    $test->assert(APPLEKLINIKA_BUYBACK_SCHEMA_VERSION === '1.5.0', 'Code schema version is 1.5.0');
+    $test->assert($schemaVersionBefore === '1.5.0', 'Installed schema version is 1.5.0');
 
     foreach ($tables as $table) {
         $engine = $wpdb->get_var($wpdb->prepare('SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s', $table));

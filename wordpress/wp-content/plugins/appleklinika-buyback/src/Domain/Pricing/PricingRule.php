@@ -57,7 +57,8 @@ final class PricingRule
             $this->definition->priority,
             $enabled,
             $this->definition->publicLabel,
-            $this->definition->internalNote
+            $this->definition->internalNote,
+            $this->definition->affectedComponentKey
         ), $at);
     }
 

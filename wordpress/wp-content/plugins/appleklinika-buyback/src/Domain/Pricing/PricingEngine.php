@@ -12,14 +12,15 @@ final class PricingEngine
 
     public function __construct(
         private readonly PriceBookValidator $validator = new PriceBookValidator(),
-        private readonly ConditionMatcher $matcher = new ConditionMatcher()
+        private readonly ConditionMatcher $matcher = new ConditionMatcher(),
+        private readonly SystemDefaultQuestionnairePolicy $questionnairePolicy = new SystemDefaultQuestionnairePolicy()
     ) {
     }
 
     /** @param list<PricingRule> $rules */
     public function calculate(PriceBook $book, array $rules, PricingCalculationInput $input): PricingCalculationResult
     {
-        $rules = $this->sortRules($rules);
+        $rules = $this->sortRules(array_merge($rules, $book->id() === null ? [] : $this->questionnairePolicy->inheritedRules($book->id())));
         $validation = $this->validator->validate($book, $rules, $input);
         if (! $validation->isValid()) {
             return PricingCalculationResult::configurationError($book, $input->serviceMode, $validation->issues);
@@ -43,29 +44,38 @@ final class PricingEngine
         )];
         $matchedRules = [$this->matched($baseRule)];
 
-        $hardRejects = $this->matchingConditional($enabled, PricingRuleKind::HARD_REJECT, $input);
+        $conditional = $this->effectiveConditionalRules(
+            array_values(array_filter($enabled, fn (PricingRule $rule): bool => $this->isMatchingConditional($rule, $input))),
+            $input
+        );
+        $componentTrace = $this->componentTrace($conditional);
+        $matchedRules = $this->mergeMatchedRules(
+            $matchedRules,
+            array_values(array_filter($componentTrace, static fn (PricingMatchedRule $rule): bool => $rule->ruleKind === PricingRuleKind::NO_CHANGE))
+        );
+        $hardRejects = $this->rulesOfKind($conditional, PricingRuleKind::HARD_REJECT);
         if ($hardRejects !== []) {
             return PricingCalculationResult::rejected(
                 $book,
                 $input->serviceMode,
                 array_map(fn (PricingRule $rule): string => $rule->definition()->code->code(), $hardRejects),
-                array_map(fn (PricingRule $rule): PricingMatchedRule => $this->matched($rule), $hardRejects),
+                $this->mergeMatchedRules($componentTrace, array_map(fn (PricingRule $rule): PricingMatchedRule => $this->matched($rule), $hardRejects)),
                 $breakdown
             );
         }
 
-        $manualReviews = $this->matchingConditional($enabled, PricingRuleKind::MANUAL_REVIEW, $input);
+        $manualReviews = $this->rulesOfKind($conditional, PricingRuleKind::MANUAL_REVIEW);
         if ($manualReviews !== []) {
             return PricingCalculationResult::manualReview(
                 $book,
                 $input->serviceMode,
                 array_map(fn (PricingRule $rule): string => $rule->definition()->code->code(), $manualReviews),
-                array_map(fn (PricingRule $rule): PricingMatchedRule => $this->matched($rule), $manualReviews),
+                $this->mergeMatchedRules($componentTrace, array_map(fn (PricingRule $rule): PricingMatchedRule => $this->matched($rule), $manualReviews)),
                 $breakdown
             );
         }
 
-        foreach ($this->matchingConditional($enabled, PricingRuleKind::FIXED_DEDUCTION, $input) as $rule) {
+        foreach ($this->rulesOfKind($conditional, PricingRuleKind::FIXED_DEDUCTION) as $rule) {
             $before = $amount;
             $deduction = $rule->definition()->amount->amount();
             $amount = max(0, $amount - $deduction);
@@ -74,7 +84,7 @@ final class PricingEngine
         }
         $afterDeductions = new Money($amount, $book->currency()->code());
 
-        foreach ($this->matchingConditional($enabled, PricingRuleKind::MULTIPLIER, $input) as $rule) {
+        foreach ($this->rulesOfKind($conditional, PricingRuleKind::MULTIPLIER) as $rule) {
             $before = $amount;
             $basisPoints = $rule->definition()->multiplier->value();
             $amount = intdiv($amount * $basisPoints, BasisPointsMultiplier::ONE);
@@ -168,13 +178,10 @@ final class PricingEngine
     }
 
     /** @param list<PricingRule> $rules @return list<PricingRule> */
-    private function matchingConditional(array $rules, string $kind, PricingCalculationInput $input): array
+    private function rulesOfKind(array $rules, string $kind): array
     {
-        $matching = array_values(array_filter($rules, fn (PricingRule $rule): bool => $this->isMatchingConditional($rule, $input)));
-        $effective = $this->effectiveConditionalRules($matching, $input);
-
         return array_values(array_filter(
-            $effective,
+            $rules,
             static fn (PricingRule $rule): bool => $rule->definition()->kind->code() === $kind
         ));
     }
@@ -191,11 +198,15 @@ final class PricingEngine
     private function effectiveConditionalRules(array $matching, PricingCalculationInput $input): array
     {
         $modelTargets = [];
+        $globalTargets = [];
         $hasMatchingModelBatteryRule = false;
 
         foreach ($matching as $rule) {
             $definition = $rule->definition();
             if ($definition->modelKey !== $input->modelKey->value()) {
+                if ($definition->modelKey === null && ! SystemDefaultQuestionnairePolicy::isInheritedRule($rule)) {
+                    $globalTargets[$this->conditionTargetKey($rule)] = true;
+                }
                 continue;
             }
 
@@ -207,10 +218,15 @@ final class PricingEngine
             $modelTargets[$this->conditionTargetKey($rule)] = true;
         }
 
-        return array_values(array_filter($matching, function (PricingRule $rule) use ($modelTargets, $hasMatchingModelBatteryRule): bool {
+        $effective = array_values(array_filter($matching, function (PricingRule $rule) use ($modelTargets, $globalTargets, $hasMatchingModelBatteryRule): bool {
             $definition = $rule->definition();
             if ($definition->modelKey !== null) {
                 return true;
+            }
+
+            if (SystemDefaultQuestionnairePolicy::isInheritedRule($rule)) {
+                $target = $this->conditionTargetKey($rule);
+                return ! isset($modelTargets[$target]) && ! isset($globalTargets[$target]);
             }
 
             if ($this->isBatteryCondition($rule)) {
@@ -219,6 +235,8 @@ final class PricingEngine
 
             return ! isset($modelTargets[$this->conditionTargetKey($rule)]);
         }));
+
+        return $this->withoutReplacedServiceHistoryRules($effective, $input);
     }
 
     private function isBatteryCondition(PricingRule $rule): bool
@@ -231,19 +249,93 @@ final class PricingEngine
         $definition = $rule->definition();
         return $definition->conditionKey !== null
             && ($definition->modelKey === null || $definition->modelKey === $input->modelKey->value())
-            && $this->matcher->matches($definition, $input->conditionAnswers);
+            && $this->matcher->matches($definition, $input->conditionAnswers, $input->affectedComponentKeys);
     }
 
     private function conditionTargetKey(PricingRule $rule): string
     {
         $definition = $rule->definition();
-        return $definition->conditionKey . '|' . $definition->operator?->code() . '|' . json_encode($definition->comparisonValue, JSON_THROW_ON_ERROR);
+        return $definition->conditionKey . '|' . $definition->affectedComponentKey . '|' . $definition->operator?->code() . '|' . json_encode($definition->comparisonValue, JSON_THROW_ON_ERROR);
     }
 
     private function matched(PricingRule $rule): PricingMatchedRule
     {
         $definition = $rule->definition();
-        return new PricingMatchedRule($definition->code->code(), $definition->kind->code(), $definition->priority->value(), $definition->publicLabel);
+        $source = $definition->affectedComponentKey !== null
+            ? 'service_history_component_override'
+            : (str_starts_with($definition->code->code(), SystemDefaultQuestionnairePolicy::CODE_PREFIX)
+            ? 'system_default'
+            : ($definition->modelKey === null ? 'price_book_global' : 'model_specific'));
+
+        return new PricingMatchedRule(
+            $definition->code->code(),
+            $definition->kind->code(),
+            $definition->priority->value(),
+            $definition->publicLabel,
+            $source,
+            $definition->conditionKey,
+            is_int($definition->comparisonValue) || is_bool($definition->comparisonValue) || is_string($definition->comparisonValue) ? $definition->comparisonValue : null,
+            $definition->affectedComponentKey
+        );
+    }
+
+    /** @param list<PricingRule> $rules @return list<PricingMatchedRule> */
+    private function componentTrace(array $rules): array
+    {
+        return array_map(
+            fn (PricingRule $rule): PricingMatchedRule => $this->matched($rule),
+            array_values(array_filter($rules, static fn (PricingRule $rule): bool => $rule->definition()->affectedComponentKey !== null))
+        );
+    }
+
+    /** @param list<PricingMatchedRule> $left @param list<PricingMatchedRule> $right @return list<PricingMatchedRule> */
+    private function mergeMatchedRules(array $left, array $right): array
+    {
+        $merged = [];
+        foreach (array_merge($left, $right) as $rule) {
+            $merged[$rule->ruleCode] = $rule;
+        }
+        return array_values($merged);
+    }
+
+    /**
+     * A component override replaces the generic service-history consequence for
+     * that selected component. When every selected component has an override,
+     * no generic service-history rule remains to apply to the device.
+     *
+     * @param list<PricingRule> $rules
+     * @return list<PricingRule>
+     */
+    private function withoutReplacedServiceHistoryRules(array $rules, PricingCalculationInput $input): array
+    {
+        if ($input->affectedComponentKeys === []) {
+            return $rules;
+        }
+
+        $serviceHistory = $input->conditionAnswers->get('replacement_parts');
+        if (! is_string($serviceHistory) || $serviceHistory === 'none_known') {
+            return $rules;
+        }
+
+        $overridden = [];
+        foreach ($rules as $rule) {
+            $definition = $rule->definition();
+            if ($definition->conditionKey === 'replacement_parts'
+                && $definition->comparisonValue === $serviceHistory
+                && $definition->affectedComponentKey !== null) {
+                $overridden[$definition->affectedComponentKey] = true;
+            }
+        }
+        if (array_diff($input->affectedComponentKeys, array_keys($overridden)) !== []) {
+            return $rules;
+        }
+
+        return array_values(array_filter($rules, static function (PricingRule $rule) use ($serviceHistory): bool {
+            $definition = $rule->definition();
+            return ! ($definition->conditionKey === 'replacement_parts'
+                && $definition->comparisonValue === $serviceHistory
+                && $definition->affectedComponentKey === null);
+        }));
     }
 
     private function amountLine(string $type, PricingRule $rule, int $before, int $adjustment, int $after): PricingBreakdownLine

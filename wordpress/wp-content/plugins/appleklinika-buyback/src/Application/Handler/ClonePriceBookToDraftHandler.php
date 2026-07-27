@@ -7,10 +7,11 @@ namespace AppleKlinika\Buyback\Application\Handler;
 use AppleKlinika\Buyback\Application\Command\ClonePriceBookToDraft;
 use AppleKlinika\Buyback\Application\Exception\PriceBookNotFoundException;
 use AppleKlinika\Buyback\Application\Port\Clock;
+use AppleKlinika\Buyback\Application\Port\PriceBookLifecycleRepository;
 use AppleKlinika\Buyback\Application\Port\PriceBookRepository;
 use AppleKlinika\Buyback\Application\Port\PricingRuleRepository;
 use AppleKlinika\Buyback\Application\Port\TransactionManager;
-use AppleKlinika\Buyback\Domain\Exception\InvalidAggregateOperationException;
+use AppleKlinika\Buyback\Domain\Exception\StaleAggregateVersionException;
 use AppleKlinika\Buyback\Domain\Pricing\PriceBook;
 use AppleKlinika\Buyback\Domain\Pricing\PriceBookId;
 use AppleKlinika\Buyback\Domain\Pricing\PricingActorId;
@@ -23,7 +24,8 @@ final class ClonePriceBookToDraftHandler
         private readonly PriceBookRepository $books,
         private readonly PricingRuleRepository $rules,
         private readonly TransactionManager $transactions,
-        private readonly Clock $clock
+        private readonly Clock $clock,
+        private readonly ?PriceBookLifecycleRepository $lifecycle = null
     ) {
     }
 
@@ -31,15 +33,12 @@ final class ClonePriceBookToDraftHandler
     {
         return $this->transactions->transactional(function () use ($command): PriceBook {
             $sourceId = new PriceBookId($command->sourcePriceBookId);
-            // The surrounding transaction makes creation and rule copying atomic.  A regular
-            // repository read keeps the handler portable to existing repository instances
-            // that do not expose row-locking support.
-            $source = $this->books->getById($sourceId);
+            $source = $this->books->getByIdForUpdate($sourceId);
             if ($source === null) {
                 throw PriceBookNotFoundException::forId($sourceId);
             }
-            if (! $source->status()->isActive()) {
-                throw new InvalidAggregateOperationException('Only the active price book may be copied into a new draft.');
+            if ($source->version()->value() !== $command->expectedSourceVersion) {
+                throw new StaleAggregateVersionException($command->expectedSourceVersion, $source->version()->value());
             }
 
             $at = $this->clock->now();
@@ -61,6 +60,12 @@ final class ClonePriceBookToDraftHandler
             foreach ($this->rules->listForPriceBook($sourceId) as $sourceRule) {
                 $this->rules->insert(PricingRule::create($draftId, $sourceRule->definition(), $at));
             }
+
+            $this->lifecycle?->record('draft_cloned', $draftId, $command->actorId, [
+                'source_price_book_id' => $sourceId->toInt(),
+                'source_version' => $source->version()->value(),
+                'source_status' => $source->status()->code(),
+            ], $at);
 
             return $draft;
         });
