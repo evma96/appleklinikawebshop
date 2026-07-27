@@ -88,7 +88,7 @@ try {
     $requestId = (int) ($row['id'] ?? 0);
     $snapshot = $wpdb->get_var($wpdb->prepare("SELECT payload_json FROM `{$tables[Schema::SNAPSHOTS]}` WHERE request_id = %d AND snapshot_type = %s", $requestId, 'public_submission'));
     $payload = is_string($snapshot) ? json_decode($snapshot, true) : null;
-    $test->assert(is_array($payload) && isset($payload['offers']['fast_online'], $payload['questionnaire']['canonical_answers'], $payload['price_book']['rules_hash']), 'Immutable snapshot contains recalculated offers, canonical answers and rule hash');
+    $test->assert(is_array($payload) && isset($payload['offers']['fast_online'], $payload['questionnaire']['canonical_answers'], $payload['price_book']['rules_hash'], $payload['effective_rule_sources']['fast_online']), 'Immutable snapshot contains recalculated offers, canonical answers, rule hash and effective rule sources');
     $test->assert((int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM `{$tables[Schema::EVENTS]}` WHERE request_id = %d", $requestId)) === 1, 'Exactly one initial event is persisted before notifications');
 
     $forcedManual = $input;
@@ -116,6 +116,8 @@ try {
     $manualSnapshot = $wpdb->get_var($wpdb->prepare("SELECT payload_json FROM `{$tables[Schema::SNAPSHOTS]}` WHERE request_id = %d AND snapshot_type = %s", $manualId, 'public_submission'));
     $manualPayload = is_string($manualSnapshot) ? json_decode($manualSnapshot, true) : null;
     $test->assert(is_array($manualPayload) && ($manualPayload['calculation']['status'] ?? null) === 'manual_review' && ($manualPayload['calculation_status'] ?? null) === 'manual_review' && array_key_exists('selected_offer_mode', $manualPayload) && $manualPayload['selected_offer_mode'] === null && array_key_exists('selected_amount', $manualPayload) && $manualPayload['selected_amount'] === null && array_key_exists('selected_final_amount_minor', $manualPayload) && $manualPayload['selected_final_amount_minor'] === null && ($manualPayload['manual_review_requested'] ?? false) === true && is_string($manualPayload['manual_review_requested_at'] ?? null), 'Manual-review snapshot records explicit no-offer intent, no amount and preserved state');
+    $sources = is_array($manualPayload['effective_rule_sources']['fast_online'] ?? null) ? $manualPayload['effective_rule_sources']['fast_online'] : [];
+    $test->assert($sources !== [] && array_diff(array_column($sources, 'source'), ['system_default', 'price_book_global', 'model_specific']) === [], 'Manual-review snapshot records the effective source and customer-facing reason for every matched rule');
     $forged = $manualInput;
     $forged['manual_review_requested'] = false;
     $forged['idempotency_token'] = bin2hex(random_bytes(32));

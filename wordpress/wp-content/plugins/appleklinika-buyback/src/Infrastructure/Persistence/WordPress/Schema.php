@@ -16,6 +16,8 @@ final class Schema
     public const EVENTS = 'ak_buyback_events';
     public const PRICE_BOOKS = 'ak_buyback_price_books';
     public const PRICE_RULES = 'ak_buyback_price_rules';
+    public const PRICE_BOOK_REFERENCES = 'ak_buyback_price_book_references';
+    public const PRICE_BOOK_LIFECYCLE_EVENTS = 'ak_buyback_price_book_lifecycle_events';
 
     /**
      * @return array<string, string>
@@ -28,6 +30,8 @@ final class Schema
             self::EVENTS => $database->prefix . self::EVENTS,
             self::PRICE_BOOKS => $database->prefix . self::PRICE_BOOKS,
             self::PRICE_RULES => $database->prefix . self::PRICE_RULES,
+            self::PRICE_BOOK_REFERENCES => $database->prefix . self::PRICE_BOOK_REFERENCES,
+            self::PRICE_BOOK_LIFECYCLE_EVENTS => $database->prefix . self::PRICE_BOOK_LIFECYCLE_EVENTS,
         ];
     }
 
@@ -123,6 +127,7 @@ final class Schema
                 'storage_gb',
                 'service_mode',
                 'condition_key',
+                'affected_component_key',
                 'comparison_operator',
                 'comparison_value_json',
                 'amount_minor',
@@ -134,6 +139,12 @@ final class Schema
                 'version',
                 'created_at',
                 'updated_at',
+            ],
+            self::PRICE_BOOK_REFERENCES => [
+                'currency', 'price_book_id', 'version', 'changed_by', 'changed_at',
+            ],
+            self::PRICE_BOOK_LIFECYCLE_EVENTS => [
+                'id', 'price_book_id', 'event_type', 'actor_id', 'payload_json', 'created_at',
             ],
         ];
     }
@@ -181,6 +192,8 @@ final class Schema
                 'book_priority',
                 'category_model',
             ],
+            self::PRICE_BOOK_REFERENCES => ['PRIMARY', 'price_book_id'],
+            self::PRICE_BOOK_LIFECYCLE_EVENTS => ['PRIMARY', 'price_book_created_at', 'event_type'],
         ];
     }
 }

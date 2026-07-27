@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace AppleKlinika\Buyback\Application\LocalDemo;
 
+use AppleKlinika\Buyback\Domain\Pricing\PricingRuleKind;
+use AppleKlinika\Buyback\Domain\Pricing\SystemDefaultQuestionnairePolicy;
+
 /**
  * Single source of truth for the local customer-facing iPhone questionnaire.
  *
@@ -261,7 +264,7 @@ final class LocalDemoQuestionnaire
      * answers: it only receives the supported existing pricing-condition
      * mapping or an immutable system outcome for each public answer.
      *
-     * @return list<array{panel:string,panel_title:string,question_key:string,label:string,helper:string,conditional_on:?string,conditional_except:?string,options:list<array{answer_key:string,label:string,configurable:bool,condition_key?:string,comparison_value?:int|bool|string,system_outcome?:string}>}>
+     * @return list<array{panel:string,panel_title:string,question_key:string,label:string,helper:string,conditional_on:?string,conditional_except:?string,options:list<array{answer_key:string,label:string,configurable:bool,editor_kind:string,condition_key?:string,comparison_value?:int|bool|string,system_outcome?:string}>}>
      */
     public function conditionEditorQuestions(): array
     {
@@ -286,7 +289,9 @@ final class LocalDemoQuestionnaire
                     'panel_title' => $this->panel($panelKey)['title'],
                     'question_key' => (string) $questionKey,
                     'label' => (string) $question['label'],
-                    'helper' => (string) ($question['helper'] ?? ''),
+                    'helper' => $questionKey === 'affected_parts'
+                        ? 'Az alkatrész önmagában nem módosítja az ajánlatot. Az alkatrészenkénti következményeket a szervizelőzmény egyes válaszainál állíthatod be.'
+                        : (string) ($question['helper'] ?? ''),
                     'conditional_on' => isset($question['conditional_on']) ? (string) $question['conditional_on'] : null,
                     'conditional_except' => isset($question['conditional_except']) ? (string) $question['conditional_except'] : null,
                     'options' => $options,
@@ -295,6 +300,45 @@ final class LocalDemoQuestionnaire
         }
 
         return $items;
+    }
+
+    /**
+     * Canonical editor metadata for rules that refine one service-history
+     * answer by the selected affected component. It is derived from the same
+     * public questionnaire, so the admin cannot drift into a second key list.
+     *
+     * @return array{service_history:list<array{answer_key:string,label:string}>,components:list<array{component_key:string,label:string,allows_monetary:bool}>}
+     */
+    public function serviceHistoryComponentRuleMetadata(): array
+    {
+        $questions = $this->questions();
+        $serviceHistory = [];
+        foreach ($questions['service_history']['options'] as $answerKey => $answer) {
+            if ($answerKey === 'none_known') {
+                continue;
+            }
+            $serviceHistory[] = ['answer_key' => (string) $answerKey, 'label' => (string) $answer['label']];
+        }
+
+        $components = [];
+        foreach ($questions['affected_parts']['options'] as $componentKey => $component) {
+            $components[] = [
+                'component_key' => (string) $componentKey,
+                'label' => (string) $component['label'],
+                'allows_monetary' => $componentKey !== 'other',
+            ];
+        }
+
+        return ['service_history' => $serviceHistory, 'components' => $components];
+    }
+
+    /** @param array<string,mixed> $state @return list<string> */
+    public function affectedPartKeys(array $state): array
+    {
+        $state = $this->sanitize($state);
+        return $this->serviceHistoryRequiresAffectedParts($state)
+            ? array_values(array_unique(array_map('strval', (array) $state['affected_parts'])))
+            : [];
     }
 
     /** @return array<string, mixed> */
@@ -417,6 +461,9 @@ final class LocalDemoQuestionnaire
             'face_id_functional' => ! in_array('face_id', $otherDefects, true),
             'camera_functional' => ! in_array('front_camera', $otherDefects, true)
                 && ! in_array('rear_camera', $otherDefects, true),
+            'front_camera_functional' => ! in_array('front_camera', $otherDefects, true),
+            'rear_camera_functional' => ! in_array('rear_camera', $otherDefects, true),
+            'audio_functional' => ! in_array('audio', $otherDefects, true),
             'charging_functional' => true,
             'battery_health' => (int) $state['battery_health'],
             'screen_condition' => (string) $state['screen_condition'],
@@ -425,11 +472,14 @@ final class LocalDemoQuestionnaire
             'camera_lens_condition' => in_array('camera_lens', $otherDefects, true) ? 'damaged' : 'excellent',
             'bent_or_dented' => false,
             'liquid_damage' => $state['liquid_exposure'] === 'yes_unknown',
+            'network_unlocked' => $state['network_status'] === 'unlocked',
+            'display_yellowing' => in_array('yellowing', $displayDefects, true),
+            'display_deformed' => in_array('deformed', $displayDefects, true),
+            'display_dead_pixels' => in_array('pixels', $displayDefects, true),
+            'display_image_brightness_functional' => ! in_array('image_brightness', $displayDefects, true),
             'motherboard_issue' => false,
             'replacement_parts' => match ((string) $state['service_history']) {
-                'original_repair', 'used_original' => 'original_repair',
-                'non_original' => 'non_original',
-                'unknown', 'repair_incomplete', 'unsure' => 'unknown',
+                'original_repair', 'used_original', 'non_original', 'unknown', 'repair_incomplete', 'unsure' => (string) $state['service_history'],
                 default => 'none_known',
             },
         ];
@@ -442,31 +492,14 @@ final class LocalDemoQuestionnaire
     {
         $state = $this->sanitize($state);
 
-        return $state['network_status'] === 'locked'
-            ? 'A helyi demó jelenleg csak hálózatfüggetlen iPhone készülékeket tud automatikusan értékelni.'
-            : null;
+        return null;
     }
 
     /** @param array<string, mixed> $state @return list<string> */
     public function manualReviewReasons(array $state): array
     {
         $state = $this->sanitize($state);
-        $reasons = [];
-
-        if ($state['liquid_exposure'] === 'yes_unknown') {
-            $reasons[] = 'A lehetséges folyadék- vagy párakár kézi bevizsgálást igényel.';
-        }
-        if (array_diff((array) $state['display_defects'], ['none', 'touch']) !== []) {
-            $reasons[] = 'A megjelölt kijelzőhiba egyedi bevizsgálást igényel.';
-        }
-        if (in_array('audio', (array) $state['other_defects'], true)) {
-            $reasons[] = 'A hanghiba egyedi bevizsgálást igényel.';
-        }
-        if (in_array((string) $state['service_history'], ['used_original', 'unknown', 'repair_incomplete', 'non_original', 'unsure'], true)) {
-            $reasons[] = 'Az alkatrész- és szervizelési előzmények kézi bevizsgálást igényelnek.';
-        }
-
-        return array_values(array_unique($reasons));
+        return [];
     }
 
     /**
@@ -475,9 +508,16 @@ final class LocalDemoQuestionnaire
      *
      * @param array<string,mixed> $state
      */
-    public function publicManualReviewReason(?string $conditionKey, string $reason, array $state): string
+    public function publicManualReviewReason(?string $conditionKey, string $reason, array $state, ?string $affectedComponentKey = null): string
     {
         $state = $this->sanitize($state);
+
+        if ($conditionKey === 'replacement_parts' && $affectedComponentKey !== null) {
+            $component = $this->questions()['affected_parts']['options'][$affectedComponentKey]['label'] ?? null;
+            if (is_string($component) && $component !== '') {
+                return $component . ' szervizelőzménye';
+            }
+        }
 
         if ($conditionKey === null) {
             $normalizedReason = function_exists('mb_strtolower') ? mb_strtolower($reason) : strtolower($reason);
@@ -521,11 +561,11 @@ final class LocalDemoQuestionnaire
             'Készülék' => ['Modell' => $model],
             'Konfiguráció' => [
                 'Tárhely' => $storage,
-                'Szín' => $color !== '' ? $color : 'Nincs kiválasztva',
+                'Szín' => $color !== '' ? $color : 'Nincs megadva',
                 'Hálózat' => $this->answerLabel('network_status', $state['network_status']),
             ],
             'Állapot' => [
-                'Folyadék / pára' => $this->answerLabel('liquid_exposure', $state['liquid_exposure']),
+                'Folyadékérintkezés' => $this->answerLabel('liquid_exposure', $state['liquid_exposure']),
                 'Kijelző' => $this->answerLabel('screen_condition', $state['screen_condition']),
                 'Keret' => $this->answerLabel('frame_condition', $state['frame_condition']),
                 'Hátlap' => $this->answerLabel('back_glass_condition', $state['back_glass_condition']),
@@ -619,7 +659,7 @@ final class LocalDemoQuestionnaire
         return implode(', ', array_map(fn (string $value): string => $this->answerLabel($key, $value), $values));
     }
 
-    /** @return array{answer_key:string,label:string,configurable:bool,condition_key?:string,comparison_value?:int|bool|string,system_outcome?:string} */
+    /** @return array{answer_key:string,label:string,configurable:bool,editor_kind:string,condition_key?:string,comparison_value?:int|bool|string,system_outcome?:string} */
     private function conditionEditorOption(string $questionKey, string $answerKey, string $label): array
     {
         $target = match ($questionKey) {
@@ -641,41 +681,41 @@ final class LocalDemoQuestionnaire
             default => null,
         };
 
+        $policy = (new SystemDefaultQuestionnairePolicy())->entryFor($questionKey, $answerKey);
+        if ($policy !== null) {
+            $target = ['condition_key' => $policy['condition_key'], 'comparison_value' => $policy['comparison_value']];
+        }
+
         if ($target !== null) {
-            return ['answer_key' => $answerKey, 'label' => $label, 'configurable' => true] + $target;
+            return ['answer_key' => $answerKey, 'label' => $label, 'configurable' => true, 'editor_kind' => 'configurable'] + $target;
         }
 
         return [
             'answer_key' => $answerKey,
             'label' => $label,
             'configurable' => false,
+            'editor_kind' => 'informational',
             'system_outcome' => $this->conditionEditorSystemOutcome($questionKey, $answerKey),
         ];
     }
 
     private function conditionEditorSystemOutcome(string $questionKey, string $answerKey): string
     {
+        $policy = (new SystemDefaultQuestionnairePolicy())->entryFor($questionKey, $answerKey);
+        if ($policy !== null) {
+            return match ($policy['default_action']) {
+                PricingRuleKind::MANUAL_REVIEW => 'Jelenlegi alapértelmezés: személyes bevizsgálás. Az árkönyvben felülírható.',
+                PricingRuleKind::HARD_REJECT => 'Jelenlegi alapértelmezés: nem felvásárolható. Az árkönyvben felülírható.',
+                default => 'Jelenlegi alapértelmezés: nincs változás. Az árkönyvben felülírható.',
+            };
+        }
         return match ($questionKey) {
-            'network_status' => $answerKey === 'locked'
-                ? 'Hálózatfüggő készülékre a nyilvános kérdőív nem ad automatikus ajánlatot; az eszköz elutasításra kerül.'
-                : 'A hálózatfüggetlen készülék folytathatja az automatikus előzetes értékelést.',
-            'liquid_exposure' => $answerKey === 'yes_unknown'
-                ? 'Lehetséges folyadék- vagy párakár esetén a nyilvános kérdőív kötelező kézi bevizsgálást kér.'
-                : 'Ismert folyadékkár hiányában ez a válasz önmagában nem hoz létre levonást.',
-            'display_defects' => match ($answerKey) {
-                'yellowing', 'deformed', 'pixels', 'image_brightness' => 'Ez a kijelzőhiba a nyilvános kérdőívben kötelező kézi bevizsgálást kér.',
-                default => 'Ez a válasz önmagában nem hoz létre külön árazási szabályt.',
-            },
             'service_history' => match ($answerKey) {
-                'used_original', 'unknown', 'repair_incomplete', 'non_original', 'unsure' => 'Ez a szervizelőzmény a nyilvános kérdőívben kötelező kézi bevizsgálást kér.',
                 'none_known' => 'Ilyenkor nem kell érintett alkatrészt megadni, és a korábban kijelölt alkatrészek törlődnek.',
                 default => 'Ez a válasz önmagában nem hoz létre külön árazási szabályt.',
             },
             'affected_parts' => 'Az érintett alkatrész csak a kérdőív bevizsgálási információja; önálló árazási szabály nem tartozik hozzá.',
-            'other_defects' => $answerKey === 'audio'
-                ? 'Hanghiba esetén a nyilvános kérdőív kötelező kézi bevizsgálást kér.'
-                : 'Ez a válasz önmagában nem hoz létre külön árazási szabályt.',
-            default => 'Ez a válasz rendszerszabály szerint nem szerkeszthető ezen a felületen.',
+            default => 'Ez az adat a bevizsgálás részlete, önálló árazási szabály nem tartozik hozzá.',
         };
     }
 }

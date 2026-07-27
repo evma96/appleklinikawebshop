@@ -16,6 +16,10 @@
   const modelCards = Array.from(root.querySelectorAll('[data-model-card]'));
   const modelGrid = root.querySelector('[data-model-grid]');
   const modelNoResults = root.querySelector('[data-model-no-results]');
+  const modelSearchClear = root.querySelector('[data-model-search-clear]');
+  const selectedModelConfiguration = root.querySelector('[data-selected-model-configuration]');
+  const selectedModelImage = root.querySelector('[data-selected-model-image]');
+  const selectedModelName = root.querySelector('[data-configuration-heading]');
   const storageCards = Array.from(root.querySelectorAll('[data-storage-card]'));
   const colorPicker = root.querySelector('[data-color-picker]');
   const colorOptions = root.querySelector('[data-color-options]');
@@ -56,10 +60,19 @@
   }
 
   let current = root.dataset.initialPanel || 'entry';
+  let modelCatalogueScrollTop = 0;
+  let modelCataloguePageScrollY = 0;
 
   const panelFor = (name) => panels.find((panel) => panel.dataset.demoPanel === name);
   const selectedModel = () => root.querySelector('input[name="model_key"]:checked');
   const selectedStorage = () => root.querySelector('input[name="storage_gb"]:checked');
+
+  function formatStorage(value) {
+    const storage = Number(value);
+    if (storage === 1024) return '1 TB';
+    if (storage === 2048) return '2 TB';
+    return String(value) + ' GB';
+  }
 
   function syncModelProgression() {
     const button = panelFor('model')?.querySelector('[data-demo-next]');
@@ -120,11 +133,38 @@
     const card = selectedModelCard();
     const storage = selectedStorage();
     const label = card ? card.dataset.label : '';
-    const storageLabel = storage ? (storage.value === '1024' ? '1 TB' : storage.value + ' GB') : '';
+    const storageLabel = storage ? formatStorage(storage.value) : '';
 
     if (crumb) {
       crumb.textContent = label ? label + (storageLabel ? ' · ' + storageLabel : '') : 'Készülék kiválasztása';
     }
+  }
+
+  function updateSelectedModelConfiguration() {
+    const card = selectedModelCard();
+    if (!selectedModelConfiguration || !selectedModelName) return;
+
+    if (!card) {
+      selectedModelConfiguration.hidden = true;
+      return;
+    }
+
+    const label = card.dataset.label || 'iPhone';
+    const image = card.dataset.image || '';
+    selectedModelName.textContent = label + ' konfigurációja';
+    selectedModelConfiguration.hidden = false;
+
+    if (!selectedModelImage) return;
+    if (image === '') {
+      selectedModelImage.hidden = true;
+      selectedModelImage.removeAttribute('src');
+      selectedModelImage.alt = '';
+      return;
+    }
+
+    selectedModelImage.src = image;
+    selectedModelImage.alt = label;
+    selectedModelImage.hidden = false;
   }
 
   function visualEntry(key) {
@@ -192,7 +232,7 @@
     applyVisual(visualEntry(''), '');
   }
 
-  function updateStorageAvailability() {
+  function updateStorageAvailability(preserveColor = false) {
     const card = selectedModelCard();
     const allowed = card && card.dataset.storages ? card.dataset.storages.split(',') : [];
 
@@ -205,17 +245,26 @@
     });
 
     updateDeviceContext();
-    updateColorOptions();
+    updateSelectedModelConfiguration();
+    updateColorOptions(preserveColor);
   }
 
-  function updateColorOptions() {
+  function resetModelSpecificConfiguration() {
+    storageCards.forEach((storageCard) => {
+      const input = storageCard.querySelector('input');
+      if (input) input.checked = false;
+    });
+    if (colorPicker) colorPicker.dataset.currentColor = '';
+  }
+
+  function updateColorOptions(preserveColor = false) {
     if (!colorPicker || !colorOptions) return;
     const card = selectedModelCard();
     const storage = selectedStorage();
     let colors = {};
     try { colors = card && storage ? (JSON.parse(card.dataset.colors || '{}')[storage.value] || {}) : {}; } catch (error) { colors = {}; }
     const current = root.querySelector('input[name="color_key"]:checked');
-    const selected = current ? current.value : (colorPicker.dataset.currentColor || '');
+    const selected = preserveColor ? (current ? current.value : (colorPicker.dataset.currentColor || '')) : '';
     colorOptions.innerHTML = '';
     Object.entries(colors).forEach(([key, label]) => {
       const id = 'ak-demo-color-' + key;
@@ -403,10 +452,6 @@
 
       const network = panel.querySelector('input[name="questionnaire[network_status]"]:checked');
       if (!network) return false;
-      if (network.value === 'locked') {
-        openNetworkModal();
-        return false;
-      }
     }
 
     const manualReviewRoute = panel.querySelector('[data-manual-review-route]');
@@ -446,6 +491,11 @@
   }
 
   root.addEventListener('click', (event) => {
+    if (event.target.closest('[data-change-model]')) {
+      showModelCatalogue();
+      return;
+    }
+
     const next = event.target.closest('[data-demo-next]');
     if (next) {
       if (next.matches('[data-entry-family]')) next.setAttribute('aria-pressed', 'true');
@@ -493,22 +543,35 @@
   modelCards.forEach((card) => {
     const input = card.querySelector('input');
     input.addEventListener('change', () => {
+      modelCatalogueScrollTop = modelGrid ? modelGrid.scrollTop : 0;
+      modelCataloguePageScrollY = window.scrollY;
+      resetModelSpecificConfiguration();
       updateStorageAvailability();
       syncModelProgression();
+      show('configuration', true);
     });
   });
+
+  function showModelCatalogue() {
+    show('model', false);
+    const heading = panelFor('model')?.querySelector('h3');
+    if (heading) {
+      heading.setAttribute('tabindex', '-1');
+      heading.focus({ preventScroll: true });
+    }
+    window.requestAnimationFrame(() => {
+      if (modelGrid) modelGrid.scrollTop = modelCatalogueScrollTop;
+      if (window.matchMedia('(max-width: 900px)').matches) {
+        window.scrollTo({ top: modelCataloguePageScrollY, behavior: 'auto' });
+      }
+    });
+  }
 
   root.querySelectorAll('input[name="storage_gb"]').forEach((input) => input.addEventListener('change', updateDeviceContext));
   root.addEventListener('change', (event) => {
     if (event.target.name === 'storage_gb' || event.target.name === 'model_key') {
       updateColorOptions();
     }
-  });
-
-  networkInputs.forEach((input) => {
-    input.addEventListener('change', () => {
-      if (input.checked && input.value === 'locked') openNetworkModal();
-    });
   });
 
   root.querySelectorAll('input[name="questionnaire[service_history]"]').forEach((input) => {
@@ -530,7 +593,7 @@
 
   const search = root.querySelector('[data-model-search]');
   if (search) {
-    search.addEventListener('input', () => {
+    const filterModels = () => {
       const query = search.value.trim().toLocaleLowerCase('hu-HU');
       let visibleCount = 0;
       modelCards.forEach((card) => {
@@ -539,8 +602,17 @@
         if (visible) visibleCount += 1;
       });
       if (modelNoResults) modelNoResults.hidden = visibleCount !== 0;
+      if (modelSearchClear) modelSearchClear.hidden = query === '';
       if (modelGrid) modelGrid.scrollTop = 0;
-    });
+    };
+    search.addEventListener('input', filterModels);
+    if (modelSearchClear) {
+      modelSearchClear.addEventListener('click', () => {
+        search.value = '';
+        filterModels();
+        search.focus({ preventScroll: true });
+      });
+    }
   }
 
   const range = root.querySelector('[data-battery-range]');
@@ -609,7 +681,7 @@
     });
   }
 
-  updateStorageAvailability();
+  updateStorageAvailability(true);
   syncModelProgression();
   root.querySelectorAll('[data-question-type="single"]').forEach(syncSingleChoiceDescriptions);
   updateConditionalQuestions();

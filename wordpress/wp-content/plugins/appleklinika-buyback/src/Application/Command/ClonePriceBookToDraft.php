@@ -8,6 +8,7 @@ final class ClonePriceBookToDraft
 {
     public function __construct(
         public readonly int $sourcePriceBookId,
+        public readonly int $expectedSourceVersion,
         public readonly int $actorId
     ) {
     }

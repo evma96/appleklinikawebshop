@@ -11,6 +11,7 @@ use AppleKlinika\Buyback\Application\Command\AddDraftPricingRule;
 use AppleKlinika\Buyback\Application\Command\CreateDraftPriceBook;
 use AppleKlinika\Buyback\Application\Command\ClonePriceBookToDraft;
 use AppleKlinika\Buyback\Application\Command\DiscardDraftPriceBook;
+use AppleKlinika\Buyback\Application\Command\ProtectPriceBook;
 use AppleKlinika\Buyback\Application\Command\DeleteDraftPricingRule;
 use AppleKlinika\Buyback\Application\Command\SaveDraftBasePriceMatrix;
 use AppleKlinika\Buyback\Application\Command\SaveDraftQuestionnaireConditions;
@@ -28,6 +29,7 @@ use AppleKlinika\Buyback\Application\Handler\ActivateDraftPriceBookHandler;
 use AppleKlinika\Buyback\Application\Handler\CreateDraftPriceBookHandler;
 use AppleKlinika\Buyback\Application\Handler\ClonePriceBookToDraftHandler;
 use AppleKlinika\Buyback\Application\Handler\DiscardDraftPriceBookHandler;
+use AppleKlinika\Buyback\Application\Handler\ProtectPriceBookHandler;
 use AppleKlinika\Buyback\Application\Handler\DeleteDraftPricingRuleHandler;
 use AppleKlinika\Buyback\Application\Handler\PreviewDraftPriceBookCalculationHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftBasePriceMatrixHandler;
@@ -68,6 +70,7 @@ use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\SchemaInspector;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\MySqlPriceBookActivationLock;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressPriceBookRepository;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressDraftPriceBookDiscardRepository;
+use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressPriceBookLifecycleRepository;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressPricingRuleRepository;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressTransactionManager;
 use AppleKlinika\Buyback\Infrastructure\WordPress\CapabilityManager;
@@ -176,9 +179,9 @@ final class ReferencedDraftPriceBookDiscardRepository implements DraftPriceBookD
         return true;
     }
 
-    public function discardDraftWithRules(PriceBookId $priceBookId): void
+    public function discardDraftWithRules(PriceBookId $priceBookId): int
     {
-        $this->delegate->discardDraftWithRules($priceBookId);
+        return $this->delegate->discardDraftWithRules($priceBookId);
     }
 }
 
@@ -193,7 +196,7 @@ final class FailingDraftPriceBookDiscardRepository implements DraftPriceBookDisc
         return false;
     }
 
-    public function discardDraftWithRules(PriceBookId $priceBookId): void
+    public function discardDraftWithRules(PriceBookId $priceBookId): int
     {
         $this->delegate->discardDraftWithRules($priceBookId);
         throw new AppleKlinika\Buyback\Infrastructure\Persistence\Exception\PersistenceException('Forced discard failure.');
@@ -277,9 +280,12 @@ function pricingCleanup(wpdb $database, array $tables, string $marker): void
     $ids = array_map('intval', is_array($ids) ? $ids : []);
     if ($ids !== []) {
         $placeholders = implode(',', array_fill(0, count($ids), '%d'));
+        $database->query($database->prepare("DELETE FROM `{$tables[Schema::PRICE_BOOK_REFERENCES]}` WHERE price_book_id IN ({$placeholders})", ...$ids));
+        $database->query($database->prepare("DELETE FROM `{$tables[Schema::PRICE_BOOK_LIFECYCLE_EVENTS]}` WHERE price_book_id IN ({$placeholders})", ...$ids));
         $database->query($database->prepare("DELETE FROM `{$tables[Schema::PRICE_RULES]}` WHERE price_book_id IN ({$placeholders})", ...$ids));
         $database->query($database->prepare("DELETE FROM `{$tables[Schema::PRICE_BOOKS]}` WHERE id IN ({$placeholders})", ...$ids));
     }
+    $database->query($database->prepare("DELETE FROM `{$tables[Schema::PRICE_BOOK_LIFECYCLE_EVENTS]}` WHERE payload_json LIKE %s", '%' . $database->esc_like($marker) . '%'));
 }
 
 function pricingDefinition(string $kind, string $code, int $priority = 100, bool $enabled = true): PricingRuleDefinition
@@ -320,8 +326,20 @@ function pricingConditionSubmission(LocalDemoQuestionnaire $questionnaire): arra
     foreach ($questionnaire->conditionEditorQuestions() as $question) {
         foreach ($question['options'] as $option) {
             if ($option['configurable']) {
-                $submission[$question['question_key']][$option['answer_key']] = ['action' => SaveDraftQuestionnaireConditionsHandler::ACTION_NONE, 'value' => ''];
+                $submission[$question['question_key']][$option['answer_key']] = ['action' => SaveDraftQuestionnaireConditionsHandler::ACTION_SYSTEM_DEFAULT, 'value' => ''];
             }
+        }
+    }
+    return $submission;
+}
+
+/** @return array<string,array<string,array{action:string,value:string}>> */
+function pricingServiceHistoryComponentSubmission(LocalDemoQuestionnaire $questionnaire): array
+{
+    $submission = [];
+    foreach ($questionnaire->serviceHistoryComponentRuleMetadata()['service_history'] as $history) {
+        foreach ($questionnaire->serviceHistoryComponentRuleMetadata()['components'] as $component) {
+            $submission[$history['answer_key']][$component['component_key']] = ['action' => SaveDraftQuestionnaireConditionsHandler::ACTION_INHERIT, 'value' => ''];
         }
     }
     return $submission;
@@ -353,10 +371,11 @@ function pricingUserForRole(string $role, string $token): array
     if (is_array($existing) && $existing !== []) {
         return [(int) $existing[0], false];
     }
+    $login = substr('qa-pricing-' . $role . '-' . strtolower($token), 0, 58);
     $id = wp_insert_user([
-        'user_login' => 'qa-pricing-' . $role . '-' . strtolower($token),
+        'user_login' => $login,
         'user_pass' => wp_generate_password(24, true, true),
-        'user_email' => 'qa-pricing-' . $role . '-' . strtolower($token) . '@example.invalid',
+        'user_email' => $login . '@example.invalid',
         'role' => $role,
     ]);
     if (is_wp_error($id)) {
@@ -399,18 +418,18 @@ $deleteRule = new DeleteDraftPricingRuleHandler($books, $rules, $transactions, $
 try {
     $test->assert(is_plugin_active(AK_BUYBACK_PRICING_PLUGIN), 'Buyback plugin is active');
     $test->assert(APPLEKLINIKA_BUYBACK_VERSION === '0.8.0', 'Plugin code version is 0.8.0');
-    $test->assert(APPLEKLINIKA_BUYBACK_SCHEMA_VERSION === '1.3.0', 'Code schema version is 1.3.0');
+    $test->assert(APPLEKLINIKA_BUYBACK_SCHEMA_VERSION === '1.5.0', 'Code schema version is 1.5.0');
 
     update_option(Schema::OPTION_SCHEMA_VERSION, '1.0.0', false);
     Plugin::migrationRunner()->run();
-    $test->assert(get_option(Schema::OPTION_SCHEMA_VERSION) === '1.3.0', 'Migration advances schema 1.0.0 to 1.3.0');
+    $test->assert(get_option(Schema::OPTION_SCHEMA_VERSION) === '1.5.0', 'Migration advances schema 1.0.0 to 1.5.0');
     Plugin::migrationRunner()->run();
-    $test->assert(get_option(Schema::OPTION_SCHEMA_VERSION) === '1.3.0', 'Migration rerun is idempotent');
+    $test->assert(get_option(Schema::OPTION_SCHEMA_VERSION) === '1.5.0', 'Migration rerun is idempotent');
     $test->assert(pricingRowCounts($wpdb, $tables) === $countsBefore, 'Migration creates no automatic business rows');
 
     $inspector = new SchemaInspector($wpdb, APPLEKLINIKA_BUYBACK_SCHEMA_VERSION);
     $inspector->assertRequiredSchema();
-    foreach ([Schema::PRICE_BOOKS, Schema::PRICE_RULES] as $key) {
+    foreach ([Schema::PRICE_BOOKS, Schema::PRICE_RULES, Schema::PRICE_BOOK_REFERENCES, Schema::PRICE_BOOK_LIFECYCLE_EVENTS] as $key) {
         $columns = pricingColumnNames($wpdb, $tables[$key]);
         $indexes = pricingIndexNames($wpdb, $tables[$key]);
         $expectedColumns = Schema::requiredColumns()[$key];
@@ -469,13 +488,22 @@ try {
     [$managerId, $managerCreated] = pricingUserForRole('shop_manager', $runToken);
     [$customerId, $customerCreated] = pricingUserForRole('customer', $runToken);
     [$subscriberId, $subscriberCreated] = pricingUserForRole('subscriber', $runToken);
-    foreach ([[$adminId, $adminCreated], [$managerId, $managerCreated], [$customerId, $customerCreated], [$subscriberId, $subscriberCreated]] as [$id, $created]) {
+    [$priceEditorId, $priceEditorCreated] = pricingUserForRole(CapabilityManager::PRICE_EDITOR_ROLE, $runToken);
+    foreach ([[$adminId, $adminCreated], [$managerId, $managerCreated], [$customerId, $customerCreated], [$subscriberId, $subscriberCreated], [$priceEditorId, $priceEditorCreated]] as [$id, $created]) {
         if ($created) {
             $createdUserIds[] = $id;
         }
     }
     (new CapabilityManager())->grant();
     $authorization = new AdminAuthorization();
+    $priceEditorRole = get_role(CapabilityManager::PRICE_EDITOR_ROLE);
+    $test->assert($priceEditorRole?->name === CapabilityManager::PRICE_EDITOR_ROLE, 'Restricted price-editor role is registered idempotently');
+    foreach (CapabilityManager::priceEditorCapabilities() as $capability) {
+        $test->assert($priceEditorRole?->has_cap($capability) === true, "Restricted price editor receives {$capability}");
+    }
+    foreach ([CapabilityManager::ACTIVATE_PRICE_BOOKS, CapabilityManager::DELETE_PRICE_BOOK_DRAFTS, CapabilityManager::PROTECT_PRICE_BOOKS, CapabilityManager::VIEW_BUYBACK_REQUESTS, CapabilityManager::MANAGE_BUYBACK_SETTINGS, CapabilityManager::VIEW_DIAGNOSTICS] as $capability) {
+        $test->assert($priceEditorRole?->has_cap($capability) !== true, "Restricted price editor does not receive {$capability}");
+    }
     foreach ([[$adminId, true, 'administrator'], [$managerId, true, 'shop_manager'], [$customerId, false, 'customer'], [$subscriberId, false, 'subscriber']] as [$userId, $allowed, $role]) {
         wp_set_current_user($userId);
         $nonce = wp_create_nonce(AdminAuthorization::NONCE_ACTION);
@@ -485,6 +513,16 @@ try {
         } else {
             $test->throws(fn () => $authorization->assert(CapabilityManager::MANAGE_PRICE_BOOKS, $nonce), RuntimeException::class, "{$role} is denied price-book access");
         }
+    }
+    wp_set_current_user($adminId);
+    wp_set_current_user($priceEditorId);
+    $editorNonce = wp_create_nonce(AdminAuthorization::NONCE_ACTION);
+    foreach (CapabilityManager::priceEditorCapabilities() as $capability) {
+        $authorization->assert($capability, $editorNonce);
+        $test->assert(true, "Restricted price editor may use {$capability}");
+    }
+    foreach ([CapabilityManager::ACTIVATE_PRICE_BOOKS, CapabilityManager::DELETE_PRICE_BOOK_DRAFTS, CapabilityManager::PROTECT_PRICE_BOOKS, CapabilityManager::VIEW_BUYBACK_REQUESTS] as $capability) {
+        $test->throws(fn () => $authorization->assert($capability, $editorNonce), RuntimeException::class, "Restricted direct request is denied for {$capability}");
     }
     wp_set_current_user($adminId);
     $test->throws(fn () => $authorization->assert(CapabilityManager::MANAGE_PRICE_BOOKS, 'invalid'), RuntimeException::class, 'Invalid admin nonce is rejected');
@@ -607,10 +645,17 @@ try {
     $test->assert($books->hasActiveBook(), 'Repository can detect active books read-only');
     $test->throws(fn () => $updateBook->handle(new UpdateDraftPriceBookSettings($activeBook->id()->toInt(), 0, 'Forbidden active edit', 0, 1, MinimumOfferPolicy::REJECT)), InvalidAggregateOperationException::class, 'Active book settings mutation is rejected');
     $test->throws(fn () => pricingAddRule($addRule, $books, $activeBook->id(), pricingDefinition(PricingRuleKind::BASE_PRICE, 'active-forbidden')), InvalidAggregateOperationException::class, 'Active book rule mutation is rejected');
-    $clone = (new ClonePriceBookToDraftHandler($books, $rules, $transactions, $clock))->handle(new ClonePriceBookToDraft($activeBook->id()->toInt(), $adminId));
+    $lifecycle = new WordPressPriceBookLifecycleRepository($wpdb);
+    $cloneHandler = new ClonePriceBookToDraftHandler($books, $rules, $transactions, $clock, $lifecycle);
+    $clone = $cloneHandler->handle(new ClonePriceBookToDraft($activeBook->id()->toInt(), $activeBook->version()->value(), $adminId));
     $test->assert($clone->status()->isDraft() && $clone->label() === $activeBook->label() . ' – Másolat v' . $activeBook->versionNumber()->value(), 'Active price book clones to a separately named draft');
     $test->assert(count($rules->listForPriceBook($clone->id())) === count($rules->listForPriceBook($activeBook->id())), 'Clone preserves all source pricing rules');
     $test->assert($books->getById($activeBook->id())?->status()->isActive(), 'Clone leaves the active source immutable and active');
+    $retiredClone = $cloneHandler->handle(new ClonePriceBookToDraft($retiredBook->id()->toInt(), $retiredBook->version()->value(), $adminId));
+    $test->assert($retiredClone->status()->isDraft() && count($rules->listForPriceBook($retiredClone->id())) === count($rules->listForPriceBook($retiredBook->id())), 'Retired price book clones to an independent editable draft');
+    $draftClone = $cloneHandler->handle(new ClonePriceBookToDraft($clone->id()->toInt(), $clone->version()->value(), $adminId));
+    $test->assert($draftClone->status()->isDraft() && $books->getById($clone->id())?->status()->isDraft(), 'Eligible draft cloning leaves its source draft unchanged');
+    $test->throws(fn () => $cloneHandler->handle(new ClonePriceBookToDraft($activeBook->id()->toInt(), $activeBook->version()->value() + 1, $adminId)), AppleKlinika\Buyback\Domain\Exception\StaleAggregateVersionException::class, 'Stale source version is rejected before a clone is created');
     $test->throws(fn () => $updateBook->handle(new UpdateDraftPriceBookSettings($retiredBook->id()->toInt(), 0, 'Forbidden retired edit', 0, 1, MinimumOfferPolicy::REJECT)), InvalidAggregateOperationException::class, 'Retired book mutation is rejected');
 
     $discardRepository = new WordPressDraftPriceBookDiscardRepository($wpdb);
@@ -618,24 +663,45 @@ try {
     $discardable = pricingCreateBook($createBook, $marker . '-DISCARD', $adminId);
     pricingAddRule($addRule, $books, $discardable->id(), pricingDefinition(PricingRuleKind::BASE_PRICE, $marker . '-discard-base'));
     $activeRulesBeforeDiscard = count($rules->listForPriceBook($activeBook->id()));
-    $discardDraft->handle(new DiscardDraftPriceBook($discardable->id()->toInt(), DiscardDraftPriceBook::CONFIRMATION));
+    $discardDraft->handle(new DiscardDraftPriceBook($discardable->id()->toInt(), $discardable->label()));
     $test->assert($books->getById($discardable->id()) === null && $rules->listForPriceBook($discardable->id()) === [], 'Discarding an unreferenced draft removes only that draft and its rules');
     $test->assert($books->getById($activeBook->id())?->status()->isActive() && count($rules->listForPriceBook($activeBook->id())) === $activeRulesBeforeDiscard, 'Discarding a draft preserves other price books and their rules');
-    $test->throws(fn () => $discardDraft->handle(new DiscardDraftPriceBook($activeBook->id()->toInt(), DiscardDraftPriceBook::CONFIRMATION)), InvalidAggregateOperationException::class, 'Discard handler rejects an active price book');
+    $test->throws(fn () => $discardDraft->handle(new DiscardDraftPriceBook($activeBook->id()->toInt(), $activeBook->label())), InvalidAggregateOperationException::class, 'Discard handler rejects an active price book');
     $retiredForDiscard = $books->getById($retiredBook->id());
-    $test->throws(fn () => $discardDraft->handle(new DiscardDraftPriceBook($retiredForDiscard?->id()->toInt() ?? 0, DiscardDraftPriceBook::CONFIRMATION)), InvalidAggregateOperationException::class, 'Discard handler rejects an archived price book');
-    $test->throws(fn () => $discardDraft->handle(new DiscardDraftPriceBook(999999999, DiscardDraftPriceBook::CONFIRMATION)), AppleKlinika\Buyback\Application\Exception\PriceBookNotFoundException::class, 'Discard handler rejects an unknown price book');
+    $test->throws(fn () => $discardDraft->handle(new DiscardDraftPriceBook($retiredForDiscard?->id()->toInt() ?? 0, $retiredForDiscard?->label() ?? '')), InvalidAggregateOperationException::class, 'Discard handler rejects an archived price book');
+    $test->throws(fn () => $discardDraft->handle(new DiscardDraftPriceBook(999999999, 'Unknown')), AppleKlinika\Buyback\Application\Exception\PriceBookNotFoundException::class, 'Discard handler rejects an unknown price book');
     $test->throws(fn () => $discardDraft->handle(new DiscardDraftPriceBook($clone->id()->toInt(), '')), InvalidArgumentException::class, 'Discard handler requires explicit permanent-deletion confirmation');
     $referencedDraft = pricingCreateBook($createBook, $marker . '-REFERENCED', $adminId);
     pricingAddRule($addRule, $books, $referencedDraft->id(), pricingDefinition(PricingRuleKind::BASE_PRICE, $marker . '-referenced-base'));
     $referencedDiscard = new DiscardDraftPriceBookHandler($books, new ReferencedDraftPriceBookDiscardRepository($discardRepository), $transactions);
-    $test->throws(fn () => $referencedDiscard->handle(new DiscardDraftPriceBook($referencedDraft->id()->toInt(), DiscardDraftPriceBook::CONFIRMATION)), AppleKlinika\Buyback\Application\Exception\PriceBookHasBusinessReferencesException::class, 'Discard handler blocks a draft with historical or business references');
+    $test->throws(fn () => $referencedDiscard->handle(new DiscardDraftPriceBook($referencedDraft->id()->toInt(), $referencedDraft->label())), AppleKlinika\Buyback\Application\Exception\PriceBookHasBusinessReferencesException::class, 'Discard handler blocks a draft with historical or business references');
     $test->assert($books->getById($referencedDraft->id()) !== null && count($rules->listForPriceBook($referencedDraft->id())) === 1, 'Reference-blocked discard leaves the draft and its rules intact');
     $rollbackDraft = pricingCreateBook($createBook, $marker . '-DISCARD-ROLLBACK', $adminId);
     pricingAddRule($addRule, $books, $rollbackDraft->id(), pricingDefinition(PricingRuleKind::BASE_PRICE, $marker . '-rollback-base'));
     $failingDiscard = new DiscardDraftPriceBookHandler($books, new FailingDraftPriceBookDiscardRepository($discardRepository), $transactions);
-    $test->throws(fn () => $failingDiscard->handle(new DiscardDraftPriceBook($rollbackDraft->id()->toInt(), DiscardDraftPriceBook::CONFIRMATION)), AppleKlinika\Buyback\Infrastructure\Persistence\Exception\PersistenceException::class, 'A discard transaction failure rolls back both the draft and its rules');
+    $test->throws(fn () => $failingDiscard->handle(new DiscardDraftPriceBook($rollbackDraft->id()->toInt(), $rollbackDraft->label())), AppleKlinika\Buyback\Infrastructure\Persistence\Exception\PersistenceException::class, 'A discard transaction failure rolls back both the draft and its rules');
     $test->assert($books->getById($rollbackDraft->id()) !== null && count($rules->listForPriceBook($rollbackDraft->id())) === 1, 'Discard rollback leaves both the draft and its rules intact');
+
+    $protectBook = new ProtectPriceBookHandler($books, $lifecycle, $transactions, $clock);
+    $protectedFirst = pricingCreateBook($createBook, $marker . '-PROTECTED-FIRST', $adminId);
+    $protectedSecond = pricingCreateBook($createBook, $marker . '-PROTECTED-SECOND', $adminId);
+    $test->throws(fn () => $protectBook->handle(new ProtectPriceBook($protectedFirst->id()->toInt(), $adminId, 'rossz név')), InvalidArgumentException::class, 'Protected-reference transfer requires the exact draft name');
+    $firstProtection = $protectBook->handle(new ProtectPriceBook($protectedFirst->id()->toInt(), $adminId, $protectedFirst->label()));
+    $test->assert($lifecycle->protectedReferenceFor(new CurrencyCode('HUF'))?->equals($protectedFirst->id()) === true && $firstProtection['previous_id'] === null, 'First protected reference is stored per currency');
+    $protectedClone = $cloneHandler->handle(new ClonePriceBookToDraft($protectedFirst->id()->toInt(), $protectedFirst->version()->value(), $adminId));
+    $test->assert($protectedClone->status()->isDraft() && ! $lifecycle->isProtected($protectedClone->id()) && count($rules->listForPriceBook($protectedClone->id())) === count($rules->listForPriceBook($protectedFirst->id())), 'Protected source clones without inheriting protected-reference state');
+    $secondProtection = $protectBook->handle(new ProtectPriceBook($protectedSecond->id()->toInt(), $adminId, $protectedSecond->label()));
+    $test->assert($lifecycle->protectedReferenceFor(new CurrencyCode('HUF'))?->equals($protectedSecond->id()) === true && $secondProtection['previous_id'] === $protectedFirst->id()->toInt() && ! $lifecycle->isProtected($protectedFirst->id()), 'Protected-reference movement atomically leaves exactly one reference per currency');
+    $protectedDiscard = new DiscardDraftPriceBookHandler($books, $discardRepository, $transactions, $lifecycle, $clock);
+    $test->throws(fn () => $protectedDiscard->handle(new DiscardDraftPriceBook($protectedSecond->id()->toInt(), $protectedSecond->label(), $adminId)), InvalidArgumentException::class, 'Protected reference cannot be deleted even through the server handler');
+    $lifecycleDiscard = pricingCreateBook($createBook, $marker . '-LIFECYCLE-DISCARD', $adminId);
+    pricingAddRule($addRule, $books, $lifecycleDiscard->id(), pricingDefinition(PricingRuleKind::BASE_PRICE, $marker . '-lifecycle-discard-rule'));
+    $deletedLifecycleDraft = $protectedDiscard->handle(new DiscardDraftPriceBook($lifecycleDiscard->id()->toInt(), $lifecycleDiscard->label(), $adminId));
+    $auditRows = $wpdb->get_results($wpdb->prepare("SELECT event_type, payload_json FROM `{$tables[Schema::PRICE_BOOK_LIFECYCLE_EVENTS]}` WHERE price_book_id IN (%d, %d) OR payload_json LIKE %s ORDER BY id ASC", $protectedFirst->id()->toInt(), $protectedSecond->id()->toInt(), '%' . $wpdb->esc_like($marker) . '%'), ARRAY_A);
+    $auditTypes = array_column(is_array($auditRows) ? $auditRows : [], 'event_type');
+    $test->assert($deletedLifecycleDraft['id'] === $lifecycleDiscard->id()->toInt() && $deletedLifecycleDraft['deleted_rule_count'] === 1 && $books->getById($lifecycleDiscard->id()) === null, 'Eligible isolated draft deletion returns the exact deleted rule count');
+    $cloneAudit = (int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM `{$tables[Schema::PRICE_BOOK_LIFECYCLE_EVENTS]}` WHERE price_book_id = %d AND event_type = %s", $protectedClone->id()->toInt(), 'draft_cloned'));
+    $test->assert(in_array('protected_reference_changed', $auditTypes, true) && in_array('draft_deleted', $auditTypes, true) && $cloneAudit === 1, 'Lifecycle actions create dedicated audit records, including clone provenance');
 
     $guard = new AdminSubmissionGuard();
     $token = $guard->issue();
@@ -738,6 +804,18 @@ try {
     $test->assert($publicQuestionKeys === array_column($editorQuestions, 'question_key'), 'Condition editor uses the public questionnaire question order directly');
     $screenQuestion = array_values(array_filter($editorQuestions, static fn (array $question): bool => $question['question_key'] === 'screen_condition'))[0] ?? null;
     $test->assert($screenQuestion !== null && ($screenQuestion['options'][4]['answer_key'] ?? null) === 'damaged' && ($screenQuestion['options'][4]['condition_key'] ?? null) === 'screen_condition', 'Condition editor uses the canonical public answer keys and condition mapping');
+    $editorOption = static function (array $questions, string $questionKey, string $answerKey): ?array {
+        foreach ($questions as $question) {
+            if ($question['question_key'] !== $questionKey) { continue; }
+            foreach ($question['options'] as $option) {
+                if ($option['answer_key'] === $answerKey) { return $option; }
+            }
+        }
+        return null;
+    };
+    $test->assert(($editorOption($editorQuestions, 'display_defects', 'yellowing')['editor_kind'] ?? null) === 'configurable' && ($editorOption($editorQuestions, 'display_defects', 'touch')['editor_kind'] ?? null) === 'configurable', 'Every commercial display-function answer is configurable from the public questionnaire catalogue');
+    $test->assert(($editorOption($editorQuestions, 'service_history', 'used_original')['editor_kind'] ?? null) === 'configurable' && ($editorOption($editorQuestions, 'service_history', 'original_repair')['editor_kind'] ?? null) === 'configurable' && ($editorOption($editorQuestions, 'affected_parts', 'battery')['editor_kind'] ?? null) === 'informational', 'Service-history commercial answers are configurable while affected-part metadata remains informational');
+    $test->assert(($editorOption($editorQuestions, 'other_defects', 'audio')['editor_kind'] ?? null) === 'configurable' && ($editorOption($editorQuestions, 'other_defects', 'front_camera')['editor_kind'] ?? null) === 'configurable' && ($editorOption($editorQuestions, 'network_status', 'locked')['editor_kind'] ?? null) === 'configurable', 'Audio, camera and network business outcomes are configurable instead of hard-coded');
     $matrixCurrent = $books->getById($matrixBook->id());
     $saveMatrix->handle(new SaveDraftBasePriceMatrix($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, [
         $firstConfiguration->modelKey => [(string) $firstConfiguration->storageGb => '125000'],
@@ -771,7 +849,8 @@ try {
     $conditionSubmission['screen_condition']['damaged'] = ['action' => SaveDraftQuestionnaireConditionsHandler::ACTION_NONE, 'value' => ''];
     $matrixCurrent = $books->getById($matrixBook->id());
     $saveConditions->handle(new SaveDraftQuestionnaireConditions($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, 'iphone_11_pro', $conditionSubmission));
-    $test->assert(count(array_filter($rules->listForPriceBook($matrixBook->id()), static fn (PricingRule $rule): bool => $rule->definition()->code->code() === $damagedCode)) === 0, 'Nincs változás removes only the matching draft questionnaire rule');
+    $noChangeRule = array_values(array_filter($rules->listForPriceBook($matrixBook->id()), static fn (PricingRule $rule): bool => $rule->definition()->code->code() === $damagedCode))[0] ?? null;
+    $test->assert($noChangeRule?->definition()->kind->code() === PricingRuleKind::NO_CHANGE, 'Nincs változás persists only a neutral override that suppresses the inherited system policy');
     $invalidConditionSubmission = $conditionSubmission;
     $invalidConditionSubmission['other_defects']['rear_camera'] = ['action' => SaveDraftQuestionnaireConditionsHandler::ACTION_HARD_REJECT, 'value' => '1'];
     $matrixCurrent = $books->getById($matrixBook->id());
@@ -779,10 +858,39 @@ try {
     $test->throws(fn () => $saveConditions->handle(new SaveDraftQuestionnaireConditions($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, 'iphone_11_pro', $invalidConditionSubmission)), InvalidArgumentException::class, 'Condition editor rejects stale financial values for rejection');
     $test->assert(count($rules->listForPriceBook($matrixBook->id())) === $ruleCountBeforeInvalidCondition, 'Invalid condition submissions leave all rules unchanged');
     $invalidConditionSubmission = $conditionSubmission;
-    $invalidConditionSubmission['network_status'] = ['locked' => ['action' => SaveDraftQuestionnaireConditionsHandler::ACTION_FIXED, 'value' => '1']];
+    $networkSubmission = $conditionSubmission;
+    $networkSubmission['network_status'] = ['locked' => ['action' => SaveDraftQuestionnaireConditionsHandler::ACTION_FIXED, 'value' => '1']];
     $matrixCurrent = $books->getById($matrixBook->id());
-    $test->throws(fn () => $saveConditions->handle(new SaveDraftQuestionnaireConditions($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, 'iphone_11_pro', $invalidConditionSubmission)), InvalidArgumentException::class, 'Condition editor does not make immutable network rejection configurable');
+    $saveConditions->handle(new SaveDraftQuestionnaireConditions($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, 'iphone_11_pro', $networkSubmission));
+    $test->assert(true, 'Condition editor accepts an explicit price-book override for the previous network-lock rejection');
     $test->throws(fn () => $saveConditions->handle(new SaveDraftQuestionnaireConditions($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, 'iphone_not_in_inventory', $conditionSubmission)), InvalidArgumentException::class, 'Condition editor rejects an unknown inventory model key');
+
+    $componentMetadata = $questionnaire->serviceHistoryComponentRuleMetadata();
+    $test->assert(array_column($componentMetadata['service_history'], 'answer_key') === ['original_repair', 'used_original', 'unknown', 'repair_incomplete', 'non_original', 'unsure'] && array_column($componentMetadata['components'], 'component_key') === ['battery', 'display', 'rear_camera', 'front_camera_truedepth', 'other'], 'Component-rule editor metadata is derived from the exact canonical public service-history and affected-part keys');
+    $test->assert(($componentMetadata['components'][4]['allows_monetary'] ?? true) === false && ($componentMetadata['components'][0]['allows_monetary'] ?? false) === true, 'Only the canonical Other component is restricted from automatic monetary rules');
+    $componentSubmission = pricingServiceHistoryComponentSubmission($questionnaire);
+    $componentSubmission['non_original']['battery'] = ['action' => SaveDraftQuestionnaireConditionsHandler::ACTION_FIXED, 'value' => '15000'];
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $saveConditions->handle(new SaveDraftQuestionnaireConditions($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, 'iphone_11_pro', $conditionSubmission, $componentSubmission));
+    $componentCode = SaveDraftQuestionnaireConditionsHandler::componentRuleCode($matrixBook->id()->toInt(), 'iphone_11_pro', 'non_original', 'battery');
+    $componentRule = array_values(array_filter($rules->listForPriceBook($matrixBook->id()), static fn (PricingRule $rule): bool => $rule->definition()->code->code() === $componentCode))[0] ?? null;
+    $test->assert($componentRule instanceof PricingRule && $componentRule->definition()->affectedComponentKey === 'battery' && $componentRule->definition()->conditionKey === 'replacement_parts' && $componentRule->definition()->comparisonValue === 'non_original' && $componentRule->definition()->amount?->amount() === 15000, 'Saving a component rule persists the exact model, service-history answer, affected component and fixed consequence');
+    $componentReloaded = $rules->getById($componentRule?->id());
+    $test->assert($componentReloaded?->definition()->affectedComponentKey === 'battery' && $componentReloaded?->definition()->amount?->amount() === 15000, 'Component rule saves and reloads byte-for-value through the versioned price-rule repository');
+    $componentSubmission['non_original']['other'] = ['action' => SaveDraftQuestionnaireConditionsHandler::ACTION_FIXED, 'value' => '1'];
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $componentRuleCountBeforeForgedOther = count($rules->listForPriceBook($matrixBook->id()));
+    $test->throws(fn () => $saveConditions->handle(new SaveDraftQuestionnaireConditions($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, 'iphone_11_pro', $conditionSubmission, $componentSubmission)), InvalidArgumentException::class, 'Forged monetary Other-component service-history rule is rejected server-side');
+    $test->assert(count($rules->listForPriceBook($matrixBook->id())) === $componentRuleCountBeforeForgedOther, 'Rejected forged Other-component rule leaves every stored rule unchanged');
+    $componentSubmission['non_original']['other'] = ['action' => SaveDraftQuestionnaireConditionsHandler::ACTION_INHERIT, 'value' => ''];
+    $componentSubmission['non_original']['battery'] = ['action' => SaveDraftQuestionnaireConditionsHandler::ACTION_INHERIT, 'value' => ''];
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $saveConditions->handle(new SaveDraftQuestionnaireConditions($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, 'iphone_11_pro', $conditionSubmission, $componentSubmission));
+    $test->assert($rules->getById($componentRule?->id()) === null, 'Inherit removes only the selected model-specific component override without backfilling inherit rows');
+    $activeCurrent = $books->getById($activeBook->id());
+    $retiredCurrent = $books->getById($retiredBook->id());
+    $test->throws(fn () => $saveConditions->handle(new SaveDraftQuestionnaireConditions($activeBook->id()->toInt(), $activeCurrent?->version()->value() ?? -1, 'iphone_11_pro', $conditionSubmission, pricingServiceHistoryComponentSubmission($questionnaire))), InvalidAggregateOperationException::class, 'Active price-book component-rule edits are rejected');
+    $test->throws(fn () => $saveConditions->handle(new SaveDraftQuestionnaireConditions($retiredBook->id()->toInt(), $retiredCurrent?->version()->value() ?? -1, 'iphone_11_pro', $conditionSubmission, pricingServiceHistoryComponentSubmission($questionnaire))), InvalidAggregateOperationException::class, 'Retired price-book component-rule edits are rejected');
 
     $batteryQuestion = $questionnaire->questions()['battery_health'] ?? [];
     $test->assert(($batteryQuestion['type'] ?? null) === 'range' && ($batteryQuestion['min'] ?? null) === 70 && ($batteryQuestion['max'] ?? null) === 100, 'Battery editor uses the public questionnaire battery key and integer 70–100 percentage range');
@@ -883,8 +991,8 @@ try {
         $rules,
         $catalog,
         $createBook,
-        new ClonePriceBookToDraftHandler($books, $rules, $transactions, $clock),
-        new DiscardDraftPriceBookHandler($books, new WordPressDraftPriceBookDiscardRepository($wpdb), $transactions),
+        new ClonePriceBookToDraftHandler($books, $rules, $transactions, $clock, $lifecycle),
+        new DiscardDraftPriceBookHandler($books, new WordPressDraftPriceBookDiscardRepository($wpdb), $transactions, $lifecycle, $clock),
         $saveMatrix,
         $saveConditions,
         $saveBatteryBands,
@@ -899,18 +1007,37 @@ try {
         new PreviewDraftPriceBookCalculationHandler($books, $rules, $catalog, new PricingEngine(), $questionnaire),
         new PreviewCalculationFormParser($questionnaire),
         new PriceBookActivationReadinessService($catalog, new PriceBookActivationReadinessEvaluator()),
-        new ActivateDraftPriceBookHandler($books, $rules, new PriceBookActivationReadinessService($catalog, new PriceBookActivationReadinessEvaluator()), new MySqlPriceBookActivationLock($wpdb), $transactions, $clock),
+        new ActivateDraftPriceBookHandler($books, $rules, new PriceBookActivationReadinessService($catalog, new PriceBookActivationReadinessEvaluator()), new MySqlPriceBookActivationLock($wpdb), $transactions, $clock, $lifecycle),
         new RepositoryActivePriceBookResolver($books, $rules),
         $clock,
         $authorization,
         new AdminSubmissionGuard(),
-        $questionnaire
+        $questionnaire,
+        $lifecycle,
+        new ProtectPriceBookHandler($books, $lifecycle, $transactions, $clock)
     );
     $_GET = [];
     ob_start();
     $uiPage->render();
     $priceBookIndexHtml = (string) ob_get_clean();
-    $test->assert(str_contains($priceBookIndexHtml, 'Apple Klinika Felvásárlás – Árkönyvek') && str_contains($priceBookIndexHtml, 'Itt kezelheted a nyilvános felvásárlási kalkulátor árait és szabályait.') && str_contains($priceBookIndexHtml, 'Élő árkönyv') && str_contains($priceBookIndexHtml, 'Szerkesztés alatt') && str_contains($priceBookIndexHtml, 'Korábbi verziók') && str_contains($priceBookIndexHtml, 'Technikai részletek') && str_contains($priceBookIndexHtml, 'Új módosítás indítása') && str_contains($priceBookIndexHtml, 'Módosítás elvetése') && str_contains($priceBookIndexHtml, 'data-ak-discard-form') && str_contains($priceBookIndexHtml, 'Haladó beállítások'), 'Price-book index presents owner-facing sections, safe clone guidance and a POST-only draft discard action');
+    $test->assert(str_contains($priceBookIndexHtml, 'Apple Klinika Felvásárlás – Árkönyvek') && str_contains($priceBookIndexHtml, 'Jelenleg aktív') && str_contains($priceBookIndexHtml, 'Védett alapárkönyv') && str_contains($priceBookIndexHtml, 'Piszkozatok') && str_contains($priceBookIndexHtml, 'data-ak-draft-filters') && str_contains($priceBookIndexHtml, 'Keresés név vagy azonosító alapján…') && str_contains($priceBookIndexHtml, 'További műveletek') && str_contains($priceBookIndexHtml, 'Korábban használt árkönyvek (') && str_contains($priceBookIndexHtml, 'Részletes adatok') && str_contains($priceBookIndexHtml, 'Új piszkozat készítése ebből') && str_contains($priceBookIndexHtml, 'expected_source_version') && str_contains($priceBookIndexHtml, 'Árkönyv használatba vétele') && str_contains($priceBookIndexHtml, 'Piszkozat végleges törlése') && str_contains($priceBookIndexHtml, 'discard_confirmation') && str_contains($priceBookIndexHtml, 'data-ak-confirmation-panel hidden') && str_contains($priceBookIndexHtml, 'Haladó beállítások'), 'Price-book index presents compact manager-facing summary, clone concurrency fields, filters, secondary-action menus and closed exact-name confirmations');
+    set_transient('ak_buyback_lifecycle_notice_' . $adminId, ['type' => 'clone', 'label' => $marker . '-NOTICE', 'id' => 987654], MINUTE_IN_SECONDS);
+    $_GET = ['ak_result' => 'success', 'ak_action' => 'clone_active_price_book'];
+    ob_start();
+    $uiPage->render();
+    $cloneNoticeHtml = (string) ob_get_clean();
+    $test->assert(substr_count($cloneNoticeHtml, 'Az új piszkozat elkészült: ' . $marker . '-NOTICE (azonosító: 987654).') === 1 && ! str_contains($cloneNoticeHtml, 'A művelet sikeresen befejeződött.'), 'Clone completion renders one exact one-time success notice without a duplicate generic notice');
+    $cloneErrorMethod = new ReflectionMethod(PriceBooksPage::class, 'cloneErrorMessage');
+    $cloneErrorMethod->setAccessible(true);
+    $test->assert($cloneErrorMethod->invoke($uiPage, new StaleAggregateVersionException(1, 2)) === 'Az árkönyv időközben megváltozott. Frissítsd az oldalt, majd próbáld újra.', 'Clone stale-version failures expose the specific owner-facing refresh message');
+    $_GET = ['book_id' => (string) $protectedSecond->id()->toInt(), 'tab' => 'base-prices'];
+    ob_start();
+    $uiPage->render();
+    $protectedOutput = (string) ob_get_clean();
+    $test->assert(str_contains($protectedOutput, 'Ez az árkönyv nem törölhető és közvetlenül nem szerkeszthető. Új piszkozat azonban bármikor készíthető belőle.') && ! str_contains($protectedOutput, 'data-ak-base-price-form'), 'Protected draft direct URL is rendered read-only with natural owner-facing guidance');
+    $protectedDispatch = new ReflectionMethod(PriceBooksPage::class, 'dispatch');
+    $protectedDispatch->setAccessible(true);
+    $test->throws(fn () => $protectedDispatch->invoke($uiPage, 'update_price_book', ['price_book_id' => $protectedSecond->id()->toInt(), 'expected_book_version' => $protectedSecond->version()->value(), 'label' => 'Forged protected write', 'minimum_offer_minor' => 0, 'rounding_increment_minor' => 1, 'minimum_policy' => MinimumOfferPolicy::REJECT]), InvalidArgumentException::class, 'Forged protected-draft write is rejected server-side');
     $_GET = ['book_id' => (string) $matrixBook->id()->toInt(), 'tab' => 'base-prices'];
     ob_start();
     $uiPage->render();
@@ -921,7 +1048,7 @@ try {
     ob_start();
     $uiPage->render();
     $conditionsHtml = (string) ob_get_clean();
-    $test->assert(str_contains($conditionsHtml, 'Hálózatfüggetlen a készülék?') && str_contains($conditionsHtml, 'Művelet') && str_contains($conditionsHtml, 'Rendszerszabály') && ! str_contains($conditionsHtml, 'Az állapotlevonások felhasználóbarát szerkesztője még nem készült el.') && ! str_contains($conditionsHtml, 'Szabálykód') && ! str_contains($conditionsHtml, 'Összehasonlítás értéke') && ! str_contains($conditionsHtml, 'Diagnosztikai azonosító'), 'Normal Conditions tab renders the business questionnaire editor without raw technical fields');
+    $test->assert(str_contains($conditionsHtml, 'Hálózatfüggetlen a készülék?') && str_contains($conditionsHtml, 'Művelet') && str_contains($conditionsHtml, 'Rendszer alapértelmezése') && str_contains($conditionsHtml, 'Forrás: Rendszer alapértelmezése') && str_contains($conditionsHtml, 'Tájékoztató válasz') && str_contains($conditionsHtml, 'Az alkatrész önmagában nem módosítja az ajánlatot. Az alkatrészenkénti következményeket a szervizelőzmény egyes válaszainál állíthatod be.') && substr_count($conditionsHtml, 'Alkatrészenkénti szabályok') === 6 && str_contains($conditionsHtml, 'Örökli a szervizelőzmény szabályát') && str_contains($conditionsHtml, 'Jelenlegi örökölt eredmény:') && str_contains($conditionsHtml, 'name="service_history_components[non_original][battery][action]"') && ! str_contains($conditionsHtml, 'name="service_history_components[none_known]') && ! str_contains($conditionsHtml, 'name="service_history_components[non_original][other][value]"') && ! str_contains($conditionsHtml, 'Rögzített biztonsági szabály') && ! str_contains($conditionsHtml, 'Az állapotlevonások felhasználóbarát szerkesztője még nem készült el.') && ! str_contains($conditionsHtml, 'Szabálykód') && ! str_contains($conditionsHtml, 'Összehasonlítás értéke') && ! str_contains($conditionsHtml, 'Diagnosztikai azonosító'), 'Normal Conditions tab exposes collapsed service-history component panels with canonical restrictions while retaining informational-only rows without raw technical fields');
     $_GET = ['book_id' => (string) $matrixBook->id()->toInt(), 'tab' => 'battery', 'model' => 'iphone_11_pro'];
     ob_start();
     $uiPage->render();
@@ -1021,7 +1148,7 @@ $test->assert($eventsAfter === $eventsBefore, 'Phase 1 retained event rows remai
 $test->assert($legacyHashAfter === $legacyHashBefore, 'Legacy user-meta hash remains unchanged');
 $test->assert($activeAfter === $activeBefore, 'Active price-book count returns to pre-test value');
 $test->assert(hash('sha256', serialize(get_option('appleklinika_device_catalog', null))) === $catalogHashBefore, 'Inventory catalog hash remains unchanged after cleanup');
-$test->assert((string) get_option(Schema::OPTION_SCHEMA_VERSION) === '1.3.0', 'Installed schema ends at 1.3.0');
+$test->assert((string) get_option(Schema::OPTION_SCHEMA_VERSION) === '1.5.0', 'Installed schema ends at 1.5.0');
 $test->assert((string) get_option(Schema::OPTION_PLUGIN_VERSION) === '0.8.0', 'Installed plugin option ends at 0.8.0');
 $test->assert((int) $wpdb->get_var('SELECT @@in_transaction') === 0, 'Cleanup leaves no database transaction open');
 foreach ($phaseOneStructureBefore as $key => $signature) {

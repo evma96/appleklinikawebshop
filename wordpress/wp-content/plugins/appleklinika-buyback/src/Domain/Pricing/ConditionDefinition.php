@@ -43,8 +43,11 @@ final class ConditionDefinition
     private const REPLACEMENT_VALUES = [
         'none_known' => 'Nem ismert cserealkatrész',
         'original_repair' => 'Eredeti alkatrészes javítás',
+        'used_original' => 'Használt eredeti alkatrész',
         'non_original' => 'Nem eredeti alkatrész',
         'unknown' => 'Nem ismert',
+        'repair_incomplete' => 'Befejezetlen javítási vagy szervizüzenet',
+        'unsure' => 'Bizonytalan szervizelőzmény',
     ];
 
     /** @var array<string, array{type: string, label: string, required: bool, operators: list<string>, values: array<string, string>}> */
@@ -55,8 +58,16 @@ final class ConditionDefinition
         'touch_functional' => ['type' => self::TYPE_BOOLEAN, 'label' => 'Az érintés működik', 'required' => true, 'operators' => self::EQUALITY_OPERATORS, 'values' => []],
         'face_id_functional' => ['type' => self::TYPE_BOOLEAN, 'label' => 'A Face ID működik', 'required' => true, 'operators' => self::EQUALITY_OPERATORS, 'values' => []],
         'camera_functional' => ['type' => self::TYPE_BOOLEAN, 'label' => 'A kamerák működnek', 'required' => true, 'operators' => self::EQUALITY_OPERATORS, 'values' => []],
+        'front_camera_functional' => ['type' => self::TYPE_BOOLEAN, 'label' => 'Az előlapi kamera működik', 'required' => true, 'operators' => self::EQUALITY_OPERATORS, 'values' => []],
+        'rear_camera_functional' => ['type' => self::TYPE_BOOLEAN, 'label' => 'A hátlapi kamera működik', 'required' => true, 'operators' => self::EQUALITY_OPERATORS, 'values' => []],
+        'audio_functional' => ['type' => self::TYPE_BOOLEAN, 'label' => 'A hang működik', 'required' => true, 'operators' => self::EQUALITY_OPERATORS, 'values' => []],
         'charging_functional' => ['type' => self::TYPE_BOOLEAN, 'label' => 'A töltés működik', 'required' => true, 'operators' => self::EQUALITY_OPERATORS, 'values' => []],
         'liquid_damage' => ['type' => self::TYPE_BOOLEAN, 'label' => 'Folyadékkár nyoma', 'required' => true, 'operators' => self::EQUALITY_OPERATORS, 'values' => []],
+        'network_unlocked' => ['type' => self::TYPE_BOOLEAN, 'label' => 'Hálózatfüggetlen', 'required' => true, 'operators' => self::EQUALITY_OPERATORS, 'values' => []],
+        'display_yellowing' => ['type' => self::TYPE_BOOLEAN, 'label' => 'A kijelző elszíneződött', 'required' => true, 'operators' => self::EQUALITY_OPERATORS, 'values' => []],
+        'display_deformed' => ['type' => self::TYPE_BOOLEAN, 'label' => 'A kijelző deformált', 'required' => true, 'operators' => self::EQUALITY_OPERATORS, 'values' => []],
+        'display_dead_pixels' => ['type' => self::TYPE_BOOLEAN, 'label' => 'A kijelzőnek pixelhibája van', 'required' => true, 'operators' => self::EQUALITY_OPERATORS, 'values' => []],
+        'display_image_brightness_functional' => ['type' => self::TYPE_BOOLEAN, 'label' => 'A kijelző képe és fényereje megfelelő', 'required' => true, 'operators' => self::EQUALITY_OPERATORS, 'values' => []],
         'motherboard_issue' => ['type' => self::TYPE_BOOLEAN, 'label' => 'Alaplaphiba', 'required' => true, 'operators' => self::EQUALITY_OPERATORS, 'values' => []],
         'screen_condition' => ['type' => self::TYPE_ENUM, 'label' => 'Kijelző állapota', 'required' => true, 'operators' => self::EQUALITY_OPERATORS, 'values' => self::COSMETIC_VALUES],
         'frame_condition' => ['type' => self::TYPE_ENUM, 'label' => 'Keret állapota', 'required' => true, 'operators' => self::EQUALITY_OPERATORS, 'values' => self::COSMETIC_VALUES],

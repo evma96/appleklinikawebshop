@@ -15,11 +15,12 @@ final class PricingRuleKind
     public const MINIMUM_OFFER = 'minimum_offer';
     public const HARD_REJECT = 'hard_reject';
     public const MANUAL_REVIEW = 'manual_review';
+    public const NO_CHANGE = 'no_change';
 
     /** @return list<string> */
     public static function supported(): array
     {
-        return [self::BASE_PRICE, self::FIXED_DEDUCTION, self::MULTIPLIER, self::MODE_ADJUSTMENT, self::MINIMUM_OFFER, self::HARD_REJECT, self::MANUAL_REVIEW];
+        return [self::BASE_PRICE, self::FIXED_DEDUCTION, self::MULTIPLIER, self::MODE_ADJUSTMENT, self::MINIMUM_OFFER, self::HARD_REJECT, self::MANUAL_REVIEW, self::NO_CHANGE];
     }
 
     public function __construct(private readonly string $code)

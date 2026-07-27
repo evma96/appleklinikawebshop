@@ -108,8 +108,16 @@ function engineAnswers(array $overrides = []): array
         'touch_functional' => true,
         'face_id_functional' => true,
         'camera_functional' => true,
+        'front_camera_functional' => true,
+        'rear_camera_functional' => true,
+        'audio_functional' => true,
         'charging_functional' => true,
         'liquid_damage' => false,
+        'network_unlocked' => true,
+        'display_yellowing' => false,
+        'display_deformed' => false,
+        'display_dead_pixels' => false,
+        'display_image_brightness_functional' => true,
         'motherboard_issue' => false,
         'screen_condition' => 'good',
         'frame_condition' => 'very_good',
@@ -143,7 +151,8 @@ function engineRule(int $id, PriceBookId $bookId, string $kind, string $code, in
         new RulePriority($priority),
         $enabled,
         $values['label'] ?? null,
-        'QA pricing-engine rule'
+        'QA pricing-engine rule',
+        $values['affected_component_key'] ?? null
     );
     $at = new DateTimeImmutable('2026-07-16T08:00:00+00:00');
     return PricingRule::reconstitute(new PricingRuleId($id), $bookId, $definition, new AggregateVersion(0), $at, $at);
@@ -160,9 +169,9 @@ function engineOfferRules(PriceBookId $bookId): array
     ];
 }
 
-function engineInput(array $answers = [], string $mode = ServiceMode::FAST_ONLINE, string $model = 'iphone-13-pro', int $storage = 128): PricingCalculationInput
+function engineInput(array $answers = [], string $mode = ServiceMode::FAST_ONLINE, string $model = 'iphone-13-pro', int $storage = 128, array $affectedComponents = []): PricingCalculationInput
 {
-    return new PricingCalculationInput(new DeviceCategory(DeviceCategory::IPHONE), new PricingModelKey($model), new StorageCapacity($storage), ConditionAnswerCollection::fromAssociative(engineAnswers($answers)), new ServiceMode($mode));
+    return new PricingCalculationInput(new DeviceCategory(DeviceCategory::IPHONE), new PricingModelKey($model), new StorageCapacity($storage), ConditionAnswerCollection::fromAssociative(engineAnswers($answers)), new ServiceMode($mode), $affectedComponents);
 }
 
 /** @return array<string, int> */
@@ -213,8 +222,8 @@ $engine = new PricingEngine();
 
 try {
     $test->assert(APPLEKLINIKA_BUYBACK_VERSION === '0.8.0', 'Plugin version is 0.8.0');
-    $test->assert(APPLEKLINIKA_BUYBACK_SCHEMA_VERSION === '1.3.0', 'Schema code remains 1.3.0');
-    $test->assert((string) get_option(Schema::OPTION_SCHEMA_VERSION) === '1.3.0', 'Installed schema remains 1.3.0');
+    $test->assert(APPLEKLINIKA_BUYBACK_SCHEMA_VERSION === '1.5.0', 'Schema code remains 1.5.0');
+    $test->assert((string) get_option(Schema::OPTION_SCHEMA_VERSION) === '1.5.0', 'Installed schema remains 1.5.0');
 
     $validAnswers = ConditionAnswerCollection::fromAssociative(engineAnswers());
     $test->assert(count($validAnswers->all()) === count(ConditionDefinition::keys()), 'Valid full condition input is accepted');
@@ -297,6 +306,29 @@ try {
     $test->assert($batteryAfterModelDeletion->finalAmount?->amount() === 195000, 'Deleting a model-specific battery override preserves the legacy global fallback');
     $test->assert($batteryUnmatched->finalAmount?->amount() === 200000, 'An uncovered battery percentage uses the proven no-adjustment engine fallback');
 
+    $boundaryBook = engineBook(700012, 0, 1);
+    $boundaryRules = [
+        engineRule(301, $boundaryBook->id(), PricingRuleKind::BASE_PRICE, 'boundary-base-11', 10, true, ['model_key' => 'iphone_11', 'amount' => 100000]),
+        engineRule(302, $boundaryBook->id(), PricingRuleKind::BASE_PRICE, 'boundary-base-17e', 10, true, ['model_key' => 'iphone_17e', 'amount' => 100000]),
+        engineRule(303, $boundaryBook->id(), PricingRuleKind::MANUAL_REVIEW, 'boundary-global-below-80', 20, true, ['condition_key' => 'battery_health', 'operator' => ComparisonOperator::LESS_THAN, 'comparison' => 80, 'label' => '80% alatti akkumulátor']),
+        engineRule(304, $boundaryBook->id(), PricingRuleKind::FIXED_DEDUCTION, 'boundary-global-80-84', 21, true, ['condition_key' => 'battery_health', 'operator' => ComparisonOperator::BETWEEN, 'comparison' => [80, 84], 'amount' => 10000]),
+        engineRule(305, $boundaryBook->id(), PricingRuleKind::FIXED_DEDUCTION, 'boundary-global-85-89', 21, true, ['condition_key' => 'battery_health', 'operator' => ComparisonOperator::BETWEEN, 'comparison' => [85, 89], 'amount' => 5000]),
+        engineRule(306, $boundaryBook->id(), PricingRuleKind::FIXED_DEDUCTION, 'boundary-11-70-79', 30, true, ['model_key' => 'iphone_11', 'condition_key' => 'battery_health', 'operator' => ComparisonOperator::BETWEEN, 'comparison' => [70, 79], 'amount' => 20000]),
+        engineRule(307, $boundaryBook->id(), PricingRuleKind::FIXED_DEDUCTION, 'boundary-11-80-89', 30, true, ['model_key' => 'iphone_11', 'condition_key' => 'battery_health', 'operator' => ComparisonOperator::BETWEEN, 'comparison' => [80, 89], 'amount' => 10000]),
+    ];
+    $boundaryExpectations = [
+        'iphone_11' => [79 => [PricingOutcome::OFFERED, 80000, 'boundary-11-70-79'], 80 => [PricingOutcome::OFFERED, 90000, 'boundary-11-80-89'], 84 => [PricingOutcome::OFFERED, 90000, 'boundary-11-80-89'], 85 => [PricingOutcome::OFFERED, 90000, 'boundary-11-80-89'], 89 => [PricingOutcome::OFFERED, 90000, 'boundary-11-80-89'], 90 => [PricingOutcome::OFFERED, 100000, null]],
+        'iphone_17e' => [79 => [PricingOutcome::MANUAL_REVIEW, null, 'boundary-global-below-80'], 80 => [PricingOutcome::OFFERED, 90000, 'boundary-global-80-84'], 84 => [PricingOutcome::OFFERED, 90000, 'boundary-global-80-84'], 85 => [PricingOutcome::OFFERED, 95000, 'boundary-global-85-89'], 89 => [PricingOutcome::OFFERED, 95000, 'boundary-global-85-89'], 90 => [PricingOutcome::OFFERED, 100000, null]],
+    ];
+    foreach ($boundaryExpectations as $model => $expectations) {
+        foreach ($expectations as $health => [$outcome, $amount, $ruleCode]) {
+            $boundaryResult = $engine->calculate($boundaryBook, $boundaryRules, engineInput(['battery_health' => $health], ServiceMode::HIGHER_OFFER, $model, 128));
+            $matchedCodes = array_column($boundaryResult->toArray()['matched_rules'], 'rule_code');
+            $test->assert($boundaryResult->outcome->code() === $outcome && ($amount === null ? $boundaryResult->finalAmount === null : $boundaryResult->finalAmount?->amount() === $amount) && ($ruleCode === null ? count($matchedCodes) === 1 : in_array($ruleCode, $matchedCodes, true)), "{$model} battery {$health}% uses the exact expected boundary outcome and rule scope");
+        }
+    }
+    $test->assert((new LocalDemoQuestionnaire())->publicManualReviewReason('battery_health', '80% alatti akkumulátor', (new LocalDemoQuestionnaire())->defaults()) === '80% alatti akkumulátor', 'The battery manual-review reason preserves the same strict customer-facing boundary wording');
+
     $precedenceBook = engineBook(700021, 0, 1);
     $precedenceRules = [
         engineRule(501, $precedenceBook->id(), PricingRuleKind::BASE_PRICE, 'precedence-base-11', 10, true, ['model_key' => 'iphone_11', 'amount' => 100000]),
@@ -328,11 +360,76 @@ try {
     $questionnaire = new LocalDemoQuestionnaire();
     $lockedState = $questionnaire->defaults();
     $lockedState['network_status'] = 'locked';
-    $test->assert($questionnaire->eligibilityError($lockedState) !== null, 'Immutable network-lock rejection remains outside and unaffected by configurable pricing-rule precedence');
+    $test->assert($questionnaire->eligibilityError($lockedState) === null && $questionnaire->mapToConditions($lockedState)['network_unlocked'] === false, 'Network lock is now represented as a canonical pricing condition rather than a hard-coded pre-engine rejection');
     $noneKnownState = $questionnaire->defaults();
     $noneKnownState['service_history'] = 'none_known';
     $noneKnownState['affected_parts'] = ['battery'];
     $test->assert($questionnaire->sanitize($noneKnownState)['affected_parts'] === [], 'Immutable none_known service-history dependency remains unaffected by configurable pricing-rule precedence');
+
+    $policyBook = engineBook(700022, 0, 1);
+    $policyBase = [engineRule(601, $policyBook->id(), PricingRuleKind::BASE_PRICE, 'policy-base', 10, true, ['amount' => 100000])];
+    $liquidInput = engineInput(['liquid_damage' => true]);
+    $inheritedLiquid = $engine->calculate($policyBook, $policyBase, $liquidInput);
+    $test->assert($inheritedLiquid->outcome->code() === PricingOutcome::MANUAL_REVIEW, 'Suspected liquid contact inherits the existing system-default manual-review outcome');
+    $noChangeLiquid = $engine->calculate($policyBook, array_merge($policyBase, [engineRule(602, $policyBook->id(), PricingRuleKind::NO_CHANGE, 'liquid-no-change', 20, true, ['model_key' => 'iphone-13-pro', 'condition_key' => 'liquid_damage', 'operator' => ComparisonOperator::EQUALS, 'comparison' => true])]), $liquidInput);
+    $test->assert($noChangeLiquid->outcome->code() === PricingOutcome::OFFERED && $noChangeLiquid->finalAmount?->amount() === 100000, 'A model-specific no-change override suppresses the inherited liquid manual-review policy without a fabricated money rule');
+    $fixedLiquid = $engine->calculate($policyBook, array_merge($policyBase, [engineRule(603, $policyBook->id(), PricingRuleKind::FIXED_DEDUCTION, 'liquid-fixed', 20, true, ['model_key' => 'iphone-13-pro', 'condition_key' => 'liquid_damage', 'operator' => ComparisonOperator::EQUALS, 'comparison' => true, 'amount' => 30000])]), $liquidInput);
+    $test->assert($fixedLiquid->outcome->code() === PricingOutcome::OFFERED && $fixedLiquid->finalAmount?->amount() === 70000, 'A model-specific fixed liquid deduction overrides the system default');
+    $percentageLiquid = $engine->calculate($policyBook, array_merge($policyBase, [engineRule(604, $policyBook->id(), PricingRuleKind::MULTIPLIER, 'liquid-percentage', 20, true, ['model_key' => 'iphone-13-pro', 'condition_key' => 'liquid_damage', 'operator' => ComparisonOperator::EQUALS, 'comparison' => true, 'multiplier' => 9000])]), $liquidInput);
+    $test->assert($percentageLiquid->outcome->code() === PricingOutcome::OFFERED && $percentageLiquid->finalAmount?->amount() === 90000, 'A model-specific percentage liquid deduction overrides the system default');
+    $manualLiquid = $engine->calculate($policyBook, array_merge($policyBase, [engineRule(605, $policyBook->id(), PricingRuleKind::MANUAL_REVIEW, 'liquid-manual', 20, true, ['model_key' => 'iphone-13-pro', 'condition_key' => 'liquid_damage', 'operator' => ComparisonOperator::EQUALS, 'comparison' => true, 'label' => 'Egyedi folyadékvizsgálat'])]), $liquidInput);
+    $test->assert($manualLiquid->outcome->code() === PricingOutcome::MANUAL_REVIEW && $manualLiquid->reasonCodes === ['liquid-manual'], 'An explicit liquid manual-review rule replaces the inherited default deterministically');
+    $rejectedLiquid = $engine->calculate($policyBook, array_merge($policyBase, [engineRule(606, $policyBook->id(), PricingRuleKind::HARD_REJECT, 'liquid-reject-policy', 20, true, ['model_key' => 'iphone-13-pro', 'condition_key' => 'liquid_damage', 'operator' => ComparisonOperator::EQUALS, 'comparison' => true, 'label' => 'Folyadékkár'])]), $liquidInput);
+    $test->assert($rejectedLiquid->outcome->code() === PricingOutcome::REJECTED, 'An explicit liquid rejection replaces the inherited default deterministically');
+    $globalLiquid = $engine->calculate($policyBook, array_merge($policyBase, [engineRule(607, $policyBook->id(), PricingRuleKind::FIXED_DEDUCTION, 'liquid-global-fixed', 20, true, ['condition_key' => 'liquid_damage', 'operator' => ComparisonOperator::EQUALS, 'comparison' => true, 'amount' => 20000])]), $liquidInput);
+    $test->assert($globalLiquid->outcome->code() === PricingOutcome::OFFERED && $globalLiquid->finalAmount?->amount() === 80000, 'A global price-book rule overrides the inherited system default when no model-specific rule exists');
+    $soundDefault = $engine->calculate($policyBook, $policyBase, engineInput(['audio_functional' => false]));
+    $test->assert($soundDefault->outcome->code() === PricingOutcome::MANUAL_REVIEW, 'Sound-fault inherited behavior remains personal inspection until explicitly overridden');
+    $displayFixed = $engine->calculate($policyBook, array_merge($policyBase, [engineRule(608, $policyBook->id(), PricingRuleKind::FIXED_DEDUCTION, 'yellowing-fixed', 20, true, ['model_key' => 'iphone-13-pro', 'condition_key' => 'display_yellowing', 'operator' => ComparisonOperator::EQUALS, 'comparison' => true, 'amount' => 12000])]), engineInput(['display_yellowing' => true]));
+    $test->assert($displayFixed->outcome->code() === PricingOutcome::OFFERED && $displayFixed->finalAmount?->amount() === 88000, 'A display-function fixed deduction suppresses the inherited manual-review default');
+    $serviceNoChange = $engine->calculate($policyBook, array_merge($policyBase, [engineRule(609, $policyBook->id(), PricingRuleKind::NO_CHANGE, 'used-original-none', 20, true, ['model_key' => 'iphone-13-pro', 'condition_key' => 'replacement_parts', 'operator' => ComparisonOperator::EQUALS, 'comparison' => 'used_original'])]), engineInput(['replacement_parts' => 'used_original']));
+    $test->assert($serviceNoChange->outcome->code() === PricingOutcome::OFFERED, 'A service-history no-change override suppresses its inherited manual-review default');
+    $cameraReject = $engine->calculate($policyBook, array_merge($policyBase, [engineRule(610, $policyBook->id(), PricingRuleKind::HARD_REJECT, 'face-id-reject', 20, true, ['model_key' => 'iphone-13-pro', 'condition_key' => 'face_id_functional', 'operator' => ComparisonOperator::EQUALS, 'comparison' => false, 'label' => 'Face ID hiba'])]), engineInput(['face_id_functional' => false]));
+    $test->assert($cameraReject->outcome->code() === PricingOutcome::REJECTED, 'A camera or Face ID commercial rule can use the configured rejection operation');
+
+    $componentBook = engineBook(700023, 0, 1);
+    $componentBase = [engineRule(701, $componentBook->id(), PricingRuleKind::BASE_PRICE, 'component-base', 10, true, ['amount' => 100000])];
+    $componentInput = static fn (array $components): PricingCalculationInput => engineInput(['replacement_parts' => 'non_original'], ServiceMode::HIGHER_OFFER, 'iphone-13-pro', 128, $components);
+    $inheritedComponent = $engine->calculate($componentBook, $componentBase, $componentInput(['battery']));
+    $test->assert($inheritedComponent->outcome->code() === PricingOutcome::MANUAL_REVIEW, 'Service-history component rules default to inherit, preserving the existing generic manual-review result');
+
+    $componentNoChangeRule = engineRule(702, $componentBook->id(), PricingRuleKind::NO_CHANGE, 'component-battery-none', 20, true, ['model_key' => 'iphone-13-pro', 'condition_key' => 'replacement_parts', 'operator' => ComparisonOperator::EQUALS, 'comparison' => 'non_original', 'affected_component_key' => 'battery']);
+    $componentNoChange = $engine->calculate($componentBook, array_merge($componentBase, [$componentNoChangeRule]), $componentInput(['battery']));
+    $test->assert($componentNoChange->outcome->code() === PricingOutcome::OFFERED && $componentNoChange->finalAmount?->amount() === 100000, 'A component no-change override removes only that component inherited service-history manual review');
+    $noChangeTrace = $componentNoChange->toArray()['matched_rules'];
+    $test->assert(($noChangeTrace[1]['source'] ?? null) === 'service_history_component_override' && ($noChangeTrace[1]['affected_component_key'] ?? null) === 'battery' && ($noChangeTrace[1]['comparison_value'] ?? null) === 'non_original', 'Component no-change trace records service history, component, override source and effective operation context');
+
+    $componentFixedRule = engineRule(703, $componentBook->id(), PricingRuleKind::FIXED_DEDUCTION, 'component-battery-fixed', 21, true, ['model_key' => 'iphone-13-pro', 'condition_key' => 'replacement_parts', 'operator' => ComparisonOperator::EQUALS, 'comparison' => 'non_original', 'amount' => 15000, 'affected_component_key' => 'battery']);
+    $componentFixed = $engine->calculate($componentBook, array_merge($componentBase, [$componentFixedRule]), $componentInput(['battery']));
+    $test->assert($componentFixed->outcome->code() === PricingOutcome::OFFERED && $componentFixed->finalAmount?->amount() === 85000, 'A component fixed deduction replaces inherited service-history manual review with the exact deduction');
+
+    $componentPercentageRule = engineRule(704, $componentBook->id(), PricingRuleKind::MULTIPLIER, 'component-display-percentage', 22, true, ['model_key' => 'iphone-13-pro', 'condition_key' => 'replacement_parts', 'operator' => ComparisonOperator::EQUALS, 'comparison' => 'non_original', 'multiplier' => 8500, 'affected_component_key' => 'display']);
+    $componentPercentage = $engine->calculate($componentBook, array_merge($componentBase, [$componentPercentageRule]), $componentInput(['display']));
+    $test->assert($componentPercentage->outcome->code() === PricingOutcome::OFFERED && $componentPercentage->finalAmount?->amount() === 85000, 'A component percentage deduction replaces inherited service-history manual review with the existing multiplier semantics');
+
+    $componentManualRule = engineRule(705, $componentBook->id(), PricingRuleKind::MANUAL_REVIEW, 'component-truedepth-manual', 23, true, ['model_key' => 'iphone-13-pro', 'condition_key' => 'replacement_parts', 'operator' => ComparisonOperator::EQUALS, 'comparison' => 'non_original', 'label' => 'TrueDepth szervizelőzménye', 'affected_component_key' => 'front_camera_truedepth']);
+    $componentManual = $engine->calculate($componentBook, array_merge($componentBase, [$componentManualRule]), $componentInput(['front_camera_truedepth']));
+    $test->assert($componentManual->outcome->code() === PricingOutcome::MANUAL_REVIEW && $componentManual->reasonCodes === ['component-truedepth-manual'] && ($componentManual->matchedRules[0]->affectedComponentKey ?? null) === 'front_camera_truedepth', 'A component manual-review override produces one dedicated manual-review result with its component trace');
+
+    $componentRejectRule = engineRule(706, $componentBook->id(), PricingRuleKind::HARD_REJECT, 'component-camera-reject', 24, true, ['model_key' => 'iphone-13-pro', 'condition_key' => 'replacement_parts', 'operator' => ComparisonOperator::EQUALS, 'comparison' => 'non_original', 'label' => 'Kamera szervizelőzménye', 'affected_component_key' => 'rear_camera']);
+    $componentRejected = $engine->calculate($componentBook, array_merge($componentBase, [$componentRejectRule]), $componentInput(['rear_camera']));
+    $test->assert($componentRejected->outcome->code() === PricingOutcome::REJECTED && $componentRejected->reasonCodes === ['component-camera-reject'], 'A component rejection override produces the dedicated rejection result');
+
+    $componentDisplayFixedRule = engineRule(707, $componentBook->id(), PricingRuleKind::FIXED_DEDUCTION, 'component-display-fixed', 25, true, ['model_key' => 'iphone-13-pro', 'condition_key' => 'replacement_parts', 'operator' => ComparisonOperator::EQUALS, 'comparison' => 'non_original', 'amount' => 25000, 'affected_component_key' => 'display']);
+    $multipleComponentDeductions = $engine->calculate($componentBook, array_merge($componentBase, [$componentFixedRule, $componentDisplayFixedRule]), $componentInput(['battery', 'display']));
+    $test->assert($multipleComponentDeductions->outcome->code() === PricingOutcome::OFFERED && $multipleComponentDeductions->finalAmount?->amount() === 60000 && count(array_filter($multipleComponentDeductions->matchedRules, static fn ($rule): bool => $rule->affectedComponentKey !== null)) === 2, 'Multiple component monetary rules aggregate exactly once through normal deduction semantics without the generic service-history rule');
+
+    $mixedSeverity = $engine->calculate($componentBook, array_merge($componentBase, [$componentFixedRule, $componentManualRule]), $componentInput(['battery', 'front_camera_truedepth']));
+    $test->assert($mixedSeverity->outcome->code() === PricingOutcome::MANUAL_REVIEW, 'Component manual review wins over a component monetary deduction');
+    $rejectionPrecedence = $engine->calculate($componentBook, array_merge($componentBase, [$componentRejectRule, $componentManualRule]), $componentInput(['rear_camera', 'front_camera_truedepth']));
+    $test->assert($rejectionPrecedence->outcome->code() === PricingOutcome::REJECTED, 'Component rejection wins over component manual review');
+    $noneKnownComponentsIgnored = $engine->calculate($componentBook, array_merge($componentBase, [$componentFixedRule]), engineInput(['replacement_parts' => 'none_known'], ServiceMode::HIGHER_OFFER, 'iphone-13-pro', 128, ['battery']));
+    $test->assert($noneKnownComponentsIgnored->outcome->code() === PricingOutcome::OFFERED && $noneKnownComponentsIgnored->finalAmount?->amount() === 100000, 'No-service-history entry ignores affected-component overrides and preserves current behavior');
 
     $missingBase = $engine->calculate($book, $rules, engineInput([], ServiceMode::FAST_ONLINE, 'iphone-14'));
     $test->assert($missingBase->outcome->code() === PricingOutcome::CONFIGURATION_ERROR && in_array('missing_base_price', $missingBase->reasonCodes, true), 'Missing base is a configuration error');

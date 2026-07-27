@@ -6,9 +6,14 @@ namespace AppleKlinika\Buyback\Domain\Pricing;
 
 final class ConditionMatcher
 {
-    public function matches(PricingRuleDefinition $definition, ConditionAnswerCollection $answers): bool
+    /** @param list<string> $affectedComponentKeys */
+    public function matches(PricingRuleDefinition $definition, ConditionAnswerCollection $answers, array $affectedComponentKeys = []): bool
     {
         if ($definition->conditionKey === null || $definition->operator === null) {
+            return false;
+        }
+
+        if ($definition->affectedComponentKey !== null && ! in_array($definition->affectedComponentKey, $affectedComponentKeys, true)) {
             return false;
         }
 

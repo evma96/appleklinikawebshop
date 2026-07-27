@@ -10,5 +10,6 @@ interface DraftPriceBookDiscardRepository
 {
     public function hasBusinessReferences(PriceBookId $priceBookId): bool;
 
-    public function discardDraftWithRules(PriceBookId $priceBookId): void;
+    /** Returns the number of exclusively owned rules removed with the draft. */
+    public function discardDraftWithRules(PriceBookId $priceBookId): int;
 }
