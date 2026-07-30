@@ -58,4 +58,51 @@ try {
     $GLOBALS['wp_query'] = $originalQuery;
 }
 
+$headerQuery = new WP_Query();
+$headerQuery->is_home = true;
+$GLOBALS['wp_query'] = $headerQuery;
+
+try {
+    ob_start();
+    appleklinika_render_header();
+    $headerHtml = (string) ob_get_clean();
+
+    $document = new DOMDocument();
+    libxml_use_internal_errors(true);
+    $document->loadHTML('<!doctype html><html><head><meta charset="utf-8"></head><body>' . $headerHtml . '</body></html>');
+    libxml_clear_errors();
+    $xpath = new DOMXPath($document);
+    $navigation = $xpath->query('//nav[contains(concat(" ", normalize-space(@class), " "), " ak-category-nav ")]')->item(0);
+    $directLinks = $navigation instanceof DOMElement
+        ? $xpath->query('./a', $navigation)
+        : false;
+    $directBreaks = $navigation instanceof DOMElement
+        ? $xpath->query('./br', $navigation)
+        : false;
+    $labels = [];
+
+    if ($directLinks !== false) {
+        foreach ($directLinks as $link) {
+            $labels[] = trim((string) $link->textContent);
+        }
+    }
+
+    $sellLink = $xpath->query('./a[contains(concat(" ", normalize-space(@class), " "), " ak-category-nav__sell ")]', $navigation)->item(0);
+    $test->assert(
+        $labels === ['iPhone', 'MacBook', 'iPad', 'Apple Watch', 'Eladás'],
+        'The category navigation renders its five required destinations in logical DOM order.'
+    );
+    $test->assert(
+        $directBreaks !== false && $directBreaks->length === 0,
+        'Theme-owned category navigation markup contains no direct structural line breaks.'
+    );
+    $test->assert(
+        $sellLink instanceof DOMElement
+        && str_contains(' ' . $sellLink->getAttribute('class') . ' ', ' ak-category-nav__sell '),
+        'The Eladás link exposes the stable class used for its full-width mobile row.'
+    );
+} finally {
+    $GLOBALS['wp_query'] = $originalQuery;
+}
+
 $test->finish();
