@@ -7180,9 +7180,13 @@ body.woocommerce-account:not(.logged-in).woocommerce-lost-password .woocommerce-
     display: none;
   }
 
+  .ak-category-nav > br {
+    display: none;
+  }
+
   .ak-category-nav .ak-category-nav__sell {
     grid-column: 1 / -1;
-    justify-self: start;
+    justify-self: stretch;
     min-height: 44px;
   }
 
