@@ -2747,6 +2747,12 @@ function appleklinika_render_product_collection_empty_state(string $blockContent
         return $blockContent;
     }
 
+    // WooCommerce returns an empty no-results block while the collection has products.
+    // Keep that empty response intact so a custom empty state is rendered only for zero results.
+    if (trim($blockContent) === '') {
+        return $blockContent;
+    }
+
     if (function_exists('is_search') && is_search()) {
         ob_start();
         appleklinika_render_search_empty_state();
