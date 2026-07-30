@@ -7144,3 +7144,59 @@ body.woocommerce-account:not(.logged-in).woocommerce-lost-password .woocommerce-
     gap: 10px;
   }
 }
+
+/* Mobile storefront stability: preserve the intended narrow-screen layout. */
+@media (max-width: 1100px) {
+  .ak-home .ak-hero,
+  .ak-home .ak-hero__tiles {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ak-home .ak-hero {
+    min-height: 0;
+  }
+}
+
+@media (max-width: 639px) {
+  .ak-category-nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 var(--ak-space-4);
+    min-height: 0;
+    padding: var(--ak-space-2) 0;
+    overflow: visible;
+    white-space: normal;
+  }
+
+  .ak-category-nav a {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+    min-height: 44px;
+    white-space: nowrap;
+  }
+
+  .ak-category-nav__spacer {
+    display: none;
+  }
+
+  .ak-category-nav .ak-category-nav__sell {
+    grid-column: 1 / -1;
+    justify-self: start;
+    min-height: 44px;
+  }
+
+  .woocommerce .woocommerce-ordering {
+    float: none;
+    width: 100%;
+  }
+
+  .ak-sort-dropdown {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .woocommerce .woocommerce-ordering.ak-sort-enhanced select {
+    min-width: 0;
+  }
+}
