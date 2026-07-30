@@ -7206,7 +7206,8 @@ body.woocommerce-account:not(.logged-in).woocommerce-lost-password .woocommerce-
 }
 
 @media (max-width: 359px) {
-  body.post-type-archive-product .wp-block-group.is-content-justification-space-between.is-nowrap:has(> .wc-block-catalog-sorting) {
+  body.post-type-archive-product .wp-block-group.is-content-justification-space-between.is-nowrap:has(> .wc-block-catalog-sorting),
+  body.tax-product_cat .wp-block-group.is-content-justification-space-between.is-nowrap:has(> .wc-block-catalog-sorting) {
     flex-wrap: wrap;
   }
 }
