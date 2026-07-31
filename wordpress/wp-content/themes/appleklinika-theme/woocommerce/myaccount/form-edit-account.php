@@ -30,6 +30,7 @@ $renderField = static function (array $args): void {
     $value = (string) ($args['value'] ?? '');
     $type = (string) ($args['type'] ?? 'text');
     $autocomplete = (string) ($args['autocomplete'] ?? '');
+    $describedBy = (string) ($args['describedby'] ?? '');
     $required = ! empty($args['required']);
     $class = (string) ($args['class'] ?? '');
     ?>
@@ -47,6 +48,7 @@ $renderField = static function (array $args): void {
             id="<?php echo esc_attr($id); ?>"
             value="<?php echo esc_attr($value); ?>"
             <?php echo $autocomplete !== '' ? 'autocomplete="' . esc_attr($autocomplete) . '"' : ''; ?>
+            <?php echo $describedBy !== '' ? 'aria-describedby="' . esc_attr($describedBy) . '"' : ''; ?>
             <?php echo $required ? 'aria-required="true" required' : ''; ?>
         />
     </p>
@@ -106,6 +108,7 @@ do_action('woocommerce_before_edit_account_form');
                 'label' => 'Megjelenített név',
                 'value' => $user->display_name,
                 'required' => true,
+                'describedby' => 'account_display_name_description',
                 'class' => 'ak-account-form-grid__full',
             ]);
             ?>

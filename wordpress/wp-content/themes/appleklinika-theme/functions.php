@@ -68,6 +68,8 @@ add_filter('woocommerce_price_format', static fn (): string => '%2$s %1$s');
 add_filter('gettext', 'appleklinika_checkout_text_translations', 10, 3);
 add_filter('gettext_woocommerce', 'appleklinika_frontend_woocommerce_text_translations', 10, 3);
 add_filter('woocommerce_shipping_rate_label', 'appleklinika_frontend_shipping_rate_label', 20, 2);
+add_filter('woocommerce_order_shipping_to_display', 'appleklinika_account_order_shipping_to_display', 20, 3);
+add_filter('woocommerce_order_details_status', 'appleklinika_account_order_details_status', 20, 2);
 add_filter('body_class', 'appleklinika_body_classes');
 add_filter('render_block_core/site-title', 'appleklinika_render_checkout_site_title_logo', 10, 2);
 add_filter('the_content', 'appleklinika_replace_cart_page_content', 9);
@@ -613,10 +615,30 @@ function appleklinika_frontend_woocommerce_text_translations(string $translation
 function appleklinika_frontend_shipping_rate_label(string $label, WC_Shipping_Rate $rate): string
 {
     if ($rate->get_method_id() === 'free_shipping' && $label === 'Free shipping') {
-        return 'Ingyenes szállítás';
+        return appleklinika_customer_shipping_label($label);
     }
 
     return $label;
+}
+
+function appleklinika_customer_shipping_label(string $label): string
+{
+    return $label === 'Free shipping' ? 'Ingyenes szállítás' : $label;
+}
+
+function appleklinika_account_order_shipping_to_display(string $shipping, WC_Order $order, string $taxDisplay): string
+{
+    if (is_admin() || ! function_exists('is_account_page') || ! is_account_page()) {
+        return $shipping;
+    }
+
+    foreach ($order->get_shipping_methods() as $shippingMethod) {
+        if ($shippingMethod->get_method_id() === 'free_shipping' && $shippingMethod->get_name() === 'Free shipping') {
+            return appleklinika_customer_shipping_label($shipping);
+        }
+    }
+
+    return $shipping;
 }
 
 function appleklinika_body_classes(array $classes): array
@@ -3335,6 +3357,8 @@ function appleklinika_redirect_account_downloads_endpoint(): void
 
 function appleklinika_account_order_status_label(string $status): string
 {
+    $status = preg_replace('/^wc-/', '', $status) ?: $status;
+
     return match ($status) {
         'pending' => 'Fizetésre vár',
         'processing' => 'Feldolgozás alatt',
@@ -3342,9 +3366,40 @@ function appleklinika_account_order_status_label(string $status): string
         'cancelled' => 'Törölve',
         'failed' => 'Sikertelen',
         'refunded' => 'Visszatérítve',
-        'on-hold' => 'Várakozik',
+        'on-hold' => 'Fizetés egyeztetés alatt',
         default => function_exists('wc_get_order_status_name') ? wc_get_order_status_name($status) : $status,
     };
+}
+
+function appleklinika_account_view_order_aria_label(string $orderNumber): string
+{
+    return sprintf('Rendelés megtekintése: #%s', $orderNumber);
+}
+
+function appleklinika_account_order_details_status(string $statusText, WC_Order $order): string
+{
+    if (is_admin() || ! function_exists('is_account_page') || ! is_account_page()) {
+        return $statusText;
+    }
+
+    $createdAt = $order->get_date_created();
+    $formattedDate = $createdAt instanceof WC_DateTime ? wc_format_datetime($createdAt) : '';
+
+    return sprintf(
+        'A #%1$s számú, %2$s-án/-én leadott rendelés állapota: %3$s.',
+        '<mark class="order-number">' . esc_html($order->get_order_number()) . '</mark>',
+        '<mark class="order-date">' . esc_html($formattedDate) . '</mark>',
+        '<mark class="order-status">' . esc_html(appleklinika_account_order_status_label($order->get_status())) . '</mark>'
+    );
+}
+
+function appleklinika_account_device_icon(): string
+{
+    return '<svg class="ak-account-record-card__device-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">'
+        . '<rect x="7" y="2.5" width="10" height="19" rx="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/>'
+        . '<path d="M10 5.2h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
+        . '<path d="M11.35 18.6h1.3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
+        . '</svg>';
 }
 
 function appleklinika_account_order_status_class(string $status): string
@@ -3954,7 +4009,7 @@ function appleklinika_render_sell_account_endpoint(): void
                 <?php foreach ($records as $record) : ?>
                     <article class="ak-account-record-card" data-buyback-record="<?php echo esc_attr((string) $record['id']); ?>">
                         <div class="ak-account-record-card__thumb" aria-hidden="true">
-                            <span><?php echo esc_html(mb_substr((string) $record['device'], 0, 2)); ?></span>
+                            <?php echo appleklinika_account_device_icon(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                         </div>
                         <div class="ak-account-record-card__body">
                             <span class="ak-account-order-card__status is-active"><?php echo esc_html((string) $record['status']); ?></span>
@@ -4057,9 +4112,9 @@ function appleklinika_render_returns_account_endpoint(): void
                 <?php foreach ($records as $order) : ?>
                     <?php if (! $order instanceof WC_Order) { continue; } ?>
                     <?php $firstItem = array_values($order->get_items())[0] ?? null; ?>
-                    <article class="ak-account-record-card">
+                    <article class="ak-account-record-card ak-account-record-card--without-thumb">
                         <div class="ak-account-record-card__body">
-                            <span class="ak-account-order-card__status is-muted">Visszatérítve</span>
+                            <span class="ak-account-order-card__status is-muted"><?php echo esc_html(appleklinika_account_order_status_label('refunded')); ?></span>
                             <h3>Rendelés #<?php echo esc_html($order->get_order_number()); ?></h3>
                             <p><?php echo esc_html($firstItem instanceof WC_Order_Item_Product ? $firstItem->get_name() : 'Rendelés'); ?></p>
                             <?php if ($order->get_date_created()) : ?>
