@@ -32,7 +32,7 @@ $initials = function_exists('appleklinika_account_initials') ? appleklinika_acco
 <nav class="woocommerce-MyAccount-navigation ak-account-sidebar" aria-label="<?php esc_attr_e('Account pages', 'woocommerce'); ?>">
     <div class="ak-account-sidebar__profile">
         <span class="ak-account-sidebar__avatar" aria-hidden="true"><?php echo esc_html($initials); ?></span>
-        <div>
+        <div class="ak-account-sidebar__profile-text">
             <strong><?php echo esc_html($displayName); ?></strong>
             <?php if ($email !== '') : ?>
                 <small><?php echo esc_html($email); ?></small>
