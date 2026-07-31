@@ -85,9 +85,9 @@ do_action('woocommerce_before_account_orders', $has_orders);
                                 <?php foreach ($actions as $key => $action) : ?>
                                     <?php
                                     $label = $key === 'view' ? 'Megtekintés' : $action['name'];
-                                    $aria_label = ! empty($action['aria-label'])
-                                        ? $action['aria-label']
-                                        : sprintf('%s rendelés #%s', $label, $order->get_order_number());
+                                    $aria_label = $key === 'view'
+                                        ? appleklinika_account_view_order_aria_label((string) $order->get_order_number())
+                                        : (! empty($action['aria-label']) ? $action['aria-label'] : sprintf('%s rendelés #%s', $label, $order->get_order_number()));
                                     ?>
                                     <a
                                         href="<?php echo esc_url($action['url']); ?>"
