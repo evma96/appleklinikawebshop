@@ -4028,6 +4028,8 @@ body.woocommerce-account .ak-account-layout {
 }
 
 body.woocommerce-account .ak-account-sidebar {
+  min-width: 0;
+  box-sizing: border-box;
   display: flex;
   min-height: 620px;
   flex-direction: column;
@@ -4040,10 +4042,15 @@ body.woocommerce-account .ak-account-sidebar {
 }
 
 body.woocommerce-account .ak-account-sidebar__profile {
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 12px;
   margin-bottom: 34px;
+}
+
+body.woocommerce-account .ak-account-sidebar__profile-text {
+  min-width: 0;
 }
 
 body.woocommerce-account .ak-account-sidebar__avatar,
@@ -4564,7 +4571,16 @@ body.woocommerce-account .ak-account-wishlist__grid {
 
 @media (max-width: 1080px) {
   body.woocommerce-account .ak-account-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+    min-width: 0;
+  }
+
+  body.woocommerce-account .ak-account-sidebar,
+  body.woocommerce-account .woocommerce-MyAccount-content {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
   }
 
   body.woocommerce-account .ak-account-sidebar {
@@ -4583,6 +4599,49 @@ body.woocommerce-account .ak-account-wishlist__grid {
 }
 
 @media (max-width: 760px) {
+  body.woocommerce-account .ak-account-sidebar__profile-text,
+  body.woocommerce-account .ak-account-sidebar__profile strong,
+  body.woocommerce-account .ak-account-sidebar__profile small {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  body.woocommerce-account .ak-account-sidebar__profile small {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+  }
+
+  body.woocommerce-account.woocommerce-view-order .woocommerce-columns--addresses,
+  body.woocommerce-account.woocommerce-view-order .woocommerce-columns--addresses .woocommerce-column,
+  body.woocommerce-account.woocommerce-view-order .woocommerce-columns--addresses address {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  body.woocommerce-account.woocommerce-view-order .woocommerce-customer-details {
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  body.woocommerce-account.woocommerce-view-order .wc-block-components-additional-fields-list {
+    min-width: 0;
+    max-width: 100%;
+    grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
+  }
+
+  body.woocommerce-account.woocommerce-view-order .wc-block-components-additional-fields-list dd {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  body.woocommerce-account.woocommerce-view-order .woocommerce-columns--addresses address {
+    overflow-wrap: anywhere;
+  }
+
   body.woocommerce-account .ak-account-profile-hero,
   body.woocommerce-account .ak-account-record-card,
   body.woocommerce-account .ak-account-order-card {
