@@ -36,6 +36,10 @@ final class AccountShellTest
 $themeRoot = dirname(__DIR__);
 $navigation = file_get_contents($themeRoot . '/woocommerce/myaccount/navigation.php');
 $account = file_get_contents($themeRoot . '/woocommerce/myaccount/my-account.php');
+$functions = file_get_contents($themeRoot . '/functions.php');
+$orders = file_get_contents($themeRoot . '/woocommerce/myaccount/orders.php');
+$accountForm = file_get_contents($themeRoot . '/woocommerce/myaccount/form-edit-account.php');
+$frontendCss = file_get_contents($themeRoot . '/assets/css/frontend.css');
 $orderCustomerTemplate = file_get_contents(dirname($themeRoot, 2) . '/plugins/woocommerce/templates/order/order-details-customer.php');
 $test = new AccountShellTest();
 
@@ -66,6 +70,46 @@ $test->assert(
 $test->assert(
     is_string($orderCustomerTemplate) && str_contains($orderCustomerTemplate, 'woocommerce-column--shipping-address'),
     'The shared order-details template retains its shipping-address column.'
+);
+$test->assert(
+    is_string($orders) && str_contains($orders, 'appleklinika_account_view_order_aria_label'),
+    'Order-list view actions use the customer-facing Hungarian accessible label.'
+);
+$test->assert(
+    is_string($functions) && str_contains($functions, "'on-hold' => 'Fizetés egyeztetés alatt'"),
+    'The on-hold status has one consistent customer-facing Hungarian label.'
+);
+$test->assert(
+    is_string($functions) && str_contains($functions, "add_filter('woocommerce_order_details_status', 'appleklinika_account_order_details_status'"),
+    'Order-detail status copy is sourced from the shared account-status label.'
+);
+$test->assert(
+    is_string($functions) && str_contains($functions, "add_filter('woocommerce_order_shipping_to_display', 'appleklinika_account_order_shipping_to_display'"),
+    'Historical free-shipping labels are normalized only in the customer account.'
+);
+$test->assert(
+    is_string($functions) && str_contains($functions, 'appleklinika_account_device_icon()'),
+    'The Buyback account card uses a neutral device icon rather than abbreviated text.'
+);
+$test->assert(
+    is_string($functions) && str_contains($functions, 'ak-account-record-card--without-thumb'),
+    'Return cards explicitly use the no-thumbnail card variant.'
+);
+$test->assert(
+    is_string($accountForm) && str_contains($accountForm, "'describedby' => 'account_display_name_description'"),
+    'The display-name helper is associated with its form control.'
+);
+$test->assert(
+    is_string($accountForm) && str_contains($accountForm, 'aria-describedby="'),
+    'Account form fields render the supplied accessible helper reference.'
+);
+$test->assert(
+    is_string($frontendCss) && str_contains($frontendCss, '.ak-account-record-card--without-thumb'),
+    'The no-thumbnail return-card layout has a dedicated responsive grid rule.'
+);
+$test->assert(
+    is_string($frontendCss) && str_contains($frontendCss, '.show-password-input:focus-visible'),
+    'Password visibility controls retain a visible keyboard focus state.'
 );
 
 $test->finish();

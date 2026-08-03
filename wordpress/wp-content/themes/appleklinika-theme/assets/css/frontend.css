@@ -3207,16 +3207,40 @@ body.woocommerce-account.woocommerce-edit-account form.woocommerce-EditAccountFo
 }
 
 body.woocommerce-account.woocommerce-edit-account form.woocommerce-EditAccountForm .password-input {
+  position: relative;
   display: block;
 }
 
+body.woocommerce-account.woocommerce-edit-account form.woocommerce-EditAccountForm .password-input input.input-text {
+  padding-right: 60px;
+}
+
 body.woocommerce-account.woocommerce-edit-account form.woocommerce-EditAccountForm .show-password-input {
+  display: inline-flex;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
   color: #667085;
+  cursor: pointer;
   transition: color .2s ease, opacity .2s ease;
 }
 
 body.woocommerce-account.woocommerce-edit-account form.woocommerce-EditAccountForm .show-password-input:hover {
-  color: #111827;
+  color: var(--ak-red, #d6001c);
+  background: rgba(214, 0, 28, .06);
+}
+
+body.woocommerce-account.woocommerce-edit-account form.woocommerce-EditAccountForm .show-password-input:focus-visible {
+  outline: 2px solid var(--ak-red, #d6001c);
+  outline-offset: 2px;
+  color: var(--ak-red, #d6001c);
+  background: rgba(214, 0, 28, .06);
 }
 
 body.woocommerce-account.woocommerce-edit-account form.woocommerce-EditAccountForm button[name="save_account_details"] {
@@ -4512,6 +4536,14 @@ body.woocommerce-account .ak-account-record-card {
   align-items: center;
 }
 
+body.woocommerce-account .ak-account-record-card--without-thumb {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+body.woocommerce-account .ak-account-record-card--without-thumb .ak-account-secondary-action {
+  justify-self: end;
+}
+
 body.woocommerce-account .ak-account-record-card__thumb {
   display: flex;
   width: 78px;
@@ -4528,6 +4560,12 @@ body.woocommerce-account .ak-account-record-card__thumb img {
   max-width: 90%;
   max-height: 90%;
   object-fit: contain;
+}
+
+body.woocommerce-account .ak-account-record-card__device-icon {
+  width: 36px;
+  height: 36px;
+  color: var(--ak-red, #d6001c);
 }
 
 body.woocommerce-account .ak-account-record-card__body {
