@@ -140,13 +140,26 @@
     gap: 1rem;
 }
 
-.ak-address-form label,
+.ak-address-form__field,
 .ak-address-book__confirm label {
     display: flex;
     min-width: 0;
     flex-direction: column;
     gap: .4rem;
     font-weight: 700;
+}
+
+.ak-address-form__label-text {
+    display: inline-flex;
+    align-items: baseline;
+    min-height: 1.3em;
+    gap: .18em;
+    line-height: 1.3;
+}
+
+.ak-address-form__required {
+    color: #b42318;
+    font-weight: 800;
 }
 
 .ak-address-form input,
@@ -164,30 +177,72 @@
 
 .ak-address-form__purposes {
     display: flex;
-    flex-wrap: wrap;
-    gap: .75rem 1rem;
     min-width: 0;
+    flex-direction: column;
+    gap: .4rem;
+    margin: 0;
     border: 0;
     padding: 0;
 }
 
 .ak-address-form__purposes legend {
-    width: 100%;
-    margin-bottom: .4rem;
+    padding: 0;
     font-weight: 800;
 }
 
+.ak-address-form__purpose-options,
+.ak-address-form__default-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem 1rem;
+}
+
 .ak-address-form__purposes label,
-.ak-address-form__check {
-    flex-direction: row;
+.ak-address-form__default {
+    display: inline-flex;
     align-items: center;
+    min-width: 0;
     min-height: 44px;
+    gap: .55rem;
+    font-weight: 700;
+    cursor: pointer;
 }
 
 .ak-address-form__purposes input,
-.ak-address-form__check input {
+.ak-address-form__default input {
+    flex: 0 0 auto;
     width: 20px;
     min-height: 20px;
+    margin: 0;
+}
+
+.ak-address-form__defaults {
+    min-width: 0;
+    margin: 1rem 0 0;
+    border: 0;
+    padding: 0;
+}
+
+.ak-address-form__defaults legend {
+    padding: 0;
+    font-weight: 800;
+}
+
+.ak-address-form__actions {
+    align-items: center;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+}
+
+.ak-address-form__cancel {
+    border-color: #cbd5e1 !important;
+    background: #fff !important;
+    color: #475569 !important;
+}
+
+.ak-address-form__save {
+    background: #d6001c !important;
+    color: #fff !important;
 }
 
 @media (max-width: 767px) {
@@ -205,6 +260,17 @@
     .ak-address-card__actions,
     .ak-address-card__actions form,
     .ak-address-card__actions .button {
+        width: 100%;
+    }
+
+    .ak-address-form__purpose-options,
+    .ak-address-form__default-options,
+    .ak-address-form__actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .ak-address-form__actions .button {
         width: 100%;
     }
 }

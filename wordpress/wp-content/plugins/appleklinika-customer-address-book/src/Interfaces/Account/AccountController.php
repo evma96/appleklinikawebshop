@@ -230,7 +230,7 @@ final class AccountController
 
     private function renderForm(?Address $address): void
     {
-        $data = $address?->toArray() ?? ['label' => '', 'capabilities' => Address::BOTH, 'first_name' => '', 'last_name' => '', 'company_name' => '', 'tax_number' => '', 'country' => 'HU', 'state' => '', 'postcode' => '', 'city' => '', 'address_1' => '', 'address_2' => '', 'house_number' => '', 'staircase' => '', 'floor' => '', 'door' => '', 'phone' => '', 'email' => ''];
+        $data = $address?->toArray() ?? ['label' => '', 'capabilities' => Address::BOTH, 'first_name' => '', 'last_name' => '', 'company_name' => '', 'tax_number' => '', 'country' => 'HU', 'state' => '', 'postcode' => '', 'city' => '', 'address_1' => '', 'address_2' => '', 'house_number' => '', 'staircase' => '', 'floor' => '', 'door' => ''];
         $operation = $address === null ? 'create' : 'update';
         echo '<header class="ak-address-book__header"><div><p class="ak-address-book__kicker">Címadatok</p><h2>' . ($address === null ? 'Új cím' : 'Cím szerkesztése') . '</h2></div></header>';
         echo '<form class="ak-address-form" method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
@@ -241,14 +241,14 @@ final class AccountController
         wp_nonce_field('ak_address_' . $operation, '_ak_address_nonce');
         echo '<div class="ak-address-form__grid">';
         $this->field('label', 'Cím elnevezése', (string) $data['label'], true, 'text', 80);
-        echo '<fieldset class="ak-address-form__purposes"><legend>Felhasználás</legend>';
-        echo '<label><input type="checkbox" name="purpose_billing" value="1" ' . checked(((int) $data['capabilities'] & Address::BILLING) > 0, true, false) . '> Számlázási</label>';
-        echo '<label><input type="checkbox" name="purpose_shipping" value="1" ' . checked(((int) $data['capabilities'] & Address::SHIPPING) > 0, true, false) . '> Szállítási</label></fieldset>';
+        echo '<fieldset class="ak-address-form__purposes"><legend class="ak-address-form__label-text">Felhasználás</legend><div class="ak-address-form__purpose-options">';
+        echo '<label for="purpose_billing"><input id="purpose_billing" type="checkbox" name="purpose_billing" value="1" ' . checked(((int) $data['capabilities'] & Address::BILLING) > 0, true, false) . '><span>Számlázási</span></label>';
+        echo '<label for="purpose_shipping"><input id="purpose_shipping" type="checkbox" name="purpose_shipping" value="1" ' . checked(((int) $data['capabilities'] & Address::SHIPPING) > 0, true, false) . '><span>Szállítási</span></label></div></fieldset>';
         $this->field('first_name', 'Keresztnév', (string) $data['first_name']);
         $this->field('last_name', 'Vezetéknév', (string) $data['last_name']);
         $this->field('company_name', 'Cégnév', (string) $data['company_name']);
         $this->field('tax_number', 'Magyar adószám', (string) $data['tax_number']);
-        echo '<label>Ország<select name="country" required>';
+        echo '<label class="ak-address-form__field"><span class="ak-address-form__label-text">Ország <span class="ak-address-form__required" aria-hidden="true">*</span></span><select name="country" required aria-required="true">';
         foreach ($this->countries->all() as $code => $label) echo '<option value="' . esc_attr($code) . '" ' . selected($data['country'], $code, false) . '>' . esc_html($label) . '</option>';
         echo '</select></label>';
         $this->field('state', 'Megye / állam', (string) $data['state']);
@@ -260,11 +260,13 @@ final class AccountController
         $this->field('staircase', 'Lépcsőház', (string) $data['staircase']);
         $this->field('floor', 'Emelet', (string) $data['floor']);
         $this->field('door', 'Ajtó', (string) $data['door']);
-        $this->field('phone', 'Telefonszám', (string) $data['phone'], false, 'tel');
-        $this->field('email', 'E-mail cím', (string) $data['email'], false, 'email');
-        echo '<label class="ak-address-form__check"><input type="checkbox" name="default_billing" value="1"> Legyen alapértelmezett számlázási cím</label>';
-        echo '<label class="ak-address-form__check"><input type="checkbox" name="default_shipping" value="1"> Legyen alapértelmezett szállítási cím</label>';
-        echo '</div><div class="ak-address-form__actions"><a class="button" href="' . esc_url($this->url()) . '">Mégse</a><button class="button" type="submit">Cím mentése</button></div></form>';
+        echo '</div><fieldset class="ak-address-form__defaults"><legend class="ak-address-form__label-text">Alapértelmezett címek</legend><div class="ak-address-form__default-options">';
+        foreach (['billing' => 'számlázási', 'shipping' => 'szállítási'] as $purpose => $label) {
+            $enabled = ((int) $data['capabilities'] & ($purpose === 'billing' ? Address::BILLING : Address::SHIPPING)) !== 0;
+            echo '<label class="ak-address-form__default" data-address-default="' . esc_attr($purpose) . '"' . ($enabled ? '' : ' hidden') . ' for="default_' . esc_attr($purpose) . '">';
+            echo '<input id="default_' . esc_attr($purpose) . '" type="checkbox" name="default_' . esc_attr($purpose) . '" value="1"' . ($enabled ? '' : ' disabled') . '><span>Legyen alapértelmezett ' . esc_html($label) . ' cím</span></label>';
+        }
+        echo '</div></fieldset><div class="ak-address-form__actions"><a class="button ak-address-form__cancel" href="' . esc_url($this->url()) . '">Mégse</a><button class="button ak-address-form__save" type="submit">Cím mentése</button></div></form>';
     }
 
     private function renderDelete(Address $address): void
@@ -287,20 +289,19 @@ final class AccountController
 
     private function field(string $name, string $label, string $value, bool $required = false, string $type = 'text', int $maxlength = 255): void
     {
-        echo '<label>' . esc_html($label) . ($required ? ' <span aria-hidden="true">*</span>' : '') . '<input type="' . esc_attr($type) . '" name="' . esc_attr($name) . '" value="' . esc_attr($value) . '" maxlength="' . esc_attr((string) $maxlength) . '" ' . ($required ? 'required' : '') . '></label>';
+        echo '<label class="ak-address-form__field"><span class="ak-address-form__label-text">' . esc_html($label) . ($required ? ' <span class="ak-address-form__required" aria-hidden="true">*</span>' : '') . '</span><input type="' . esc_attr($type) . '" name="' . esc_attr($name) . '" value="' . esc_attr($value) . '" maxlength="' . esc_attr((string) $maxlength) . '" ' . ($required ? 'aria-required="true" required' : '') . '></label>';
     }
 
     /** @return array<string, mixed> */
     private function postedAddress(): array
     {
-        $fields = ['label','first_name','last_name','company_name','tax_number','country','state','postcode','city','address_1','address_2','house_number','staircase','floor','door','phone','email'];
+        $fields = ['label','first_name','last_name','company_name','tax_number','country','state','postcode','city','address_1','address_2','house_number','staircase','floor','door'];
         $data = [];
         foreach ($fields as $field) {
             $raw = isset($_POST[$field]) ? wp_unslash((string) $_POST[$field]) : '';
-            $data[$field] = $field === 'email' ? sanitize_email($raw) : sanitize_text_field($raw);
+            $data[$field] = sanitize_text_field($raw);
         }
         $data['country'] = strtoupper((string) $data['country']);
-        $data['phone'] = preg_replace('/[^0-9+() .\/-]/', '', (string) $data['phone']) ?: '';
         $data['capabilities'] = (isset($_POST['purpose_billing']) ? Address::BILLING : 0) | (isset($_POST['purpose_shipping']) ? Address::SHIPPING : 0);
         $data['status'] = Address::STATUS_ACTIVE;
         $data['source'] = Address::SOURCE_ACCOUNT;

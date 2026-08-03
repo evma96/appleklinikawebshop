@@ -49,8 +49,6 @@ final class LegacyAddressImporter
             $merged = array_merge($billing, [
                 'label' => 'Mentett cím',
                 'capabilities' => Address::BOTH,
-                'phone' => $billing['phone'] !== '' ? $billing['phone'] : $shipping['phone'],
-                'email' => $billing['email'] !== '' ? $billing['email'] : $shipping['email'],
             ]);
             $candidates = [$merged];
             $summary['merged']++;
@@ -119,8 +117,6 @@ final class LegacyAddressImporter
             'staircase' => $meta($ak . 'staircase'),
             'floor' => $meta($ak . 'floor'),
             'door' => $meta($ak . 'door'),
-            'phone' => $meta($prefix . 'phone', 'ak_account_phone'),
-            'email' => $purpose === 'billing' ? $meta('billing_email') : '',
         ]);
     }
 
@@ -152,7 +148,7 @@ final class LegacyAddressImporter
     /** @param array<string, mixed> $data */
     private function hasMeaningfulData(array $data): bool
     {
-        foreach (['first_name', 'last_name', 'company_name', 'postcode', 'city', 'address_1', 'phone', 'email'] as $field) {
+        foreach (['first_name', 'last_name', 'company_name', 'postcode', 'city', 'address_1'] as $field) {
             if (($data[$field] ?? '') !== '') {
                 return true;
             }
@@ -163,7 +159,7 @@ final class LegacyAddressImporter
     /** @param array<string, mixed> $data */
     private function comparable(array $data): string
     {
-        unset($data['email'], $data['tax_number'], $data['label'], $data['capabilities']);
+        unset($data['tax_number'], $data['label'], $data['capabilities']);
         ksort($data);
         return wp_json_encode($data) ?: '';
     }

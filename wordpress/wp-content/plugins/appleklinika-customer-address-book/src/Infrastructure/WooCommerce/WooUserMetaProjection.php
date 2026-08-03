@@ -57,15 +57,11 @@ final class WooUserMetaProjection implements AddressProjection
         ];
 
         if ($purpose === 'billing') {
-            $mapping['billing_phone'] = (string) $data['phone'];
-            $mapping['billing_email'] = (string) $data['email'];
             $mapping['ak_billing_is_company'] = $data['company_name'] !== '' ? '1' : '';
             $mapping['ak_billing_tax_number'] = (string) $data['tax_number'];
             $mapping['appleklinika_company_purchase'] = $data['company_name'] !== '' ? '1' : '';
             $mapping['appleklinika_company_name'] = (string) $data['company_name'];
             $mapping['appleklinika_tax_number'] = (string) $data['tax_number'];
-        } else {
-            $mapping['shipping_phone'] = (string) $data['phone'];
         }
 
         return $mapping;

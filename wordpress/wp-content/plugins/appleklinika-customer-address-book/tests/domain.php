@@ -29,14 +29,18 @@ $review = Address::create(42, str_repeat('r', 24), $test->addressData([
 ]));
 $test->assert(! $review->canBeDefault('billing'), 'needs review cannot be default');
 
+$contactFree = Address::create(42, str_repeat('c', 24), $test->addressData([
+    'phone' => '',
+    'email' => 'not-an-address-contact',
+]));
+$test->assert($contactFree->canBeDefault('billing'), 'active address does not require profile contact values');
+
 $invalid = [
     ['label' => '', 'message' => 'empty label'],
     ['label' => str_repeat('a', 81), 'message' => 'label max length'],
     ['capabilities' => 0, 'message' => 'capabilities required'],
     ['country' => 'HUN', 'message' => 'two-character country'],
     ['postcode' => '', 'message' => 'active postcode required'],
-    ['email' => 'bad', 'message' => 'billing email valid'],
-    ['phone' => '', 'message' => 'shipping phone required'],
     ['company_name' => 'Teszt Kft.', 'tax_number' => 'bad', 'message' => 'HU company tax format'],
 ];
 foreach ($invalid as $case) {

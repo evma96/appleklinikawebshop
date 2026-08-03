@@ -84,8 +84,8 @@ final class AddressBookTestSupport
             'staircase' => '',
             'floor' => '',
             'door' => '',
-            'phone' => '+36 30 123 4567',
-            'email' => 'teszt@example.test',
+            'phone' => '',
+            'email' => '',
             'status' => 'active',
             'source' => 'account',
         ], $overrides);
