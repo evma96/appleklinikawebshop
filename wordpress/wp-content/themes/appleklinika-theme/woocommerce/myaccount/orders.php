@@ -35,8 +35,7 @@ do_action('woocommerce_before_account_orders', $has_orders);
 
                 $items = array_values($order->get_items());
                 $first_item = $items[0] ?? null;
-                $product = $first_item instanceof WC_Order_Item_Product ? $first_item->get_product() : null;
-                $item_count = max(0, $order->get_item_count() - $order->get_item_count_refunded());
+                $item_count = count($items);
                 $extra_count = max(0, $item_count - 1);
                 $product_name = $first_item instanceof WC_Order_Item_Product
                     ? $first_item->get_name()
@@ -48,13 +47,7 @@ do_action('woocommerce_before_account_orders', $has_orders);
                 ?>
                 <article class="ak-account-order-card ak-account-order-card--<?php echo esc_attr($status); ?>">
                     <a class="ak-account-order-card__thumb" href="<?php echo esc_url($order->get_view_order_url()); ?>" aria-label="<?php echo esc_attr(sprintf('Rendelés #%s megtekintése', $order->get_order_number())); ?>">
-                        <?php
-                        if ($product instanceof WC_Product) {
-                            echo wp_kses_post($product->get_image('woocommerce_thumbnail'));
-                        } else {
-                            echo wp_kses_post(wc_placeholder_img('woocommerce_thumbnail'));
-                        }
-                        ?>
+                        <?php echo $first_item instanceof WC_Order_Item_Product ? wp_kses_post(appleklinika_account_order_item_image_html($first_item)) : wp_kses_post(wc_placeholder_img('woocommerce_thumbnail', ['alt' => $product_name])); ?>
                     </a>
 
                     <div class="ak-account-order-card__body">
@@ -78,7 +71,7 @@ do_action('woocommerce_before_account_orders', $has_orders);
                     </div>
 
                     <div class="ak-account-order-card__summary">
-                        <div class="ak-account-order-card__total"><?php echo wp_kses_post($order->get_formatted_order_total()); ?></div>
+                        <?php appleklinika_render_account_order_price_summary($order); ?>
 
                         <?php if (! empty($actions)) : ?>
                             <div class="ak-account-order-card__actions">
