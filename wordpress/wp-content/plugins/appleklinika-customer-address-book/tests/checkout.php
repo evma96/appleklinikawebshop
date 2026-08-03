@@ -1,0 +1,120 @@
+<?php
+
+declare(strict_types=1);
+
+require_once __DIR__ . '/TestSupport.php';
+
+use AppleKlinika\CustomerAddressBook\Application\Handler\AddressBookService;
+use AppleKlinika\CustomerAddressBook\Application\Handler\CheckoutAddressSelection;
+use AppleKlinika\CustomerAddressBook\Domain\AddressBook\Address;
+use AppleKlinika\CustomerAddressBook\Infrastructure\Persistence\WordPress\WordPressAddressRepository;
+use AppleKlinika\CustomerAddressBook\Infrastructure\Persistence\WordPress\WordPressTransactionManager;
+use AppleKlinika\CustomerAddressBook\Infrastructure\WooCommerce\WooAllowedCountries;
+use AppleKlinika\CustomerAddressBook\Infrastructure\WooCommerce\WooUserMetaProjection;
+use AppleKlinika\CustomerAddressBook\Interfaces\Checkout\CheckoutAddressController;
+
+$test = new AddressBookTestSupport();
+global $wpdb;
+$owner = $test->createUser('checkout-owner');
+$foreign = $test->createUser('checkout-foreign');
+$service = new AddressBookService(new WordPressAddressRepository($wpdb), new WordPressTransactionManager($wpdb), new WooUserMetaProjection(), new WooAllowedCountries());
+$selector = new CheckoutAddressSelection($service, new WooAllowedCountries());
+$draftOrder = null;
+
+try {
+    $billing = $service->create($owner, $test->addressData([
+        'label' => 'Számla',
+        'capabilities' => Address::BILLING,
+        'company_name' => 'Apple Klinika Teszt Kft.',
+        'tax_number' => '12345678-1-23',
+    ]), true, false);
+    $shipping = $service->create($owner, $test->addressData(['label' => 'Szállítás', 'capabilities' => Address::SHIPPING, 'city' => 'Szeged']), false, true);
+    $review = $service->create($owner, $test->addressData(['label' => 'Ellenőrzés', 'status' => Address::STATUS_NEEDS_REVIEW]), false, false);
+    $foreignAddress = $service->create($foreign, $test->addressData(['label' => 'Más ügyfél']), true, true);
+
+    $options = $selector->options($owner, true);
+    $test->assert($options['enabled'] === true, 'authenticated customer receives address options');
+    $test->assert(count($options['billing']) === 1, 'billing excludes shipping-only and needs-review address');
+    $test->assert(count($options['shipping']) === 1, 'shipping excludes billing-only and needs-review address');
+    $test->assert($options['billing'][0]['key'] === $billing->key(), 'only owner billing key returned');
+    $test->assert($options['billing'][0]['is_default'] === true, 'default billing marked');
+    $test->assert($options['shipping'][0]['is_default'] === true, 'default shipping marked');
+    $test->assert(! array_key_exists('id', $options['billing'][0]), 'numeric address id not exposed');
+    $test->assert(! array_key_exists('customer_id', $options['billing'][0]), 'customer id not exposed');
+    $test->assert(! array_key_exists('created_at', $options['billing'][0]) && ! array_key_exists('source', $options['billing'][0]), 'non-checkout audit data not exposed');
+    $test->assert($selector->options(0, true)['enabled'] === false, 'unauthenticated customer receives no selector');
+    $test->assert($selector->options($owner, false)['shipping'] === [], 'no-shipping checkout receives no shipping selector options');
+
+    $storedSelection = ['billing' => ['mode' => 'saved', 'key' => $billing->key(), 'version' => $billing->version()], 'shipping' => ['mode' => 'one_off']];
+    $restored = $selector->options($owner, true, $storedSelection);
+    $test->assert($restored['selection'] === $storedSelection, 'valid checkout selection state is available for safe restoration');
+
+    $fields = $selector->checkoutFields($billing);
+    $test->assert($fields['first_name'] === 'Teszt' && $fields['postcode'] === '1111', 'standard billing fields mapped');
+    $test->assert($fields['appleklinika/house_number'] === '1', 'Hungarian address component mapped');
+    $test->assert($fields['appleklinika/company_purchase'] === '1' && $fields['appleklinika/company_name'] === 'Apple Klinika Teszt Kft.' && $fields['appleklinika/tax_number'] === '12345678-1-23', 'company and tax fields mapped');
+    $test->assert(! isset($fields['phone'], $fields['email']), 'profile contacts never mapped from address');
+    $test->assert($selector->resolve($owner, 'billing', $billing->key(), $billing->version())->key() === $billing->key(), 'valid owner selection resolves');
+
+    update_user_meta($owner, 'billing_email', 'profil@example.test');
+    update_user_meta($owner, 'billing_phone', '+36 30 999 0000');
+    wp_set_current_user($owner);
+    WC()->customer = new WC_Customer($owner, true);
+    $controller = new CheckoutAddressController($service, $selector, new WooUserMetaProjection());
+    $controller->updateSelection([
+        'billing' => ['mode' => 'saved', 'key' => $billing->key(), 'version' => $billing->version()],
+    ]);
+    $selected = $controller->storeApiData()['selection'];
+    $test->assert($selected['billing']['key'] === $billing->key() && ! isset($selected['shipping']), 'server stores owner-scoped selection only for the current checkout purpose');
+    $test->assert(WC()->customer->get_billing_city() === 'Budapest', 'server applies selected physical fields to Woo checkout customer');
+    $test->assert(WC()->customer->get_billing_email() === 'profil@example.test' && WC()->customer->get_billing_phone() === '+36 30 999 0000', 'server selection never overwrites profile contacts');
+
+    $draftOrder = wc_create_order(['customer_id' => $owner]);
+    $controller->syncDraftMetadata($draftOrder, new WP_REST_Request());
+    $test->assert($draftOrder->get_meta('_appleklinika_address_book_billing_key', true) === $billing->key() && $draftOrder->get_meta('_appleklinika_address_book_shipping_key', true) === '', 'draft keeps only current checkout opaque address selection audit metadata');
+
+    $addressCountBeforeIntent = count($service->list($owner));
+    $controller->updateSelection([
+        'billing' => ['mode' => 'saved', 'key' => $billing->key(), 'version' => $billing->version(), 'save' => true, 'set_default' => true, 'label' => 'Módosított számlázási cím'],
+    ]);
+    $intent = $controller->storeApiData()['selection']['billing'];
+    $test->assert($intent['save'] === true && $intent['set_default'] === true && count($service->list($owner)) === $addressCountBeforeIntent, 'modified saved address intent is session-only until final order');
+
+    $craftedIntentRejected = false;
+    try {
+        $controller->updateSelection([
+            'billing' => ['mode' => 'saved', 'key' => $billing->key(), 'version' => $billing->version(), 'save' => false, 'set_default' => true, 'label' => ''],
+        ]);
+    } catch (Throwable) {
+        $craftedIntentRejected = true;
+    }
+    $test->assert($craftedIntentRejected, 'crafted default intent without an explicit save is rejected');
+
+    foreach ([
+        static fn () => $selector->resolve($foreign, 'billing', $billing->key(), $billing->version()),
+        static fn () => $selector->resolve($owner, 'billing', $billing->key(), $billing->version() + 1),
+        static fn () => $selector->resolve($owner, 'shipping', $billing->key(), $billing->version()),
+        static fn () => $selector->resolve(0, 'billing', $billing->key(), $billing->version()),
+    ] as $invalid) {
+        $rejected = false;
+        try { $invalid(); } catch (Throwable) { $rejected = true; }
+        $test->assert($rejected, 'foreign, stale, unsupported and unauthenticated selections are rejected');
+    }
+
+    $service->delete($owner, $shipping->key(), $shipping->version());
+    $deletedRejected = false;
+    try { $selector->resolve($owner, 'shipping', $shipping->key(), $shipping->version()); } catch (Throwable) { $deletedRejected = true; }
+    $test->assert($deletedRejected, 'deleted address invalidates stored selection');
+    $test->assert($review->status() === Address::STATUS_NEEDS_REVIEW && $foreignAddress->customerId() === $foreign, 'fixtures remain isolated');
+    $controller->clearSession();
+    $test->assert($controller->storeApiData()['selection'] === [], 'logout-compatible session cleanup clears saved selection state');
+
+    echo 'Customer address book checkout: ' . $test->count() . " assertions\n";
+} finally {
+    if ($draftOrder instanceof WC_Order) {
+        $draftOrder->delete(true);
+    }
+    wp_set_current_user(0);
+    $test->cleanupUser($owner);
+    $test->cleanupUser($foreign);
+}

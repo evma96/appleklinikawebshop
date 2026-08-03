@@ -12,6 +12,7 @@ use AppleKlinika\CustomerAddressBook\Infrastructure\Persistence\WordPress\WordPr
 use AppleKlinika\CustomerAddressBook\Infrastructure\WooCommerce\WooAllowedCountries;
 use AppleKlinika\CustomerAddressBook\Infrastructure\WooCommerce\WooUserMetaProjection;
 use AppleKlinika\CustomerAddressBook\Interfaces\Account\AccountController;
+use AppleKlinika\CustomerAddressBook\Interfaces\Checkout\CheckoutAddressController;
 use AppleKlinika\CustomerAddressBook\Interfaces\Cli\MigrateLegacyAddressesCommand;
 
 final class Plugin
@@ -19,6 +20,7 @@ final class Plugin
     public function __construct(
         private readonly MigrationRunner $migrations,
         private readonly AccountController $account,
+        private readonly CheckoutAddressController $checkout,
         private readonly LegacyAddressImporter $importer
     ) {
     }
@@ -27,17 +29,20 @@ final class Plugin
     {
         global $wpdb;
         $repository = new WordPressAddressRepository($wpdb);
+        $projection = new WooUserMetaProjection();
+        $countries = new WooAllowedCountries();
         $service = new AddressBookService(
             $repository,
             new WordPressTransactionManager($wpdb),
-            new WooUserMetaProjection(),
-            new WooAllowedCountries()
+            $projection,
+            $countries
         );
         $importer = new LegacyAddressImporter($service, $repository);
 
         return new self(
             new MigrationRunner($wpdb),
-            new AccountController($service, $importer, new WooAllowedCountries()),
+            new AccountController($service, $importer, $countries),
+            new CheckoutAddressController($service, new \AppleKlinika\CustomerAddressBook\Application\Handler\CheckoutAddressSelection($service, $countries), $projection),
             $importer
         );
     }
@@ -55,6 +60,7 @@ final class Plugin
         }
 
         $this->account->register();
+        $this->checkout->register();
         if (defined('WP_CLI') && WP_CLI && class_exists('WP_CLI')) {
             \WP_CLI::add_command('ak address-book migrate', new MigrateLegacyAddressesCommand($this->importer));
         }
