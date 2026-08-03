@@ -72,6 +72,13 @@ try {
     $test->assert(str_contains((string) $controllerSource, "wp_safe_redirect"), 'PRG redirect present');
     $test->assert(! str_contains((string) $controllerSource, 'name="customer_id"'), 'client customer id absent');
     $test->assert(! str_contains((string) $controllerSource, 'name="address_id"'), 'numeric address id absent');
+    $test->assert(! str_contains((string) $controllerSource, "'phone','email'"), 'account address payload ignores profile contact fields');
+    $test->assert(! str_contains((string) $controllerSource, "field('phone'"), 'address form has no telephone input');
+    $test->assert(! str_contains((string) $controllerSource, "field('email'"), 'address form has no email input');
+    $test->assert(str_contains((string) $controllerSource, 'ak-address-form__required'), 'required marker uses inline markup');
+    $test->assert(str_contains((string) $controllerSource, 'data-address-default'), 'default controls use bound labelled rows');
+    $test->assert(str_contains((string) $controllerSource, 'purpose_billing'), 'billing capability control retained');
+    $test->assert(str_contains((string) $controllerSource, 'purpose_shipping'), 'shipping capability control retained');
 } finally {
     $test->cleanupUser($userId);
 }

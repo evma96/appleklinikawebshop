@@ -23,6 +23,9 @@ $projection = new WooUserMetaProjection();
 $service = new AddressBookService($repo, $transactions, $projection, new WooAllowedCountries());
 
 try {
+    update_user_meta($userId, 'billing_email', 'profil@example.test');
+    update_user_meta($userId, 'billing_phone', '+36 30 999 0000');
+    update_user_meta($userId, 'shipping_phone', '+36 30 888 0000');
     $first = $service->create($userId, $test->addressData());
     $test->assert($first->id() > 0, 'create returns internal id');
     $test->assert($repo->countActiveForCustomer($userId) === 1, 'active count');
@@ -34,12 +37,17 @@ try {
     $test->assert(get_user_meta($userId, 'shipping_city', true) === 'Budapest', 'shipping projection');
     $test->assert(get_user_meta($userId, 'ak_billing_house_number', true) === '1', 'AK billing component');
     $test->assert(get_user_meta($userId, 'ak_shipping_house_number', true) === '1', 'AK shipping component');
+    $test->assert(get_user_meta($userId, 'billing_email', true) === 'profil@example.test', 'billing email preserved after default projection');
+    $test->assert(get_user_meta($userId, 'billing_phone', true) === '+36 30 999 0000', 'billing phone preserved after default projection');
+    $test->assert(get_user_meta($userId, 'shipping_phone', true) === '+36 30 888 0000', 'shipping phone preserved after default projection');
 
     $second = $service->create($userId, $test->addressData(['label' => 'Munkahely', 'city' => 'Győr']), true, false);
     $test->assert(count($service->list($userId)) === 2, 'second address');
     $test->assert($service->getDefault($userId, 'billing')?->id() === $second->id(), 'billing switched');
     $test->assert($service->getDefault($userId, 'shipping')?->id() === $first->id(), 'shipping isolated');
     $test->assert(get_user_meta($userId, 'billing_city', true) === 'Győr', 'billing projection switched');
+    $test->assert(get_user_meta($userId, 'billing_email', true) === 'profil@example.test', 'billing email preserved after default switch');
+    $test->assert(get_user_meta($userId, 'billing_phone', true) === '+36 30 999 0000', 'billing phone preserved after default switch');
 
     $duplicate = false;
     try { $service->create($userId, $test->addressData(['label' => 'Más név', 'city' => 'Győr'])); } catch (Throwable) { $duplicate = true; }
@@ -84,6 +92,9 @@ try {
     $test->assert(! metadata_exists('user', $userId, 'billing_city'), 'billing projection cleared');
     $test->assert(! metadata_exists('user', $userId, 'shipping_city'), 'shipping projection cleared');
     $test->assert(! metadata_exists('user', $userId, 'appleklinika_tax_number'), 'company projection aliases cleared');
+    $test->assert(get_user_meta($userId, 'billing_email', true) === 'profil@example.test', 'billing email preserved after final address delete');
+    $test->assert(get_user_meta($userId, 'billing_phone', true) === '+36 30 999 0000', 'billing phone preserved after final address delete');
+    $test->assert(get_user_meta($userId, 'shipping_phone', true) === '+36 30 888 0000', 'shipping phone preserved after final address delete');
 
     $failingProjection = new class implements AddressProjection {
         public function project(int $customerId, string $purpose, Address $address): void { throw new RuntimeException('projection failure'); }

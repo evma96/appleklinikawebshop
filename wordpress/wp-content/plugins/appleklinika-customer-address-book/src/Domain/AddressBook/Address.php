@@ -158,12 +158,6 @@ final class Address
             if ((string) $this->data['company_name'] === '' && ((string) $this->data['first_name'] === '' || (string) $this->data['last_name'] === '')) {
                 throw new AddressException('A név vagy a cégnév megadása kötelező.');
             }
-            if ($this->supports('shipping') && (string) $this->data['phone'] === '') {
-                throw new AddressException('Szállítási címhez telefonszám szükséges.');
-            }
-            if ($this->supports('billing') && ((string) $this->data['email'] === '' || ! filter_var($this->data['email'], FILTER_VALIDATE_EMAIL))) {
-                throw new AddressException('Számlázási címhez érvényes e-mail cím szükséges.');
-            }
             if ($this->supports('billing') && (string) $this->data['country'] === 'HU' && (string) $this->data['company_name'] !== '') {
                 if (! preg_match('/^\d{8}-[1-5]-\d{2}$/', (string) $this->data['tax_number'])) {
                     throw new AddressException('Magyar céges számlázási címhez érvényes adószám szükséges.');

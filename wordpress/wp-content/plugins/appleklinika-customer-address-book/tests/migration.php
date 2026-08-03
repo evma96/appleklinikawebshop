@@ -54,6 +54,8 @@ try {
     $test->assert(count($service->list($mergedUser)) === 1, 'one merged address');
     $test->assert($service->list($mergedUser)[0]->supports('billing'), 'merged billing capability');
     $test->assert($service->list($mergedUser)[0]->supports('shipping'), 'merged shipping capability');
+    $test->assert($service->list($mergedUser)[0]->toArray()['phone'] === '', 'legacy phone remains customer-level');
+    $test->assert($service->list($mergedUser)[0]->toArray()['email'] === '', 'legacy email remains customer-level');
     $test->assert($legacyMetaSnapshot($mergedUser) === $originalMeta, 'all original merged legacy meta preserved');
     $repeat = $importer->import($mergedUser);
     $test->assert($repeat['already_migrated'] === 1, 'repeat migration idempotent');
@@ -70,6 +72,8 @@ try {
     $test->assert(count($service->list($splitUser)) === 2, 'two split addresses');
     $test->assert($service->getDefault($splitUser, 'billing') !== null, 'valid billing default');
     $test->assert($service->getDefault($splitUser, 'shipping') !== null, 'valid shipping default');
+    $test->assert($service->list($splitUser)[0]->toArray()['phone'] === '', 'split legacy phone not duplicated');
+    $test->assert($service->list($splitUser)[0]->toArray()['email'] === '', 'split legacy email not duplicated');
     $test->assert($legacyMetaSnapshot($splitUser) === $splitOriginalMeta, 'all original split legacy meta preserved');
 
     $partialUser = $test->createUser('migration-partial');
