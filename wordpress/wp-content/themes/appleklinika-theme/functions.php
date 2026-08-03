@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once get_template_directory() . '/inc/account-order-display.php';
+
 add_action('after_setup_theme', static function (): void {
     add_theme_support('title-tag');
     add_theme_support('post-thumbnails');
@@ -3376,6 +3378,55 @@ function appleklinika_account_view_order_aria_label(string $orderNumber): string
     return sprintf('Rendelés megtekintése: #%s', $orderNumber);
 }
 
+/**
+ * @return array{state: string, rows: list<array{key: string, label: string, amount: float, emphasis: string}>}
+ */
+function appleklinika_account_order_price_summary(WC_Order $order): array
+{
+    $orderTotal = (float) $order->get_total();
+    $refundedTotal = (float) $order->get_total_refunded();
+    $discountTotal = (float) $order->get_discount_total() + (float) $order->get_discount_tax();
+    $preDiscountTotal = $refundedTotal <= 0.00001 && $discountTotal > 0.00001
+        ? $orderTotal + $discountTotal
+        : null;
+
+    return appleklinika_account_order_price_rows($orderTotal, $refundedTotal, $preDiscountTotal);
+}
+
+function appleklinika_render_account_order_price_summary(WC_Order $order): void
+{
+    $summary = appleklinika_account_order_price_summary($order);
+    ?>
+    <div class="ak-account-order-price" data-price-state="<?php echo esc_attr($summary['state']); ?>">
+        <?php foreach ($summary['rows'] as $row) : ?>
+            <div class="ak-account-order-price__row ak-account-order-price__row--<?php echo esc_attr($row['key']); ?>">
+                <span class="ak-account-order-price__label"><?php echo esc_html($row['label']); ?></span>
+                <strong class="ak-account-order-price__amount ak-account-order-price__amount--<?php echo esc_attr($row['emphasis']); ?>"><?php echo wp_kses_post(wc_price($row['amount'])); ?></strong>
+            </div>
+        <?php endforeach; ?>
+    </div>
+    <?php
+}
+
+function appleklinika_account_order_item_image_html(WC_Order_Item_Product $item): string
+{
+    $storedName = $item->get_name();
+    $candidateIds = array_values(array_unique(array_filter([
+        (int) $item->get_variation_id(),
+        (int) $item->get_product_id(),
+    ])));
+
+    foreach ($candidateIds as $candidateId) {
+        $product = wc_get_product($candidateId);
+
+        if ($product instanceof WC_Product && $product->get_image_id() > 0) {
+            return $product->get_image('woocommerce_thumbnail', ['alt' => $storedName]);
+        }
+    }
+
+    return wc_placeholder_img('woocommerce_thumbnail', ['alt' => $storedName]);
+}
+
 function appleklinika_account_order_details_status(string $statusText, WC_Order $order): string
 {
     if (is_admin() || ! function_exists('is_account_page') || ! is_account_page()) {
@@ -3835,7 +3886,7 @@ function appleklinika_account_warranty_records(int $userId): array
 }
 
 /**
- * @return array<int, WC_Order>
+ * @return array<int, array{order: WC_Order, first_item: WC_Order_Item_Product|null, product_name: string, extra_count: int, refund_date: WC_DateTime|null, refunded_amount: float}>
  */
 function appleklinika_account_return_records(int $userId): array
 {
@@ -3843,13 +3894,40 @@ function appleklinika_account_return_records(int $userId): array
         return [];
     }
 
-    return wc_get_orders([
+    $orders = wc_get_orders([
         'customer_id' => $userId,
         'status' => ['refunded'],
         'limit' => -1,
         'orderby' => 'date',
         'order' => 'DESC',
     ]);
+
+    return array_values(array_filter(array_map(static function ($order): ?array {
+        if (! $order instanceof WC_Order) {
+            return null;
+        }
+
+        $items = array_values($order->get_items());
+        $firstItem = $items[0] ?? null;
+        $refundDate = null;
+
+        foreach ($order->get_refunds() as $refund) {
+            $createdAt = $refund->get_date_created();
+
+            if ($createdAt instanceof WC_DateTime && ($refundDate === null || $createdAt->getTimestamp() > $refundDate->getTimestamp())) {
+                $refundDate = $createdAt;
+            }
+        }
+
+        return [
+            'order' => $order,
+            'first_item' => $firstItem instanceof WC_Order_Item_Product ? $firstItem : null,
+            'product_name' => $firstItem instanceof WC_Order_Item_Product ? $firstItem->get_name() : 'Rendelés',
+            'extra_count' => max(0, count($items) - 1),
+            'refund_date' => $refundDate,
+            'refunded_amount' => (float) $order->get_total_refunded(),
+        ];
+    }, $orders)));
 }
 
 /**
@@ -4109,17 +4187,26 @@ function appleklinika_render_returns_account_endpoint(): void
             ?>
         <?php else : ?>
             <div class="ak-account-record-list">
-                <?php foreach ($records as $order) : ?>
-                    <?php if (! $order instanceof WC_Order) { continue; } ?>
-                    <?php $firstItem = array_values($order->get_items())[0] ?? null; ?>
-                    <article class="ak-account-record-card ak-account-record-card--without-thumb">
+                <?php foreach ($records as $record) : ?>
+                    <?php $order = $record['order']; ?>
+                    <article class="ak-account-record-card ak-account-return-card">
+                        <a class="ak-account-record-card__thumb" href="<?php echo esc_url($order->get_view_order_url()); ?>" aria-label="<?php echo esc_attr(appleklinika_account_view_order_aria_label((string) $order->get_order_number())); ?>">
+                            <?php
+                            if ($record['first_item'] instanceof WC_Order_Item_Product) {
+                                echo wp_kses_post(appleklinika_account_order_item_image_html($record['first_item']));
+                            } else {
+                                echo wp_kses_post(wc_placeholder_img('woocommerce_thumbnail', ['alt' => 'Rendelés']));
+                            }
+                            ?>
+                        </a>
                         <div class="ak-account-record-card__body">
                             <span class="ak-account-order-card__status is-muted"><?php echo esc_html(appleklinika_account_order_status_label('refunded')); ?></span>
                             <h3>Rendelés #<?php echo esc_html($order->get_order_number()); ?></h3>
-                            <p><?php echo esc_html($firstItem instanceof WC_Order_Item_Product ? $firstItem->get_name() : 'Rendelés'); ?></p>
-                            <?php if ($order->get_date_created()) : ?>
-                                <p><?php echo esc_html(wc_format_datetime($order->get_date_created())); ?></p>
+                            <p><?php echo esc_html($record['product_name']); ?><?php echo $record['extra_count'] > 0 ? ' · +' . esc_html((string) $record['extra_count']) . ' további termék' : ''; ?></p>
+                            <?php if ($record['refund_date'] instanceof WC_DateTime) : ?>
+                                <p>Visszatérítés dátuma: <?php echo esc_html(wc_format_datetime($record['refund_date'])); ?></p>
                             <?php endif; ?>
+                            <p class="ak-account-return-card__amount"><span>Visszatérített összeg</span><strong><?php echo wp_kses_post(wc_price($record['refunded_amount'])); ?></strong></p>
                         </div>
                         <a class="ak-account-secondary-action" href="<?php echo esc_url($order->get_view_order_url()); ?>">Részletek</a>
                     </article>
