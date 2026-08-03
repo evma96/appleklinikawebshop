@@ -3047,11 +3047,42 @@ body.woocommerce-account .ak-account-order-card__summary {
   text-align: right;
 }
 
-body.woocommerce-account .ak-account-order-card__total {
+body.woocommerce-account .ak-account-order-price {
+  display: grid;
+  gap: 5px;
+  min-width: min(100%, 236px);
+}
+
+body.woocommerce-account .ak-account-order-price__row {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+body.woocommerce-account .ak-account-order-price__label {
+  color: #667085;
+  font-size: 12px;
+  font-weight: 750;
+  text-align: left;
+}
+
+body.woocommerce-account .ak-account-order-price__amount {
   color: #111827;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 950;
   white-space: nowrap;
+}
+
+body.woocommerce-account .ak-account-order-price__amount--secondary {
+  color: #475467;
+  font-size: 13px;
+}
+
+body.woocommerce-account .ak-account-order-price__amount--struck {
+  color: #667085;
+  font-size: 13px;
+  text-decoration: line-through;
 }
 
 body.woocommerce-account .ak-account-order-card__actions {
@@ -4576,6 +4607,19 @@ body.woocommerce-account .ak-account-record-card__body {
 body.woocommerce-account .ak-account-record-card__body h3,
 body.woocommerce-account .ak-account-record-card__body p {
   margin: 0;
+}
+
+body.woocommerce-account .ak-account-return-card__amount {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  align-items: baseline;
+}
+
+body.woocommerce-account .ak-account-return-card__amount strong {
+  color: #111827;
+  font-size: 15px;
+  font-weight: 950;
 }
 
 body.woocommerce-account .ak-account-record-card__body h3 {
