@@ -1,0 +1,73 @@
+.ak-checkout-address-selector {
+    display: grid;
+    gap: .7rem;
+    margin: 0 0 1.25rem;
+    padding: 1rem;
+    border: 1px solid #dbe3ee;
+    border-radius: .75rem;
+    background: #f8fafc;
+}
+
+.ak-checkout-address-selector h3 {
+    margin: 0;
+    color: #172033;
+    font-size: 1rem;
+}
+
+.ak-checkout-address-selector select,
+.ak-checkout-address-selector input[type="text"] {
+    min-height: 44px;
+    width: 100%;
+}
+
+.ak-checkout-address-selector__notice {
+    min-height: 0;
+    margin: 0;
+    color: #b42318;
+    font-size: .875rem;
+}
+
+.ak-checkout-address-selector__save {
+    display: grid;
+    gap: .65rem;
+    padding-top: .2rem;
+}
+
+.ak-checkout-address-selector__save [data-ak-address-save-details] {
+    display: grid;
+    gap: .65rem;
+}
+
+.ak-checkout-address-selector__save > label,
+.ak-checkout-address-selector__save [data-ak-address-save-details] > label {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    gap: .55rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.ak-checkout-address-selector__save input[type="checkbox"] {
+    width: 20px;
+    min-width: 20px;
+    min-height: 20px;
+    margin: 0;
+}
+
+.ak-checkout-address-selector__save .ak-checkout-address-selector__label {
+    display: grid;
+    gap: .35rem;
+    align-items: stretch;
+}
+
+.ak-checkout-address-selector.is-updating {
+    opacity: .65;
+}
+
+@media (max-width: 479px) {
+    .ak-checkout-address-selector {
+        margin-inline: 0;
+        padding: .85rem;
+    }
+}
