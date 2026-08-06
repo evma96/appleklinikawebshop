@@ -1,0 +1,286 @@
+.ak-address-book,
+.ak-address-book * {
+    box-sizing: border-box;
+}
+
+.ak-address-book {
+    min-width: 0;
+    color: #111827;
+}
+
+.ak-address-book__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.ak-address-book__header h2,
+.ak-address-book__header p {
+    margin: 0;
+}
+
+.ak-address-book__header h2 {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    line-height: 1.15;
+}
+
+.ak-address-book__kicker {
+    color: #d6001c;
+    font-size: .75rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.ak-address-book__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.ak-address-card,
+.ak-address-book__empty,
+.ak-address-book__confirm,
+.ak-address-form {
+    min-width: 0;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    background: #fff;
+    padding: 1.1rem;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, .04);
+}
+
+.ak-address-card__heading {
+    display: flex;
+    flex-direction: column;
+    gap: .65rem;
+}
+
+.ak-address-card h3,
+.ak-address-card p {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.ak-address-card__badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+}
+
+.ak-address-card__badges span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    border-radius: 999px;
+    background: #f1f5f9;
+    padding: .25rem .6rem;
+    color: #475569;
+    font-size: .75rem;
+    font-weight: 700;
+}
+
+.ak-address-card__badges .is-default {
+    background: #ecfdf3;
+    color: #067647;
+}
+
+.ak-address-card__badges .is-review {
+    background: #fff7ed;
+    color: #9a3412;
+}
+
+.ak-address-card__name {
+    margin-top: 1rem !important;
+    font-weight: 750;
+}
+
+.ak-address-card__preview {
+    margin-top: .3rem !important;
+    color: #64748b;
+}
+
+.ak-address-card__actions,
+.ak-address-form__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin-top: 1rem;
+}
+
+.ak-address-card__actions form {
+    margin: 0;
+}
+
+.ak-address-book .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px !important;
+    white-space: normal;
+    text-align: center;
+}
+
+.ak-address-book .button:focus-visible,
+.ak-address-book input:focus-visible,
+.ak-address-book select:focus-visible {
+    outline: 3px solid rgba(214, 0, 28, .3);
+    outline-offset: 2px;
+}
+
+.ak-address-card__delete {
+    color: #b42318 !important;
+}
+
+.ak-address-form__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.ak-address-form__field,
+.ak-address-book__confirm label {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: .4rem;
+    font-weight: 700;
+}
+
+.ak-address-form__label-text {
+    display: inline-flex;
+    align-items: baseline;
+    min-height: 1.3em;
+    gap: .18em;
+    line-height: 1.3;
+}
+
+.ak-address-form__required {
+    color: #b42318;
+    font-weight: 800;
+}
+
+.ak-address-form input,
+.ak-address-form select,
+.ak-address-book__confirm select {
+    width: 100%;
+    min-width: 0;
+    min-height: 46px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background: #fff;
+    padding: .7rem .8rem;
+    font: inherit;
+}
+
+.ak-address-form__purposes {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: .4rem;
+    margin: 0;
+    border: 0;
+    padding: 0;
+}
+
+.ak-address-form__purposes legend {
+    padding: 0;
+    font-weight: 800;
+}
+
+.ak-address-form__purpose-options,
+.ak-address-form__default-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem 1rem;
+}
+
+.ak-address-form__purposes label,
+.ak-address-form__default {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+    min-height: 44px;
+    gap: .55rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.ak-address-form__purposes input,
+.ak-address-form__default input {
+    flex: 0 0 auto;
+    width: 20px;
+    min-height: 20px;
+    margin: 0;
+}
+
+.ak-address-form__defaults {
+    min-width: 0;
+    margin: 1rem 0 0;
+    border: 0;
+    padding: 0;
+}
+
+.ak-address-form__defaults legend {
+    padding: 0;
+    font-weight: 800;
+}
+
+.ak-address-form__actions {
+    align-items: center;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+}
+
+.ak-address-form__cancel {
+    border-color: #cbd5e1 !important;
+    background: #fff !important;
+    color: #475569 !important;
+}
+
+.ak-address-form__save {
+    background: #d6001c !important;
+    color: #fff !important;
+}
+
+@media (max-width: 767px) {
+    .ak-address-book__header,
+    .ak-address-book__grid,
+    .ak-address-form__grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .ak-address-book__add {
+        width: 100%;
+    }
+
+    .ak-address-card__actions,
+    .ak-address-card__actions form,
+    .ak-address-card__actions .button {
+        width: 100%;
+    }
+
+    .ak-address-form__purpose-options,
+    .ak-address-form__default-options,
+    .ak-address-form__actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .ak-address-form__actions .button {
+        width: 100%;
+    }
+}
+
+@media (max-width: 359px) {
+    .ak-address-card,
+    .ak-address-book__empty,
+    .ak-address-book__confirm,
+    .ak-address-form {
+        padding: .85rem;
+        border-radius: 12px;
+    }
+}

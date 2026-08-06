@@ -5321,6 +5321,7 @@ body.woocommerce-checkout .ak-checkout-step-controls--summary {
 body.woocommerce-checkout .ak-checkout-step-controls__button,
 body.woocommerce-checkout .ak-checkout-step-controls__link {
   display: inline-flex;
+  box-sizing: border-box;
   align-items: center;
   justify-content: center;
   min-height: 46px;

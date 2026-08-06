@@ -3347,7 +3347,7 @@ function appleklinika_redirect_account_downloads_endpoint(): void
     }
 
     if (is_wc_endpoint_url('edit-address')) {
-        wp_safe_redirect(wc_get_account_endpoint_url('edit-account'));
+        wp_safe_redirect(wc_get_account_endpoint_url('cimeim'));
         exit;
     }
 
@@ -3556,57 +3556,8 @@ function appleklinika_validate_account_details_fields($errors, $user): void
         return;
     }
 
-    $requiredFields = [
-        'account_phone' => 'Telefonszám megadása kötelező.',
-        'shipping_country' => 'Szállítási ország megadása kötelező.',
-        'shipping_postcode' => 'Szállítási irányítószám megadása kötelező.',
-        'shipping_city' => 'Szállítási város megadása kötelező.',
-        'shipping_address_1' => 'Szállítási cím megadása kötelező.',
-        'shipping_phone' => 'Szállítási telefonszám megadása kötelező.',
-        'billing_country' => 'Számlázási ország megadása kötelező.',
-        'billing_postcode' => 'Számlázási irányítószám megadása kötelező.',
-        'billing_city' => 'Számlázási város megadása kötelező.',
-        'billing_address_1' => 'Számlázási cím megadása kötelező.',
-        'billing_phone' => 'Számlázási telefonszám megadása kötelező.',
-        'billing_email' => 'Számlázási e-mail cím megadása kötelező.',
-    ];
-
-    foreach ($requiredFields as $fieldKey => $message) {
-        if (appleklinika_account_posted_text($fieldKey) === '') {
-            $errors->add('appleklinika_' . $fieldKey . '_required', $message);
-        }
-    }
-
-    $billingEmail = appleklinika_account_posted_email('billing_email');
-    if ($billingEmail !== '' && ! is_email($billingEmail)) {
-        $errors->add('appleklinika_billing_email_invalid', 'A számlázási e-mail cím formátuma hibás.');
-    }
-
-    $isCompany = appleklinika_account_posted_checkbox('ak_billing_is_company');
-
-    if (! $isCompany) {
-        if (appleklinika_account_posted_text('billing_first_name') === '') {
-            $errors->add('appleklinika_billing_first_name_required', 'Számlázási keresztnév megadása kötelező.');
-        }
-
-        if (appleklinika_account_posted_text('billing_last_name') === '') {
-            $errors->add('appleklinika_billing_last_name_required', 'Számlázási vezetéknév megadása kötelező.');
-        }
-
-        return;
-    }
-
-    $companyName = appleklinika_account_posted_text('billing_company');
-    $taxNumber = appleklinika_sanitize_checkout_tax_number(appleklinika_account_posted_text('ak_billing_tax_number'));
-
-    if ($companyName === '') {
-        $errors->add('appleklinika_billing_company_required', 'Cégnév megadása kötelező, ha cégként vásárolsz.');
-    }
-
-    if ($taxNumber === '') {
-        $errors->add('appleklinika_billing_tax_number_required', 'Adószám megadása kötelező, ha cégként vásárolsz.');
-    } elseif (! appleklinika_valid_hungarian_tax_number($taxNumber)) {
-        $errors->add('appleklinika_billing_tax_number_invalid', 'Az adószám formátuma hibás. Példa: 12345678-1-23');
+    if (appleklinika_account_posted_text('account_phone') === '') {
+        $errors->add('appleklinika_account_phone_required', 'Telefonszám megadása kötelező.');
     }
 }
 
@@ -3617,69 +3568,7 @@ function appleklinika_save_account_details_fields(int $userId): void
     }
 
     $accountPhone = appleklinika_account_posted_text('account_phone');
-    $billingEmail = appleklinika_account_posted_email('billing_email');
-    $isCompany = appleklinika_account_posted_checkbox('ak_billing_is_company');
-    $companyName = appleklinika_account_posted_text('billing_company');
-    $taxNumber = appleklinika_sanitize_checkout_tax_number(appleklinika_account_posted_text('ak_billing_tax_number'));
-    $accountFirstName = appleklinika_account_posted_text('account_first_name');
-    $accountLastName = appleklinika_account_posted_text('account_last_name');
-
     update_user_meta($userId, 'ak_account_phone', $accountPhone);
-    update_user_meta($userId, 'billing_phone', appleklinika_account_posted_text('billing_phone') ?: $accountPhone);
-
-    foreach ([
-        'shipping_country',
-        'shipping_postcode',
-        'shipping_city',
-        'shipping_address_1',
-        'shipping_phone',
-        'billing_country',
-        'billing_postcode',
-        'billing_city',
-        'billing_address_1',
-        'billing_phone',
-    ] as $metaKey) {
-        update_user_meta($userId, $metaKey, appleklinika_account_posted_text($metaKey));
-    }
-
-    if ($billingEmail !== '') {
-        update_user_meta($userId, 'billing_email', $billingEmail);
-    }
-
-    foreach ([
-        'ak_shipping_house_number',
-        'ak_shipping_floor',
-        'ak_shipping_staircase',
-        'ak_shipping_door',
-        'ak_billing_house_number',
-        'ak_billing_floor',
-        'ak_billing_staircase',
-        'ak_billing_door',
-    ] as $metaKey) {
-        update_user_meta($userId, $metaKey, appleklinika_account_posted_text($metaKey));
-    }
-
-    if ($isCompany) {
-        update_user_meta($userId, 'appleklinika_company_purchase', '1');
-        update_user_meta($userId, 'appleklinika_company_name', $companyName);
-        update_user_meta($userId, 'appleklinika_tax_number', $taxNumber);
-        update_user_meta($userId, 'ak_billing_is_company', '1');
-        update_user_meta($userId, 'ak_billing_tax_number', $taxNumber);
-        update_user_meta($userId, 'billing_company', $companyName);
-        update_user_meta($userId, 'billing_first_name', $accountFirstName);
-        update_user_meta($userId, 'billing_last_name', $accountLastName !== '' ? $accountLastName : $companyName);
-
-        return;
-    }
-
-    delete_user_meta($userId, 'appleklinika_company_purchase');
-    delete_user_meta($userId, 'appleklinika_company_name');
-    delete_user_meta($userId, 'appleklinika_tax_number');
-    delete_user_meta($userId, 'ak_billing_is_company');
-    delete_user_meta($userId, 'ak_billing_tax_number');
-    update_user_meta($userId, 'billing_company', '');
-    update_user_meta($userId, 'billing_first_name', appleklinika_account_posted_text('billing_first_name'));
-    update_user_meta($userId, 'billing_last_name', appleklinika_account_posted_text('billing_last_name'));
 }
 
 function appleklinika_current_account_endpoint_key(): string
@@ -3695,6 +3584,7 @@ function appleklinika_current_account_endpoint_key(): string
         'eladasaim',
         'garanciaim',
         'visszakuldesek',
+        'cimeim',
         'edit-account',
         'kedvelt-termekek',
         'edit-address',
@@ -3720,7 +3610,7 @@ function appleklinika_account_page_title(): string
         'visszakuldesek' => 'Visszaküldéseim',
         'edit-account' => 'Fiók beállítások',
         'kedvelt-termekek' => 'Kedvelt termékek',
-        'edit-address' => 'Fiók beállítások',
+        'cimeim', 'edit-address' => 'Címeim',
         default => 'Vezérlőpult',
     };
 }
@@ -3735,7 +3625,7 @@ function appleklinika_account_breadcrumb_label(): string
         'visszakuldesek' => 'Visszaküldéseim',
         'edit-account' => 'Fiók beállítások',
         'kedvelt-termekek' => 'Kedvelt termékek',
-        'edit-address' => 'Fiók beállítások',
+        'cimeim', 'edit-address' => 'Címeim',
         default => 'Vezérlőpult',
     };
 }

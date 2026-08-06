@@ -10,18 +10,12 @@
 defined('ABSPATH') || exit;
 
 $userId = $user instanceof WP_User ? (int) $user->ID : get_current_user_id();
-$countries = function_exists('appleklinika_account_country_options') ? appleklinika_account_country_options() : ['HU' => 'Magyarország'];
 $meta = static function (string $key, string $default = '') use ($userId): string {
     return function_exists('appleklinika_account_user_meta')
         ? appleklinika_account_user_meta($userId, $key, $default)
         : (string) get_user_meta($userId, $key, true);
 };
-$isCompany = function_exists('appleklinika_checkout_company_enabled')
-    ? appleklinika_checkout_company_enabled($meta('appleklinika_company_purchase', $meta('ak_billing_is_company')))
-    : $meta('appleklinika_company_purchase') === '1';
 $accountPhone = $meta('ak_account_phone', $meta('billing_phone', $meta('shipping_phone')));
-$billingCompany = $meta('appleklinika_company_name', $meta('billing_company'));
-$billingTaxNumber = $meta('appleklinika_tax_number', $meta('ak_billing_tax_number'));
 
 $renderField = static function (array $args): void {
     $id = (string) ($args['id'] ?? '');
@@ -55,19 +49,6 @@ $renderField = static function (array $args): void {
     <?php
 };
 
-$renderCountry = static function (string $id, string $label, string $value, string $class = '') use ($countries): void {
-    ?>
-    <p class="woocommerce-form-row form-row <?php echo esc_attr($class); ?>">
-        <label for="<?php echo esc_attr($id); ?>"><?php echo esc_html($label); ?>&nbsp;<span class="required" aria-hidden="true">*</span></label>
-        <select class="woocommerce-Input input-text ak-account-country-select" name="<?php echo esc_attr($id); ?>" id="<?php echo esc_attr($id); ?>" required aria-required="true">
-            <?php foreach ($countries as $countryCode => $countryLabel) : ?>
-                <option value="<?php echo esc_attr((string) $countryCode); ?>" <?php selected((string) $countryCode, $value); ?>><?php echo esc_html((string) $countryLabel); ?></option>
-            <?php endforeach; ?>
-        </select>
-    </p>
-    <?php
-};
-
 do_action('woocommerce_before_edit_account_form');
 ?>
 
@@ -75,7 +56,7 @@ do_action('woocommerce_before_edit_account_form');
     <header class="ak-account-page__header">
         <p class="ak-account-section-kicker">Beállítások</p>
         <h2>Fiók beállítások</h2>
-        <p>Személyes adatok, mentett címek, céges számlázás és jelszó egy helyen.</p>
+        <p>Személyes adatok, elérhetőség és jelszó egy helyen.</p>
     </header>
 
 <form class="woocommerce-EditAccountForm edit-account ak-account-details-form" action="" method="post" <?php do_action('woocommerce_edit_account_form_tag'); ?>>
@@ -138,67 +119,15 @@ do_action('woocommerce_before_edit_account_form');
         <?php do_action('woocommerce_edit_account_form_fields'); ?>
     </section>
 
-    <section class="ak-account-form-section ak-account-address ak-account-address--shipping">
+    <section class="ak-account-form-section ak-account-form-section--addresses">
         <header class="ak-account-form-section__header">
-            <p class="ak-account-section-kicker">Szállítási cím</p>
-            <h2>Hová küldjük a rendelést?</h2>
+            <p class="ak-account-section-kicker">Mentett címek</p>
+            <h2>A címeidet külön kezelheted</h2>
         </header>
-
-        <div class="ak-account-form-grid">
-            <?php
-            $renderCountry('shipping_country', 'Ország', $meta('shipping_country', 'HU'), 'ak-account-form-grid__full');
-            $renderField(['id' => 'shipping_postcode', 'label' => 'Irányítószám', 'value' => $meta('shipping_postcode'), 'autocomplete' => 'shipping postal-code', 'required' => true]);
-            $renderField(['id' => 'shipping_city', 'label' => 'Város', 'value' => $meta('shipping_city'), 'autocomplete' => 'shipping address-level2', 'required' => true]);
-            $renderField(['id' => 'shipping_address_1', 'label' => 'Utca / cím', 'value' => $meta('shipping_address_1'), 'autocomplete' => 'shipping address-line1', 'required' => true, 'class' => 'ak-account-form-grid__full']);
-            $renderField(['id' => 'ak_shipping_house_number', 'label' => 'Házszám', 'value' => $meta('ak_shipping_house_number')]);
-            $renderField(['id' => 'ak_shipping_floor', 'label' => 'Emelet', 'value' => $meta('ak_shipping_floor')]);
-            $renderField(['id' => 'ak_shipping_staircase', 'label' => 'Lépcsőház', 'value' => $meta('ak_shipping_staircase')]);
-            $renderField(['id' => 'ak_shipping_door', 'label' => 'Ajtó', 'value' => $meta('ak_shipping_door')]);
-            $renderField(['id' => 'shipping_phone', 'label' => 'Telefonszám', 'value' => $meta('shipping_phone', $accountPhone), 'type' => 'tel', 'autocomplete' => 'shipping tel', 'required' => true]);
-            ?>
-        </div>
-    </section>
-
-    <section class="ak-account-form-section ak-account-address ak-account-address--billing <?php echo $isCompany ? 'is-company-enabled' : ''; ?>">
-        <header class="ak-account-form-section__header">
-            <p class="ak-account-section-kicker">Számlázási adatok</p>
-            <h2>Magánszemély vagy céges vásárlás</h2>
-        </header>
-
-        <label class="ak-account-company-toggle" for="ak_billing_is_company">
-            <input type="checkbox" name="ak_billing_is_company" id="ak_billing_is_company" value="1" <?php checked($isCompany); ?> />
-            <span class="ak-account-company-toggle__box" aria-hidden="true"></span>
-            <span>Cégként vásárolok</span>
-        </label>
-
-        <div class="ak-account-form-grid ak-account-billing-grid">
-            <div class="ak-account-billing-personal-row">
-                <?php
-                $renderField(['id' => 'billing_first_name', 'label' => 'Keresztnév', 'value' => $meta('billing_first_name', $user->first_name), 'autocomplete' => 'billing given-name', 'required' => ! $isCompany]);
-                $renderField(['id' => 'billing_last_name', 'label' => 'Vezetéknév', 'value' => $meta('billing_last_name', $user->last_name), 'autocomplete' => 'billing family-name', 'required' => ! $isCompany]);
-                ?>
-            </div>
-
-            <div class="ak-account-company-fields">
-                <?php
-                $renderField(['id' => 'billing_company', 'label' => 'Cégnév', 'value' => $billingCompany, 'autocomplete' => 'organization', 'required' => $isCompany]);
-                $renderField(['id' => 'ak_billing_tax_number', 'label' => 'Adószám', 'value' => $billingTaxNumber, 'autocomplete' => 'off', 'required' => $isCompany]);
-                ?>
-            </div>
-
-            <?php
-            $renderCountry('billing_country', 'Ország', $meta('billing_country', 'HU'), 'ak-account-form-grid__full');
-            $renderField(['id' => 'billing_postcode', 'label' => 'Irányítószám', 'value' => $meta('billing_postcode'), 'autocomplete' => 'billing postal-code', 'required' => true]);
-            $renderField(['id' => 'billing_city', 'label' => 'Város', 'value' => $meta('billing_city'), 'autocomplete' => 'billing address-level2', 'required' => true]);
-            $renderField(['id' => 'billing_address_1', 'label' => 'Utca / cím', 'value' => $meta('billing_address_1'), 'autocomplete' => 'billing address-line1', 'required' => true, 'class' => 'ak-account-form-grid__full']);
-            $renderField(['id' => 'ak_billing_house_number', 'label' => 'Házszám', 'value' => $meta('ak_billing_house_number')]);
-            $renderField(['id' => 'ak_billing_floor', 'label' => 'Emelet', 'value' => $meta('ak_billing_floor')]);
-            $renderField(['id' => 'ak_billing_staircase', 'label' => 'Lépcsőház', 'value' => $meta('ak_billing_staircase')]);
-            $renderField(['id' => 'ak_billing_door', 'label' => 'Ajtó', 'value' => $meta('ak_billing_door')]);
-            $renderField(['id' => 'billing_phone', 'label' => 'Telefonszám', 'value' => $meta('billing_phone', $accountPhone), 'type' => 'tel', 'autocomplete' => 'billing tel', 'required' => true]);
-            $renderField(['id' => 'billing_email', 'label' => 'Számlázási e-mail', 'value' => $meta('billing_email', $user->user_email), 'type' => 'email', 'autocomplete' => 'billing email', 'required' => true]);
-            ?>
-        </div>
+        <p>A számlázási, szállítási és céges címadatokat a Címeim oldalon adhatod hozzá vagy módosíthatod.</p>
+        <?php if (function_exists('wc_get_account_endpoint_url')) : ?>
+            <a class="button" href="<?php echo esc_url(wc_get_account_endpoint_url('cimeim')); ?>">Címeim megnyitása</a>
+        <?php endif; ?>
     </section>
 
     <section class="ak-account-form-section ak-account-form-section--password">
