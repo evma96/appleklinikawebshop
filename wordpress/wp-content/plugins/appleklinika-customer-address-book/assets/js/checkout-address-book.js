@@ -3,17 +3,18 @@
 
     var namespace = 'appleklinika/address-book';
     var initializedDefaults = false;
+    var blocksCheckout = window.wc && window.wc.blocksCheckout;
 
     function cartExtension() {
-        if (!window.wp || !window.wp.data || !window.wc || !window.wc.wcBlocksData) {
+        if (!window.wp || !window.wp.data) {
             return null;
         }
-        var cart = window.wp.data.select(window.wc.wcBlocksData.cartStore).getCartData();
+        var cart = window.wp.data.select('wc/store/cart').getCartData();
         return cart && cart.extensions ? cart.extensions[namespace] : null;
     }
 
     function sendSelection(root) {
-        if (!window.wc || !window.wc.blocksCheckout || typeof window.wc.blocksCheckout.extensionCartUpdate !== 'function') {
+        if (!blocksCheckout || typeof blocksCheckout.extensionCartUpdate !== 'function') {
             return;
         }
         var data = {};
@@ -35,7 +36,7 @@
             };
         });
         root.classList.add('is-updating');
-        window.wc.blocksCheckout.extensionCartUpdate({ namespace: namespace, data: data })
+        blocksCheckout.extensionCartUpdate({ namespace: namespace, data: data })
             .catch(function (error) {
                 var message = error && error.message ? error.message : 'A mentett cím kiválasztása nem sikerült. Kérjük, próbáld újra.';
                 root.querySelectorAll('[data-ak-address-notice]').forEach(function (notice) { notice.textContent = message; });
@@ -43,30 +44,51 @@
             .finally(function () { root.classList.remove('is-updating'); });
     }
 
+    function setCheckoutControlValue(control, value) {
+        var prototype = control.tagName === 'SELECT'
+            ? window.HTMLSelectElement.prototype
+            : window.HTMLInputElement.prototype;
+        var setter = Object.getOwnPropertyDescriptor(prototype, 'value');
+        if (setter && setter.set) {
+            setter.set.call(control, value);
+        } else {
+            control.value = value;
+        }
+        control.dispatchEvent(new Event('input', { bubbles: true }));
+        control.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
     function setCustomFields(section, option) {
         if (!option || !option.fields) {
             return;
         }
         var purpose = section.getAttribute('data-ak-address-purpose');
+        ['country', 'first_name', 'last_name', 'company', 'address_1', 'address_2', 'city', 'state', 'postcode'].forEach(function (name) {
+            var input = document.getElementById(purpose + '-' + name);
+            if (input) {
+                setCheckoutControlValue(input, option.fields[name] || '');
+            }
+        });
         ['house_number', 'staircase', 'floor', 'door'].forEach(function (name) {
-            var input = document.getElementById('ak_' + purpose + '_' + name);
+            var input = document.getElementById(purpose + '-appleklinika-' + name);
             if (!input) {
                 return;
             }
-            input.value = option.fields['appleklinika/' + name] || '';
-            input.dispatchEvent(new Event('input', { bubbles: true }));
-            input.dispatchEvent(new Event('change', { bubbles: true }));
+            setCheckoutControlValue(input, option.fields['appleklinika/' + name] || '');
         });
         if (purpose === 'billing') {
-            ['company_name', 'tax_number'].forEach(function (name) {
-                var input = document.getElementById('ak_billing_' + name);
-                if (!input) {
-                    return;
+            {
+                var input = document.getElementById('order-appleklinika-company_name');
+                if (input) {
+                    setCheckoutControlValue(input, option.fields['appleklinika/company_name'] || '');
                 }
-                input.value = option.fields['appleklinika/' + name] || '';
-                input.dispatchEvent(new Event('input', { bubbles: true }));
-                input.dispatchEvent(new Event('change', { bubbles: true }));
-            });
+            }
+            {
+                var taxInput = document.getElementById('order-appleklinika-tax_number');
+                if (taxInput) {
+                    setCheckoutControlValue(taxInput, option.fields['appleklinika/tax_number'] || '');
+                }
+            }
         }
     }
 
@@ -134,6 +156,7 @@
         });
         section.querySelector('[data-ak-address-label]').addEventListener('change', function () { sendSelection(root); });
         defaultControl.addEventListener('change', function () { sendSelection(root); });
+        setCustomFields(section, matchingOption());
         return !current && select.value !== '__one_off__';
     }
 

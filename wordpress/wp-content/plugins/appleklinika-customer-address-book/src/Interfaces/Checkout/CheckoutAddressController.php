@@ -204,7 +204,7 @@ final class CheckoutAddressController
         wp_enqueue_script(
             'appleklinika-customer-address-book-checkout',
             APPLEKLINIKA_ADDRESS_BOOK_URL . 'assets/js/checkout-address-book.js',
-            ['wc-blocks-checkout', 'wp-data'],
+            ['wc-blocks-checkout', 'wc-blocks-data-store', 'wp-data'],
             APPLEKLINIKA_ADDRESS_BOOK_VERSION,
             true
         );

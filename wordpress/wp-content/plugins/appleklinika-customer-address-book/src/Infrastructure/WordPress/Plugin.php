@@ -14,6 +14,7 @@ use AppleKlinika\CustomerAddressBook\Infrastructure\WooCommerce\WooUserMetaProje
 use AppleKlinika\CustomerAddressBook\Interfaces\Account\AccountController;
 use AppleKlinika\CustomerAddressBook\Interfaces\Checkout\CheckoutAddressController;
 use AppleKlinika\CustomerAddressBook\Interfaces\Cli\MigrateLegacyAddressesCommand;
+use AppleKlinika\CustomerAddressBook\Interfaces\Privacy\AddressBookPrivacyController;
 
 final class Plugin
 {
@@ -21,6 +22,7 @@ final class Plugin
         private readonly MigrationRunner $migrations,
         private readonly AccountController $account,
         private readonly CheckoutAddressController $checkout,
+        private readonly AddressBookPrivacyController $privacy,
         private readonly LegacyAddressImporter $importer
     ) {
     }
@@ -43,6 +45,7 @@ final class Plugin
             new MigrationRunner($wpdb),
             new AccountController($service, $importer, $countries),
             new CheckoutAddressController($service, new \AppleKlinika\CustomerAddressBook\Application\Handler\CheckoutAddressSelection($service, $countries), $projection),
+            new AddressBookPrivacyController($service, $projection, $wpdb),
             $importer
         );
     }
@@ -61,6 +64,7 @@ final class Plugin
 
         $this->account->register();
         $this->checkout->register();
+        $this->privacy->register();
         if (defined('WP_CLI') && WP_CLI && class_exists('WP_CLI')) {
             \WP_CLI::add_command('ak address-book migrate', new MigrateLegacyAddressesCommand($this->importer));
         }

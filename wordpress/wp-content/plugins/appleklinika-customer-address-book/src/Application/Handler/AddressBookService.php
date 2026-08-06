@@ -223,6 +223,27 @@ final class AddressBookService
         });
     }
 
+    /** Removes every canonical address and default pointer for one existing customer. */
+    public function eraseForCustomer(int $customerId): int
+    {
+        if ($customerId <= 0) {
+            return 0;
+        }
+
+        return $this->transactions->transactional(function () use ($customerId): int {
+            $this->addresses->lockCustomer($customerId);
+            $addresses = $this->addresses->listForCustomer($customerId, true);
+            foreach (['billing', 'shipping'] as $purpose) {
+                $this->addresses->clearDefault($customerId, $purpose);
+            }
+            foreach ($addresses as $address) {
+                $this->addresses->delete($address);
+            }
+
+            return count($addresses);
+        });
+    }
+
     /** @return array<int, Address> */
     public function list(int $customerId): array { return $this->addresses->listForCustomer($customerId); }
     public function get(int $customerId, string $key): Address { return $this->requireOwned($customerId, $key); }
