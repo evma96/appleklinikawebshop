@@ -28,24 +28,30 @@ try {
         'company_name' => 'Apple Klinika Teszt Kft.',
         'tax_number' => '12345678-1-23',
     ]), true, false);
+    $personalBilling = $service->create($owner, $test->addressData([
+        'label' => 'Személyes számla',
+        'capabilities' => Address::BILLING,
+    ]), false, false);
     $shipping = $service->create($owner, $test->addressData(['label' => 'Szállítás', 'capabilities' => Address::SHIPPING, 'city' => 'Szeged']), false, true);
     $review = $service->create($owner, $test->addressData(['label' => 'Ellenőrzés', 'status' => Address::STATUS_NEEDS_REVIEW]), false, false);
     $foreignAddress = $service->create($foreign, $test->addressData(['label' => 'Más ügyfél']), true, true);
 
     $options = $selector->options($owner, true);
     $test->assert($options['enabled'] === true, 'authenticated customer receives address options');
-    $test->assert(count($options['billing']) === 1, 'billing excludes shipping-only and needs-review address');
+    $test->assert(count($options['billing']) === 2, 'billing includes both valid owner billing addresses and excludes needs-review address');
     $test->assert(count($options['shipping']) === 1, 'shipping excludes billing-only and needs-review address');
-    $test->assert($options['billing'][0]['key'] === $billing->key(), 'only owner billing key returned');
-    $test->assert($options['billing'][0]['is_default'] === true, 'default billing marked');
+    $billingKeys = array_column($options['billing'], 'key');
+    $test->assert(in_array($billing->key(), $billingKeys, true) && in_array($personalBilling->key(), $billingKeys, true), 'only valid owner billing keys returned');
+    $defaultBilling = array_values(array_filter($options['billing'], static fn (array $option): bool => $option['key'] === $billing->key()));
+    $test->assert(count($defaultBilling) === 1 && $defaultBilling[0]['is_default'] === true, 'default billing marked');
     $test->assert($options['shipping'][0]['is_default'] === true, 'default shipping marked');
     $test->assert(! array_key_exists('id', $options['billing'][0]), 'numeric address id not exposed');
     $test->assert(! array_key_exists('customer_id', $options['billing'][0]), 'customer id not exposed');
     $test->assert(! array_key_exists('created_at', $options['billing'][0]) && ! array_key_exists('source', $options['billing'][0]), 'non-checkout audit data not exposed');
     $checkoutScript = file_get_contents(dirname(__DIR__) . '/assets/js/checkout-address-book.js');
     $test->assert(is_string($checkoutScript) && str_contains($checkoutScript, "purpose + '-appleklinika-' + name"), 'checkout custom address fields use their Blocks ids');
-    $test->assert(str_contains((string) $checkoutScript, "order-appleklinika-company_name") && str_contains((string) $checkoutScript, "order-appleklinika-tax_number"), 'checkout company and tax fields use their Blocks ids');
-    $test->assert(str_contains((string) $checkoutScript, 'HTMLInputElement.prototype') && str_contains($checkoutScript, 'HTMLSelectElement.prototype') && str_contains($checkoutScript, 'setCheckoutControlValue'), 'checkout address fields update through the controlled Blocks input path');
+    $test->assert(str_contains((string) $checkoutScript, "order-appleklinika-company_purchase") && str_contains($checkoutScript, "order-appleklinika-company_name") && str_contains((string) $checkoutScript, "order-appleklinika-tax_number"), 'checkout company controls use their registered Blocks ids');
+    $test->assert(str_contains((string) $checkoutScript, 'setCheckoutControlChecked(companyPurchaseInput, option.fields') && str_contains((string) $checkoutScript, 'control.click()') && str_contains($checkoutScript, 'HTMLInputElement.prototype') && str_contains($checkoutScript, 'HTMLSelectElement.prototype') && str_contains($checkoutScript, 'setCheckoutControlValue'), 'checkout address fields update through the controlled Blocks input path');
     $test->assert(str_contains((string) $checkoutScript, 'setCustomFields(section, matchingOption());'), 'checkout applies custom address details to the initially selected default');
     $test->assert(str_contains((string) $checkoutScript, "select('wc/store/cart')") && str_contains($checkoutScript, 'var blocksCheckout = window.wc') && ! str_contains($checkoutScript, 'window.wc.blocksCheckout.extensionCartUpdate'), 'checkout uses the declared Blocks store directly and captures the checkout API while its script identity is available');
     $checkoutController = file_get_contents(dirname(__DIR__) . '/src/Interfaces/Checkout/CheckoutAddressController.php');
@@ -61,6 +67,8 @@ try {
     $test->assert($fields['first_name'] === 'Teszt' && $fields['postcode'] === '1111', 'standard billing fields mapped');
     $test->assert($fields['appleklinika/house_number'] === '1', 'Hungarian address component mapped');
     $test->assert($fields['appleklinika/company_purchase'] === '1' && $fields['appleklinika/company_name'] === 'Apple Klinika Teszt Kft.' && $fields['appleklinika/tax_number'] === '12345678-1-23', 'company and tax fields mapped');
+    $personalFields = $selector->checkoutFields($personalBilling);
+    $test->assert($personalFields['appleklinika/company_purchase'] === '' && $personalFields['appleklinika/company_name'] === '' && $personalFields['appleklinika/tax_number'] === '', 'personal billing mapping clears company mode and company-only values');
     $test->assert(! isset($fields['phone'], $fields['email']), 'profile contacts never mapped from address');
     $test->assert($selector->resolve($owner, 'billing', $billing->key(), $billing->version())->key() === $billing->key(), 'valid owner selection resolves');
 
