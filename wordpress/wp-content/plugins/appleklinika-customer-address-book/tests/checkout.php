@@ -42,6 +42,14 @@ try {
     $test->assert(! array_key_exists('id', $options['billing'][0]), 'numeric address id not exposed');
     $test->assert(! array_key_exists('customer_id', $options['billing'][0]), 'customer id not exposed');
     $test->assert(! array_key_exists('created_at', $options['billing'][0]) && ! array_key_exists('source', $options['billing'][0]), 'non-checkout audit data not exposed');
+    $checkoutScript = file_get_contents(dirname(__DIR__) . '/assets/js/checkout-address-book.js');
+    $test->assert(is_string($checkoutScript) && str_contains($checkoutScript, "purpose + '-appleklinika-' + name"), 'checkout custom address fields use their Blocks ids');
+    $test->assert(str_contains((string) $checkoutScript, "order-appleklinika-company_name") && str_contains((string) $checkoutScript, "order-appleklinika-tax_number"), 'checkout company and tax fields use their Blocks ids');
+    $test->assert(str_contains((string) $checkoutScript, 'HTMLInputElement.prototype') && str_contains($checkoutScript, 'HTMLSelectElement.prototype') && str_contains($checkoutScript, 'setCheckoutControlValue'), 'checkout address fields update through the controlled Blocks input path');
+    $test->assert(str_contains((string) $checkoutScript, 'setCustomFields(section, matchingOption());'), 'checkout applies custom address details to the initially selected default');
+    $test->assert(str_contains((string) $checkoutScript, "select('wc/store/cart')") && str_contains($checkoutScript, 'var blocksCheckout = window.wc') && ! str_contains($checkoutScript, 'window.wc.blocksCheckout.extensionCartUpdate'), 'checkout uses the declared Blocks store directly and captures the checkout API while its script identity is available');
+    $checkoutController = file_get_contents(dirname(__DIR__) . '/src/Interfaces/Checkout/CheckoutAddressController.php');
+    $test->assert(is_string($checkoutController) && str_contains($checkoutController, "'wc-blocks-data-store'"), 'checkout script declares the Woo Blocks data-store dependency');
     $test->assert($selector->options(0, true)['enabled'] === false, 'unauthenticated customer receives no selector');
     $test->assert($selector->options($owner, false)['shipping'] === [], 'no-shipping checkout receives no shipping selector options');
 

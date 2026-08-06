@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Apple Klinika Customer Address Book
  * Description: Canonical customer address book and WooCommerce account integration.
- * Version: 0.1.0
+ * Version: 0.1.7
  * Requires PHP: 8.1
  * Requires Plugins: woocommerce
  * Author: Apple Klinika
@@ -15,7 +15,7 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-define('APPLEKLINIKA_ADDRESS_BOOK_VERSION', '0.1.0');
+define('APPLEKLINIKA_ADDRESS_BOOK_VERSION', '0.1.7');
 define('APPLEKLINIKA_ADDRESS_BOOK_SCHEMA_VERSION', '1');
 define('APPLEKLINIKA_ADDRESS_BOOK_FILE', __FILE__);
 define('APPLEKLINIKA_ADDRESS_BOOK_PATH', __DIR__);
