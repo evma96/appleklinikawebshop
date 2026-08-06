@@ -58,6 +58,12 @@
         control.dispatchEvent(new Event('change', { bubbles: true }));
     }
 
+    function setCheckoutControlChecked(control, checked) {
+        if (control.checked !== checked) {
+            control.click();
+        }
+    }
+
     function setCustomFields(section, option) {
         if (!option || !option.fields) {
             return;
@@ -77,6 +83,10 @@
             setCheckoutControlValue(input, option.fields['appleklinika/' + name] || '');
         });
         if (purpose === 'billing') {
+            var companyPurchaseInput = document.getElementById('order-appleklinika-company_purchase');
+            if (companyPurchaseInput) {
+                setCheckoutControlChecked(companyPurchaseInput, option.fields['appleklinika/company_purchase'] === '1');
+            }
             {
                 var input = document.getElementById('order-appleklinika-company_name');
                 if (input) {

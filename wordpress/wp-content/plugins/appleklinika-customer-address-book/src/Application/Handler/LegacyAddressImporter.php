@@ -78,7 +78,7 @@ final class LegacyAddressImporter
             $summary['imported']++;
         }
 
-        if (! $dryRun) {
+        if (! $dryRun && $summary['invalid'] === 0) {
             update_user_meta($customerId, self::USER_META_VERSION, self::MIGRATION_VERSION);
         }
 
