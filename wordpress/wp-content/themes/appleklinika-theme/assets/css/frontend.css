@@ -5231,7 +5231,8 @@ body.woocommerce-checkout .ak-checkout-stepper__control {
   align-items: center;
   gap: 8px;
   max-width: 100%;
-  padding: 0;
+  min-height: 44px;
+  padding: 3px 8px;
   border: 0;
   color: #6b7280;
   background: transparent;
@@ -5324,7 +5325,7 @@ body.woocommerce-checkout .ak-checkout-step-controls__link {
   box-sizing: border-box;
   align-items: center;
   justify-content: center;
-  min-height: 46px;
+  min-height: 44px;
   border-radius: 999px;
   font-size: 14px;
   font-weight: 950;
@@ -5356,6 +5357,14 @@ body.woocommerce-checkout .ak-checkout-step-controls__link:hover,
 body.woocommerce-checkout .ak-checkout-step-controls__link:focus-visible {
   outline: 0;
   transform: translateY(-1px);
+}
+
+body.woocommerce-checkout .ak-checkout-step-validation-message {
+  margin: -12px 0 18px;
+  color: #b42318;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.4;
 }
 
 body.woocommerce-checkout .ak-checkout-step-controls__button:hover,
@@ -5546,6 +5555,18 @@ body.woocommerce-cart .ak-cart-layout {
   overflow: visible;
 }
 
+@media (min-width: 901px) and (max-width: 1180px) {
+  body.woocommerce-cart .ak-cart-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+    gap: 24px;
+  }
+
+  body.woocommerce-cart .ak-cart-items-card,
+  body.woocommerce-cart .ak-cart-summary {
+    padding: 26px;
+  }
+}
+
 body.woocommerce-cart .ak-cart-layout--empty {
   display: block;
   max-width: 980px;
@@ -5720,8 +5741,8 @@ body.woocommerce-cart .ak-cart-qty-control button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
+  width: 44px;
+  height: 44px;
   border: 0;
   border-radius: 999px;
   color: #111;
@@ -5733,8 +5754,8 @@ body.woocommerce-cart .ak-cart-qty-control button {
 }
 
 body.woocommerce-cart .ak-cart-item__qty {
-  width: 34px;
-  min-height: 34px;
+  width: 44px;
+  min-height: 44px;
   border: 0;
   border-radius: 999px;
   color: var(--ak-ink);
@@ -6328,19 +6349,21 @@ body.woocommerce-cart .wc-block-cart-item__quantity {
 }
 
 body.woocommerce-cart .wc-block-components-quantity-selector {
-  min-height: 40px;
+  min-height: 44px;
   border: 1px solid var(--ak-line);
   border-radius: var(--ak-radius);
   background: #fff;
 }
 
 body.woocommerce-cart .wc-block-components-quantity-selector input {
-  min-height: 38px;
+  min-height: 44px;
   color: var(--ak-ink);
   font-weight: 850;
 }
 
 body.woocommerce-cart .wc-block-components-quantity-selector button {
+  min-width: 44px;
+  min-height: 44px;
   color: var(--ak-ink);
   font-weight: 900;
 }

@@ -218,6 +218,33 @@ body.woocommerce-checkout .ak-checkout-summary__row--total .amount {
   font-weight: 820;
 }
 
+body.woocommerce-checkout .ak-checkout-summary__details {
+  display: grid;
+  gap: 0;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(229, 231, 235, .78);
+}
+
+body.woocommerce-checkout .ak-checkout-summary__detail {
+  display: grid;
+  gap: 3px;
+  padding: 8px 0;
+}
+
+body.woocommerce-checkout .ak-checkout-summary__detail span {
+  color: var(--ak-muted);
+  font-size: 12px;
+  font-weight: 760;
+}
+
+body.woocommerce-checkout .ak-checkout-summary__detail strong {
+  color: var(--ak-ink);
+  font-size: 13px;
+  line-height: 1.35;
+  font-weight: 740;
+}
+
 @media (min-width: 1024px) {
   body.woocommerce-checkout .ak-checkout-summary-slot {
     grid-column: 2 !important;
