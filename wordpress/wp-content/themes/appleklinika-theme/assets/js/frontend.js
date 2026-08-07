@@ -1339,6 +1339,76 @@
     });
   }
 
+  function initCheckoutPaymentAvailabilityGuard() {
+    if (!document.body.classList.contains('woocommerce-checkout')) {
+      return;
+    }
+
+    var unavailableMessage = 'There are no payment methods available. Please contact us for help placing your order.';
+    var scheduled = false;
+
+    function hasAvailablePaymentMethod() {
+      var paymentStore = 'wc/store/payment';
+
+      if (window.wp && window.wp.data && typeof window.wp.data.select === 'function') {
+        try {
+          var selectors = window.wp.data.select(paymentStore);
+          var methods = selectors && typeof selectors.getAvailablePaymentMethods === 'function'
+            ? selectors.getAvailablePaymentMethods()
+            : null;
+
+          if (methods && Object.keys(methods).length > 0) {
+            return true;
+          }
+        } catch (error) {
+          // The visible WooCommerce control remains a safe fallback while the
+          // Blocks store is being replaced during a checkout update.
+        }
+      }
+
+      return Array.prototype.some.call(
+        document.querySelectorAll('#payment-method input[type="radio"]'),
+        function (input) { return !input.disabled && input.getAttribute('aria-disabled') !== 'true'; }
+      );
+    }
+
+    function clearOnlyStaleUnavailablePaymentAnnouncement() {
+      scheduled = false;
+
+      if (!hasAvailablePaymentMethod()) {
+        return;
+      }
+
+      document.querySelectorAll('.a11y-speak-region[aria-live="assertive"]').forEach(function (region) {
+        if (region.textContent.replace(/\s+/g, ' ').trim() === unavailableMessage) {
+          region.textContent = '';
+        }
+      });
+    }
+
+    function schedulePaymentAnnouncementSync() {
+      if (scheduled) {
+        return;
+      }
+
+      scheduled = true;
+      window.requestAnimationFrame(clearOnlyStaleUnavailablePaymentAnnouncement);
+    }
+
+    schedulePaymentAnnouncementSync();
+
+    var observer = new MutationObserver(schedulePaymentAnnouncementSync);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      characterData: true
+    });
+
+    if (window.wp && window.wp.data && typeof window.wp.data.subscribe === 'function') {
+      window.wp.data.subscribe(schedulePaymentAnnouncementSync);
+    }
+  }
+
   function updatePriceFilter(filter) {
     var minInput = filter.querySelector('[data-price-min]');
     var maxInput = filter.querySelector('[data-price-max]');
@@ -1377,6 +1447,7 @@
   initCompanyCheckoutFields();
   initCheckoutSummary();
   initCheckoutStepper();
+  initCheckoutPaymentAvailabilityGuard();
 
   document.querySelectorAll('.woocommerce-ordering').forEach(function (form) {
     var select = form.querySelector('select.orderby');
