@@ -14,6 +14,7 @@ add_action('after_setup_theme', static function (): void {
 
 add_action('wp_enqueue_scripts', static function (): void {
     $frontendCssPath = get_stylesheet_directory() . '/assets/css/frontend.css';
+    $frontendScriptPath = get_stylesheet_directory() . '/assets/js/frontend.js';
     wp_enqueue_style(
         'appleklinika-theme',
         get_stylesheet_directory_uri() . '/assets/css/frontend.css',
@@ -22,19 +23,26 @@ add_action('wp_enqueue_scripts', static function (): void {
     );
 
     if (function_exists('is_checkout') && is_checkout()) {
+        $checkoutSidebarPath = get_stylesheet_directory() . '/assets/css/checkout-sidebar.css';
         wp_enqueue_style(
             'appleklinika-checkout-sidebar',
             get_stylesheet_directory_uri() . '/assets/css/checkout-sidebar.css',
             ['appleklinika-theme'],
-            '0.1.18'
+            md5_file($checkoutSidebarPath) ?: null
         );
+    }
+
+    $frontendScriptDependencies = [];
+
+    if (function_exists('is_checkout') && is_checkout()) {
+        $frontendScriptDependencies = ['wp-data', 'wc-blocks-data-store'];
     }
 
     wp_enqueue_script(
         'appleklinika-theme',
         get_stylesheet_directory_uri() . '/assets/js/frontend.js',
-        [],
-        '0.1.83',
+        $frontendScriptDependencies,
+        md5_file($frontendScriptPath) ?: null,
         true
     );
 
@@ -47,12 +55,6 @@ add_action('wp_enqueue_scripts', static function (): void {
         'productIds' => is_user_logged_in() ? appleklinika_get_wishlist_product_ids(get_current_user_id()) : [],
     ]);
 
-    if (function_exists('is_checkout') && is_checkout()) {
-        wp_localize_script('appleklinika-theme', 'appleklinikaCheckoutSummary', [
-            'html' => appleklinika_checkout_summary_markup(),
-            'isStaticSnapshot' => true,
-        ]);
-    }
 });
 
 add_action('init', 'appleklinika_ensure_info_pages');
@@ -90,6 +92,7 @@ add_action('woocommerce_store_api_checkout_update_order_from_request', 'applekli
 add_action('woocommerce_admin_order_data_after_billing_address', 'appleklinika_render_company_order_admin_meta');
 add_filter('woocommerce_get_country_locale_default', 'appleklinika_checkout_default_locale_overrides');
 add_filter('woocommerce_get_country_locale', 'appleklinika_checkout_country_locale_overrides');
+add_filter('woocommerce_countries_shipping_countries', 'appleklinika_checkout_supported_shipping_countries');
 add_filter('woocommerce_get_default_value_for_appleklinika/company_purchase', 'appleklinika_company_checkout_default_value', 10, 3);
 add_filter('woocommerce_get_default_value_for_appleklinika/company_name', 'appleklinika_company_checkout_default_value', 10, 3);
 add_filter('woocommerce_get_default_value_for_appleklinika/tax_number', 'appleklinika_company_checkout_default_value', 10, 3);
@@ -758,6 +761,7 @@ function appleklinika_render_cart_item(string $cartItemKey, array $cartItem): vo
     $currentPrice = (float) $product->get_price();
     $savings = $regularPrice > $currentPrice ? ($regularPrice - $currentPrice) * $quantity : 0;
     $removeUrl = wc_get_cart_remove_url($cartItemKey);
+    $maximumQuantity = $product->get_max_purchase_quantity();
     ?>
     <article class="ak-cart-item">
         <div class="ak-cart-item__row">
@@ -789,6 +793,7 @@ function appleklinika_render_cart_item(string $cartItemKey, array $cartItem): vo
                             class="ak-cart-item__qty"
                             type="number"
                             min="0"
+                            <?php if ($maximumQuantity > 0) : ?>max="<?php echo esc_attr((string) $maximumQuantity); ?>"<?php endif; ?>
                             step="1"
                             name="cart[<?php echo esc_attr($cartItemKey); ?>][qty]"
                             value="<?php echo esc_attr((string) $quantity); ?>"
@@ -817,6 +822,48 @@ function appleklinika_render_cart_item(string $cartItemKey, array $cartItem): vo
         </div>
     </article>
     <?php
+}
+
+/**
+ * Limit the checkout shipping-country selector to countries covered by an
+ * enabled shipping zone. Billing countries remain WooCommerce-managed.
+ *
+ * @param array<string, string> $countries
+ * @return array<string, string>
+ */
+function appleklinika_checkout_supported_shipping_countries(array $countries): array
+{
+    if (! function_exists('is_checkout') || ! is_checkout() || ! class_exists('WC_Shipping_Zones')) {
+        return $countries;
+    }
+
+    $restOfWorld = WC_Shipping_Zones::get_zone_by('zone_id', 0);
+
+    if ($restOfWorld instanceof WC_Shipping_Zone && $restOfWorld->get_shipping_methods(true) !== []) {
+        return $countries;
+    }
+
+    $coveredCountryCodes = [];
+
+    foreach (WC_Shipping_Zones::get_zones() as $zone) {
+        if (($zone['shipping_methods'] ?? []) === []) {
+            continue;
+        }
+
+        foreach ((array) ($zone['zone_locations'] ?? []) as $location) {
+            if (($location->type ?? '') !== 'country' || ! isset($location->code)) {
+                continue;
+            }
+
+            $coveredCountryCodes[] = (string) $location->code;
+        }
+    }
+
+    if ($coveredCountryCodes === []) {
+        return $countries;
+    }
+
+    return array_intersect_key($countries, array_flip(array_unique($coveredCountryCodes)));
 }
 
 /**
@@ -4496,6 +4543,7 @@ function appleklinika_persist_company_checkout_fields(WC_Order $order, WP_REST_R
     $taxNumber = appleklinika_sanitize_checkout_tax_number($additionalFields['appleklinika/tax_number'] ?? '');
 
     if (! $companyPurchase) {
+        $order->set_billing_company('');
         appleklinika_clear_company_checkout_meta($order);
         if ($saveToProfile) {
             appleklinika_clear_company_checkout_user_meta($order);
@@ -4504,6 +4552,7 @@ function appleklinika_persist_company_checkout_fields(WC_Order $order, WP_REST_R
         return;
     }
 
+    $order->set_billing_company($companyName);
     $order->update_meta_data('appleklinika_company_purchase', '1');
     $order->update_meta_data('appleklinika_company_name', $companyName);
     $order->update_meta_data('appleklinika_tax_number', $taxNumber);

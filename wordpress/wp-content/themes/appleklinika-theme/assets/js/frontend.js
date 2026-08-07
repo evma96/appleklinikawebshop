@@ -680,13 +680,189 @@
       return;
     }
 
-    var config = window.appleklinikaCheckoutSummary || {};
+    var syncFrame = null;
+    var lastSummaryHtml = '';
 
-    if (!config.html) {
-      return;
+    function escapeHtml(value) {
+      var element = document.createElement('div');
+      element.textContent = String(value || '');
+      return element.innerHTML;
     }
 
-    var syncFrame = null;
+    var checkoutStores = {
+      cartStore: 'wc/store/cart',
+      paymentStore: 'wc/store/payment',
+      validationStore: 'wc/store/validation'
+    };
+
+    function blocksStore(name) {
+      return checkoutStores[name] || null;
+    }
+
+    function blocksSelector(store, method, fallback) {
+      if (!store || !window.wp || !window.wp.data || typeof window.wp.data.select !== 'function') {
+        return fallback;
+      }
+
+      try {
+        var selectors = window.wp.data.select(store);
+        return selectors && typeof selectors[method] === 'function' ? selectors[method]() : fallback;
+      } catch (error) {
+        return fallback;
+      }
+    }
+
+    function formatStoreMoney(amount, totals) {
+      if (amount === undefined || amount === null || amount === '') {
+        return '—';
+      }
+
+      var minorUnit = Number(totals.currency_minor_unit || 0);
+      var currency = String(totals.currency_code || 'HUF');
+      var numericAmount = Number(amount) / Math.pow(10, minorUnit);
+
+      if (!Number.isFinite(numericAmount)) {
+        return '—';
+      }
+
+      try {
+        return new Intl.NumberFormat('hu-HU', {
+          style: 'currency',
+          currency: currency,
+          minimumFractionDigits: 0,
+          maximumFractionDigits: minorUnit
+        }).format(numericAmount);
+      } catch (error) {
+        return String(totals.currency_prefix || '') + numericAmount.toFixed(minorUnit) + String(totals.currency_suffix || '');
+      }
+    }
+
+    function addressSummary(address) {
+      if (!address || !address.address_1) {
+        return 'Még nincs megadva';
+      }
+
+      var recipient = [address.company, address.first_name, address.last_name].filter(Boolean).join(' · ');
+      var locality = [address.postcode, address.city].filter(Boolean).join(' ');
+      return [recipient, address.address_1, address.address_2, locality].filter(Boolean).join(', ');
+    }
+
+    function checkoutFormAddress(prefix) {
+      var field = function (name) {
+        var input = document.getElementById(prefix + '-' + name);
+        return input ? input.value.trim() : '';
+      };
+
+      return {
+        first_name: field('first_name'),
+        last_name: field('last_name'),
+        company: field('company'),
+        address_1: field('address_1'),
+        address_2: field('address_2'),
+        postcode: field('postcode'),
+        city: field('city')
+      };
+    }
+
+    function selectedShippingMethod(cart) {
+      var packages = Array.isArray(cart.shipping_rates) ? cart.shipping_rates : [];
+      var selected = [];
+
+      packages.forEach(function (shippingPackage) {
+        (shippingPackage.shipping_rates || []).forEach(function (rate) {
+          if (rate && rate.selected && rate.name) {
+            selected.push(rate.name);
+          }
+        });
+      });
+
+      if (selected.length) {
+        return selected.join(', ');
+      }
+
+      var selectedInput = document.querySelector('#shipping-option input:checked');
+      var shippingLabel = selectedInput && selectedInput.closest('label')
+        ? selectedInput.closest('label').textContent.trim()
+        : '';
+
+      return shippingLabel || 'Még nincs kiválasztva';
+    }
+
+    function selectedPaymentMethod() {
+      var paymentStore = blocksStore('paymentStore');
+      var activePayment = blocksSelector(paymentStore, 'getActivePaymentMethod', '');
+      var selectedInput = document.querySelector('.wc-block-components-radio-control__input[name*="payment"]:checked, input[id*="payment-method-options"]:checked');
+      var paymentLabelElement = selectedInput && selectedInput.id
+        ? document.querySelector('label[for="' + selectedInput.id + '"] .wc-block-components-payment-method-label')
+        : null;
+      var paymentLabel = paymentLabelElement ? paymentLabelElement.textContent.trim() : '';
+
+      if (paymentLabel) {
+        return paymentLabel;
+      }
+
+      if (activePayment === 'bacs') {
+        return 'Banki átutalás';
+      }
+
+      return activePayment ? String(activePayment) : 'Válassz fizetési módot';
+    }
+
+    function currentCheckoutSummaryHtml() {
+      var cartStore = blocksStore('cartStore');
+      var cart = blocksSelector(cartStore, 'getCartData', null);
+
+      if (!cart) {
+        return '';
+      }
+
+      var totals = cart.totals || {};
+      var items = Array.isArray(cart.items) ? cart.items : [];
+      var itemHtml = items.map(function (item) {
+        var image = item.images && item.images[0] ? (item.images[0].thumbnail || item.images[0].src || '') : '';
+        var quantity = Number(item.quantity || 0);
+        var lineTotal = item.totals && item.totals.line_total !== undefined ? item.totals.line_total : '';
+
+        return '<article class="ak-checkout-summary__item">'
+          + '<div class="ak-checkout-summary__thumb">'
+          + (image ? '<img class="ak-checkout-summary__image" src="' + escapeHtml(image) + '" alt="">' : '')
+          + '<span class="ak-checkout-summary__qty">' + escapeHtml(quantity) + '</span></div>'
+          + '<div class="ak-checkout-summary__item-body"><h3 class="ak-checkout-summary__item-title">' + escapeHtml(item.name) + '</h3></div>'
+          + '<div class="ak-checkout-summary__item-aside"><div class="ak-checkout-summary__item-price">' + escapeHtml(formatStoreMoney(lineTotal, totals)) + '</div></div>'
+          + '</article>';
+      }).join('');
+      var discount = Number(totals.total_discount || 0);
+      var tax = Number(totals.total_tax || 0);
+      var billing = blocksSelector(cartStore, 'getBillingAddress', cart.billing_address || {});
+      var shipping = blocksSelector(cartStore, 'getShippingAddress', cart.shipping_address || {});
+
+      if (!billing || !billing.address_1) {
+        billing = checkoutFormAddress('billing');
+      }
+
+      if (!shipping || !shipping.address_1) {
+        shipping = checkoutFormAddress('shipping');
+      }
+      var detailRows = [
+        ['Számlázási cím', addressSummary(billing)],
+        ['Szállítási cím', addressSummary(shipping)],
+        ['Szállítási mód', selectedShippingMethod(cart)],
+        ['Fizetési mód', selectedPaymentMethod()]
+      ].map(function (row) {
+        return '<div class="ak-checkout-summary__detail"><span>' + escapeHtml(row[0]) + '</span><strong>' + escapeHtml(row[1]) + '</strong></div>';
+      }).join('');
+
+      return '<aside class="ak-checkout-summary" aria-label="Rendelés összesítő">'
+        + '<h2 class="ak-checkout-summary__title">Rendelés összesítő</h2>'
+        + (itemHtml ? '<div class="ak-checkout-summary__items">' + itemHtml + '</div>' : '<p class="ak-checkout-summary__empty">A kosarad jelenleg üres.</p>')
+        + '<div class="ak-checkout-summary__totals">'
+        + '<div class="ak-checkout-summary__row"><span>Részösszeg</span><strong>' + escapeHtml(formatStoreMoney(totals.total_items, totals)) + '</strong></div>'
+        + (discount > 0 ? '<div class="ak-checkout-summary__row"><span>Kedvezmény</span><strong>−' + escapeHtml(formatStoreMoney(discount, totals)) + '</strong></div>' : '')
+        + '<div class="ak-checkout-summary__row"><span>Szállítás</span><strong>' + escapeHtml(formatStoreMoney(totals.total_shipping, totals)) + '</strong></div>'
+        + '<div class="ak-checkout-summary__row"><span>Adó</span><strong>' + escapeHtml(formatStoreMoney(tax, totals)) + '</strong></div>'
+        + '<div class="ak-checkout-summary__row ak-checkout-summary__row--total"><span>Végösszeg</span><strong>' + escapeHtml(formatStoreMoney(totals.total_price, totals)) + '</strong></div>'
+        + '</div><div class="ak-checkout-summary__details" aria-live="polite">' + detailRows + '</div></aside>';
+    }
 
     function syncCheckoutSummary() {
       var defaultSummary = document.querySelector('body.woocommerce-checkout .wc-block-components-sidebar');
@@ -703,8 +879,15 @@
         defaultSummary.parentNode.insertBefore(slot, defaultSummary.nextSibling);
       }
 
-      if (!slot.querySelector('.ak-checkout-summary')) {
-        slot.innerHTML = config.html;
+      var summaryHtml = currentCheckoutSummaryHtml();
+
+      if (!summaryHtml) {
+        return false;
+      }
+
+      if (summaryHtml !== lastSummaryHtml) {
+        slot.innerHTML = summaryHtml;
+        lastSummaryHtml = summaryHtml;
       }
 
       defaultSummary.classList.add('ak-checkout-default-summary-hidden');
@@ -727,6 +910,16 @@
     }
 
     syncCheckoutSummary();
+
+    window.setTimeout(scheduleCheckoutSummarySync, 250);
+    window.setTimeout(scheduleCheckoutSummarySync, 1000);
+
+    document.addEventListener('change', scheduleCheckoutSummarySync);
+    document.addEventListener('input', scheduleCheckoutSummarySync);
+
+    if (window.wp && window.wp.data && typeof window.wp.data.subscribe === 'function') {
+      window.wp.data.subscribe(scheduleCheckoutSummarySync);
+    }
 
     var observer = new MutationObserver(scheduleCheckoutSummarySync);
     observer.observe(document.body, {
@@ -797,6 +990,150 @@
       syncCheckoutStepper();
     }
 
+    function checkoutValidationApi() {
+      var validationStore = 'wc/store/validation';
+
+      if (!validationStore || !window.wp || !window.wp.data) {
+        return null;
+      }
+
+      try {
+        return {
+          selectors: window.wp.data.select(validationStore),
+          dispatch: window.wp.data.dispatch(validationStore)
+        };
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function validationErrors() {
+      var validation = checkoutValidationApi();
+
+      if (!validation || !validation.selectors || typeof validation.selectors.getValidationErrors !== 'function') {
+        return [];
+      }
+
+      var errors = validation.selectors.getValidationErrors() || {};
+
+      return Object.keys(errors).map(function (key) {
+        return { key: key, error: errors[key] || {} };
+      }).filter(function (entry) {
+        return entry.error.message || entry.error.hidden === false;
+      });
+    }
+
+    function validationErrorStep(entry) {
+      var identity = (entry.key + ' ' + String(entry.error.message || '')).toLowerCase();
+
+      if (identity.indexOf('terms') !== -1 || identity.indexOf('privacy') !== -1) {
+        return 4;
+      }
+
+      if (identity.indexOf('payment') !== -1 || identity.indexOf('shipping-rate') !== -1 || identity.indexOf('shipping_method') !== -1) {
+        return 3;
+      }
+
+      if (identity.indexOf('contact') !== -1 || identity.indexOf('billing') !== -1 || identity.indexOf('shipping') !== -1 || identity.indexOf('company') !== -1 || identity.indexOf('tax') !== -1 || identity.indexOf('address') !== -1) {
+        return 2;
+      }
+
+      return activeStep;
+    }
+
+    function focusValidationError(step, entries) {
+      var matching = entries.filter(function (entry) {
+        return validationErrorStep(entry) === step;
+      });
+      var field = null;
+
+      if (matching.length) {
+        field = document.getElementById(matching[0].key)
+          || document.getElementById(matching[0].key.replace(/_/g, '-'));
+      }
+
+      if (!field) {
+        var targets = checkoutStepTargets()[step] || [];
+
+        targets.some(function (target) {
+          field = target.querySelector('[aria-invalid="true"]');
+          return Boolean(field);
+        });
+      }
+
+      if (field && typeof field.focus === 'function') {
+        window.requestAnimationFrame(function () {
+          field.focus();
+        });
+      }
+    }
+
+    function announceValidationError(step, entries) {
+      var message = document.querySelector('.ak-checkout-step-validation-message');
+
+      if (!message) {
+        message = document.createElement('p');
+        message.className = 'ak-checkout-step-validation-message';
+        message.setAttribute('role', 'alert');
+        var stepper = document.querySelector('.ak-checkout-stepper');
+
+        if (stepper && stepper.parentNode) {
+          stepper.parentNode.insertBefore(message, stepper.nextSibling);
+        }
+      }
+
+      if (message) {
+        var firstError = entries.filter(function (entry) {
+          return validationErrorStep(entry) === step;
+        })[0];
+        message.textContent = firstError && firstError.error.message
+          ? String(firstError.error.message)
+          : 'Ellenőrizd a megadott adatokat a továbblépés előtt.';
+      }
+    }
+
+    function validateCurrentStep(onValid) {
+      var validation = checkoutValidationApi();
+
+      if (!validation || !validation.dispatch || typeof validation.dispatch.showAllValidationErrors !== 'function') {
+        announceValidationError(activeStep, []);
+        return;
+      }
+
+      validation.dispatch.showAllValidationErrors();
+      window.setTimeout(function () {
+        var errors = validationErrors();
+        var currentErrors = errors.filter(function (entry) {
+          return validationErrorStep(entry) === activeStep;
+        });
+
+        if (currentErrors.length) {
+          announceValidationError(activeStep, currentErrors);
+          focusValidationError(activeStep, currentErrors);
+          return;
+        }
+
+        var message = document.querySelector('.ak-checkout-step-validation-message');
+        if (message) {
+          message.textContent = '';
+        }
+        onValid();
+      }, 0);
+    }
+
+    function requestStep(step) {
+      var requestedStep = Math.max(2, Math.min(4, Number(step) || 2));
+
+      if (requestedStep <= activeStep) {
+        setActiveStep(requestedStep);
+        return;
+      }
+
+      validateCurrentStep(function () {
+        setActiveStep(Math.min(requestedStep, activeStep + 1));
+      });
+    }
+
     function createStepper(checkoutBlock) {
       var existingStepper = document.querySelector('.ak-checkout-stepper');
 
@@ -831,7 +1168,7 @@
           control.type = 'button';
           control.setAttribute('data-checkout-step-trigger', String(step));
           control.addEventListener('click', function () {
-            setActiveStep(step);
+            requestStep(step);
           });
         }
 
@@ -865,7 +1202,7 @@
           nextPayment.type = 'button';
           nextPayment.textContent = 'Tovább a szállítás és fizetéshez';
           nextPayment.addEventListener('click', function () {
-            setActiveStep(3);
+            requestStep(3);
           });
           step2Controls.appendChild(cartLink);
           step2Controls.appendChild(nextPayment);
@@ -893,7 +1230,7 @@
           nextSummary.type = 'button';
           nextSummary.textContent = 'Tovább az összegzéshez';
           nextSummary.addEventListener('click', function () {
-            setActiveStep(4);
+            requestStep(4);
           });
           step3Controls.appendChild(backDetails);
           step3Controls.appendChild(nextSummary);
@@ -1140,6 +1477,7 @@
 
       var step = Number(input.getAttribute('step')) || 1;
       var min = Number(input.getAttribute('min')) || 0;
+      var max = Number(input.getAttribute('max')) || 0;
       var current = Number(input.value) || 0;
 
       if (button.hasAttribute('data-cart-qty-decrease')) {
@@ -1147,10 +1485,19 @@
       }
 
       if (button.hasAttribute('data-cart-qty-increase')) {
-        input.value = String(current + step);
+        input.value = String(max > 0 ? Math.min(max, current + step) : current + step);
       }
 
       input.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+
+    input.addEventListener('change', function () {
+      var max = Number(input.getAttribute('max')) || 0;
+      var nextValue = Number(input.value) || 0;
+
+      if (max > 0 && nextValue > max) {
+        input.value = String(max);
+      }
     });
   });
 
