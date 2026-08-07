@@ -116,6 +116,12 @@ Scope: My Account V1 functional structure.
 
 ## 5. Cart / Checkout Check
 
+| Check | Status | Evidence |
+| --- | --- | --- |
+| Cart, checkout, order confirmation, and account-order responsiveness | PASS | Local browser QA at 390, 768, 1024, and 1440 px found no horizontal overflow on the filled cart, checkout, order-received page, or account order detail. |
+| Order confirmation labels and address details | PASS | The temporary local BACS order showed `Rendelésszám` and `Fizetési mód`; billing and shipping stayed distinct, Hungarian address components appeared once per address, and the tax number appeared once in billing. |
+| Account order snapshot presentation | PASS | The temporary logged-in order displayed its immutable company, tax, payment, shipping, and address data without exposing address-book keys or versions. |
+
 | Item | Status | Notes |
 | --- | --- | --- |
 | Company tax number formats while typing | PASS | Browser QA confirmed the checkout `Adószám` input formats numeric text as `12345678-1-23` and strips non-digit characters before re-inserting the two hyphens. |
