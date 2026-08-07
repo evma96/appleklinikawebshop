@@ -105,6 +105,9 @@ $guestOrder = null;
 $fixtureOrderIds = [];
 $product = wc_get_product(463);
 $stockBefore = $product instanceof WC_Product ? $product->get_stock_quantity() : null;
+$originalUserId = get_current_user_id();
+$originalOrderReceived = get_query_var('order-received');
+$originalOrderKey = $_GET['key'] ?? null;
 
 // This test renders the production email templates, but never dispatches a
 // message while temporary order statuses change.
@@ -120,6 +123,7 @@ try {
     $test->assert(is_string($functions) && str_contains($functions, 'woocommerce/order-confirmation-billing-address') && str_contains($functions, 'woocommerce/order-confirmation-shipping-address'), 'Both order confirmation address Blocks are covered without a template override.');
     $test->assert(is_string($functions) && str_contains($functions, "add_action('woocommerce_order_details_after_customer_details', 'appleklinika_render_order_tax_number', 20)"), 'Tax number has a dedicated customer-facing order-detail renderer.');
     $test->assert(is_string($functions) && str_contains($functions, "add_action('woocommerce_email_customer_details', 'appleklinika_render_order_tax_number_in_email', 20, 4)"), 'Tax number has a dedicated e-mail renderer.');
+    $test->assert(is_string($functions) && str_contains($functions, "['appleklinika/company_name', 'appleklinika/tax_number']"), 'The generic confirmation and e-mail path excludes the tax number owned by the dedicated renderer.');
     $test->assert(is_string($functions) && str_contains($functions, "'Order #:' => 'Rendelésszám:'") && str_contains($functions, "'Payment:' => 'Fizetési mód:'"), 'Order summary labels have exact Hungarian translations.');
     $test->assert(is_string($frontendScript) && str_contains($frontendScript, "paymentStore: 'wc/store/payment'") && ! str_contains($frontendScript, 'barion'), 'Checkout payment presentation uses WooCommerce state and does not hard-code a Barion flow.');
     $test->assert(is_string($frontendScript) && ! str_contains($frontendScript, 'gls'), 'Checkout shipping presentation does not hard-code a GLS flow.');
@@ -185,6 +189,12 @@ try {
         ['blockName' => 'woocommerce/order-confirmation-billing-address']
     );
     $test->assert(substr_count($confirmationBlock, 'Házszám') === 1 && str_contains($confirmationBlock, 'Lépcsőház: B') && str_contains($confirmationBlock, 'Kapucsengő'), 'Order confirmation keeps the formatted address and unrelated supplementary fields while removing only duplicate Hungarian details.');
+
+    wp_set_current_user($userId);
+    set_query_var('order-received', $draft->get_id());
+    $_GET['key'] = $draft->get_order_key();
+    $orderReceivedHtml = do_blocks('<!-- wp:woocommerce/order-confirmation-billing-address /-->');
+    $test->assert(substr_count($orderReceivedHtml, 'Adószám') === 1 && substr_count($orderReceivedHtml, '12345678-1-23') === 1, 'The real order-received Billing Address Block renders the tax number exactly once.');
 
     ob_start();
     wc_get_template('order/order-details-customer.php', ['show_shipping' => true, 'order' => $draft]);
@@ -266,7 +276,13 @@ try {
     $restoredProduct = wc_get_product(463);
     $test->assert($restoredProduct instanceof WC_Product && $restoredProduct->get_stock_quantity() === $stockBefore, 'Temporary order cleanup restores the exact test-product stock quantity.');
     $test->assert(appleklinika_order_finalization_business_snapshot() === $businessBefore, 'Temporary order-flow tests leave every Buyback business table unchanged.');
-    wp_set_current_user(0);
+    set_query_var('order-received', $originalOrderReceived);
+    if ($originalOrderKey === null) {
+        unset($_GET['key']);
+    } else {
+        $_GET['key'] = $originalOrderKey;
+    }
+    wp_set_current_user($originalUserId);
     remove_filter('woocommerce_email_enabled_new_order', '__return_false');
     remove_filter('woocommerce_email_enabled_customer_on_hold_order', '__return_false');
     remove_filter('pre_wp_mail', 'appleklinika_order_finalization_prevent_mail', 10);

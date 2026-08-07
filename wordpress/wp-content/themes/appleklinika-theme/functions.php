@@ -15,6 +15,7 @@ add_action('after_setup_theme', static function (): void {
 add_action('wp_enqueue_scripts', static function (): void {
     $frontendCssPath = get_stylesheet_directory() . '/assets/css/frontend.css';
     $frontendScriptPath = get_stylesheet_directory() . '/assets/js/frontend.js';
+    $frontendScriptVersion = (md5_file($frontendScriptPath) ?: 'frontend') . '-' . (string) filemtime($frontendScriptPath);
     wp_enqueue_style(
         'appleklinika-theme',
         get_stylesheet_directory_uri() . '/assets/css/frontend.css',
@@ -42,7 +43,7 @@ add_action('wp_enqueue_scripts', static function (): void {
         'appleklinika-theme',
         get_stylesheet_directory_uri() . '/assets/js/frontend.js',
         $frontendScriptDependencies,
-        md5_file($frontendScriptPath) ?: null,
+        $frontendScriptVersion,
         true
     );
 
@@ -4820,8 +4821,10 @@ function appleklinika_filter_order_confirmation_fields(bool $show, array $field)
     }
 
     // The standard billing_company field already represents this value in the
-    // formatted billing address. Tax number remains a separate business field.
-    if ($fieldId === 'appleklinika/company_name') {
+    // formatted billing address. The tax number has one dedicated renderer on
+    // each customer-facing surface, so neither field may enter WooCommerce's
+    // additional-information renderer as a second copy.
+    if (in_array($fieldId, ['appleklinika/company_name', 'appleklinika/tax_number'], true)) {
         return false;
     }
 
