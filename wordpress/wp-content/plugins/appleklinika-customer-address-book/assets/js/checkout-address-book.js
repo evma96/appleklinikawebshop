@@ -111,8 +111,11 @@
         section.className = 'ak-checkout-address-selector';
         section.setAttribute('data-ak-address-purpose', purpose);
         var title = purpose === 'billing' ? 'Számlázási cím' : 'Szállítási cím';
+        var selectorCaption = purpose === 'billing'
+            ? 'Válassz mentett számlázási címet'
+            : 'Válassz mentett szállítási címet';
         var select = document.createElement('select');
-        select.setAttribute('aria-label', title + ' kiválasztása');
+        select.id = 'ak-checkout-address-selector-' + purpose;
         var oneOff = document.createElement('option');
         oneOff.value = '__one_off__';
         oneOff.textContent = 'Új vagy egyszeri cím';
@@ -128,12 +131,14 @@
             }
             select.appendChild(item);
         });
-        var heading = document.createElement('h3');
-        heading.textContent = title;
+        var caption = document.createElement('label');
+        caption.className = 'ak-checkout-address-selector__caption';
+        caption.htmlFor = select.id;
+        caption.textContent = selectorCaption;
         var notice = document.createElement('p');
         notice.className = 'ak-checkout-address-selector__notice';
         notice.setAttribute('data-ak-address-notice', '');
-        section.appendChild(heading);
+        section.appendChild(caption);
         section.appendChild(select);
         section.appendChild(notice);
 

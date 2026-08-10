@@ -14,6 +14,8 @@ add_action('after_setup_theme', static function (): void {
 
 add_action('wp_enqueue_scripts', static function (): void {
     $frontendCssPath = get_stylesheet_directory() . '/assets/css/frontend.css';
+    $frontendScriptPath = get_stylesheet_directory() . '/assets/js/frontend.js';
+    $frontendScriptVersion = (md5_file($frontendScriptPath) ?: 'frontend') . '-' . (string) filemtime($frontendScriptPath);
     wp_enqueue_style(
         'appleklinika-theme',
         get_stylesheet_directory_uri() . '/assets/css/frontend.css',
@@ -22,19 +24,26 @@ add_action('wp_enqueue_scripts', static function (): void {
     );
 
     if (function_exists('is_checkout') && is_checkout()) {
+        $checkoutSidebarPath = get_stylesheet_directory() . '/assets/css/checkout-sidebar.css';
         wp_enqueue_style(
             'appleklinika-checkout-sidebar',
             get_stylesheet_directory_uri() . '/assets/css/checkout-sidebar.css',
             ['appleklinika-theme'],
-            '0.1.18'
+            md5_file($checkoutSidebarPath) ?: null
         );
+    }
+
+    $frontendScriptDependencies = [];
+
+    if (function_exists('is_checkout') && is_checkout()) {
+        $frontendScriptDependencies = ['wp-data', 'wc-blocks-data-store'];
     }
 
     wp_enqueue_script(
         'appleklinika-theme',
         get_stylesheet_directory_uri() . '/assets/js/frontend.js',
-        [],
-        '0.1.83',
+        $frontendScriptDependencies,
+        $frontendScriptVersion,
         true
     );
 
@@ -47,12 +56,6 @@ add_action('wp_enqueue_scripts', static function (): void {
         'productIds' => is_user_logged_in() ? appleklinika_get_wishlist_product_ids(get_current_user_id()) : [],
     ]);
 
-    if (function_exists('is_checkout') && is_checkout()) {
-        wp_localize_script('appleklinika-theme', 'appleklinikaCheckoutSummary', [
-            'html' => appleklinika_checkout_summary_markup(),
-            'isStaticSnapshot' => true,
-        ]);
-    }
 });
 
 add_action('init', 'appleklinika_ensure_info_pages');
@@ -88,14 +91,20 @@ add_action('woocommerce_blocks_validate_location_order_fields', 'appleklinika_va
 add_action('woocommerce_store_api_checkout_update_customer_from_request', 'appleklinika_reset_checkout_profile_save_state', 20, 2);
 add_action('woocommerce_store_api_checkout_update_order_from_request', 'appleklinika_persist_company_checkout_fields', 10, 2);
 add_action('woocommerce_admin_order_data_after_billing_address', 'appleklinika_render_company_order_admin_meta');
+add_action('woocommerce_init', 'appleklinika_replace_order_address_field_renderer', 100);
+add_action('woocommerce_order_details_after_customer_details', 'appleklinika_render_order_tax_number', 20);
+add_action('woocommerce_email_customer_details', 'appleklinika_render_order_tax_number_in_email', 20, 4);
 add_filter('woocommerce_get_country_locale_default', 'appleklinika_checkout_default_locale_overrides');
 add_filter('woocommerce_get_country_locale', 'appleklinika_checkout_country_locale_overrides');
+add_filter('woocommerce_countries_shipping_countries', 'appleklinika_checkout_supported_shipping_countries');
 add_filter('woocommerce_get_default_value_for_appleklinika/company_purchase', 'appleklinika_company_checkout_default_value', 10, 3);
 add_filter('woocommerce_get_default_value_for_appleklinika/company_name', 'appleklinika_company_checkout_default_value', 10, 3);
 add_filter('woocommerce_get_default_value_for_appleklinika/tax_number', 'appleklinika_company_checkout_default_value', 10, 3);
 add_filter('woocommerce_get_default_value_for_appleklinika/save_to_profile', 'appleklinika_checkout_profile_save_default_value', 10, 3);
 add_filter('woocommerce_order_formatted_billing_address', 'appleklinika_append_checkout_address_details_to_formatted_address', 10, 2);
 add_filter('woocommerce_order_formatted_shipping_address', 'appleklinika_append_checkout_address_details_to_formatted_address', 10, 2);
+add_filter('woocommerce_filter_fields_for_order_confirmation', 'appleklinika_filter_order_confirmation_fields', 10, 2);
+add_filter('render_block', 'appleklinika_filter_order_confirmation_address_block', 10, 2);
 add_action('after_switch_theme', static function (): void {
     appleklinika_register_account_endpoints();
     flush_rewrite_rules();
@@ -598,6 +607,16 @@ function appleklinika_checkout_text_translations(string $translation, string $te
         return 'Céges adatok';
     }
 
+    if ($domain === 'woocommerce') {
+        return match ($text) {
+            'Order #:' => 'Rendelésszám:',
+            'Payment:' => 'Fizetési mód:',
+            'Product' => 'Termék',
+            'Total' => 'Összesen',
+            default => $translation,
+        };
+    }
+
     return $translation;
 }
 
@@ -758,6 +777,7 @@ function appleklinika_render_cart_item(string $cartItemKey, array $cartItem): vo
     $currentPrice = (float) $product->get_price();
     $savings = $regularPrice > $currentPrice ? ($regularPrice - $currentPrice) * $quantity : 0;
     $removeUrl = wc_get_cart_remove_url($cartItemKey);
+    $maximumQuantity = $product->get_max_purchase_quantity();
     ?>
     <article class="ak-cart-item">
         <div class="ak-cart-item__row">
@@ -789,6 +809,7 @@ function appleklinika_render_cart_item(string $cartItemKey, array $cartItem): vo
                             class="ak-cart-item__qty"
                             type="number"
                             min="0"
+                            <?php if ($maximumQuantity > 0) : ?>max="<?php echo esc_attr((string) $maximumQuantity); ?>"<?php endif; ?>
                             step="1"
                             name="cart[<?php echo esc_attr($cartItemKey); ?>][qty]"
                             value="<?php echo esc_attr((string) $quantity); ?>"
@@ -817,6 +838,48 @@ function appleklinika_render_cart_item(string $cartItemKey, array $cartItem): vo
         </div>
     </article>
     <?php
+}
+
+/**
+ * Limit the checkout shipping-country selector to countries covered by an
+ * enabled shipping zone. Billing countries remain WooCommerce-managed.
+ *
+ * @param array<string, string> $countries
+ * @return array<string, string>
+ */
+function appleklinika_checkout_supported_shipping_countries(array $countries): array
+{
+    if (! function_exists('is_checkout') || ! is_checkout() || ! class_exists('WC_Shipping_Zones')) {
+        return $countries;
+    }
+
+    $restOfWorld = WC_Shipping_Zones::get_zone_by('zone_id', 0);
+
+    if ($restOfWorld instanceof WC_Shipping_Zone && $restOfWorld->get_shipping_methods(true) !== []) {
+        return $countries;
+    }
+
+    $coveredCountryCodes = [];
+
+    foreach (WC_Shipping_Zones::get_zones() as $zone) {
+        if (($zone['shipping_methods'] ?? []) === []) {
+            continue;
+        }
+
+        foreach ((array) ($zone['zone_locations'] ?? []) as $location) {
+            if (($location->type ?? '') !== 'country' || ! isset($location->code)) {
+                continue;
+            }
+
+            $coveredCountryCodes[] = (string) $location->code;
+        }
+    }
+
+    if ($coveredCountryCodes === []) {
+        return $countries;
+    }
+
+    return array_intersect_key($countries, array_flip(array_unique($coveredCountryCodes)));
 }
 
 /**
@@ -4237,7 +4300,7 @@ function appleklinika_register_company_checkout_fields(): void
                 'autocomplete' => 'organization',
             ],
             'sanitize_callback' => 'appleklinika_sanitize_checkout_text_field',
-            'show_in_order_confirmation' => true,
+            'show_in_order_confirmation' => false,
         ],
         [
             'id' => 'appleklinika/tax_number',
@@ -4277,7 +4340,7 @@ function appleklinika_checkout_address_detail_fields(): array
             'type' => 'text',
             'required' => false,
             'sanitize_callback' => 'appleklinika_sanitize_checkout_text_field',
-            'show_in_order_confirmation' => true,
+            'show_in_order_confirmation' => false,
         ],
         [
             'id' => 'appleklinika/floor',
@@ -4287,7 +4350,7 @@ function appleklinika_checkout_address_detail_fields(): array
             'type' => 'text',
             'required' => false,
             'sanitize_callback' => 'appleklinika_sanitize_checkout_text_field',
-            'show_in_order_confirmation' => true,
+            'show_in_order_confirmation' => false,
         ],
         [
             'id' => 'appleklinika/staircase',
@@ -4297,7 +4360,7 @@ function appleklinika_checkout_address_detail_fields(): array
             'type' => 'text',
             'required' => false,
             'sanitize_callback' => 'appleklinika_sanitize_checkout_text_field',
-            'show_in_order_confirmation' => true,
+            'show_in_order_confirmation' => false,
         ],
         [
             'id' => 'appleklinika/door',
@@ -4307,7 +4370,7 @@ function appleklinika_checkout_address_detail_fields(): array
             'type' => 'text',
             'required' => false,
             'sanitize_callback' => 'appleklinika_sanitize_checkout_text_field',
-            'show_in_order_confirmation' => true,
+            'show_in_order_confirmation' => false,
         ],
     ];
 }
@@ -4496,6 +4559,7 @@ function appleklinika_persist_company_checkout_fields(WC_Order $order, WP_REST_R
     $taxNumber = appleklinika_sanitize_checkout_tax_number($additionalFields['appleklinika/tax_number'] ?? '');
 
     if (! $companyPurchase) {
+        $order->set_billing_company('');
         appleklinika_clear_company_checkout_meta($order);
         if ($saveToProfile) {
             appleklinika_clear_company_checkout_user_meta($order);
@@ -4504,6 +4568,7 @@ function appleklinika_persist_company_checkout_fields(WC_Order $order, WP_REST_R
         return;
     }
 
+    $order->set_billing_company($companyName);
     $order->update_meta_data('appleklinika_company_purchase', '1');
     $order->update_meta_data('appleklinika_company_name', $companyName);
     $order->update_meta_data('appleklinika_tax_number', $taxNumber);
@@ -4612,6 +4677,38 @@ function appleklinika_render_company_order_admin_meta(WC_Order $order): void
     <?php
 }
 
+function appleklinika_render_order_tax_number(WC_Order $order): void
+{
+    $taxNumber = (string) $order->get_meta('appleklinika_tax_number', true);
+
+    if ($taxNumber === '') {
+        return;
+    }
+    ?>
+    <p class="appleklinika-order-tax-number"><strong>Adószám:</strong> <?php echo esc_html($taxNumber); ?></p>
+    <?php
+}
+
+function appleklinika_render_order_tax_number_in_email($order, bool $sentToAdmin, bool $plainText, WC_Email $email): void
+{
+    if (! $order instanceof WC_Order) {
+        return;
+    }
+
+    $taxNumber = (string) $order->get_meta('appleklinika_tax_number', true);
+
+    if ($taxNumber === '') {
+        return;
+    }
+
+    if ($plainText) {
+        echo "Adószám: {$taxNumber}\n";
+        return;
+    }
+
+    echo '<p><strong>Adószám:</strong> ' . esc_html($taxNumber) . '</p>';
+}
+
 /**
  * @param array<string, string> $address
  * @return array<string, string>
@@ -4649,4 +4746,160 @@ function appleklinika_checkout_address_detail_display_value(WC_Order $order, str
     }
 
     return implode(', ', $parts);
+}
+
+/**
+ * The formatted WooCommerce address is the single customer-facing source for
+ * Hungarian address components. The Blocks renderer otherwise repeats these
+ * fields beneath the same address on account order details.
+ */
+function appleklinika_replace_order_address_field_renderer(): void
+{
+    global $wp_filter;
+
+    $hook = $wp_filter['woocommerce_order_details_after_customer_address'] ?? null;
+
+    if (! $hook instanceof WP_Hook) {
+        return;
+    }
+
+    foreach ($hook->callbacks[10] ?? [] as $callback) {
+        $function = $callback['function'] ?? null;
+
+        if (
+            ! is_array($function)
+            || ! is_object($function[0] ?? null)
+            || ($function[1] ?? '') !== 'render_order_address_fields'
+            || ! $function[0] instanceof \Automattic\WooCommerce\Blocks\Domain\Services\CheckoutFieldsFrontend
+        ) {
+            continue;
+        }
+
+        remove_action('woocommerce_order_details_after_customer_address', $function, 10);
+    }
+
+    add_action('woocommerce_order_details_after_customer_address', 'appleklinika_render_nonduplicated_order_address_fields', 10, 2);
+}
+
+function appleklinika_render_nonduplicated_order_address_fields(string $addressType, WC_Order $order): void
+{
+    if (
+        ! in_array($addressType, ['billing', 'shipping'], true)
+        || ! class_exists('\Automattic\\WooCommerce\\Blocks\\Package')
+        || ! class_exists('\Automattic\\WooCommerce\\Blocks\\Domain\\Services\\CheckoutFields')
+    ) {
+        return;
+    }
+
+    $controller = \Automattic\WooCommerce\Blocks\Package::container()->get(\Automattic\WooCommerce\Blocks\Domain\Services\CheckoutFields::class);
+    $fields = $controller->get_order_additional_fields_with_values($order, 'address', $addressType, 'view');
+    $fields = array_values(array_filter($fields, static function (array $field): bool {
+        return ! appleklinika_is_canonical_formatted_address_field((string) ($field['id'] ?? ''));
+    }));
+
+    if ($fields === []) {
+        return;
+    }
+
+    echo '<dl class="wc-block-components-additional-fields-list">';
+    foreach ($fields as $field) {
+        echo '<dt>' . esc_html((string) ($field['label'] ?? '')) . '</dt>';
+        echo '<dd>' . esc_html((string) ($field['value'] ?? '')) . '</dd>';
+    }
+    echo '</dl>';
+}
+
+/**
+ * @param array<string, mixed> $field
+ */
+function appleklinika_filter_order_confirmation_fields(bool $show, array $field): bool
+{
+    $fieldId = (string) ($field['id'] ?? '');
+
+    if (appleklinika_is_canonical_formatted_address_field($fieldId)) {
+        return false;
+    }
+
+    // The standard billing_company field already represents this value in the
+    // formatted billing address. The tax number has one dedicated renderer on
+    // each customer-facing surface, so neither field may enter WooCommerce's
+    // additional-information renderer as a second copy.
+    if (in_array($fieldId, ['appleklinika/company_name', 'appleklinika/tax_number'], true)) {
+        return false;
+    }
+
+    return $show;
+}
+
+function appleklinika_is_canonical_formatted_address_field(string $fieldId): bool
+{
+    return in_array($fieldId, [
+        'appleklinika/house_number',
+        'appleklinika/staircase',
+        'appleklinika/floor',
+        'appleklinika/door',
+    ], true);
+}
+
+/**
+ * Order-confirmation Blocks render address fields directly instead of the
+ * confirmation-field filter used by e-mails. Remove only the repeated
+ * address-detail list; the formatted address above remains intact.
+ *
+ * @param array<string, mixed> $block
+ */
+function appleklinika_filter_order_confirmation_address_block(string $content, array $block): string
+{
+    $blockName = $block['blockName'] ?? '';
+
+    if (! in_array($blockName, [
+        'woocommerce/order-confirmation-billing-address',
+        'woocommerce/order-confirmation-shipping-address',
+    ], true)) {
+        return $content;
+    }
+
+    foreach (appleklinika_checkout_address_detail_fields() as $field) {
+        $label = trim((string) ($field['label'] ?? ''));
+
+        if ($label === '') {
+            continue;
+        }
+
+        $content = (string) preg_replace(
+            '#<dt>\\s*' . preg_quote($label, '#') . '\\s*</dt>\\s*<dd>.*?</dd>#si',
+            '',
+            $content
+        );
+    }
+
+    $content = (string) preg_replace(
+        '#<dl\\b[^>]*\\bwc-block-components-additional-fields-list\\b[^>]*>\\s*</dl>#si',
+        '',
+        $content
+    );
+
+    if ($blockName === 'woocommerce/order-confirmation-billing-address') {
+        $content .= appleklinika_order_confirmation_tax_number_html();
+    }
+
+    return $content;
+}
+
+function appleklinika_order_confirmation_tax_number_html(): string
+{
+    $orderId = absint(get_query_var('order-received'));
+
+    if ($orderId <= 0) {
+        return '';
+    }
+
+    $order = wc_get_order($orderId);
+    $taxNumber = $order instanceof WC_Order ? (string) $order->get_meta('appleklinika_tax_number', true) : '';
+
+    if ($taxNumber === '') {
+        return '';
+    }
+
+    return '<p class="appleklinika-order-tax-number"><strong>Adószám:</strong> ' . esc_html($taxNumber) . '</p>';
 }

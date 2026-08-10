@@ -195,17 +195,19 @@ final class CheckoutAddressController
         if (! function_exists('is_checkout') || ! is_checkout() || ! is_user_logged_in()) {
             return;
         }
+        $stylePath = APPLEKLINIKA_ADDRESS_BOOK_PATH . '/assets/css/checkout-address-book.css';
+        $scriptPath = APPLEKLINIKA_ADDRESS_BOOK_PATH . '/assets/js/checkout-address-book.js';
         wp_enqueue_style(
             'appleklinika-customer-address-book-checkout',
             APPLEKLINIKA_ADDRESS_BOOK_URL . 'assets/css/checkout-address-book.css',
             [],
-            APPLEKLINIKA_ADDRESS_BOOK_VERSION
+            md5_file($stylePath) ?: APPLEKLINIKA_ADDRESS_BOOK_VERSION
         );
         wp_enqueue_script(
             'appleklinika-customer-address-book-checkout',
             APPLEKLINIKA_ADDRESS_BOOK_URL . 'assets/js/checkout-address-book.js',
             ['wc-blocks-checkout', 'wc-blocks-data-store', 'wp-data'],
-            APPLEKLINIKA_ADDRESS_BOOK_VERSION,
+            md5_file($scriptPath) ?: APPLEKLINIKA_ADDRESS_BOOK_VERSION,
             true
         );
     }
