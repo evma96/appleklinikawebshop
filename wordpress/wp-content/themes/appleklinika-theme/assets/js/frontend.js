@@ -157,7 +157,7 @@
     var previousEnabled = null;
     var profileSaveDefaultInitialized = false;
     var taxPattern = '\\d{8}-\\d-\\d{2}';
-    var addressDetailLabels = ['Házszám', 'Emelet', 'Lépcsőház', 'Ajtó'];
+    var addressDetailLabels = ['Házszám', 'Lépcsőház', 'Emelet', 'Ajtó'];
 
     function taxNumberDigits(value) {
       return String(value || '').replace(/\D/g, '').slice(0, 11);
@@ -875,9 +875,9 @@
 
         return '<article class="ak-checkout-summary__item">'
           + '<div class="ak-checkout-summary__thumb">'
-          + (image ? '<img class="ak-checkout-summary__image" src="' + escapeHtml(image) + '" alt="">' : '')
-          + '<span class="ak-checkout-summary__qty">' + escapeHtml(quantity) + '</span></div>'
+          + (image ? '<img class="ak-checkout-summary__image" src="' + escapeHtml(image) + '" alt="">' : '') + '</div>'
           + '<div class="ak-checkout-summary__item-body"><h3 class="ak-checkout-summary__item-title">' + escapeHtml(decodeHtmlEntities(item.name)) + '</h3></div>'
+          + '<span class="ak-checkout-summary__qty" aria-label="Mennyiség">' + escapeHtml(quantity) + '</span>'
           + '<div class="ak-checkout-summary__item-aside"><div class="ak-checkout-summary__item-price">' + escapeHtml(formatStoreMoney(lineTotal, totals)) + '</div></div>'
           + '</article>';
       }).join('');
