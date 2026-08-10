@@ -8,10 +8,11 @@
     background: #f8fafc;
 }
 
-.ak-checkout-address-selector h3 {
+.ak-checkout-address-selector__caption {
     margin: 0;
     color: #172033;
     font-size: 1rem;
+    font-weight: 700;
 }
 
 .ak-checkout-address-selector select,

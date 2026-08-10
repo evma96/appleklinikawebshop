@@ -26,6 +26,8 @@ Mocks, stubs, and local fixtures are required.
 
 The test commands exist in the Makefile, but actual test tooling is still deferred.
 
+The focused local order-finalization contract is covered by `make test-order-finalization` and its flow, presentation, e-mail, and lifecycle aliases. It creates isolated logged-in and guest BACS fixtures, renders the production order and e-mail templates without dispatching mail, verifies stock reduction/restoration and immutable HPOS snapshots, and removes every fixture before it completes.
+
 The first behavior that should receive unit coverage is grade validation:
 
 - Invalid grade values should be rejected.
