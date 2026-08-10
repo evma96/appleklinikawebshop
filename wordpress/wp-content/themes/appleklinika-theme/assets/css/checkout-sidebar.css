@@ -15,9 +15,9 @@ body.woocommerce-checkout .ak-checkout-summary {
   overflow: hidden;
   box-sizing: border-box;
   width: 100%;
-  padding: 24px 22px;
-  border: 1px solid #e5e7eb;
-  border-radius: 18px;
+  padding: 26px 24px;
+  border: 1px solid rgba(219, 226, 235, .96);
+  border-radius: 22px;
   background: #fff;
   box-shadow: 0 18px 42px rgba(15, 23, 42, .09);
 }
@@ -27,11 +27,11 @@ body.woocommerce-checkout .ak-checkout-summary * {
 }
 
 body.woocommerce-checkout .ak-checkout-summary__title {
-  margin: 0 0 20px;
+  margin: 0 0 18px;
   color: var(--ak-ink);
-  font-size: 22px;
+  font-size: 21px;
   line-height: 1.2;
-  font-weight: 780;
+  font-weight: 850;
   letter-spacing: 0;
 }
 
@@ -53,8 +53,8 @@ body.woocommerce-checkout .ak-checkout-summary__items {
 
 body.woocommerce-checkout .ak-checkout-summary__item {
   display: grid;
-  grid-template-columns: 56px minmax(0, 1fr) max-content;
-  gap: 13px;
+  grid-template-columns: 62px minmax(0, 1fr) max-content;
+  gap: 14px;
   align-items: center;
   min-height: 0;
   padding: 16px 0;
@@ -72,8 +72,8 @@ body.woocommerce-checkout .ak-checkout-summary__item:last-child {
 
 body.woocommerce-checkout .ak-checkout-summary__thumb {
   position: relative;
-  width: 56px;
-  height: 56px;
+  width: 62px;
+  height: 62px;
   border: 1px solid rgba(229, 231, 235, .96);
   border-radius: 12px;
   background: #f8fafc;
@@ -83,10 +83,10 @@ body.woocommerce-checkout .ak-checkout-summary__thumb {
 body.woocommerce-checkout .ak-checkout-summary__image,
 body.woocommerce-checkout .ak-checkout-summary__thumb img {
   display: block;
-  width: 56px;
-  height: 56px;
-  max-width: 56px;
-  max-height: 56px;
+  width: 62px;
+  height: 62px;
+  max-width: 62px;
+  max-height: 62px;
   border-radius: 12px;
   object-fit: cover;
 }
@@ -124,7 +124,7 @@ body.woocommerce-checkout .ak-checkout-summary__item-title {
   color: var(--ak-ink);
   font-size: 14px;
   line-height: 1.22;
-  font-weight: 760;
+  font-weight: 800;
   letter-spacing: 0;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -146,9 +146,9 @@ body.woocommerce-checkout .ak-checkout-summary__item-aside {
 
 body.woocommerce-checkout .ak-checkout-summary__item-price {
   color: var(--ak-ink);
-  font-size: 12.5px;
+  font-size: 13px;
   line-height: 1.2;
-  font-weight: 780;
+  font-weight: 820;
   text-align: right;
   white-space: nowrap;
 }
@@ -205,7 +205,7 @@ body.woocommerce-checkout .ak-checkout-summary__row--total {
   min-height: 0;
   margin-top: 12px;
   padding: 17px 0 0;
-  border-top: 1px solid rgba(214, 0, 28, .22);
+  border-top: 1px solid rgba(214, 0, 28, .32);
   border-bottom: 0;
 }
 
@@ -221,15 +221,15 @@ body.woocommerce-checkout .ak-checkout-summary__row--total .amount {
 body.woocommerce-checkout .ak-checkout-summary__details {
   display: grid;
   gap: 0;
-  margin-top: 18px;
-  padding-top: 14px;
+  margin-top: 20px;
+  padding-top: 16px;
   border-top: 1px solid rgba(229, 231, 235, .78);
 }
 
 body.woocommerce-checkout .ak-checkout-summary__detail {
   display: grid;
   gap: 3px;
-  padding: 8px 0;
+  padding: 9px 0;
 }
 
 body.woocommerce-checkout .ak-checkout-summary__detail span {

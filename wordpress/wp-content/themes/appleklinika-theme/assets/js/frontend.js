@@ -509,9 +509,47 @@
       return true;
     }
 
+    function syncCheckoutAddressGridForSection(section) {
+      if (!section) {
+        return;
+      }
+
+      var form = section.querySelector('.wc-block-components-address-form') || section;
+      var fields = {
+        firstName: checkoutAddressInputField(form, 'first_name'),
+        lastName: checkoutAddressInputField(form, 'last_name'),
+        postcode: checkoutAddressInputField(form, 'postcode'),
+        city: checkoutAddressInputField(form, 'city'),
+        address: checkoutAddressInputField(form, 'address_1'),
+        phone: checkoutAddressInputField(form, 'phone')
+      };
+
+      form.classList.add('ak-checkout-address-grid');
+
+      [
+        ['firstName', 'ak-checkout-address-person-name'],
+        ['lastName', 'ak-checkout-address-person-name'],
+        ['postcode', 'ak-checkout-address-half-field'],
+        ['city', 'ak-checkout-address-half-field'],
+        ['address', 'ak-checkout-address-main-field'],
+        ['phone', 'ak-checkout-address-phone-field']
+      ].forEach(function (entry) {
+        var field = fields[entry[0]];
+
+        if (field && field.wrapper) {
+          field.wrapper.classList.add(entry[1]);
+        }
+      });
+    }
+
     function syncCheckoutAddressDetails() {
-      syncCheckoutAddressDetailsForSection(document.querySelector('#shipping-fields'));
-      syncCheckoutAddressDetailsForSection(document.querySelector('#billing-fields'));
+      var shippingSection = document.querySelector('#shipping-fields');
+      var billingSection = document.querySelector('#billing-fields');
+
+      syncCheckoutAddressDetailsForSection(shippingSection);
+      syncCheckoutAddressDetailsForSection(billingSection);
+      syncCheckoutAddressGridForSection(shippingSection);
+      syncCheckoutAddressGridForSection(billingSection);
     }
 
     function moveCompanyFieldsIntoBillingSection(purchaseField, companyField, taxField) {
@@ -787,9 +825,15 @@
       }
 
       var selectedInput = document.querySelector('#shipping-option input:checked');
-      var shippingLabel = selectedInput && selectedInput.closest('label')
-        ? selectedInput.closest('label').textContent.trim()
-        : '';
+      var selectedOption = selectedInput
+        ? selectedInput.closest('.wc-block-components-radio-control__option, label')
+        : null;
+      var primaryLabel = selectedOption
+        ? selectedOption.querySelector('.wc-block-components-radio-control__label')
+        : null;
+      var shippingLabel = primaryLabel
+        ? primaryLabel.textContent.trim()
+        : (selectedOption ? selectedOption.textContent.trim() : '');
 
       return shippingLabel || 'Még nincs kiválasztva';
     }
