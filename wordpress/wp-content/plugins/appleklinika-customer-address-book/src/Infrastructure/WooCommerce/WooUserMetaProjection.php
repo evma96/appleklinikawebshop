@@ -40,10 +40,11 @@ final class WooUserMetaProjection implements AddressProjection
     {
         $data = $address->toArray();
         $prefix = $purpose . '_';
+        $isCompanyBilling = $purpose === 'billing' && $address->isCompanyBilling();
         $mapping = [
-            $prefix . 'first_name' => (string) $data['first_name'],
-            $prefix . 'last_name' => (string) $data['last_name'],
-            $prefix . 'company' => (string) $data['company_name'],
+            $prefix . 'first_name' => $isCompanyBilling ? '' : (string) $data['first_name'],
+            $prefix . 'last_name' => $isCompanyBilling ? '' : (string) $data['last_name'],
+            $prefix . 'company' => $isCompanyBilling ? (string) $data['company_name'] : '',
             $prefix . 'country' => (string) $data['country'],
             $prefix . 'state' => (string) $data['state'],
             $prefix . 'postcode' => (string) $data['postcode'],
@@ -57,11 +58,11 @@ final class WooUserMetaProjection implements AddressProjection
         ];
 
         if ($purpose === 'billing') {
-            $mapping['ak_billing_is_company'] = $data['company_name'] !== '' ? '1' : '';
-            $mapping['ak_billing_tax_number'] = (string) $data['tax_number'];
-            $mapping['appleklinika_company_purchase'] = $data['company_name'] !== '' ? '1' : '';
-            $mapping['appleklinika_company_name'] = (string) $data['company_name'];
-            $mapping['appleklinika_tax_number'] = (string) $data['tax_number'];
+            $mapping['ak_billing_is_company'] = $isCompanyBilling ? '1' : '';
+            $mapping['ak_billing_tax_number'] = $isCompanyBilling ? (string) $data['tax_number'] : '';
+            $mapping['appleklinika_company_purchase'] = $isCompanyBilling ? '1' : '';
+            $mapping['appleklinika_company_name'] = $isCompanyBilling ? (string) $data['company_name'] : '';
+            $mapping['appleklinika_tax_number'] = $isCompanyBilling ? (string) $data['tax_number'] : '';
         }
 
         return $mapping;

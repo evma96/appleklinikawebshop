@@ -79,6 +79,10 @@ try {
     $test->assert(str_contains((string) $controllerSource, 'data-address-default'), 'default controls use bound labelled rows');
     $test->assert(str_contains((string) $controllerSource, 'purpose_billing'), 'billing capability control retained');
     $test->assert(str_contains((string) $controllerSource, 'purpose_shipping'), 'shipping capability control retained');
+    $test->assert(str_contains((string) $controllerSource, 'Számlázás típusa') && str_contains($controllerSource, 'Magánszemély') && str_contains($controllerSource, 'Cég'), 'address form exposes an explicit native billing identity type only for billing-capable addresses');
+    $test->assert(str_contains((string) $controllerSource, "if (! \$isBilling)") && str_contains($controllerSource, "elseif (\$identityType === 'company')") && str_contains($controllerSource, "\$data['company_name'] = ''"), 'account submission normalizes shipping-only and personal billing away from stale company data');
+    $accountScript = file_get_contents(dirname(__DIR__) . '/assets/js/account-address-book.js');
+    $test->assert(is_string($accountScript) && str_contains($accountScript, 'data-ak-company-identity') && str_contains($accountScript, 'data-ak-recipient-identity') && str_contains($accountScript, 'field.disabled = !enabled'), 'address form presents and submits only the relevant identity fields while server normalization remains authoritative');
 } finally {
     $test->cleanupUser($userId);
 }

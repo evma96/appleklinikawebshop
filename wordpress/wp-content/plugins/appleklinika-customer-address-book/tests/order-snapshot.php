@@ -19,12 +19,48 @@ $userId = $test->createUser('order-snapshot');
 $service = new AddressBookService(new WordPressAddressRepository($wpdb), new WordPressTransactionManager($wpdb), new WooUserMetaProjection(), new WooAllowedCountries());
 $order = null;
 $oneOffOrder = null;
+$companyOrder = null;
 
 try {
     update_user_meta($userId, 'billing_email', 'profil@example.test');
     update_user_meta($userId, 'billing_phone', '+36 30 999 0000');
     $billing = $service->create($userId, $test->addressData(['label' => 'Számla', 'capabilities' => Address::BILLING]), true, false);
     $shipping = $service->create($userId, $test->addressData(['label' => 'Szállítás', 'capabilities' => Address::SHIPPING, 'city' => 'Szeged']), false, true);
+    $companyBilling = $service->create($userId, $test->addressData([
+        'label' => 'Céges számla',
+        'capabilities' => Address::BILLING,
+        'first_name' => '',
+        'last_name' => '',
+        'company_name' => 'Apple Klinika Teszt Kft.',
+        'tax_number' => '12345678-1-23',
+    ]), false, false);
+    $companyShipping = $service->create($userId, $test->addressData([
+        'label' => 'Céges telephely',
+        'capabilities' => Address::BOTH,
+        'first_name' => 'Szállítási',
+        'last_name' => 'Címzett',
+        'company_name' => 'Apple Klinika Teszt Kft.',
+        'tax_number' => '12345678-1-23',
+    ]), false, false);
+
+    $companyOrder = wc_create_order(['customer_id' => $userId]);
+    $companyOrder->set_address([
+        'first_name' => '', 'last_name' => '', 'company' => 'Apple Klinika Teszt Kft.', 'address_1' => 'Fő fasor', 'postcode' => '6726', 'city' => 'Szeged', 'country' => 'HU',
+        'email' => 'profil@example.test', 'phone' => '+36 30 999 0000',
+    ], 'billing');
+    $companyOrder->set_address([
+        'first_name' => 'Szállítási', 'last_name' => 'Címzett', 'address_1' => 'Fő fasor', 'postcode' => '6726', 'city' => 'Szeged', 'country' => 'HU',
+    ], 'shipping');
+    $companyOrder->update_meta_data('appleklinika_company_purchase', '1');
+    $companyOrder->update_meta_data('appleklinika_company_name', 'Apple Klinika Teszt Kft.');
+    $companyOrder->update_meta_data('appleklinika_tax_number', '12345678-1-23');
+    $companyOrder->save();
+    $companyBillingFields = (new CheckoutAddressSelection($service, new WooAllowedCountries()))->checkoutFields($companyBilling);
+    $companyShippingFields = (new CheckoutAddressSelection($service, new WooAllowedCountries()))->checkoutFields($companyShipping, 'shipping');
+    $test->assert($companyBillingFields['first_name'] === '' && $companyBillingFields['last_name'] === '' && $companyBillingFields['company'] === 'Apple Klinika Teszt Kft.', 'company billing snapshot uses legal company identity without personal invoice names');
+    $test->assert($companyShippingFields['first_name'] === 'Szállítási' && $companyShippingFields['last_name'] === 'Címzett', 'company shipping snapshot retains the physical delivery recipient');
+    $test->assert(str_contains($companyOrder->get_formatted_billing_address(), 'Apple Klinika Teszt Kft.') && ! str_contains($companyOrder->get_formatted_billing_address(), 'Szállítási Címzett'), 'company billing presentation leads with the legal company rather than shipping recipient data');
+    $test->assert($companyOrder->get_meta('appleklinika_tax_number', true) === '12345678-1-23', 'company order snapshot keeps the tax number in its dedicated field exactly once');
 
     $order = wc_create_order(['customer_id' => $userId]);
     $order->set_address([
@@ -74,7 +110,7 @@ try {
     $test->assert(get_user_meta($userId, 'billing_email', true) === 'profil@example.test' && get_user_meta($userId, 'billing_phone', true) === '+36 30 999 0000', 'checkout finalization preserves profile contacts');
 
     $service->update($userId, $billing->key(), $billing->version(), $test->addressData(['label' => 'Számla', 'capabilities' => Address::BILLING, 'city' => 'Pécs']));
-    $service->delete($userId, $shipping->key(), $shipping->version());
+    $service->delete($userId, $shipping->key(), $shipping->version(), ['shipping' => $companyShipping->key()]);
     $unchanged = wc_get_order($orderId);
     $test->assert($unchanged->get_billing_city() === 'Budapest', 'later saved-address update leaves order snapshot unchanged');
     $test->assert($unchanged->get_shipping_city() === 'Szeged', 'later saved-address delete leaves order snapshot unchanged');
@@ -94,6 +130,9 @@ try {
     }
     if ($oneOffOrder instanceof WC_Order) {
         $oneOffOrder->delete(true);
+    }
+    if ($companyOrder instanceof WC_Order) {
+        $companyOrder->delete(true);
     }
     wp_set_current_user(0);
     $test->cleanupUser($userId);

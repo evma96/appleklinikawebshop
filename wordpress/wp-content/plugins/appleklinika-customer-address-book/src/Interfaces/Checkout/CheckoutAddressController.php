@@ -239,7 +239,7 @@ final class CheckoutAddressController
         if (! function_exists('WC') || WC()->customer === null) {
             return;
         }
-        $fields = $this->selection->checkoutFields($address);
+        $fields = $this->selection->checkoutFields($address, $purpose);
         $customer = WC()->customer;
         foreach (['first_name','last_name','company','address_1','address_2','city','state','postcode','country'] as $field) {
             $setter = 'set_' . $purpose . '_' . $field;

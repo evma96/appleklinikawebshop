@@ -33,18 +33,27 @@ try {
         'capabilities' => Address::BILLING,
     ]), false, false);
     $shipping = $service->create($owner, $test->addressData(['label' => 'Szállítás', 'capabilities' => Address::SHIPPING, 'city' => 'Szeged']), false, true);
+    $companyShipping = $service->create($owner, $test->addressData([
+        'label' => 'Céges telephely',
+        'capabilities' => Address::BOTH,
+        'company_name' => 'Apple Klinika Teszt Kft.',
+        'tax_number' => '12345678-1-23',
+        'first_name' => 'Szállítási',
+        'last_name' => 'Címzett',
+    ]), false, false);
     $review = $service->create($owner, $test->addressData(['label' => 'Ellenőrzés', 'status' => Address::STATUS_NEEDS_REVIEW]), false, false);
     $foreignAddress = $service->create($foreign, $test->addressData(['label' => 'Más ügyfél']), true, true);
 
     $options = $selector->options($owner, true);
     $test->assert($options['enabled'] === true, 'authenticated customer receives address options');
-    $test->assert(count($options['billing']) === 2, 'billing includes both valid owner billing addresses and excludes needs-review address');
-    $test->assert(count($options['shipping']) === 1, 'shipping excludes billing-only and needs-review address');
+    $test->assert(count($options['billing']) === 3, 'billing includes valid personal and company owner addresses and excludes needs-review address');
+    $test->assert(count($options['shipping']) === 2, 'shipping excludes billing-only and needs-review address');
     $billingKeys = array_column($options['billing'], 'key');
     $test->assert(in_array($billing->key(), $billingKeys, true) && in_array($personalBilling->key(), $billingKeys, true), 'only valid owner billing keys returned');
     $defaultBilling = array_values(array_filter($options['billing'], static fn (array $option): bool => $option['key'] === $billing->key()));
     $test->assert(count($defaultBilling) === 1 && $defaultBilling[0]['is_default'] === true, 'default billing marked');
-    $test->assert($options['shipping'][0]['is_default'] === true, 'default shipping marked');
+    $defaultShipping = array_values(array_filter($options['shipping'], static fn (array $option): bool => $option['key'] === $shipping->key()));
+    $test->assert(count($defaultShipping) === 1 && $defaultShipping[0]['is_default'] === true, 'default shipping marked');
     $test->assert(! array_key_exists('id', $options['billing'][0]), 'numeric address id not exposed');
     $test->assert(! array_key_exists('customer_id', $options['billing'][0]), 'customer id not exposed');
     $test->assert(! array_key_exists('created_at', $options['billing'][0]) && ! array_key_exists('source', $options['billing'][0]), 'non-checkout audit data not exposed');
@@ -62,6 +71,8 @@ try {
     $test->assert(is_string($checkoutCss) && str_contains($checkoutCss, '.ak-checkout-address-selector') && str_contains($checkoutCss, 'background: transparent;') && str_contains($checkoutCss, 'border: 0;'), 'saved-address selection remains an integrated checkout control rather than a nested card');
     $checkoutController = file_get_contents(dirname(__DIR__) . '/src/Interfaces/Checkout/CheckoutAddressController.php');
     $test->assert(is_string($checkoutController) && str_contains($checkoutController, "'wc-blocks-data-store'"), 'checkout script declares the Woo Blocks data-store dependency');
+    $themeFunctions = file_get_contents(dirname(__DIR__, 3) . '/themes/appleklinika-theme/functions.php');
+    $test->assert(is_string($themeFunctions) && str_contains($themeFunctions, "'/cart/update-customer'") && str_contains($themeFunctions, 'appleklinika_capture_checkout_company_identity'), 'company identity is available during both Store API checkout and cart customer-address validation');
     $test->assert($selector->options(0, true)['enabled'] === false, 'unauthenticated customer receives no selector');
     $test->assert($selector->options($owner, false)['shipping'] === [], 'no-shipping checkout receives no shipping selector options');
 
@@ -70,11 +81,13 @@ try {
     $test->assert($restored['selection'] === $storedSelection, 'valid checkout selection state is available for safe restoration');
 
     $fields = $selector->checkoutFields($billing);
-    $test->assert($fields['first_name'] === 'Teszt' && $fields['postcode'] === '1111', 'standard billing fields mapped');
+    $test->assert($fields['first_name'] === '' && $fields['last_name'] === '' && $fields['postcode'] === '1111', 'company billing maps no personal invoice name into standard billing fields');
     $test->assert($fields['appleklinika/house_number'] === '1', 'Hungarian address component mapped');
     $test->assert($fields['appleklinika/company_purchase'] === '1' && $fields['appleklinika/company_name'] === 'Apple Klinika Teszt Kft.' && $fields['appleklinika/tax_number'] === '12345678-1-23', 'company and tax fields mapped');
     $personalFields = $selector->checkoutFields($personalBilling);
-    $test->assert($personalFields['appleklinika/company_purchase'] === '' && $personalFields['appleklinika/company_name'] === '' && $personalFields['appleklinika/tax_number'] === '', 'personal billing mapping clears company mode and company-only values');
+    $test->assert($personalFields['first_name'] === 'Teszt' && $personalFields['last_name'] === 'Vásárló' && $personalFields['appleklinika/company_purchase'] === '' && $personalFields['appleklinika/company_name'] === '' && $personalFields['appleklinika/tax_number'] === '', 'personal billing mapping restores personal identity and clears company-only values');
+    $companyShippingFields = $selector->checkoutFields($companyShipping, 'shipping');
+    $test->assert($companyShippingFields['first_name'] === 'Szállítási' && $companyShippingFields['last_name'] === 'Címzett' && $companyShippingFields['company'] === '', 'company billing plus shipping keeps the delivery recipient separate from invoice identity');
     $test->assert(! isset($fields['phone'], $fields['email']), 'profile contacts never mapped from address');
     $test->assert($selector->resolve($owner, 'billing', $billing->key(), $billing->version())->key() === $billing->key(), 'valid owner selection resolves');
 
@@ -89,6 +102,7 @@ try {
     $selected = $controller->storeApiData()['selection'];
     $test->assert($selected['billing']['key'] === $billing->key() && ! isset($selected['shipping']), 'server stores owner-scoped selection only for the current checkout purpose');
     $test->assert(WC()->customer->get_billing_city() === 'Budapest', 'server applies selected physical fields to Woo checkout customer');
+    $test->assert(WC()->customer->get_billing_first_name() === '' && WC()->customer->get_billing_last_name() === '' && WC()->customer->get_billing_company() === 'Apple Klinika Teszt Kft.', 'saved company selection projects legal company name without a fake personal billing identity');
     $test->assert(WC()->customer->get_billing_email() === 'profil@example.test' && WC()->customer->get_billing_phone() === '+36 30 999 0000', 'server selection never overwrites profile contacts');
 
     $draftOrder = wc_create_order(['customer_id' => $owner]);
@@ -123,7 +137,7 @@ try {
         $test->assert($rejected, 'foreign, stale, unsupported and unauthenticated selections are rejected');
     }
 
-    $service->delete($owner, $shipping->key(), $shipping->version());
+    $service->delete($owner, $shipping->key(), $shipping->version(), ['shipping' => $companyShipping->key()]);
     $deletedRejected = false;
     try { $selector->resolve($owner, 'shipping', $shipping->key(), $shipping->version()); } catch (Throwable) { $deletedRejected = true; }
     $test->assert($deletedRejected, 'deleted address invalidates stored selection');
