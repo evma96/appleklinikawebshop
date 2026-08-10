@@ -5165,13 +5165,47 @@ body.woocommerce-checkout .wc-block-components-checkbox {
 
 body.woocommerce-checkout #contact-fields .ak-checkout-profile-save {
   box-sizing: border-box;
+  margin: 10px 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+body.woocommerce-checkout #contact-fields .ak-checkout-profile-save label {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  padding: 0;
+  color: var(--ak-ink);
+  font-size: 14px;
+  font-weight: 750;
+  line-height: 1.4;
+}
+
+body.woocommerce-checkout #contact-fields .ak-checkout-profile-save input[type="checkbox"] {
+  width: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  height: 20px;
+  margin: 1px 0 0;
 }
 
 body.woocommerce-checkout #contact-fields .ak-checkout-profile-save__helper {
-  margin: 7px 0 0 36px;
+  margin: 5px 0 0 30px;
+  max-width: 62ch;
   color: var(--ak-muted);
   font-size: 12px;
   line-height: 1.45;
+}
+
+body.woocommerce-checkout #billing-fields > .ak-checkout-address-selector + .wc-block-components-address-form,
+body.woocommerce-checkout #shipping-fields > .ak-checkout-address-selector + .wc-block-components-address-form {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(227, 232, 239, .9);
 }
 
 body.woocommerce-checkout .wc-block-checkout__terms {
@@ -5484,6 +5518,24 @@ body.woocommerce-checkout .ak-checkout-step-controls__link:focus-visible {
 
   body.woocommerce-checkout .wc-block-components-checkout-step {
     padding: 16px;
+  }
+}
+
+@media (max-width: 1023px) {
+  body.woocommerce-checkout .wc-block-components-sidebar-layout > .wc-block-components-main,
+  body.woocommerce-checkout .wc-block-components-sidebar-layout > .wc-block-checkout__main {
+    order: 0;
+  }
+
+  body.woocommerce-checkout .wc-block-components-sidebar-layout > .ak-checkout-summary-slot {
+    order: 1;
+    width: 100%;
+    margin-top: 18px;
+  }
+
+  body.woocommerce-checkout .wc-block-components-sidebar-layout > .wc-block-components-sidebar,
+  body.woocommerce-checkout .wc-block-components-sidebar-layout > .wc-block-checkout__sidebar {
+    order: 2;
   }
 }
 
