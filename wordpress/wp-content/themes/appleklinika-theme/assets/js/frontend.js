@@ -284,6 +284,18 @@
       });
     }
 
+    function clearBillingPersonalIdentity(billingSection) {
+      var billingForm = billingSection ? (billingSection.querySelector('.wc-block-components-address-form') || billingSection) : null;
+
+      ['first_name', 'last_name'].forEach(function (suffix) {
+        var input = checkoutAddressInputBySuffix(billingForm, suffix);
+
+        if (input && input.value !== '') {
+          setCheckoutFieldValue(input, '');
+        }
+      });
+    }
+
     function insertElementAfter(element, reference) {
       if (!element || !reference || !reference.parentNode) {
         return;
@@ -342,54 +354,36 @@
       field.input.setAttribute('aria-required', hidden ? 'false' : 'true');
     }
 
-    function syncBillingInternalNameValues(billingSection, companyField) {
+    function syncBillingCompanyValue(billingSection, companyField, enabled) {
       if (!billingSection) {
         return;
       }
 
-      var shippingSection = document.querySelector('#shipping-fields');
-      var shippingForm = shippingSection ? (shippingSection.querySelector('.wc-block-components-address-form') || shippingSection) : null;
       var billingForm = billingSection.querySelector('.wc-block-components-address-form') || billingSection;
-      var shippingFirst = checkoutAddressInputBySuffix(shippingForm, 'first_name');
-      var shippingLast = checkoutAddressInputBySuffix(shippingForm, 'last_name');
-      var billingFirst = checkoutAddressInputBySuffix(billingForm, 'first_name');
-      var billingLast = checkoutAddressInputBySuffix(billingForm, 'last_name');
-      var companyName = companyField && companyField.input ? normalizeText(companyField.input.value) : '';
-      var fallbackName = companyName || normalizeText(billingFirst && billingFirst.value) || normalizeText(billingLast && billingLast.value);
-      var firstValue = normalizeText(shippingFirst && shippingFirst.value) || fallbackName;
-      var lastValue = normalizeText(shippingLast && shippingLast.value) || fallbackName;
+      var standardCompany = checkoutAddressInputBySuffix(billingForm, 'company');
+      var value = enabled && companyField && companyField.input ? normalizeText(companyField.input.value) : '';
 
-      if (billingFirst && firstValue && billingFirst.value !== firstValue) {
-        setCheckoutFieldValue(billingFirst, firstValue);
+      if (standardCompany && standardCompany.value !== value) {
+        setCheckoutFieldValue(standardCompany, value);
       }
 
-      if (billingLast && lastValue && billingLast.value !== lastValue) {
-        setCheckoutFieldValue(billingLast, lastValue);
+      var companyWrapper = checkoutAddressFieldWrapper(standardCompany);
+      if (companyWrapper) {
+        companyWrapper.classList.add('ak-checkout-billing-standard-company');
+        companyWrapper.setAttribute('aria-hidden', 'true');
       }
     }
 
-    function bindBillingCompanyNameSync(billingSection, companyField) {
+    function bindBillingCompanyValueSync(billingSection, companyField) {
       if (!billingSection || !companyField || !companyField.input || billingSection.dataset.akBillingCompanyNameSyncBound === '1') {
         return;
       }
 
       billingSection.dataset.akBillingCompanyNameSyncBound = '1';
 
-      ['first_name', 'last_name'].forEach(function (suffix) {
-        var shippingInput = checkoutAddressInputBySuffix(document.querySelector('#shipping-fields'), suffix);
-
-        if (shippingInput) {
-          shippingInput.addEventListener('input', function () {
-            if (billingSection.classList.contains('ak-checkout-company-mode')) {
-              syncBillingInternalNameValues(billingSection, companyField);
-            }
-          });
-        }
-      });
-
       companyField.input.addEventListener('input', function () {
         if (billingSection.classList.contains('ak-checkout-company-mode')) {
-          syncBillingInternalNameValues(billingSection, companyField);
+          syncBillingCompanyValue(billingSection, companyField, true);
         }
       });
     }
@@ -430,28 +424,13 @@
       setFieldHidden(fields.firstName, companyMode);
       setFieldHidden(fields.lastName, companyMode);
 
-      if (companyMode) {
-        [fields.firstName, fields.lastName].forEach(function (field) {
-          if (field && field.input && field.input.dataset.akPersonalBillingStored !== '1') {
-            field.input.dataset.akPersonalBillingStored = '1';
-            field.input.dataset.akPersonalBillingValue = field.input.value || '';
-          }
-        });
-
-        syncBillingInternalNameValues(billingSection, companyField);
-      } else {
+      if (!companyMode) {
         [fields.firstName, fields.lastName].forEach(function (field) {
           if (field && field.wrapper) {
             field.wrapper.classList.remove('is-company-hidden');
             field.wrapper.setAttribute('aria-hidden', 'false');
             field.input.required = true;
             field.input.setAttribute('aria-required', 'true');
-
-            if (field.input.dataset.akPersonalBillingStored === '1') {
-              setCheckoutFieldValue(field.input, field.input.dataset.akPersonalBillingValue || '');
-              delete field.input.dataset.akPersonalBillingStored;
-              delete field.input.dataset.akPersonalBillingValue;
-            }
           }
         });
       }
@@ -643,7 +622,8 @@
       companyRow.classList.toggle('is-hidden', !enabled);
       companyRow.setAttribute('aria-hidden', enabled ? 'false' : 'true');
       billingSection.classList.toggle('ak-checkout-company-mode', enabled);
-      bindBillingCompanyNameSync(billingSection, companyField);
+      bindBillingCompanyValueSync(billingSection, companyField);
+      syncBillingCompanyValue(billingSection, companyField, enabled);
       syncBillingFormLayout(billingSection, companyField);
 
       return slot;
@@ -682,6 +662,10 @@
 
       enabled = Boolean(purchaseField.input.checked);
       setCompanyPurchaseState(purchaseField, companyField, taxField, enabled);
+
+      if (enabled && hiddenChanged) {
+        clearBillingPersonalIdentity(document.querySelector('#billing-fields'));
+      }
 
       if (!enabled && hiddenChanged) {
         clearCompanyCheckoutValues(companyField, taxField);
@@ -786,7 +770,9 @@
         return 'Még nincs megadva';
       }
 
-      var recipient = [address.company, address.first_name, address.last_name].filter(Boolean).join(' · ');
+      var recipient = address.company
+        ? address.company
+        : [address.first_name, address.last_name].filter(Boolean).join(' ');
       var locality = [address.postcode, address.city].filter(Boolean).join(' ');
       return [recipient, address.address_1, address.address_2, locality].filter(Boolean).join(', ');
     }
@@ -796,11 +782,21 @@
         var input = document.getElementById(prefix + '-' + name);
         return input ? input.value.trim() : '';
       };
+      var company = field('company');
+
+      if (prefix === 'billing') {
+        var companyToggle = document.getElementById('order-appleklinika-company_purchase');
+        var companyName = document.getElementById('order-appleklinika-company_name');
+
+        if (companyToggle && companyToggle.checked && companyName) {
+          company = companyName.value.trim();
+        }
+      }
 
       return {
         first_name: field('first_name'),
         last_name: field('last_name'),
-        company: field('company'),
+        company: company,
         address_1: field('address_1'),
         address_2: field('address_2'),
         postcode: field('postcode'),

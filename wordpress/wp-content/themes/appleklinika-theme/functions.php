@@ -88,6 +88,8 @@ add_action('woocommerce_save_account_details_errors', 'appleklinika_validate_acc
 add_action('woocommerce_save_account_details', 'appleklinika_save_account_details_fields', 10, 1);
 add_action('init', 'appleklinika_register_company_checkout_fields', 20);
 add_action('woocommerce_blocks_validate_location_order_fields', 'appleklinika_validate_company_checkout_fields', 10, 3);
+add_action('woocommerce_blocks_validate_location_address_fields', 'appleklinika_validate_checkout_address_identity', 10, 3);
+add_filter('rest_request_before_callbacks', 'appleklinika_capture_checkout_company_identity', 10, 3);
 add_action('woocommerce_store_api_checkout_update_customer_from_request', 'appleklinika_reset_checkout_profile_save_state', 20, 2);
 add_action('woocommerce_store_api_checkout_update_order_from_request', 'appleklinika_persist_company_checkout_fields', 10, 2);
 add_action('woocommerce_admin_order_data_after_billing_address', 'appleklinika_render_company_order_admin_meta');
@@ -4415,6 +4417,15 @@ function appleklinika_valid_hungarian_tax_number(string $taxNumber): bool
  */
 function appleklinika_checkout_default_locale_overrides(array $locale): array
 {
+    foreach (['first_name', 'last_name'] as $field) {
+        if (isset($locale[$field])) {
+            // Blocks validates the standard locale before its company toggle is
+            // available to extensions. The supported Store API callback below
+            // applies the correct personal/company rule for the relevant group.
+            $locale[$field]['required'] = false;
+        }
+    }
+
     if (isset($locale['phone'])) {
         $locale['phone']['required'] = true;
         $locale['phone']['hidden'] = false;
@@ -4503,6 +4514,77 @@ function appleklinika_validate_company_checkout_fields(WP_Error $errors, array $
     }
 }
 
+/**
+ * WooCommerce locale rules cannot express a billing-only conditional name
+ * requirement. Keep the base address fields optional and apply the canonical
+ * personal/company rule through the supported Blocks validation hook.
+ *
+ * @param array<string, mixed> $fields
+ */
+function appleklinika_validate_checkout_address_identity(WP_Error $errors, array $fields, string $group): void
+{
+    if (! in_array($group, ['billing', 'shipping'], true)) {
+        return;
+    }
+
+    $firstName = trim(sanitize_text_field((string) ($fields['first_name'] ?? '')));
+    $lastName = trim(sanitize_text_field((string) ($fields['last_name'] ?? '')));
+    $requiresRecipientName = $group === 'shipping' || ! appleklinika_checkout_company_identity_from_request();
+
+    if (! $requiresRecipientName) {
+        return;
+    }
+
+    if ($firstName === '') {
+        $errors->add(
+            'appleklinika_' . $group . '_first_name_required',
+            $group === 'shipping' ? 'A szállítási címzetthez keresztnév megadása kötelező.' : 'Keresztnév megadása kötelező személyes számlázáshoz.',
+            ['key' => 'first_name']
+        );
+    }
+
+    if ($lastName === '') {
+        $errors->add(
+            'appleklinika_' . $group . '_last_name_required',
+            $group === 'shipping' ? 'A szállítási címzetthez vezetéknév megadása kötelező.' : 'Vezetéknév megadása kötelező személyes számlázáshoz.',
+            ['key' => 'last_name']
+        );
+    }
+}
+
+/**
+ * Captures the registered Blocks company field for the lifetime of the current
+ * Store API checkout request. Address validation happens before WooCommerce
+ * applies order-location additional fields, so the request is the canonical
+ * source at this point rather than a hidden personal-name fallback.
+ *
+ * @param mixed $response
+ * @param array<string, mixed> $handler
+ * @return mixed
+ */
+function appleklinika_capture_checkout_company_identity($response, array $handler, WP_REST_Request $request)
+{
+    unset($GLOBALS['appleklinika_checkout_company_identity']);
+
+    $route = $request->get_route();
+    $isCheckoutAddressUpdate = str_contains($route, '/checkout')
+        || str_contains($route, '/cart/update-customer');
+
+    if (! str_starts_with($route, '/wc/store/') || ! $isCheckoutAddressUpdate) {
+        return $response;
+    }
+
+    $additionalFields = (array) $request->get_param('additional_fields');
+    $GLOBALS['appleklinika_checkout_company_identity'] = appleklinika_checkout_company_enabled($additionalFields['appleklinika/company_purchase'] ?? false);
+
+    return $response;
+}
+
+function appleklinika_checkout_company_identity_from_request(): bool
+{
+    return ! empty($GLOBALS['appleklinika_checkout_company_identity']);
+}
+
 function appleklinika_company_checkout_default_value($value, string $group, WC_Data $wcObject)
 {
     if ($value !== null || $group !== 'other' || ! $wcObject instanceof WC_Customer) {
@@ -4569,6 +4651,8 @@ function appleklinika_persist_company_checkout_fields(WC_Order $order, WP_REST_R
     }
 
     $order->set_billing_company($companyName);
+    $order->set_billing_first_name('');
+    $order->set_billing_last_name('');
     $order->update_meta_data('appleklinika_company_purchase', '1');
     $order->update_meta_data('appleklinika_company_name', $companyName);
     $order->update_meta_data('appleklinika_tax_number', $taxNumber);

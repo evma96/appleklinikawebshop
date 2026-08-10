@@ -95,6 +95,16 @@ final class Address
         return $this->status() === self::STATUS_ACTIVE && $this->supports($purpose);
     }
 
+    /**
+     * A billing identity is company-based only when this billing-capable
+     * address carries the canonical company identity. Address purpose and
+     * invoice identity deliberately remain separate concepts.
+     */
+    public function isCompanyBilling(): bool
+    {
+        return $this->supports('billing') && trim((string) $this->data['company_name']) !== '';
+    }
+
     /** @return array<string, mixed> */
     public function toArray(): array { return $this->data; }
 
@@ -155,13 +165,28 @@ final class Address
             if ((string) $this->data['postcode'] === '' || (string) $this->data['city'] === '' || (string) $this->data['address_1'] === '') {
                 throw new AddressException('Az irányítószám, a város és a cím megadása kötelező.');
             }
-            if ((string) $this->data['company_name'] === '' && ((string) $this->data['first_name'] === '' || (string) $this->data['last_name'] === '')) {
-                throw new AddressException('A név vagy a cégnév megadása kötelező.');
+            $hasRecipientName = (string) $this->data['first_name'] !== '' && (string) $this->data['last_name'] !== '';
+
+            if (! $this->supports('billing') && ((string) $this->data['company_name'] !== '' || (string) $this->data['tax_number'] !== '')) {
+                throw new AddressException('Céges számlázási adatok csak számlázási címhez adhatók meg.');
             }
-            if ($this->supports('billing') && (string) $this->data['country'] === 'HU' && (string) $this->data['company_name'] !== '') {
-                if (! preg_match('/^\d{8}-[1-5]-\d{2}$/', (string) $this->data['tax_number'])) {
+
+            if ($this->supports('billing') && $this->isCompanyBilling()) {
+                if ((string) $this->data['country'] === 'HU' && ! preg_match('/^\d{8}-[1-5]-\d{2}$/', (string) $this->data['tax_number'])) {
                     throw new AddressException('Magyar céges számlázási címhez érvényes adószám szükséges.');
                 }
+                if ($this->supports('shipping') && ! $hasRecipientName) {
+                    throw new AddressException('A szállítási címzetthez keresztnév és vezetéknév szükséges.');
+                }
+                return;
+            }
+
+            if (! $hasRecipientName) {
+                throw new AddressException($this->supports('shipping') ? 'A szállítási címzetthez keresztnév és vezetéknév szükséges.' : 'Keresztnév és vezetéknév megadása kötelező.');
+            }
+
+            if ((string) $this->data['company_name'] === '' && (string) $this->data['tax_number'] !== '') {
+                throw new AddressException('Adószám csak céges számlázási címhez adható meg.');
             }
         }
     }

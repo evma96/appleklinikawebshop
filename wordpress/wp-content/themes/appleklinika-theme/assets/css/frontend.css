@@ -5097,6 +5097,12 @@ body.woocommerce-checkout #billing-fields .ak-checkout-billing-person-name.is-co
   display: none !important;
 }
 
+/* The visible company field is the registered Apple Klinika field. This
+   standard Woo field is kept in sync solely for WooCommerce order semantics. */
+body.woocommerce-checkout #billing-fields .ak-checkout-billing-standard-company {
+  display: none !important;
+}
+
 body.woocommerce-checkout #billing-fields .ak-checkout-company-field {
   margin: 0 !important;
 }
