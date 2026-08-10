@@ -102,6 +102,29 @@
         }
     }
 
+    function syncPresentation(section) {
+        var select = section.querySelector('select');
+        var isOneOff = !select || select.value === '__one_off__';
+        section.classList.toggle('is-one-off', isOneOff);
+        section.classList.toggle('has-saved-address', !isOneOff);
+
+        if (!isOneOff) {
+            var save = section.querySelector('[data-ak-address-save]');
+            var saveDetails = section.querySelector('[data-ak-address-save-details]');
+            var defaultControl = section.querySelector('[data-ak-address-default]');
+            if (save) {
+                save.checked = false;
+            }
+            if (saveDetails) {
+                saveDetails.hidden = true;
+            }
+            if (defaultControl) {
+                defaultControl.checked = false;
+                defaultControl.disabled = true;
+            }
+        }
+    }
+
     function renderPurpose(root, purpose, options, current) {
         var host = document.getElementById(purpose + '-fields');
         if (!host || host.querySelector('[data-ak-address-purpose="' + purpose + '"]')) {
@@ -153,6 +176,7 @@
         };
         select.addEventListener('change', function () {
             var item = matchingOption();
+            syncPresentation(section);
             if (item) {
                 setCustomFields(section, item);
             }
@@ -171,6 +195,7 @@
         });
         section.querySelector('[data-ak-address-label]').addEventListener('change', function () { sendSelection(root); });
         defaultControl.addEventListener('change', function () { sendSelection(root); });
+        syncPresentation(section);
         setCustomFields(section, matchingOption());
         return !current && select.value !== '__one_off__';
     }

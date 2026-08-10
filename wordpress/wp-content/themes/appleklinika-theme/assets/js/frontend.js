@@ -689,6 +689,12 @@
       return element.innerHTML;
     }
 
+    function decodeHtmlEntities(value) {
+      var element = document.createElement('textarea');
+      element.innerHTML = String(value || '');
+      return element.value;
+    }
+
     var checkoutStores = {
       cartStore: 'wc/store/cart',
       paymentStore: 'wc/store/payment',
@@ -827,7 +833,7 @@
           + '<div class="ak-checkout-summary__thumb">'
           + (image ? '<img class="ak-checkout-summary__image" src="' + escapeHtml(image) + '" alt="">' : '')
           + '<span class="ak-checkout-summary__qty">' + escapeHtml(quantity) + '</span></div>'
-          + '<div class="ak-checkout-summary__item-body"><h3 class="ak-checkout-summary__item-title">' + escapeHtml(item.name) + '</h3></div>'
+          + '<div class="ak-checkout-summary__item-body"><h3 class="ak-checkout-summary__item-title">' + escapeHtml(decodeHtmlEntities(item.name)) + '</h3></div>'
           + '<div class="ak-checkout-summary__item-aside"><div class="ak-checkout-summary__item-price">' + escapeHtml(formatStoreMoney(lineTotal, totals)) + '</div></div>'
           + '</article>';
       }).join('');

@@ -1,10 +1,10 @@
 .ak-checkout-address-selector {
     display: grid;
-    gap: .7rem;
+    gap: .6rem;
     margin: 0 0 1.25rem;
     padding: 1rem;
     border: 1px solid #dbe3ee;
-    border-radius: .75rem;
+    border-radius: .875rem;
     background: #f8fafc;
 }
 
@@ -17,8 +17,16 @@
 
 .ak-checkout-address-selector select,
 .ak-checkout-address-selector input[type="text"] {
-    min-height: 44px;
+    box-sizing: border-box;
+    min-height: 48px;
     width: 100%;
+    padding: 0 .8rem;
+    border: 1px solid #d5dde8;
+    border-radius: .75rem;
+    color: #172033;
+    background: #fff;
+    font: inherit;
+    font-weight: 650;
 }
 
 .ak-checkout-address-selector__notice {
@@ -31,12 +39,17 @@
 .ak-checkout-address-selector__save {
     display: grid;
     gap: .65rem;
-    padding-top: .2rem;
+    padding: .85rem 0 0;
+    border-top: 1px solid #e3e8ef;
 }
 
 .ak-checkout-address-selector__save [data-ak-address-save-details] {
     display: grid;
     gap: .65rem;
+}
+
+.ak-checkout-address-selector__save [data-ak-address-save-details][hidden] {
+    display: none !important;
 }
 
 .ak-checkout-address-selector__save > label,
@@ -60,6 +73,15 @@
     display: grid;
     gap: .35rem;
     align-items: stretch;
+}
+
+.ak-checkout-address-selector.has-saved-address {
+    border-color: #dbe3ee;
+    background: #fff;
+}
+
+.ak-checkout-address-selector.has-saved-address .ak-checkout-address-selector__save {
+    display: none;
 }
 
 .ak-checkout-address-selector.is-updating {
