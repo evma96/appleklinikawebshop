@@ -31,6 +31,7 @@ final class CheckoutAddressController
         add_action('wp_enqueue_scripts', [$this, 'assets']);
         add_action('woocommerce_store_api_cart_update_order_from_request', [$this, 'syncDraftMetadata'], 20, 2);
         add_action('woocommerce_store_api_checkout_update_customer_from_request', [$this, 'validateCheckoutSelection'], 5, 2);
+        add_action('woocommerce_store_api_checkout_update_order_from_request', [$this, 'syncCheckoutOrderIntent'], 20, 2);
         add_action('woocommerce_store_api_checkout_order_processed', [$this, 'finalizeOrder'], 20, 1);
         add_action('wp_logout', [$this, 'clearSession']);
     }
@@ -110,16 +111,10 @@ final class CheckoutAddressController
         $stored = $this->sessionSelection();
         foreach ($this->purposesForCurrentCart() as $purpose) {
             $selection = $stored[$purpose] ?? ['mode' => 'one_off'];
-            $draftOrder->update_meta_data(self::ORDER_META_PREFIX . $purpose . '_mode', (string) ($selection['mode'] ?? 'one_off'));
-            $draftOrder->update_meta_data(self::ORDER_META_PREFIX . $purpose . '_key', (string) ($selection['key'] ?? ''));
-            $draftOrder->update_meta_data(self::ORDER_META_PREFIX . $purpose . '_version', (string) ((int) ($selection['version'] ?? 0)));
-            $draftOrder->update_meta_data(self::ORDER_META_PREFIX . $purpose . '_save', ! empty($selection['save']) ? '1' : '');
-            $draftOrder->update_meta_data(self::ORDER_META_PREFIX . $purpose . '_default', ! empty($selection['set_default']) ? '1' : '');
+            $this->storeOrderIntent($draftOrder, $purpose, $selection);
         }
         if (! $this->needsShipping()) {
-            foreach (['mode', 'key', 'version', 'save', 'default'] as $suffix) {
-                $draftOrder->delete_meta_data(self::ORDER_META_PREFIX . 'shipping_' . $suffix);
-            }
+            $this->clearOrderIntent($draftOrder, 'shipping');
         }
         $draftOrder->save();
     }
@@ -148,25 +143,51 @@ final class CheckoutAddressController
         }
     }
 
+    public function syncCheckoutOrderIntent(\WC_Order $order, \WP_REST_Request $request): void
+    {
+        $customerId = $order->get_user_id();
+        $currentCustomerId = get_current_user_id();
+        if ($customerId <= 0 || ($currentCustomerId > 0 && $currentCustomerId !== $customerId)) {
+            return;
+        }
+
+        $stored = $this->sessionSelection();
+        foreach ($this->purposesForOrder($order) as $purpose) {
+            if (isset($stored[$purpose]) && is_array($stored[$purpose])) {
+                $this->storeOrderIntent($order, $purpose, $stored[$purpose]);
+            }
+        }
+        $order->save();
+    }
+
     public function finalizeOrder(\WC_Order $order): void
     {
-        $customerId = get_current_user_id();
-        if ($customerId <= 0 || ($order->get_user_id() > 0 && $order->get_user_id() !== $customerId)) {
+        $customerId = $order->get_user_id();
+        $currentCustomerId = get_current_user_id();
+        if ($customerId <= 0 || ($currentCustomerId > 0 && $currentCustomerId !== $customerId)) {
             return;
         }
         $stored = $this->sessionSelection();
 
-        foreach ($this->purposesForCurrentCart() as $purpose) {
-            $item = $stored[$purpose] ?? ['mode' => 'one_off'];
+        foreach ($this->purposesForOrder($order) as $purpose) {
+            if ($order->get_meta(self::ORDER_META_PREFIX . $purpose . '_consumed', true) === '1') {
+                continue;
+            }
+            $item = $this->orderIntent($order, $purpose) ?? ($stored[$purpose] ?? ['mode' => 'one_off']);
             if (($item['mode'] ?? 'one_off') === 'saved') {
                 $order->update_meta_data(self::ORDER_META_PREFIX . $purpose . '_key', (string) $item['key']);
                 $order->update_meta_data(self::ORDER_META_PREFIX . $purpose . '_version', (string) ((int) $item['version']));
+                $this->clearOrderSaveIntent($order, $purpose);
+                continue;
             }
             if (empty($item['save'])) {
+                $this->clearOrderIntent($order, $purpose);
                 continue;
             }
             try {
                 $this->saveOneOffAddress($customerId, $order, $purpose, $item);
+                $order->update_meta_data(self::ORDER_META_PREFIX . $purpose . '_consumed', '1');
+                $this->clearOrderIntent($order, $purpose, false);
             } catch (\Throwable $exception) {
                 $order->add_order_note('A cím mentése a Címeim közé nem sikerült: ' . $exception->getMessage());
             }
@@ -174,7 +195,7 @@ final class CheckoutAddressController
         $order->save();
 
         // WooCommerce persists checkout fields to user meta. Canonical defaults win after an order.
-        foreach ($this->purposesForCurrentCart() as $purpose) {
+        foreach ($this->purposesForOrder($order) as $purpose) {
             $default = $this->service->getDefault($customerId, $purpose);
             if ($default !== null) {
                 $this->projection->project($customerId, $purpose, $default);
@@ -312,5 +333,57 @@ final class CheckoutAddressController
     private function purposesForCurrentCart(): array
     {
         return $this->needsShipping() ? ['billing', 'shipping'] : ['billing'];
+    }
+
+    /** @param array<string, mixed> $selection */
+    private function storeOrderIntent(\WC_Order $order, string $purpose, array $selection): void
+    {
+        $order->update_meta_data(self::ORDER_META_PREFIX . $purpose . '_mode', (string) ($selection['mode'] ?? 'one_off'));
+        $order->update_meta_data(self::ORDER_META_PREFIX . $purpose . '_key', (string) ($selection['key'] ?? ''));
+        $order->update_meta_data(self::ORDER_META_PREFIX . $purpose . '_version', (string) ((int) ($selection['version'] ?? 0)));
+        $order->update_meta_data(self::ORDER_META_PREFIX . $purpose . '_save', ! empty($selection['save']) ? '1' : '');
+        $order->update_meta_data(self::ORDER_META_PREFIX . $purpose . '_default', ! empty($selection['set_default']) ? '1' : '');
+        $order->update_meta_data(self::ORDER_META_PREFIX . $purpose . '_label', sanitize_text_field((string) ($selection['label'] ?? '')));
+    }
+
+    /** @return array<string, mixed>|null */
+    private function orderIntent(\WC_Order $order, string $purpose): ?array
+    {
+        $mode = (string) $order->get_meta(self::ORDER_META_PREFIX . $purpose . '_mode', true);
+        if (! in_array($mode, ['one_off', 'saved'], true)) {
+            return null;
+        }
+
+        return [
+            'mode' => $mode,
+            'key' => (string) $order->get_meta(self::ORDER_META_PREFIX . $purpose . '_key', true),
+            'version' => (int) $order->get_meta(self::ORDER_META_PREFIX . $purpose . '_version', true),
+            'save' => $order->get_meta(self::ORDER_META_PREFIX . $purpose . '_save', true) === '1',
+            'set_default' => $order->get_meta(self::ORDER_META_PREFIX . $purpose . '_default', true) === '1',
+            'label' => sanitize_text_field((string) $order->get_meta(self::ORDER_META_PREFIX . $purpose . '_label', true)),
+        ];
+    }
+
+    private function clearOrderIntent(\WC_Order $order, string $purpose, bool $clearConsumed = true): void
+    {
+        foreach (['mode', 'key', 'version', 'save', 'default', 'label'] as $suffix) {
+            $order->delete_meta_data(self::ORDER_META_PREFIX . $purpose . '_' . $suffix);
+        }
+        if ($clearConsumed) {
+            $order->delete_meta_data(self::ORDER_META_PREFIX . $purpose . '_consumed');
+        }
+    }
+
+    private function clearOrderSaveIntent(\WC_Order $order, string $purpose): void
+    {
+        foreach (['mode', 'save', 'default', 'label', 'consumed'] as $suffix) {
+            $order->delete_meta_data(self::ORDER_META_PREFIX . $purpose . '_' . $suffix);
+        }
+    }
+
+    /** @return array<int, string> */
+    private function purposesForOrder(\WC_Order $order): array
+    {
+        return $order->needs_shipping() ? ['billing', 'shipping'] : ['billing'];
     }
 }
