@@ -1024,9 +1024,10 @@
         && document.getElementById('order-appleklinika-company_purchase').checked;
       var companyName = companyPurchase ? checkoutFieldValue('order-appleklinika-company_name') : '';
       var recipient = companyName || [checkoutFieldValue(prefix + '-last_name'), checkoutFieldValue(prefix + '-first_name')].filter(Boolean).join(' ');
-      var street = [checkoutFieldValue(prefix + '-address_1'), checkoutFieldValue(prefix + '-appleklinika-house_number')].filter(Boolean).join(' ');
       var locality = [checkoutFieldValue(prefix + '-postcode'), checkoutFieldValue(prefix + '-city')].filter(Boolean).join(' ');
-      var lines = [recipient, street, checkoutFieldValue(prefix + '-address_2'), locality].filter(Boolean);
+      var street = [checkoutFieldValue(prefix + '-address_1'), checkoutFieldValue(prefix + '-appleklinika-house_number')].filter(Boolean).join(' ');
+      var location = [locality, street].filter(Boolean).join(', ');
+      var lines = [recipient, location, checkoutFieldValue(prefix + '-address_2')].filter(Boolean);
 
       if (companyName) {
         var taxNumber = checkoutFieldValue('order-appleklinika-tax_number');
@@ -1061,15 +1062,37 @@
         : (selected ? selected.value : 'Még nincs kiválasztva');
     }
 
-    function finalReviewGroup(title, lines, step) {
+    function finalReviewAction(label, step) {
+      return '<button class="ak-checkout-final-review__edit" type="button" data-ak-checkout-review-step="' + String(step) + '" aria-label="' + finalReviewEscapeHtml(label) + '">' + finalReviewEscapeHtml(label) + '</button>';
+    }
+
+    function finalReviewValues(lines) {
       var content = lines.filter(Boolean).map(function (line) {
         return '<p>' + finalReviewEscapeHtml(line) + '</p>';
       }).join('');
 
-      return '<section class="ak-checkout-final-review__group">'
-        + '<div class="ak-checkout-final-review__group-heading"><h3>' + finalReviewEscapeHtml(title) + '</h3>'
-        + '<button class="ak-checkout-final-review__edit" type="button" data-ak-checkout-review-step="' + String(step) + '" aria-label="' + finalReviewEscapeHtml(title + ' módosítása') + '">Módosítás</button></div>'
-        + '<div class="ak-checkout-final-review__values">' + (content || '<p>Még nincs megadva</p>') + '</div></section>';
+      return '<div class="ak-checkout-final-review__values">' + (content || '<p>Még nincs megadva</p>') + '</div>';
+    }
+
+    function finalReviewSubsection(label, lines, actionLabel, step) {
+      return '<div class="ak-checkout-final-review__subsection">'
+        + '<div class="ak-checkout-final-review__subsection-heading"><h4>' + finalReviewEscapeHtml(label) + '</h4>'
+        + finalReviewAction(actionLabel, step) + '</div>'
+        + finalReviewValues(lines) + '</div>';
+    }
+
+    function finalReviewSection(title, content, actionLabel, step) {
+      return '<section class="ak-checkout-final-review__section">'
+        + '<div class="ak-checkout-final-review__section-heading"><h3>' + finalReviewEscapeHtml(title) + '</h3>'
+        + (actionLabel ? finalReviewAction(actionLabel, step) : '') + '</div>'
+        + content + '</section>';
+    }
+
+    function shippingReviewLines(shippingMethod) {
+      var price = String(shippingMethod.price || '').trim();
+      var isFree = /(^|\s)0\s*(?:ft|huf)\b|ingyen/i.test(price);
+
+      return [shippingMethod.title, price && !isFree && price !== shippingMethod.title ? price : ''].filter(Boolean);
     }
 
     function finalReviewHtml() {
@@ -1077,21 +1100,23 @@
       var billing = addressReview('billing');
       var shipping = addressReview('shipping');
       var shippingMethod = currentShippingReview();
-      var fulfilment = [shippingMethod.title, shippingMethod.price].filter(Boolean);
+      var fulfilment = shippingReviewLines(shippingMethod);
       var payment = [currentPaymentReview()];
       var note = document.querySelector('#order-notes textarea');
       var noteHtml = note && note.value.trim()
-        ? finalReviewGroup('Megjegyzés', [note.value.trim()], 2)
+        ? finalReviewSection('Megjegyzés', finalReviewValues([note.value.trim()]), 'Megjegyzés módosítása', 2)
         : '';
 
       return '<section class="ak-checkout-final-review" aria-labelledby="ak-checkout-final-review-title">'
-        + '<div class="ak-checkout-final-review__intro"><p class="ak-checkout-final-review__eyebrow">4. lépés</p><h2 id="ak-checkout-final-review-title">Ellenőrizd a rendelésed</h2><p>Mielőtt véglegesíted, nézd át még egyszer az adatokat és a választásaidat.</p></div>'
-        + '<div class="ak-checkout-final-review__groups">'
-        + finalReviewGroup('Kapcsolattartási adatok', contact, 2)
-        + finalReviewGroup('Számlázási adatok', billing.length ? billing : shipping, 2)
-        + finalReviewGroup('Szállítási adatok', shipping, 2)
-        + finalReviewGroup('Szállítási mód', fulfilment, 3)
-        + finalReviewGroup('Fizetési mód', payment, 3)
+        + '<div class="ak-checkout-final-review__intro"><h2 id="ak-checkout-final-review-title">Rendelés áttekintése</h2><p>Ellenőrizd az adatokat a véglegesítés előtt.</p></div>'
+        + '<div class="ak-checkout-final-review__sections">'
+        + finalReviewSection('Kapcsolattartás', finalReviewValues(contact), 'Kapcsolattartás módosítása', 2)
+        + finalReviewSection('Kézbesítés',
+          finalReviewSubsection('Szállítási cím', shipping, 'Cím módosítása', 2)
+          + finalReviewSubsection('Szállítási mód', fulfilment, 'Szállítás módosítása', 3))
+        + finalReviewSection('Számlázás és fizetés',
+          finalReviewSubsection('Számlázási adatok', billing.length ? billing : shipping, 'Számlázás módosítása', 2)
+          + finalReviewSubsection('Fizetési mód', payment, 'Fizetés módosítása', 3))
         + noteHtml
         + '</div></section>';
     }
