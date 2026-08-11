@@ -982,6 +982,8 @@
 
     var activeStep = 2;
     var syncFrame = null;
+    var lastFinalReviewHtml = '';
+    var summaryHome = null;
     var stepLabels = {
       1: 'Kosár',
       2: 'Szállítás és számlázás',
@@ -1005,6 +1007,154 @@
       });
     }
 
+    function finalReviewEscapeHtml(value) {
+      var element = document.createElement('div');
+      element.textContent = String(value || '');
+      return element.innerHTML;
+    }
+
+    function checkoutFieldValue(id) {
+      var field = document.getElementById(id);
+      return field && typeof field.value === 'string' ? field.value.trim() : '';
+    }
+
+    function addressReview(prefix) {
+      var companyPurchase = prefix === 'billing'
+        && document.getElementById('order-appleklinika-company_purchase')
+        && document.getElementById('order-appleklinika-company_purchase').checked;
+      var companyName = companyPurchase ? checkoutFieldValue('order-appleklinika-company_name') : '';
+      var recipient = companyName || [checkoutFieldValue(prefix + '-last_name'), checkoutFieldValue(prefix + '-first_name')].filter(Boolean).join(' ');
+      var street = [checkoutFieldValue(prefix + '-address_1'), checkoutFieldValue(prefix + '-appleklinika-house_number')].filter(Boolean).join(' ');
+      var locality = [checkoutFieldValue(prefix + '-postcode'), checkoutFieldValue(prefix + '-city')].filter(Boolean).join(' ');
+      var lines = [recipient, street, checkoutFieldValue(prefix + '-address_2'), locality].filter(Boolean);
+
+      if (companyName) {
+        var taxNumber = checkoutFieldValue('order-appleklinika-tax_number');
+        if (taxNumber) {
+          lines.splice(1, 0, 'Adószám: ' + taxNumber);
+        }
+      }
+
+      return lines;
+    }
+
+    function currentShippingReview() {
+      var selected = document.querySelector('#shipping-option input:checked');
+      var option = selected ? selected.closest('.wc-block-components-radio-control__option, label') : null;
+      var title = option && option.querySelector('.wc-block-components-radio-control__label');
+      var price = option && option.querySelector('.wc-block-components-radio-control__secondary-label, .wc-block-components-radio-control__description');
+
+      return {
+        title: title ? title.textContent.trim() : (option ? option.textContent.trim() : 'Még nincs kiválasztva'),
+        price: price ? price.textContent.trim() : ''
+      };
+    }
+
+    function currentPaymentReview() {
+      var selected = document.querySelector('.wc-block-components-radio-control__input[name*="payment"]:checked, input[id*="payment-method-options"]:checked');
+      var label = selected && selected.id
+        ? document.querySelector('label[for="' + selected.id + '"] .wc-block-components-payment-method-label')
+        : null;
+
+      return label && label.textContent.trim()
+        ? label.textContent.trim()
+        : (selected ? selected.value : 'Még nincs kiválasztva');
+    }
+
+    function finalReviewGroup(title, lines, step) {
+      var content = lines.filter(Boolean).map(function (line) {
+        return '<p>' + finalReviewEscapeHtml(line) + '</p>';
+      }).join('');
+
+      return '<section class="ak-checkout-final-review__group">'
+        + '<div class="ak-checkout-final-review__group-heading"><h3>' + finalReviewEscapeHtml(title) + '</h3>'
+        + '<button class="ak-checkout-final-review__edit" type="button" data-ak-checkout-review-step="' + String(step) + '" aria-label="' + finalReviewEscapeHtml(title + ' módosítása') + '">Módosítás</button></div>'
+        + '<div class="ak-checkout-final-review__values">' + (content || '<p>Még nincs megadva</p>') + '</div></section>';
+    }
+
+    function finalReviewHtml() {
+      var contact = [checkoutFieldValue('email'), checkoutFieldValue('billing-phone') || checkoutFieldValue('shipping-phone')].filter(Boolean);
+      var billing = addressReview('billing');
+      var shipping = addressReview('shipping');
+      var shippingMethod = currentShippingReview();
+      var fulfilment = [shippingMethod.title, shippingMethod.price].filter(Boolean);
+      var payment = [currentPaymentReview()];
+      var note = document.querySelector('#order-notes textarea');
+      var noteHtml = note && note.value.trim()
+        ? finalReviewGroup('Megjegyzés', [note.value.trim()], 2)
+        : '';
+
+      return '<section class="ak-checkout-final-review" aria-labelledby="ak-checkout-final-review-title">'
+        + '<div class="ak-checkout-final-review__intro"><p class="ak-checkout-final-review__eyebrow">4. lépés</p><h2 id="ak-checkout-final-review-title">Ellenőrizd a rendelésed</h2><p>Mielőtt véglegesíted, nézd át még egyszer az adatokat és a választásaidat.</p></div>'
+        + '<div class="ak-checkout-final-review__groups">'
+        + finalReviewGroup('Kapcsolattartási adatok', contact, 2)
+        + finalReviewGroup('Számlázási adatok', billing.length ? billing : shipping, 2)
+        + finalReviewGroup('Szállítási adatok', shipping, 2)
+        + finalReviewGroup('Szállítási mód', fulfilment, 3)
+        + finalReviewGroup('Fizetési mód', payment, 3)
+        + noteHtml
+        + '</div></section>';
+    }
+
+    function syncCheckoutFinalReview() {
+      var terms = document.querySelector('.wc-block-checkout__terms');
+
+      if (!terms || !terms.parentNode) {
+        return null;
+      }
+
+      var review = document.querySelector('.ak-checkout-final-review');
+      if (!review) {
+        review = document.createElement('div');
+        review.className = 'ak-checkout-final-review-slot';
+        terms.parentNode.insertBefore(review, terms);
+      }
+
+      var html = finalReviewHtml();
+      if (html !== lastFinalReviewHtml) {
+        review.innerHTML = html;
+        lastFinalReviewHtml = html;
+      }
+
+      review.querySelectorAll('[data-ak-checkout-review-step]').forEach(function (button) {
+        button.onclick = function () {
+          setActiveStep(Number(button.getAttribute('data-ak-checkout-review-step')) || 2);
+        };
+      });
+
+      return review;
+    }
+
+    function positionMobileFinalReviewSummary() {
+      var summary = document.querySelector('.ak-checkout-summary-slot');
+      var terms = document.querySelector('.wc-block-checkout__terms');
+      var mobileStepFour = activeStep === 4 && window.matchMedia('(max-width: 1023px)').matches;
+
+      if (!summary || !terms || !terms.parentNode) {
+        return;
+      }
+
+      if (mobileStepFour) {
+        if (!summaryHome) {
+          summaryHome = { parent: summary.parentNode, nextSibling: summary.nextSibling };
+        }
+        if (summary.parentNode !== terms.parentNode || summary.nextSibling !== terms) {
+          terms.parentNode.insertBefore(summary, terms);
+        }
+        summary.classList.add('ak-checkout-summary-slot--final-review');
+        return;
+      }
+
+      if (summaryHome && summaryHome.parent) {
+        if (summaryHome.nextSibling && summaryHome.nextSibling.parentNode === summaryHome.parent) {
+          summaryHome.parent.insertBefore(summary, summaryHome.nextSibling);
+        } else {
+          summaryHome.parent.appendChild(summary);
+        }
+      }
+      summary.classList.remove('ak-checkout-summary-slot--final-review');
+    }
+
     function checkoutStepTargets() {
       var companyToggle = document.querySelector('.ak-checkout-company-toggle');
       var companyStep = companyToggle ? companyToggle.closest('.wc-block-components-checkout-step') : null;
@@ -1023,6 +1173,7 @@
           closestCheckoutStep('#payment-method')
         ]),
         4: uniqueElements([
+          document.querySelector('.ak-checkout-final-review-slot'),
           document.querySelector('.wc-block-checkout__terms'),
           document.querySelector('.wc-block-components-checkout-place-order-button')
         ]),
@@ -1384,6 +1535,7 @@
       }
 
       var stepper = createStepper(checkoutBlock);
+      syncCheckoutFinalReview();
       var targets = checkoutStepTargets();
       var allTargets = uniqueElements(targets[2].concat(targets[3]).concat(targets[4]));
 
@@ -1393,6 +1545,7 @@
       document.body.classList.remove('ak-checkout-step-2', 'ak-checkout-step-3', 'ak-checkout-step-4');
       document.body.classList.add('ak-checkout-step-' + activeStep);
       document.body.setAttribute('data-ak-checkout-step', String(activeStep));
+      positionMobileFinalReviewSummary();
 
       allTargets.forEach(function (target) {
         var visible = targets[activeStep].indexOf(target) !== -1;
@@ -1455,6 +1608,10 @@
       childList: true,
       subtree: true
     });
+
+    document.addEventListener('change', scheduleCheckoutStepperSync);
+    document.addEventListener('input', scheduleCheckoutStepperSync);
+    window.addEventListener('resize', scheduleCheckoutStepperSync);
   }
 
   function initCheckoutPaymentAvailabilityGuard() {
