@@ -20,6 +20,7 @@ $foreign = $test->createUser('checkout-foreign');
 $service = new AddressBookService(new WordPressAddressRepository($wpdb), new WordPressTransactionManager($wpdb), new WooUserMetaProjection(), new WooAllowedCountries());
 $selector = new CheckoutAddressSelection($service, new WooAllowedCountries());
 $draftOrder = null;
+$finalOrders = [];
 
 try {
     $billing = $service->create($owner, $test->addressData([
@@ -145,10 +146,71 @@ try {
     $controller->clearSession();
     $test->assert($controller->storeApiData()['selection'] === [], 'logout-compatible session cleanup clears saved selection state');
 
+    $oneOffPersonal = wc_create_order(['customer_id' => $owner]);
+    $finalOrders[] = $oneOffPersonal;
+    $oneOffPersonal->set_address([
+        'first_name' => 'Egyedi', 'last_name' => 'Személy', 'company' => '', 'country' => 'HU', 'postcode' => '1117',
+        'city' => 'Budapest', 'address_1' => 'Mentés utca', 'address_2' => '', 'email' => 'rendeles@example.test', 'phone' => '+36 30 111 2222',
+    ], 'billing');
+    $oneOffPersonal->save();
+    $countBeforePersonalSave = count($service->list($owner));
+    $controller->updateSelection(['billing' => ['mode' => 'one_off', 'save' => true, 'set_default' => true, 'label' => 'Egyedi személyes']]);
+    $controller->syncCheckoutOrderIntent($oneOffPersonal, new WP_REST_Request());
+    $test->assert($oneOffPersonal->get_meta('_appleklinika_address_book_billing_label', true) === 'Egyedi személyes' && $oneOffPersonal->get_meta('_appleklinika_address_book_billing_save', true) === '1', 'checkout order update stores the minimal one-off save intent including its label');
+    $controller->clearSession();
+    $controller->finalizeOrder($oneOffPersonal);
+    $savedPersonalAddresses = $service->list($owner);
+    $test->assert(count($savedPersonalAddresses) === $countBeforePersonalSave + 1, 'successful personal checkout saves exactly one one-off address after the session is unavailable');
+    $savedPersonal = $savedPersonalAddresses[0] ?? null;
+    $savedPersonalData = $savedPersonal instanceof Address ? $savedPersonal->toArray() : [];
+    $test->assert($savedPersonal instanceof Address && $savedPersonalData['label'] === 'Egyedi személyes' && $savedPersonalData['first_name'] === 'Egyedi' && $savedPersonalData['last_name'] === 'Személy', 'saved personal checkout address keeps its real identity and label');
+    $test->assert($service->getDefault($owner, 'billing')?->key() === $savedPersonal->key(), 'explicit personal checkout default changes only the billing default');
+    $controller->finalizeOrder($oneOffPersonal);
+    $test->assert(count($service->list($owner)) === $countBeforePersonalSave + 1 && $oneOffPersonal->get_meta('_appleklinika_address_book_billing_consumed', true) === '1', 'repeated finalization is idempotent after the address intent is consumed');
+    $test->assert($oneOffPersonal->get_meta('_appleklinika_address_book_billing_label', true) === '' && $oneOffPersonal->get_meta('_appleklinika_address_book_billing_save', true) === '', 'successful finalization removes transient one-off save intent from the order');
+
+    $oneOffCompany = wc_create_order(['customer_id' => $owner]);
+    $finalOrders[] = $oneOffCompany;
+    $oneOffCompany->set_address([
+        'first_name' => '', 'last_name' => '', 'company' => 'Checkout Minta Kft.', 'country' => 'HU', 'postcode' => '6721',
+        'city' => 'Szeged', 'address_1' => 'Cég utca', 'address_2' => '', 'email' => 'rendeles@example.test', 'phone' => '+36 30 111 2222',
+    ], 'billing');
+    $oneOffCompany->update_meta_data('appleklinika_tax_number', '12345678-1-23');
+    $oneOffCompany->save();
+    $countBeforeCompanySave = count($service->list($owner));
+    $controller->updateSelection(['billing' => ['mode' => 'one_off', 'save' => true, 'set_default' => false, 'label' => 'Egyedi céges']]);
+    $controller->syncCheckoutOrderIntent($oneOffCompany, new WP_REST_Request());
+    $controller->clearSession();
+    $controller->finalizeOrder($oneOffCompany);
+    $savedCompanyAddresses = $service->list($owner);
+    $savedCompany = $savedCompanyAddresses[0] ?? null;
+    $savedCompanyData = $savedCompany instanceof Address ? $savedCompany->toArray() : [];
+    $test->assert(count($savedCompanyAddresses) === $countBeforeCompanySave + 1 && $savedCompany instanceof Address, 'successful company checkout saves exactly one one-off address');
+    $test->assert($savedCompanyData['label'] === 'Egyedi céges' && $savedCompanyData['company_name'] === 'Checkout Minta Kft.' && $savedCompanyData['tax_number'] === '12345678-1-23' && $savedCompanyData['first_name'] === '' && $savedCompanyData['last_name'] === '', 'saved company checkout address preserves company identity without a fake person name');
+    $test->assert($service->getDefault($owner, 'billing')?->key() === $savedPersonal->key(), 'saving a company address without default does not change the existing billing default');
+
+    $oneOffNoSave = wc_create_order(['customer_id' => $owner]);
+    $finalOrders[] = $oneOffNoSave;
+    $oneOffNoSave->set_address([
+        'first_name' => 'Nem', 'last_name' => 'Mentett', 'company' => '', 'country' => 'HU', 'postcode' => '1118',
+        'city' => 'Budapest', 'address_1' => 'Egyszeri utca', 'address_2' => '', 'email' => 'rendeles@example.test', 'phone' => '+36 30 111 2222',
+    ], 'billing');
+    $oneOffNoSave->save();
+    $countBeforeNoSave = count($service->list($owner));
+    $controller->updateSelection(['billing' => ['mode' => 'one_off', 'save' => false, 'set_default' => false, 'label' => '']]);
+    $controller->syncCheckoutOrderIntent($oneOffNoSave, new WP_REST_Request());
+    $controller->clearSession();
+    $controller->finalizeOrder($oneOffNoSave);
+    $test->assert(count($service->list($owner)) === $countBeforeNoSave && $oneOffNoSave->get_meta('_appleklinika_address_book_billing_mode', true) === '', 'no-save checkout creates no address and removes stale save intent');
+    $test->assert(get_user_meta($owner, 'billing_email', true) === 'profil@example.test' && get_user_meta($owner, 'billing_phone', true) === '+36 30 999 0000', 'checkout address saving never changes profile contact details');
+
     echo 'Customer address book checkout: ' . $test->count() . " assertions\n";
 } finally {
     if ($draftOrder instanceof WC_Order) {
         $draftOrder->delete(true);
+    }
+    foreach ($finalOrders as $finalOrder) {
+        $finalOrder->delete(true);
     }
     wp_set_current_user(0);
     $test->cleanupUser($owner);

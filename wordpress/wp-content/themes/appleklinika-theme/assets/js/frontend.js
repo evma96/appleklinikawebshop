@@ -671,6 +671,7 @@
         clearCompanyCheckoutValues(companyField, taxField);
       }
 
+      document.dispatchEvent(new CustomEvent('appleklinika:checkout-company-mode-changed'));
       previousEnabled = enabled;
 
       return true;
@@ -1069,6 +1070,61 @@
       });
     }
 
+    function validationIdentity(entry) {
+      return (String(entry.key || '') + ' ' + String((entry.error || {}).message || '')).toLowerCase();
+    }
+
+    function billingPersonalNameValidation(entry) {
+      var identity = validationIdentity(entry);
+
+      return /billing[-_](first_name|last_name)/.test(identity)
+        || (/(keresztnév|vezetéknév|first.?name|last.?name)/.test(identity) && !/(shipping|szállítás)/.test(identity));
+    }
+
+    function companyBillingValidation(entry) {
+      var identity = validationIdentity(entry);
+
+      return /(appleklinika.*(company|tax)|(company|tax).*appleklinika|cégnév|adószám)/.test(identity);
+    }
+
+    function clearInactiveBillingValidationErrors() {
+      var validation = checkoutValidationApi();
+
+      if (!validation || !validation.dispatch || typeof validation.dispatch.clearValidationError !== 'function') {
+        return;
+      }
+
+      var companyToggle = document.getElementById('order-appleklinika-company_purchase');
+      var companyMode = Boolean(companyToggle && companyToggle.checked);
+      var cleared = false;
+
+      validationErrors().forEach(function (entry) {
+        var inactive = companyMode
+          ? billingPersonalNameValidation(entry)
+          : companyBillingValidation(entry);
+
+        if (inactive) {
+          validation.dispatch.clearValidationError(entry.key);
+          cleared = true;
+        }
+      });
+
+      if (cleared) {
+        window.setTimeout(function () {
+          var message = document.querySelector('.ak-checkout-step-validation-message');
+          var currentErrors = validationErrors().filter(function (entry) {
+            return validationErrorStep(entry) === activeStep;
+          });
+
+          if (message && currentErrors.length === 0) {
+            message.textContent = '';
+          }
+        }, 0);
+      }
+    }
+
+    document.addEventListener('appleklinika:checkout-company-mode-changed', clearInactiveBillingValidationErrors);
+
     function validationErrorStep(entry) {
       var identity = (entry.key + ' ' + String(entry.error.message || '')).toLowerCase();
 
@@ -1148,6 +1204,7 @@
 
       validation.dispatch.showAllValidationErrors();
       window.setTimeout(function () {
+        clearInactiveBillingValidationErrors();
         var errors = validationErrors();
         var currentErrors = errors.filter(function (entry) {
           return validationErrorStep(entry) === activeStep;
