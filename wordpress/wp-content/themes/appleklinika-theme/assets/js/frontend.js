@@ -1362,6 +1362,20 @@
       }
     }
 
+    function positionStep3Controls(targets) {
+      var controls = document.querySelector('[data-checkout-step-controls="3"]');
+      var step3Targets = targets[3] || [];
+      var lastMethodSection = step3Targets[step3Targets.length - 1];
+
+      if (!controls || !lastMethodSection || !lastMethodSection.parentNode) {
+        return;
+      }
+
+      if (controls.previousElementSibling !== lastMethodSection) {
+        lastMethodSection.parentNode.insertBefore(controls, lastMethodSection.nextSibling);
+      }
+    }
+
     function syncCheckoutStepper() {
       var checkoutBlock = document.querySelector('.wp-block-woocommerce-checkout');
 
@@ -1374,6 +1388,7 @@
       var allTargets = uniqueElements(targets[2].concat(targets[3]).concat(targets[4]));
 
       createNavigationControls(targets);
+      positionStep3Controls(targets);
       document.body.classList.add('ak-checkout-multistep');
       document.body.classList.remove('ak-checkout-step-2', 'ak-checkout-step-3', 'ak-checkout-step-4');
       document.body.classList.add('ak-checkout-step-' + activeStep);
