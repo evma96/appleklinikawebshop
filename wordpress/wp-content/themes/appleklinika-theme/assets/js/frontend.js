@@ -1074,18 +1074,35 @@
       return '<div class="ak-checkout-final-review__values">' + (content || '<p>Még nincs megadva</p>') + '</div>';
     }
 
-    function finalReviewSubsection(label, lines, actionLabel, step) {
-      return '<div class="ak-checkout-final-review__subsection">'
-        + '<div class="ak-checkout-final-review__subsection-heading"><h4>' + finalReviewEscapeHtml(label) + '</h4>'
-        + finalReviewAction(actionLabel, step) + '</div>'
-        + finalReviewValues(lines) + '</div>';
+    function finalReviewIcon(icon) {
+      var icons = {
+        contact: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8c.8-3.2 3.2-5 7-5s6.2 1.8 7 5" /></svg>',
+        delivery: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6h11v10H3zM14 9h3.5L21 12.5V16h-7zM7 19a1.7 1.7 0 1 0 0-3.4A1.7 1.7 0 0 0 7 19Zm10 0a1.7 1.7 0 1 0 0-3.4A1.7 1.7 0 0 0 17 19Z" /></svg>',
+        billing: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 21V4h10v17M3 21h18M8 8h4M8 12h4M8 16h4M17 8h2M17 12h2M17 16h2" /></svg>',
+        payment: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 10h18M7 15h4" /></svg>'
+      };
+
+      return '<span class="ak-checkout-final-review__marker">' + (icons[icon] || '') + '</span>';
     }
 
-    function finalReviewSection(title, content, actionLabel, step) {
-      return '<section class="ak-checkout-final-review__section">'
-        + '<div class="ak-checkout-final-review__section-heading"><h3>' + finalReviewEscapeHtml(title) + '</h3>'
-        + (actionLabel ? finalReviewAction(actionLabel, step) : '') + '</div>'
-        + content + '</section>';
+    function finalReviewActions(actions) {
+      return '<div class="ak-checkout-final-review__actions">' + actions.map(function (action) {
+        return finalReviewAction(action.label, action.step);
+      }).join('') + '</div>';
+    }
+
+    function finalReviewTimelineItem(icon, title, content, actions) {
+      return '<section class="ak-checkout-final-review__timeline-item">'
+        + finalReviewIcon(icon)
+        + '<div class="ak-checkout-final-review__timeline-content"><h3>' + finalReviewEscapeHtml(title) + '</h3>'
+        + content
+        + finalReviewActions(actions) + '</div></section>';
+    }
+
+    function finalReviewNote(note) {
+      return '<section class="ak-checkout-final-review__note"><h3>Megjegyzés</h3>'
+        + finalReviewValues([note])
+        + finalReviewActions([{ label: 'Megjegyzés módosítása', step: 2 }]) + '</section>';
     }
 
     function shippingReviewLines(shippingMethod) {
@@ -1104,19 +1121,19 @@
       var payment = [currentPaymentReview()];
       var note = document.querySelector('#order-notes textarea');
       var noteHtml = note && note.value.trim()
-        ? finalReviewSection('Megjegyzés', finalReviewValues([note.value.trim()]), 'Megjegyzés módosítása', 2)
+        ? finalReviewNote(note.value.trim())
         : '';
 
       return '<section class="ak-checkout-final-review" aria-labelledby="ak-checkout-final-review-title">'
         + '<div class="ak-checkout-final-review__intro"><h2 id="ak-checkout-final-review-title">Rendelés áttekintése</h2><p>Ellenőrizd az adatokat a véglegesítés előtt.</p></div>'
-        + '<div class="ak-checkout-final-review__sections">'
-        + finalReviewSection('Kapcsolattartás', finalReviewValues(contact), 'Kapcsolattartás módosítása', 2)
-        + finalReviewSection('Kézbesítés',
-          finalReviewSubsection('Szállítási cím', shipping, 'Cím módosítása', 2)
-          + finalReviewSubsection('Szállítási mód', fulfilment, 'Szállítás módosítása', 3))
-        + finalReviewSection('Számlázás és fizetés',
-          finalReviewSubsection('Számlázási adatok', billing.length ? billing : shipping, 'Számlázás módosítása', 2)
-          + finalReviewSubsection('Fizetési mód', payment, 'Fizetés módosítása', 3))
+        + '<div class="ak-checkout-final-review__timeline">'
+        + finalReviewTimelineItem('contact', 'Kapcsolattartás', finalReviewValues(contact), [{ label: 'Módosítás', step: 2 }])
+        + finalReviewTimelineItem('delivery', 'Kézbesítés',
+          finalReviewValues(shipping)
+          + '<div class="ak-checkout-final-review__delivery-method"><p>Szállítási mód</p>' + finalReviewValues(fulfilment) + '</div>',
+          [{ label: 'Cím módosítása', step: 2 }, { label: 'Szállítás módosítása', step: 3 }])
+        + finalReviewTimelineItem('billing', 'Számlázási adatok', finalReviewValues(billing.length ? billing : shipping), [{ label: 'Módosítás', step: 2 }])
+        + finalReviewTimelineItem('payment', 'Fizetési mód', finalReviewValues(payment), [{ label: 'Módosítás', step: 3 }])
         + noteHtml
         + '</div></section>';
     }

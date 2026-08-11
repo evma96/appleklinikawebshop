@@ -5563,46 +5563,83 @@ body.woocommerce-checkout .ak-checkout-final-review__intro > p:last-child {
   line-height: 1.5;
 }
 
-body.woocommerce-checkout .ak-checkout-final-review__sections {
+body.woocommerce-checkout .ak-checkout-final-review__timeline {
+  position: relative;
   display: grid;
   gap: 0;
 }
 
-body.woocommerce-checkout .ak-checkout-final-review__section {
+body.woocommerce-checkout .ak-checkout-final-review__timeline::before {
+  position: absolute;
+  z-index: 0;
+  top: 18px;
+  bottom: 36px;
+  left: 18px;
+  width: 1px;
+  background: linear-gradient(to bottom, rgba(214, 0, 28, .72), rgba(214, 0, 28, .16));
+  content: '';
+}
+
+body.woocommerce-checkout .ak-checkout-final-review__timeline-item {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 14px;
   min-width: 0;
-  padding: 22px 0;
-  border-top: 1px solid rgba(227, 232, 239, .92);
+  padding-bottom: 28px;
 }
 
-body.woocommerce-checkout .ak-checkout-final-review__section:first-child {
-  padding-top: 0;
-  border-top: 0;
+body.woocommerce-checkout .ak-checkout-final-review__timeline-item:last-child {
+  padding-bottom: 0;
 }
 
-body.woocommerce-checkout .ak-checkout-final-review__section-heading,
-body.woocommerce-checkout .ak-checkout-final-review__subsection-heading {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
+body.woocommerce-checkout .ak-checkout-final-review__marker {
+  display: inline-grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  box-sizing: border-box;
+  border: 1px solid rgba(214, 0, 28, .24);
+  border-radius: 50%;
+  color: #D6001C;
+  background: #fff;
+}
+
+body.woocommerce-checkout .ak-checkout-final-review__marker svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+body.woocommerce-checkout .ak-checkout-final-review__timeline-content {
+  min-width: 0;
+  padding: 5px 0 0;
 }
 
 body.woocommerce-checkout .ak-checkout-final-review h3 {
-  font-size: 12px;
-  line-height: 1.3;
-  font-weight: 900;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-}
-
-body.woocommerce-checkout .ak-checkout-final-review__subsection {
-  margin-top: 16px;
-}
-
-body.woocommerce-checkout .ak-checkout-final-review h4 {
-  font-size: 14px;
-  line-height: 1.3;
+  font-size: 15px;
+  line-height: 1.35;
   font-weight: 800;
+}
+
+body.woocommerce-checkout .ak-checkout-final-review__delivery-method {
+  margin-top: 12px;
+  padding-top: 11px;
+  border-top: 1px solid rgba(227, 232, 239, .82);
+}
+
+body.woocommerce-checkout .ak-checkout-final-review__delivery-method > p {
+  margin: 0;
+  color: #7b8798;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .045em;
+  text-transform: uppercase;
 }
 
 body.woocommerce-checkout .ak-checkout-final-review__edit {
@@ -5620,6 +5657,13 @@ body.woocommerce-checkout .ak-checkout-final-review__edit {
   text-underline-offset: 3px;
 }
 
+body.woocommerce-checkout .ak-checkout-final-review__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-top: 10px;
+}
+
 body.woocommerce-checkout .ak-checkout-final-review__edit:focus-visible {
   border-radius: 4px;
   outline: 2px solid #D6001C;
@@ -5632,6 +5676,12 @@ body.woocommerce-checkout .ak-checkout-final-review__values p {
   font-size: 14px;
   line-height: 1.42;
   overflow-wrap: anywhere;
+}
+
+body.woocommerce-checkout .ak-checkout-final-review__note {
+  margin: 26px 0 0 52px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(227, 232, 239, .92);
 }
 
 body.woocommerce-checkout.ak-checkout-step-4 .ak-checkout-summary__details {
@@ -6030,6 +6080,32 @@ body.woocommerce-checkout .ak-checkout-step-controls__link:focus-visible {
 
   body.woocommerce-checkout .ak-checkout-final-review {
     padding: 22px 16px 20px;
+  }
+
+  body.woocommerce-checkout .ak-checkout-final-review__timeline-item {
+    grid-template-columns: 32px minmax(0, 1fr);
+    gap: 12px;
+    padding-bottom: 24px;
+  }
+
+  body.woocommerce-checkout .ak-checkout-final-review__timeline::before {
+    top: 16px;
+    bottom: 32px;
+    left: 16px;
+  }
+
+  body.woocommerce-checkout .ak-checkout-final-review__marker {
+    width: 32px;
+    height: 32px;
+  }
+
+  body.woocommerce-checkout .ak-checkout-final-review__marker svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  body.woocommerce-checkout .ak-checkout-final-review__note {
+    margin-left: 44px;
   }
 
 }
