@@ -64,8 +64,85 @@
         return latestSelectionRequest;
     }
 
+    function oneOffAddressFields(root, purpose) {
+        var section = root.querySelector('[data-ak-address-purpose="' + purpose + '"]');
+        var select = section ? section.querySelector('select') : null;
+        var fields = {};
+
+        if (!section || !select || select.value !== '__one_off__') {
+            return null;
+        }
+
+        ['first_name', 'last_name', 'company', 'address_1', 'address_2', 'city', 'state', 'postcode', 'country'].forEach(function (field) {
+            var control = document.getElementById(purpose + '-' + field);
+            if (control) {
+                fields[field] = String(control.value || '');
+            }
+        });
+        ['house_number', 'staircase', 'floor', 'door'].forEach(function (field) {
+            var control = document.getElementById(purpose + '-appleklinika-' + field);
+            if (control) {
+                fields['appleklinika/' + field] = String(control.value || '');
+            }
+        });
+
+        return fields;
+    }
+
+    function sameAddressFields(expected, actual) {
+        return Object.keys(expected).every(function (field) {
+            return String(actual && actual[field] || '') === expected[field];
+        });
+    }
+
+    function waitForOneOffAddressSync(root) {
+        var expected = {};
+
+        ['billing', 'shipping'].forEach(function (purpose) {
+            var fields = oneOffAddressFields(root, purpose);
+            if (fields) {
+                expected[purpose] = fields;
+            }
+        });
+
+        if (Object.keys(expected).length === 0) {
+            return Promise.resolve(true);
+        }
+
+        return new Promise(function (resolve) {
+            var deadline = Date.now() + 3000;
+            var verify = function () {
+                var cart = window.wp && window.wp.data
+                    ? window.wp.data.select('wc/store/cart').getCartData()
+                    : null;
+                var synchronized = cart && Object.keys(expected).every(function (purpose) {
+                    return sameAddressFields(expected[purpose], cart[purpose + 'Address']);
+                });
+
+                if (synchronized) {
+                    resolve(true);
+                    return;
+                }
+                if (Date.now() >= deadline) {
+                    resolve(false);
+                    return;
+                }
+                window.setTimeout(verify, 50);
+            };
+            verify();
+        });
+    }
+
     function flushSelection(root) {
-        return sendSelection(root).catch(function () { return false; });
+        return waitForOneOffAddressSync(root).then(function (addressesSynchronized) {
+            if (!addressesSynchronized) {
+                root.querySelectorAll('[data-ak-address-notice]').forEach(function (notice) {
+                    notice.textContent = 'A megadott címet még szinkronizáljuk. Kérjük, próbáld újra.';
+                });
+                return false;
+            }
+            return sendSelection(root).catch(function () { return false; });
+        });
     }
 
     function installProgressFlush(root) {
