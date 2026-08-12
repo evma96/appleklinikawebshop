@@ -21,6 +21,7 @@ $service = new AddressBookService(new WordPressAddressRepository($wpdb), new Wor
 $selector = new CheckoutAddressSelection($service, new WooAllowedCountries());
 $draftOrder = null;
 $finalOrders = [];
+$finalProducts = [];
 
 try {
     $billing = $service->create($owner, $test->addressData([
@@ -68,6 +69,7 @@ try {
     $test->assert(str_contains((string) $checkoutScript, 'Válassz mentett számlázási címet') && str_contains($checkoutScript, 'Válassz mentett szállítási címet') && ! str_contains($checkoutScript, "document.createElement('h3')"), 'saved-address selectors use descriptive labels instead of duplicate visible section headings');
     $test->assert(str_contains((string) $checkoutScript, "section.classList.toggle('is-one-off', isOneOff)") && str_contains($checkoutScript, "section.classList.toggle('has-saved-address', !isOneOff)") && str_contains($checkoutScript, 'save.checked = false;') && str_contains($checkoutScript, 'defaultControl.disabled = true;'), 'checkout keeps the saved-address and one-off address presentation states explicit and clears one-off save intent before a saved address is submitted');
     $test->assert(str_contains((string) $checkoutScript, 'function selectionData(root)') && str_contains($checkoutScript, 'latestSelectionRequest') && str_contains($checkoutScript, "addEventListener('input'") && str_contains($checkoutScript, 'function installProgressFlush(root)') && str_contains($checkoutScript, 'data-ak-address-flushed'), 'checkout serializes the newest one-off save intent and flushes it before continuing without relying on label blur timing');
+    $test->assert(str_contains((string) $checkoutScript, 'function oneOffAddressFields(root, purpose)') && str_contains($checkoutScript, 'function waitForOneOffAddressSync(root)') && str_contains($checkoutScript, "cart[purpose + 'Address']") && str_contains($checkoutScript, 'sameAddressFields(expected[purpose]'), 'checkout blocks progression until the WooCommerce cart state contains the latest visible one-off physical address fields');
     $checkoutCss = file_get_contents(dirname(__DIR__) . '/assets/css/checkout-address-book.css');
     $test->assert(is_string($checkoutCss) && str_contains($checkoutCss, '[data-ak-address-save-details][hidden]') && str_contains($checkoutCss, 'display: none !important;') && str_contains($checkoutCss, '.has-saved-address .ak-checkout-address-selector__save'), 'checkout keeps collapsed saved-address details hidden and reserves address-save controls for one-off addresses');
     $test->assert(is_string($checkoutCss) && str_contains($checkoutCss, '.ak-checkout-address-selector') && str_contains($checkoutCss, 'background: transparent;') && str_contains($checkoutCss, 'border: 0;'), 'saved-address selection remains an integrated checkout control rather than a nested card');
@@ -151,8 +153,12 @@ try {
     $finalOrders[] = $oneOffPersonal;
     $oneOffPersonal->set_address([
         'first_name' => 'Egyedi', 'last_name' => 'Személy', 'company' => '', 'country' => 'HU', 'postcode' => '1117',
-        'city' => 'Budapest', 'address_1' => 'Mentés utca', 'address_2' => '', 'email' => 'rendeles@example.test', 'phone' => '+36 30 111 2222',
+        'state' => 'BU', 'city' => 'Budapest', 'address_1' => 'Mentés utca', 'address_2' => 'A épület', 'email' => 'rendeles@example.test', 'phone' => '+36 30 111 2222',
     ], 'billing');
+    $oneOffPersonal->update_meta_data('_wc_billing/appleklinika/house_number', '19');
+    $oneOffPersonal->update_meta_data('_wc_billing/appleklinika/staircase', 'A');
+    $oneOffPersonal->update_meta_data('_wc_billing/appleklinika/floor', '2');
+    $oneOffPersonal->update_meta_data('_wc_billing/appleklinika/door', '5');
     $oneOffPersonal->save();
     $countBeforePersonalSave = count($service->list($owner));
     $controller->updateSelection(['billing' => ['mode' => 'one_off', 'save' => false, 'set_default' => false, 'label' => '']]);
@@ -168,6 +174,9 @@ try {
     $savedPersonal = $savedPersonalAddresses[0] ?? null;
     $savedPersonalData = $savedPersonal instanceof Address ? $savedPersonal->toArray() : [];
     $test->assert($savedPersonal instanceof Address && $savedPersonalData['label'] === 'Egyedi személyes' && $savedPersonalData['first_name'] === 'Egyedi' && $savedPersonalData['last_name'] === 'Személy', 'saved personal checkout address keeps its real identity and label');
+    $test->assert(array_intersect_key($savedPersonalData, array_flip(['first_name', 'last_name', 'company_name', 'tax_number', 'country', 'state', 'postcode', 'city', 'address_1', 'address_2', 'house_number', 'staircase', 'floor', 'door'])) === [
+        'first_name' => 'Egyedi', 'last_name' => 'Személy', 'company_name' => '', 'tax_number' => '', 'country' => 'HU', 'state' => 'BU', 'postcode' => '1117', 'city' => 'Budapest', 'address_1' => 'Mentés utca', 'address_2' => 'A épület', 'house_number' => '19', 'staircase' => 'A', 'floor' => '2', 'door' => '5',
+    ], 'saved personal checkout address uses every final order snapshot identity and physical field rather than prior customer defaults');
     $test->assert($service->getDefault($owner, 'billing')?->key() === $savedPersonal->key(), 'explicit personal checkout default changes only the billing default');
     $controller->finalizeOrder($oneOffPersonal);
     $test->assert(count($service->list($owner)) === $countBeforePersonalSave + 1 && $oneOffPersonal->get_meta('_appleklinika_address_book_billing_consumed', true) === '1', 'repeated finalization is idempotent after the address intent is consumed');
@@ -191,7 +200,42 @@ try {
     $savedCompanyData = $savedCompany instanceof Address ? $savedCompany->toArray() : [];
     $test->assert(count($savedCompanyAddresses) === $countBeforeCompanySave + 1 && $savedCompany instanceof Address, 'successful company checkout saves exactly one one-off address');
     $test->assert($savedCompanyData['label'] === 'Egyedi céges' && $savedCompanyData['company_name'] === 'Checkout Minta Kft.' && $savedCompanyData['tax_number'] === '12345678-1-23' && $savedCompanyData['first_name'] === '' && $savedCompanyData['last_name'] === '', 'saved company checkout address preserves company identity without a fake person name');
+    $test->assert($savedCompanyData['country'] === 'HU' && $savedCompanyData['postcode'] === '6721' && $savedCompanyData['city'] === 'Szeged' && $savedCompanyData['address_1'] === 'Cég utca', 'saved company checkout address uses the final company order snapshot physical fields');
     $test->assert($service->getDefault($owner, 'billing')?->key() === $savedPersonal->key(), 'saving a company address without default does not change the existing billing default');
+
+    $shippingProduct = new WC_Product_Simple();
+    $shippingProduct->set_name('Address-book shipping fixture');
+    $shippingProduct->set_regular_price('1000');
+    $shippingProduct->set_price('1000');
+    $shippingProduct->set_virtual(false);
+    $shippingProduct->save();
+    $finalProducts[] = $shippingProduct;
+    $oneOffShipping = wc_create_order(['customer_id' => $owner]);
+    $finalOrders[] = $oneOffShipping;
+    $oneOffShipping->add_product($shippingProduct, 1);
+    $oneOffShipping->set_address([
+        'first_name' => 'Szállított', 'last_name' => 'Címzett', 'company' => '', 'country' => 'HU', 'postcode' => '7630',
+        'city' => 'Pécs', 'address_1' => 'Küldemény utca', 'address_2' => 'Raktár',
+    ], 'shipping');
+    $oneOffShipping->update_meta_data('_wc_shipping/appleklinika/house_number', '7');
+    $oneOffShipping->update_meta_data('_wc_shipping/appleklinika/staircase', 'B');
+    $oneOffShipping->update_meta_data('_wc_shipping/appleklinika/floor', '3');
+    $oneOffShipping->update_meta_data('_wc_shipping/appleklinika/door', '8');
+    $oneOffShipping->update_meta_data('_appleklinika_address_book_shipping_mode', 'one_off');
+    $oneOffShipping->update_meta_data('_appleklinika_address_book_shipping_save', '1');
+    $oneOffShipping->update_meta_data('_appleklinika_address_book_shipping_default', '1');
+    $oneOffShipping->update_meta_data('_appleklinika_address_book_shipping_label', 'Egyedi szállítás');
+    $oneOffShipping->save();
+    $countBeforeShippingSave = count($service->list($owner));
+    $controller->finalizeOrder($oneOffShipping);
+    $savedShipping = $service->getDefault($owner, 'shipping');
+    $savedShippingData = $savedShipping?->toArray() ?? [];
+    $test->assert(count($service->list($owner)) === $countBeforeShippingSave + 1 && $savedShipping instanceof Address, 'successful one-off shipping checkout saves exactly one shipping-purpose address');
+    $test->assert(array_intersect_key($savedShippingData, array_flip(['first_name', 'last_name', 'country', 'postcode', 'city', 'address_1', 'address_2', 'house_number', 'staircase', 'floor', 'door'])) === [
+        'first_name' => 'Szállított', 'last_name' => 'Címzett', 'country' => 'HU', 'postcode' => '7630', 'city' => 'Pécs', 'address_1' => 'Küldemény utca', 'address_2' => 'Raktár', 'house_number' => '7', 'staircase' => 'B', 'floor' => '3', 'door' => '8',
+    ], 'shipping-purpose save uses only the final order shipping snapshot, without billing or default-address leakage');
+    $controller->finalizeOrder($oneOffShipping);
+    $test->assert(count($service->list($owner)) === $countBeforeShippingSave + 1, 'repeated shipping finalization remains idempotent after the one-off save intent is consumed');
 
     $oneOffNoSave = wc_create_order(['customer_id' => $owner]);
     $finalOrders[] = $oneOffNoSave;
@@ -215,6 +259,9 @@ try {
     }
     foreach ($finalOrders as $finalOrder) {
         $finalOrder->delete(true);
+    }
+    foreach ($finalProducts as $finalProduct) {
+        wp_delete_post($finalProduct->get_id(), true);
     }
     wp_set_current_user(0);
     $test->cleanupUser($owner);

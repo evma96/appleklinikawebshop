@@ -1172,7 +1172,7 @@
         };
       });
 
-      return review;
+      return reviewSlot;
     }
 
     function positionMobileFinalReviewSummary() {
