@@ -2,7 +2,6 @@
     'use strict';
 
     var namespace = 'appleklinika/address-book';
-    var initializedDefaults = false;
     var blocksCheckout = window.wc && window.wc.blocksCheckout;
     var latestSelectionRequest = Promise.resolve();
     var selectionRequestSequence = 0;
@@ -28,7 +27,20 @@
             data[purpose] = {
                 mode: selected === '__one_off__' ? 'one_off' : 'saved',
                 key: selected === '__one_off__' ? '' : parts[0],
-                version: selected === '__one_off__' ? 0 : Number(parts[1] || 0),
+                version: selected === '__one_off__' ? 0 : Number(parts[1] || 0)
+            };
+        });
+        return data;
+    }
+
+    function saveIntentData(root) {
+        var data = {};
+        root.querySelectorAll('[data-ak-address-purpose]').forEach(function (section) {
+            var purpose = section.getAttribute('data-ak-address-purpose');
+            var save = section.querySelector('[data-ak-address-save]');
+            var label = section.querySelector('[data-ak-address-label]');
+            var defaultControl = section.querySelector('[data-ak-address-default]');
+            data[purpose] = {
                 save: Boolean(save && save.checked),
                 set_default: Boolean(defaultControl && defaultControl.checked),
                 label: label ? label.value.trim() : ''
@@ -37,14 +49,21 @@
         return data;
     }
 
-    function sendSelection(root) {
+    function sendSaveIntent(root) {
+        return sendAddressBookUpdate(root, {
+            selection: selectionData(root),
+            intent: saveIntentData(root)
+        });
+    }
+
+    function sendAddressBookUpdate(root, data) {
         if (!blocksCheckout || typeof blocksCheckout.extensionCartUpdate !== 'function') {
             return Promise.resolve();
         }
         var sequence = ++selectionRequestSequence;
         var request = function () {
             root.classList.add('is-updating');
-            return blocksCheckout.extensionCartUpdate({ namespace: namespace, data: selectionData(root) })
+            return blocksCheckout.extensionCartUpdate({ namespace: namespace, data: data })
                 .then(function (result) {
                     root.querySelectorAll('[data-ak-address-notice]').forEach(function (notice) { notice.textContent = ''; });
                     return result;
@@ -141,7 +160,7 @@
                 });
                 return false;
             }
-            return sendSelection(root).catch(function () { return false; });
+            return sendSaveIntent(root).catch(function () { return false; });
         });
     }
 
@@ -313,7 +332,6 @@
             if (item) {
                 setCustomFields(section, item);
             }
-            sendSelection(root);
         });
         var save = section.querySelector('[data-ak-address-save]');
         var defaultControl = section.querySelector('[data-ak-address-default]');
@@ -324,11 +342,7 @@
             if (!save.checked) {
                 defaultControl.checked = false;
             }
-            sendSelection(root);
         });
-        section.querySelector('[data-ak-address-label]').addEventListener('input', function () { sendSelection(root); });
-        section.querySelector('[data-ak-address-label]').addEventListener('change', function () { sendSelection(root); });
-        defaultControl.addEventListener('change', function () { sendSelection(root); });
         syncPresentation(section);
         setCustomFields(section, matchingOption());
         return !current && select.value !== '__one_off__';
@@ -346,10 +360,6 @@
         var changed = renderPurpose(checkout, 'billing', data.billing || [], data.selection ? data.selection.billing : null);
         if (data.needs_shipping) {
             changed = renderPurpose(checkout, 'shipping', data.shipping || [], data.selection ? data.selection.shipping : null) || changed;
-        }
-        if (changed && !initializedDefaults) {
-            initializedDefaults = true;
-            sendSelection(checkout);
         }
         installProgressFlush(checkout);
     }
