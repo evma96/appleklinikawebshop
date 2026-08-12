@@ -90,10 +90,17 @@ final class CheckoutAddressController
         }
 
         $current = $this->sessionSelection();
+        $isEnvelope = isset($data['selection']) || isset($data['intent']);
+        $selectionData = is_array($data['selection'] ?? null) ? $data['selection'] : $data;
+        $intentData = is_array($data['intent'] ?? null) ? $data['intent'] : [];
         $next = [];
         foreach ($this->purposesForCurrentCart() as $purpose) {
-            $candidate = is_array($data[$purpose] ?? null) ? $data[$purpose] : ($current[$purpose] ?? ['mode' => 'one_off']);
-            $next[$purpose] = $this->normalizeSelection($customerId, $purpose, $candidate);
+            $candidate = is_array($selectionData[$purpose] ?? null) ? $selectionData[$purpose] : ($current[$purpose] ?? ['mode' => 'one_off']);
+            $next[$purpose] = $this->normalizeAddressSelection($customerId, $purpose, $candidate);
+            $intent = $isEnvelope
+                ? (is_array($intentData[$purpose] ?? null) ? $intentData[$purpose] : [])
+                : $candidate;
+            $next[$purpose] = array_merge($next[$purpose], $this->normalizeSaveIntent($intent));
             if ($next[$purpose]['mode'] === 'saved') {
                 $this->applyAddressToCustomer($purpose, $this->selection->resolve(
                     $customerId,
@@ -234,9 +241,21 @@ final class CheckoutAddressController
     }
 
     /** @param array<string, mixed> $candidate @return array<string, mixed> */
-    private function normalizeSelection(int $customerId, string $purpose, array $candidate): array
+    private function normalizeAddressSelection(int $customerId, string $purpose, array $candidate): array
     {
         $mode = ($candidate['mode'] ?? '') === 'saved' ? 'saved' : 'one_off';
+        if ($mode === 'one_off') {
+            return ['mode' => 'one_off'];
+        }
+        $key = sanitize_text_field((string) ($candidate['key'] ?? ''));
+        $version = absint($candidate['version'] ?? 0);
+        $this->selection->resolve($customerId, $purpose, $key, $version);
+        return ['mode' => 'saved', 'key' => $key, 'version' => $version];
+    }
+
+    /** @param array<string, mixed> $candidate @return array<string, mixed> */
+    private function normalizeSaveIntent(array $candidate): array
+    {
         $save = ! empty($candidate['save']);
         $setDefault = $save && ! empty($candidate['set_default']);
         $label = sanitize_text_field((string) ($candidate['label'] ?? ''));
@@ -246,13 +265,7 @@ final class CheckoutAddressController
         if ($save && $label === '') {
             throw new \WC_REST_Exception('appleklinika_address_book_label', 'A mentett címhez adj meg egy címelnevezést.', 400);
         }
-        if ($mode === 'one_off') {
-            return ['mode' => 'one_off', 'save' => $save, 'set_default' => $setDefault, 'label' => $label];
-        }
-        $key = sanitize_text_field((string) ($candidate['key'] ?? ''));
-        $version = absint($candidate['version'] ?? 0);
-        $this->selection->resolve($customerId, $purpose, $key, $version);
-        return ['mode' => 'saved', 'key' => $key, 'version' => $version, 'save' => $save, 'set_default' => $setDefault, 'label' => $label];
+        return ['save' => $save, 'set_default' => $setDefault, 'label' => $label];
     }
 
     private function applyAddressToCustomer(string $purpose, Address $address): void
