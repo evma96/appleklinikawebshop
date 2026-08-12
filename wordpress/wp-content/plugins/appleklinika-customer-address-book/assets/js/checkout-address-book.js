@@ -4,6 +4,8 @@
     var namespace = 'appleklinika/address-book';
     var initializedDefaults = false;
     var blocksCheckout = window.wc && window.wc.blocksCheckout;
+    var latestSelectionRequest = Promise.resolve();
+    var selectionRequestSequence = 0;
 
     function cartExtension() {
         if (!window.wp || !window.wp.data) {
@@ -13,10 +15,7 @@
         return cart && cart.extensions ? cart.extensions[namespace] : null;
     }
 
-    function sendSelection(root) {
-        if (!blocksCheckout || typeof blocksCheckout.extensionCartUpdate !== 'function') {
-            return;
-        }
+    function selectionData(root) {
         var data = {};
         root.querySelectorAll('[data-ak-address-purpose]').forEach(function (section) {
             var purpose = section.getAttribute('data-ak-address-purpose');
@@ -35,13 +34,70 @@
                 label: label ? label.value.trim() : ''
             };
         });
-        root.classList.add('is-updating');
-        blocksCheckout.extensionCartUpdate({ namespace: namespace, data: data })
-            .catch(function (error) {
-                var message = error && error.message ? error.message : 'A mentett cím kiválasztása nem sikerült. Kérjük, próbáld újra.';
-                root.querySelectorAll('[data-ak-address-notice]').forEach(function (notice) { notice.textContent = message; });
-            })
-            .finally(function () { root.classList.remove('is-updating'); });
+        return data;
+    }
+
+    function sendSelection(root) {
+        if (!blocksCheckout || typeof blocksCheckout.extensionCartUpdate !== 'function') {
+            return Promise.resolve();
+        }
+        var sequence = ++selectionRequestSequence;
+        var request = function () {
+            root.classList.add('is-updating');
+            return blocksCheckout.extensionCartUpdate({ namespace: namespace, data: selectionData(root) })
+                .then(function (result) {
+                    root.querySelectorAll('[data-ak-address-notice]').forEach(function (notice) { notice.textContent = ''; });
+                    return result;
+                })
+                .catch(function (error) {
+                    var message = error && error.message ? error.message : 'A mentett cím kiválasztása nem sikerült. Kérjük, próbáld újra.';
+                    root.querySelectorAll('[data-ak-address-notice]').forEach(function (notice) { notice.textContent = message; });
+                    throw error;
+                })
+                .finally(function () {
+                    if (sequence === selectionRequestSequence) {
+                        root.classList.remove('is-updating');
+                    }
+                });
+        };
+        latestSelectionRequest = latestSelectionRequest.catch(function () {}).then(request);
+        return latestSelectionRequest;
+    }
+
+    function flushSelection(root) {
+        return sendSelection(root).catch(function () { return false; });
+    }
+
+    function installProgressFlush(root) {
+        if (root.getAttribute('data-ak-address-progress-flush') === '1') {
+            return;
+        }
+        root.setAttribute('data-ak-address-progress-flush', '1');
+        document.addEventListener('click', function (event) {
+            var button = event.target.closest('[data-checkout-step-controls="2"] .ak-checkout-step-controls__button');
+            if (!button) {
+                return;
+            }
+            if (button.getAttribute('data-ak-address-flushed') === '1') {
+                button.removeAttribute('data-ak-address-flushed');
+                return;
+            }
+            if (button.getAttribute('data-ak-address-flushing') === '1') {
+                return;
+            }
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            button.setAttribute('data-ak-address-flushing', '1');
+            button.disabled = true;
+            flushSelection(root).then(function (synchronized) {
+                button.disabled = false;
+                button.removeAttribute('data-ak-address-flushing');
+                if (synchronized !== false) {
+                    button.setAttribute('data-ak-address-flushed', '1');
+                    button.click();
+                }
+            });
+        }, true);
     }
 
     function setCheckoutControlValue(control, value) {
@@ -193,6 +249,7 @@
             }
             sendSelection(root);
         });
+        section.querySelector('[data-ak-address-label]').addEventListener('input', function () { sendSelection(root); });
         section.querySelector('[data-ak-address-label]').addEventListener('change', function () { sendSelection(root); });
         defaultControl.addEventListener('change', function () { sendSelection(root); });
         syncPresentation(section);
@@ -217,6 +274,7 @@
             initializedDefaults = true;
             sendSelection(checkout);
         }
+        installProgressFlush(checkout);
     }
 
     var attempts = 0;

@@ -1140,25 +1140,33 @@
 
     function syncCheckoutFinalReview() {
       var terms = document.querySelector('.wc-block-checkout__terms');
+      var reviewSlot = null;
 
       if (!terms || !terms.parentNode) {
         return null;
       }
 
-      var review = document.querySelector('.ak-checkout-final-review');
-      if (!review) {
-        review = document.createElement('div');
-        review.className = 'ak-checkout-final-review-slot';
-        terms.parentNode.insertBefore(review, terms);
+      Array.prototype.some.call(terms.parentNode.children, function (child) {
+        if (child.classList && child.classList.contains('ak-checkout-final-review-slot')) {
+          reviewSlot = child;
+          return true;
+        }
+        return false;
+      });
+
+      if (!reviewSlot) {
+        reviewSlot = document.createElement('div');
+        reviewSlot.className = 'ak-checkout-final-review-slot';
+        terms.parentNode.insertBefore(reviewSlot, terms);
       }
 
       var html = finalReviewHtml();
-      if (html !== lastFinalReviewHtml) {
-        review.innerHTML = html;
+      if (html !== lastFinalReviewHtml || !reviewSlot.querySelector('.ak-checkout-final-review')) {
+        reviewSlot.innerHTML = html;
         lastFinalReviewHtml = html;
       }
 
-      review.querySelectorAll('[data-ak-checkout-review-step]').forEach(function (button) {
+      reviewSlot.querySelectorAll('[data-ak-checkout-review-step]').forEach(function (button) {
         button.onclick = function () {
           setActiveStep(Number(button.getAttribute('data-ak-checkout-review-step')) || 2);
         };

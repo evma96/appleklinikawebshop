@@ -67,6 +67,7 @@ try {
     $test->assert(str_contains((string) $checkoutScript, "select.id = 'ak-checkout-address-selector-' + purpose") && str_contains($checkoutScript, 'caption.htmlFor = select.id'), 'saved-address selectors have an explicit programmatic label relationship');
     $test->assert(str_contains((string) $checkoutScript, 'Válassz mentett számlázási címet') && str_contains($checkoutScript, 'Válassz mentett szállítási címet') && ! str_contains($checkoutScript, "document.createElement('h3')"), 'saved-address selectors use descriptive labels instead of duplicate visible section headings');
     $test->assert(str_contains((string) $checkoutScript, "section.classList.toggle('is-one-off', isOneOff)") && str_contains($checkoutScript, "section.classList.toggle('has-saved-address', !isOneOff)") && str_contains($checkoutScript, 'save.checked = false;') && str_contains($checkoutScript, 'defaultControl.disabled = true;'), 'checkout keeps the saved-address and one-off address presentation states explicit and clears one-off save intent before a saved address is submitted');
+    $test->assert(str_contains((string) $checkoutScript, 'function selectionData(root)') && str_contains($checkoutScript, 'latestSelectionRequest') && str_contains($checkoutScript, "addEventListener('input'") && str_contains($checkoutScript, 'function installProgressFlush(root)') && str_contains($checkoutScript, 'data-ak-address-flushed'), 'checkout serializes the newest one-off save intent and flushes it before continuing without relying on label blur timing');
     $checkoutCss = file_get_contents(dirname(__DIR__) . '/assets/css/checkout-address-book.css');
     $test->assert(is_string($checkoutCss) && str_contains($checkoutCss, '[data-ak-address-save-details][hidden]') && str_contains($checkoutCss, 'display: none !important;') && str_contains($checkoutCss, '.has-saved-address .ak-checkout-address-selector__save'), 'checkout keeps collapsed saved-address details hidden and reserves address-save controls for one-off addresses');
     $test->assert(is_string($checkoutCss) && str_contains($checkoutCss, '.ak-checkout-address-selector') && str_contains($checkoutCss, 'background: transparent;') && str_contains($checkoutCss, 'border: 0;'), 'saved-address selection remains an integrated checkout control rather than a nested card');
@@ -154,7 +155,10 @@ try {
     ], 'billing');
     $oneOffPersonal->save();
     $countBeforePersonalSave = count($service->list($owner));
+    $controller->updateSelection(['billing' => ['mode' => 'one_off', 'save' => false, 'set_default' => false, 'label' => '']]);
     $controller->updateSelection(['billing' => ['mode' => 'one_off', 'save' => true, 'set_default' => true, 'label' => 'Egyedi személyes']]);
+    $latestIntent = $controller->storeApiData()['selection']['billing'];
+    $test->assert($latestIntent['save'] === true && $latestIntent['set_default'] === true && $latestIntent['label'] === 'Egyedi személyes', 'latest one-off save intent replaces an earlier incomplete local intent before order progression');
     $controller->syncCheckoutOrderIntent($oneOffPersonal, new WP_REST_Request());
     $test->assert($oneOffPersonal->get_meta('_appleklinika_address_book_billing_label', true) === 'Egyedi személyes' && $oneOffPersonal->get_meta('_appleklinika_address_book_billing_save', true) === '1', 'checkout order update stores the minimal one-off save intent including its label');
     $controller->clearSession();
