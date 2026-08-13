@@ -29,6 +29,9 @@
                 key: selected === '__one_off__' ? '' : parts[0],
                 version: selected === '__one_off__' ? 0 : Number(parts[1] || 0)
             };
+            if (selected === '__one_off__') {
+                data[purpose].fields = oneOffAddressFields(root, purpose) || {};
+            }
         });
         return data;
     }
@@ -104,6 +107,14 @@
                 fields['appleklinika/' + field] = String(control.value || '');
             }
         });
+        if (purpose === 'billing') {
+            var companyPurchase = document.getElementById('order-appleklinika-company_purchase');
+            var companyName = document.getElementById('order-appleklinika-company_name');
+            var taxNumber = document.getElementById('order-appleklinika-tax_number');
+            fields['appleklinika/company_purchase'] = companyPurchase && companyPurchase.checked ? '1' : '';
+            fields['appleklinika/company_name'] = companyName ? String(companyName.value || '') : '';
+            fields['appleklinika/tax_number'] = taxNumber ? String(taxNumber.value || '') : '';
+        }
 
         return fields;
     }
@@ -254,6 +265,40 @@
         }
     }
 
+    function clearSavedAddressProjection(section) {
+        var purpose = section.getAttribute('data-ak-address-purpose');
+
+        // Selecting a one-off address starts a new physical address. Woo Blocks
+        // keeps its hidden core fields mounted, so explicitly clear every value
+        // that may have been projected from the previously selected saved address.
+        // Contact details are deliberately not part of this list: they remain
+        // customer-profile data rather than address-book data.
+        ['country', 'first_name', 'last_name', 'company', 'address_1', 'address_2', 'city', 'state', 'postcode'].forEach(function (name) {
+            var input = document.getElementById(purpose + '-' + name);
+            if (input) {
+                setCheckoutControlValue(input, '');
+            }
+        });
+        ['house_number', 'staircase', 'floor', 'door'].forEach(function (name) {
+            var input = document.getElementById(purpose + '-appleklinika-' + name);
+            if (input) {
+                setCheckoutControlValue(input, '');
+            }
+        });
+        if (purpose === 'billing') {
+            var companyPurchaseInput = document.getElementById('order-appleklinika-company_purchase');
+            if (companyPurchaseInput) {
+                setCheckoutControlChecked(companyPurchaseInput, false);
+            }
+            ['order-appleklinika-company_name', 'order-appleklinika-tax_number'].forEach(function (id) {
+                var input = document.getElementById(id);
+                if (input) {
+                    setCheckoutControlValue(input, '');
+                }
+            });
+        }
+    }
+
     function syncPresentation(section) {
         var select = section.querySelector('select');
         var isOneOff = !select || select.value === '__one_off__';
@@ -331,6 +376,8 @@
             syncPresentation(section);
             if (item) {
                 setCustomFields(section, item);
+            } else {
+                clearSavedAddressProjection(section);
             }
         });
         var save = section.querySelector('[data-ak-address-save]');
