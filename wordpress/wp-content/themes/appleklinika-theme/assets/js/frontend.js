@@ -157,7 +157,7 @@
     var previousEnabled = null;
     var profileSaveDefaultInitialized = false;
     var taxPattern = '\\d{8}-\\d-\\d{2}';
-    var addressDetailLabels = ['Házszám', 'Emelet', 'Lépcsőház', 'Ajtó'];
+    var addressDetailLabels = ['Házszám', 'Lépcsőház', 'Emelet', 'Ajtó'];
 
     function taxNumberDigits(value) {
       return String(value || '').replace(/\D/g, '').slice(0, 11);
@@ -284,6 +284,18 @@
       });
     }
 
+    function clearBillingPersonalIdentity(billingSection) {
+      var billingForm = billingSection ? (billingSection.querySelector('.wc-block-components-address-form') || billingSection) : null;
+
+      ['first_name', 'last_name'].forEach(function (suffix) {
+        var input = checkoutAddressInputBySuffix(billingForm, suffix);
+
+        if (input && input.value !== '') {
+          setCheckoutFieldValue(input, '');
+        }
+      });
+    }
+
     function insertElementAfter(element, reference) {
       if (!element || !reference || !reference.parentNode) {
         return;
@@ -342,54 +354,36 @@
       field.input.setAttribute('aria-required', hidden ? 'false' : 'true');
     }
 
-    function syncBillingInternalNameValues(billingSection, companyField) {
+    function syncBillingCompanyValue(billingSection, companyField, enabled) {
       if (!billingSection) {
         return;
       }
 
-      var shippingSection = document.querySelector('#shipping-fields');
-      var shippingForm = shippingSection ? (shippingSection.querySelector('.wc-block-components-address-form') || shippingSection) : null;
       var billingForm = billingSection.querySelector('.wc-block-components-address-form') || billingSection;
-      var shippingFirst = checkoutAddressInputBySuffix(shippingForm, 'first_name');
-      var shippingLast = checkoutAddressInputBySuffix(shippingForm, 'last_name');
-      var billingFirst = checkoutAddressInputBySuffix(billingForm, 'first_name');
-      var billingLast = checkoutAddressInputBySuffix(billingForm, 'last_name');
-      var companyName = companyField && companyField.input ? normalizeText(companyField.input.value) : '';
-      var fallbackName = companyName || normalizeText(billingFirst && billingFirst.value) || normalizeText(billingLast && billingLast.value);
-      var firstValue = normalizeText(shippingFirst && shippingFirst.value) || fallbackName;
-      var lastValue = normalizeText(shippingLast && shippingLast.value) || fallbackName;
+      var standardCompany = checkoutAddressInputBySuffix(billingForm, 'company');
+      var value = enabled && companyField && companyField.input ? normalizeText(companyField.input.value) : '';
 
-      if (billingFirst && firstValue && billingFirst.value !== firstValue) {
-        setCheckoutFieldValue(billingFirst, firstValue);
+      if (standardCompany && standardCompany.value !== value) {
+        setCheckoutFieldValue(standardCompany, value);
       }
 
-      if (billingLast && lastValue && billingLast.value !== lastValue) {
-        setCheckoutFieldValue(billingLast, lastValue);
+      var companyWrapper = checkoutAddressFieldWrapper(standardCompany);
+      if (companyWrapper) {
+        companyWrapper.classList.add('ak-checkout-billing-standard-company');
+        companyWrapper.setAttribute('aria-hidden', 'true');
       }
     }
 
-    function bindBillingCompanyNameSync(billingSection, companyField) {
+    function bindBillingCompanyValueSync(billingSection, companyField) {
       if (!billingSection || !companyField || !companyField.input || billingSection.dataset.akBillingCompanyNameSyncBound === '1') {
         return;
       }
 
       billingSection.dataset.akBillingCompanyNameSyncBound = '1';
 
-      ['first_name', 'last_name'].forEach(function (suffix) {
-        var shippingInput = checkoutAddressInputBySuffix(document.querySelector('#shipping-fields'), suffix);
-
-        if (shippingInput) {
-          shippingInput.addEventListener('input', function () {
-            if (billingSection.classList.contains('ak-checkout-company-mode')) {
-              syncBillingInternalNameValues(billingSection, companyField);
-            }
-          });
-        }
-      });
-
       companyField.input.addEventListener('input', function () {
         if (billingSection.classList.contains('ak-checkout-company-mode')) {
-          syncBillingInternalNameValues(billingSection, companyField);
+          syncBillingCompanyValue(billingSection, companyField, true);
         }
       });
     }
@@ -430,28 +424,13 @@
       setFieldHidden(fields.firstName, companyMode);
       setFieldHidden(fields.lastName, companyMode);
 
-      if (companyMode) {
-        [fields.firstName, fields.lastName].forEach(function (field) {
-          if (field && field.input && field.input.dataset.akPersonalBillingStored !== '1') {
-            field.input.dataset.akPersonalBillingStored = '1';
-            field.input.dataset.akPersonalBillingValue = field.input.value || '';
-          }
-        });
-
-        syncBillingInternalNameValues(billingSection, companyField);
-      } else {
+      if (!companyMode) {
         [fields.firstName, fields.lastName].forEach(function (field) {
           if (field && field.wrapper) {
             field.wrapper.classList.remove('is-company-hidden');
             field.wrapper.setAttribute('aria-hidden', 'false');
             field.input.required = true;
             field.input.setAttribute('aria-required', 'true');
-
-            if (field.input.dataset.akPersonalBillingStored === '1') {
-              setCheckoutFieldValue(field.input, field.input.dataset.akPersonalBillingValue || '');
-              delete field.input.dataset.akPersonalBillingStored;
-              delete field.input.dataset.akPersonalBillingValue;
-            }
           }
         });
       }
@@ -509,9 +488,47 @@
       return true;
     }
 
+    function syncCheckoutAddressGridForSection(section) {
+      if (!section) {
+        return;
+      }
+
+      var form = section.querySelector('.wc-block-components-address-form') || section;
+      var fields = {
+        firstName: checkoutAddressInputField(form, 'first_name'),
+        lastName: checkoutAddressInputField(form, 'last_name'),
+        postcode: checkoutAddressInputField(form, 'postcode'),
+        city: checkoutAddressInputField(form, 'city'),
+        address: checkoutAddressInputField(form, 'address_1'),
+        phone: checkoutAddressInputField(form, 'phone')
+      };
+
+      form.classList.add('ak-checkout-address-grid');
+
+      [
+        ['firstName', 'ak-checkout-address-person-name'],
+        ['lastName', 'ak-checkout-address-person-name'],
+        ['postcode', 'ak-checkout-address-half-field'],
+        ['city', 'ak-checkout-address-half-field'],
+        ['address', 'ak-checkout-address-main-field'],
+        ['phone', 'ak-checkout-address-phone-field']
+      ].forEach(function (entry) {
+        var field = fields[entry[0]];
+
+        if (field && field.wrapper) {
+          field.wrapper.classList.add(entry[1]);
+        }
+      });
+    }
+
     function syncCheckoutAddressDetails() {
-      syncCheckoutAddressDetailsForSection(document.querySelector('#shipping-fields'));
-      syncCheckoutAddressDetailsForSection(document.querySelector('#billing-fields'));
+      var shippingSection = document.querySelector('#shipping-fields');
+      var billingSection = document.querySelector('#billing-fields');
+
+      syncCheckoutAddressDetailsForSection(shippingSection);
+      syncCheckoutAddressDetailsForSection(billingSection);
+      syncCheckoutAddressGridForSection(shippingSection);
+      syncCheckoutAddressGridForSection(billingSection);
     }
 
     function moveCompanyFieldsIntoBillingSection(purchaseField, companyField, taxField) {
@@ -605,7 +622,8 @@
       companyRow.classList.toggle('is-hidden', !enabled);
       companyRow.setAttribute('aria-hidden', enabled ? 'false' : 'true');
       billingSection.classList.toggle('ak-checkout-company-mode', enabled);
-      bindBillingCompanyNameSync(billingSection, companyField);
+      bindBillingCompanyValueSync(billingSection, companyField);
+      syncBillingCompanyValue(billingSection, companyField, enabled);
       syncBillingFormLayout(billingSection, companyField);
 
       return slot;
@@ -645,10 +663,15 @@
       enabled = Boolean(purchaseField.input.checked);
       setCompanyPurchaseState(purchaseField, companyField, taxField, enabled);
 
+      if (enabled && hiddenChanged) {
+        clearBillingPersonalIdentity(document.querySelector('#billing-fields'));
+      }
+
       if (!enabled && hiddenChanged) {
         clearCompanyCheckoutValues(companyField, taxField);
       }
 
+      document.dispatchEvent(new CustomEvent('appleklinika:checkout-company-mode-changed'));
       previousEnabled = enabled;
 
       return true;
@@ -687,6 +710,12 @@
       var element = document.createElement('div');
       element.textContent = String(value || '');
       return element.innerHTML;
+    }
+
+    function decodeHtmlEntities(value) {
+      var element = document.createElement('textarea');
+      element.innerHTML = String(value || '');
+      return element.value;
     }
 
     var checkoutStores = {
@@ -742,7 +771,9 @@
         return 'Még nincs megadva';
       }
 
-      var recipient = [address.company, address.first_name, address.last_name].filter(Boolean).join(' · ');
+      var recipient = address.company
+        ? address.company
+        : [address.first_name, address.last_name].filter(Boolean).join(' ');
       var locality = [address.postcode, address.city].filter(Boolean).join(' ');
       return [recipient, address.address_1, address.address_2, locality].filter(Boolean).join(', ');
     }
@@ -752,11 +783,21 @@
         var input = document.getElementById(prefix + '-' + name);
         return input ? input.value.trim() : '';
       };
+      var company = field('company');
+
+      if (prefix === 'billing') {
+        var companyToggle = document.getElementById('order-appleklinika-company_purchase');
+        var companyName = document.getElementById('order-appleklinika-company_name');
+
+        if (companyToggle && companyToggle.checked && companyName) {
+          company = companyName.value.trim();
+        }
+      }
 
       return {
         first_name: field('first_name'),
         last_name: field('last_name'),
-        company: field('company'),
+        company: company,
         address_1: field('address_1'),
         address_2: field('address_2'),
         postcode: field('postcode'),
@@ -781,9 +822,15 @@
       }
 
       var selectedInput = document.querySelector('#shipping-option input:checked');
-      var shippingLabel = selectedInput && selectedInput.closest('label')
-        ? selectedInput.closest('label').textContent.trim()
-        : '';
+      var selectedOption = selectedInput
+        ? selectedInput.closest('.wc-block-components-radio-control__option, label')
+        : null;
+      var primaryLabel = selectedOption
+        ? selectedOption.querySelector('.wc-block-components-radio-control__label')
+        : null;
+      var shippingLabel = primaryLabel
+        ? primaryLabel.textContent.trim()
+        : (selectedOption ? selectedOption.textContent.trim() : '');
 
       return shippingLabel || 'Még nincs kiválasztva';
     }
@@ -825,9 +872,9 @@
 
         return '<article class="ak-checkout-summary__item">'
           + '<div class="ak-checkout-summary__thumb">'
-          + (image ? '<img class="ak-checkout-summary__image" src="' + escapeHtml(image) + '" alt="">' : '')
-          + '<span class="ak-checkout-summary__qty">' + escapeHtml(quantity) + '</span></div>'
-          + '<div class="ak-checkout-summary__item-body"><h3 class="ak-checkout-summary__item-title">' + escapeHtml(item.name) + '</h3></div>'
+          + (image ? '<img class="ak-checkout-summary__image" src="' + escapeHtml(image) + '" alt="">' : '') + '</div>'
+          + '<div class="ak-checkout-summary__item-body"><h3 class="ak-checkout-summary__item-title">' + escapeHtml(decodeHtmlEntities(item.name)) + '</h3></div>'
+          + '<span class="ak-checkout-summary__qty" aria-label="Mennyiség">' + escapeHtml(quantity) + '</span>'
           + '<div class="ak-checkout-summary__item-aside"><div class="ak-checkout-summary__item-price">' + escapeHtml(formatStoreMoney(lineTotal, totals)) + '</div></div>'
           + '</article>';
       }).join('');
@@ -935,6 +982,8 @@
 
     var activeStep = 2;
     var syncFrame = null;
+    var lastFinalReviewHtml = '';
+    var summaryHome = null;
     var stepLabels = {
       1: 'Kosár',
       2: 'Szállítás és számlázás',
@@ -958,6 +1007,204 @@
       });
     }
 
+    function finalReviewEscapeHtml(value) {
+      var element = document.createElement('div');
+      element.textContent = String(value || '');
+      return element.innerHTML;
+    }
+
+    function checkoutFieldValue(id) {
+      var field = document.getElementById(id);
+      return field && typeof field.value === 'string' ? field.value.trim() : '';
+    }
+
+    function addressReview(prefix) {
+      var companyPurchase = prefix === 'billing'
+        && document.getElementById('order-appleklinika-company_purchase')
+        && document.getElementById('order-appleklinika-company_purchase').checked;
+      var companyName = companyPurchase ? checkoutFieldValue('order-appleklinika-company_name') : '';
+      var recipient = companyName || [checkoutFieldValue(prefix + '-last_name'), checkoutFieldValue(prefix + '-first_name')].filter(Boolean).join(' ');
+      var locality = [checkoutFieldValue(prefix + '-postcode'), checkoutFieldValue(prefix + '-city')].filter(Boolean).join(' ');
+      var street = [checkoutFieldValue(prefix + '-address_1'), checkoutFieldValue(prefix + '-appleklinika-house_number')].filter(Boolean).join(' ');
+      var location = [locality, street].filter(Boolean).join(', ');
+      var lines = [recipient, location, checkoutFieldValue(prefix + '-address_2')].filter(Boolean);
+
+      if (companyName) {
+        var taxNumber = checkoutFieldValue('order-appleklinika-tax_number');
+        if (taxNumber) {
+          lines.splice(1, 0, 'Adószám: ' + taxNumber);
+        }
+      }
+
+      return lines;
+    }
+
+    function currentShippingReview() {
+      var selected = document.querySelector('#shipping-option input:checked');
+      var option = selected ? selected.closest('.wc-block-components-radio-control__option, label') : null;
+      var title = option && option.querySelector('.wc-block-components-radio-control__label');
+      var price = option && option.querySelector('.wc-block-components-radio-control__secondary-label, .wc-block-components-radio-control__description');
+
+      return {
+        title: title ? title.textContent.trim() : (option ? option.textContent.trim() : 'Még nincs kiválasztva'),
+        price: price ? price.textContent.trim() : ''
+      };
+    }
+
+    function currentPaymentReview() {
+      var selected = document.querySelector('.wc-block-components-radio-control__input[name*="payment"]:checked, input[id*="payment-method-options"]:checked');
+      var label = selected && selected.id
+        ? document.querySelector('label[for="' + selected.id + '"] .wc-block-components-payment-method-label')
+        : null;
+
+      return label && label.textContent.trim()
+        ? label.textContent.trim()
+        : (selected ? selected.value : 'Még nincs kiválasztva');
+    }
+
+    function finalReviewAction(label, step) {
+      return '<button class="ak-checkout-final-review__edit" type="button" data-ak-checkout-review-step="' + String(step) + '" aria-label="' + finalReviewEscapeHtml(label) + '">' + finalReviewEscapeHtml(label) + '</button>';
+    }
+
+    function finalReviewValues(lines) {
+      var content = lines.filter(Boolean).map(function (line) {
+        return '<p>' + finalReviewEscapeHtml(line) + '</p>';
+      }).join('');
+
+      return '<div class="ak-checkout-final-review__values">' + (content || '<p>Még nincs megadva</p>') + '</div>';
+    }
+
+    function finalReviewIcon(icon) {
+      var icons = {
+        contact: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8c.8-3.2 3.2-5 7-5s6.2 1.8 7 5" /></svg>',
+        delivery: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6h11v10H3zM14 9h3.5L21 12.5V16h-7zM7 19a1.7 1.7 0 1 0 0-3.4A1.7 1.7 0 0 0 7 19Zm10 0a1.7 1.7 0 1 0 0-3.4A1.7 1.7 0 0 0 17 19Z" /></svg>',
+        billing: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 21V4h10v17M3 21h18M8 8h4M8 12h4M8 16h4M17 8h2M17 12h2M17 16h2" /></svg>',
+        payment: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 10h18M7 15h4" /></svg>'
+      };
+
+      return '<span class="ak-checkout-final-review__marker">' + (icons[icon] || '') + '</span>';
+    }
+
+    function finalReviewActions(actions) {
+      return '<div class="ak-checkout-final-review__actions">' + actions.map(function (action) {
+        return finalReviewAction(action.label, action.step);
+      }).join('') + '</div>';
+    }
+
+    function finalReviewTimelineItem(icon, title, content, actions) {
+      return '<section class="ak-checkout-final-review__timeline-item">'
+        + finalReviewIcon(icon)
+        + '<div class="ak-checkout-final-review__timeline-content"><h3>' + finalReviewEscapeHtml(title) + '</h3>'
+        + content
+        + finalReviewActions(actions) + '</div></section>';
+    }
+
+    function finalReviewNote(note) {
+      return '<section class="ak-checkout-final-review__note"><h3>Megjegyzés</h3>'
+        + finalReviewValues([note])
+        + finalReviewActions([{ label: 'Megjegyzés módosítása', step: 2 }]) + '</section>';
+    }
+
+    function shippingReviewLines(shippingMethod) {
+      var price = String(shippingMethod.price || '').trim();
+      var isFree = /(^|\s)0\s*(?:ft|huf)\b|ingyen/i.test(price);
+
+      return [shippingMethod.title, price && !isFree && price !== shippingMethod.title ? price : ''].filter(Boolean);
+    }
+
+    function finalReviewHtml() {
+      var contact = [checkoutFieldValue('email'), checkoutFieldValue('billing-phone') || checkoutFieldValue('shipping-phone')].filter(Boolean);
+      var billing = addressReview('billing');
+      var shipping = addressReview('shipping');
+      var shippingMethod = currentShippingReview();
+      var fulfilment = shippingReviewLines(shippingMethod);
+      var payment = [currentPaymentReview()];
+      var note = document.querySelector('#order-notes textarea');
+      var noteHtml = note && note.value.trim()
+        ? finalReviewNote(note.value.trim())
+        : '';
+
+      return '<section class="ak-checkout-final-review" aria-labelledby="ak-checkout-final-review-title">'
+        + '<div class="ak-checkout-final-review__intro"><h2 id="ak-checkout-final-review-title">Rendelés áttekintése</h2><p>Ellenőrizd az adatokat a véglegesítés előtt.</p></div>'
+        + '<div class="ak-checkout-final-review__timeline">'
+        + finalReviewTimelineItem('contact', 'Kapcsolattartás', finalReviewValues(contact), [{ label: 'Módosítás', step: 2 }])
+        + finalReviewTimelineItem('delivery', 'Kézbesítés',
+          finalReviewValues(shipping)
+          + '<div class="ak-checkout-final-review__delivery-method"><p>Szállítási mód</p>' + finalReviewValues(fulfilment) + '</div>',
+          [{ label: 'Cím módosítása', step: 2 }, { label: 'Szállítás módosítása', step: 3 }])
+        + finalReviewTimelineItem('billing', 'Számlázási adatok', finalReviewValues(billing.length ? billing : shipping), [{ label: 'Módosítás', step: 2 }])
+        + finalReviewTimelineItem('payment', 'Fizetési mód', finalReviewValues(payment), [{ label: 'Módosítás', step: 3 }])
+        + noteHtml
+        + '</div></section>';
+    }
+
+    function syncCheckoutFinalReview() {
+      var terms = document.querySelector('.wc-block-checkout__terms');
+      var reviewSlot = null;
+
+      if (!terms || !terms.parentNode) {
+        return null;
+      }
+
+      Array.prototype.some.call(terms.parentNode.children, function (child) {
+        if (child.classList && child.classList.contains('ak-checkout-final-review-slot')) {
+          reviewSlot = child;
+          return true;
+        }
+        return false;
+      });
+
+      if (!reviewSlot) {
+        reviewSlot = document.createElement('div');
+        reviewSlot.className = 'ak-checkout-final-review-slot';
+        terms.parentNode.insertBefore(reviewSlot, terms);
+      }
+
+      var html = finalReviewHtml();
+      if (html !== lastFinalReviewHtml || !reviewSlot.querySelector('.ak-checkout-final-review')) {
+        reviewSlot.innerHTML = html;
+        lastFinalReviewHtml = html;
+      }
+
+      reviewSlot.querySelectorAll('[data-ak-checkout-review-step]').forEach(function (button) {
+        button.onclick = function () {
+          setActiveStep(Number(button.getAttribute('data-ak-checkout-review-step')) || 2);
+        };
+      });
+
+      return reviewSlot;
+    }
+
+    function positionMobileFinalReviewSummary() {
+      var summary = document.querySelector('.ak-checkout-summary-slot');
+      var terms = document.querySelector('.wc-block-checkout__terms');
+      var mobileStepFour = activeStep === 4 && window.matchMedia('(max-width: 1023px)').matches;
+
+      if (!summary || !terms || !terms.parentNode) {
+        return;
+      }
+
+      if (mobileStepFour) {
+        if (!summaryHome) {
+          summaryHome = { parent: summary.parentNode, nextSibling: summary.nextSibling };
+        }
+        if (summary.parentNode !== terms.parentNode || summary.nextSibling !== terms) {
+          terms.parentNode.insertBefore(summary, terms);
+        }
+        summary.classList.add('ak-checkout-summary-slot--final-review');
+        return;
+      }
+
+      if (summaryHome && summaryHome.parent) {
+        if (summaryHome.nextSibling && summaryHome.nextSibling.parentNode === summaryHome.parent) {
+          summaryHome.parent.insertBefore(summary, summaryHome.nextSibling);
+        } else {
+          summaryHome.parent.appendChild(summary);
+        }
+      }
+      summary.classList.remove('ak-checkout-summary-slot--final-review');
+    }
+
     function checkoutStepTargets() {
       var companyToggle = document.querySelector('.ak-checkout-company-toggle');
       var companyStep = companyToggle ? companyToggle.closest('.wc-block-components-checkout-step') : null;
@@ -976,6 +1223,7 @@
           closestCheckoutStep('#payment-method')
         ]),
         4: uniqueElements([
+          document.querySelector('.ak-checkout-final-review-slot'),
           document.querySelector('.wc-block-checkout__terms'),
           document.querySelector('.wc-block-components-checkout-place-order-button')
         ]),
@@ -1022,6 +1270,61 @@
         return entry.error.message || entry.error.hidden === false;
       });
     }
+
+    function validationIdentity(entry) {
+      return (String(entry.key || '') + ' ' + String((entry.error || {}).message || '')).toLowerCase();
+    }
+
+    function billingPersonalNameValidation(entry) {
+      var identity = validationIdentity(entry);
+
+      return /billing[-_](first_name|last_name)/.test(identity)
+        || (/(keresztnév|vezetéknév|first.?name|last.?name)/.test(identity) && !/(shipping|szállítás)/.test(identity));
+    }
+
+    function companyBillingValidation(entry) {
+      var identity = validationIdentity(entry);
+
+      return /(appleklinika.*(company|tax)|(company|tax).*appleklinika|cégnév|adószám)/.test(identity);
+    }
+
+    function clearInactiveBillingValidationErrors() {
+      var validation = checkoutValidationApi();
+
+      if (!validation || !validation.dispatch || typeof validation.dispatch.clearValidationError !== 'function') {
+        return;
+      }
+
+      var companyToggle = document.getElementById('order-appleklinika-company_purchase');
+      var companyMode = Boolean(companyToggle && companyToggle.checked);
+      var cleared = false;
+
+      validationErrors().forEach(function (entry) {
+        var inactive = companyMode
+          ? billingPersonalNameValidation(entry)
+          : companyBillingValidation(entry);
+
+        if (inactive) {
+          validation.dispatch.clearValidationError(entry.key);
+          cleared = true;
+        }
+      });
+
+      if (cleared) {
+        window.setTimeout(function () {
+          var message = document.querySelector('.ak-checkout-step-validation-message');
+          var currentErrors = validationErrors().filter(function (entry) {
+            return validationErrorStep(entry) === activeStep;
+          });
+
+          if (message && currentErrors.length === 0) {
+            message.textContent = '';
+          }
+        }, 0);
+      }
+    }
+
+    document.addEventListener('appleklinika:checkout-company-mode-changed', clearInactiveBillingValidationErrors);
 
     function validationErrorStep(entry) {
       var identity = (entry.key + ' ' + String(entry.error.message || '')).toLowerCase();
@@ -1102,6 +1405,7 @@
 
       validation.dispatch.showAllValidationErrors();
       window.setTimeout(function () {
+        clearInactiveBillingValidationErrors();
         var errors = validationErrors();
         var currentErrors = errors.filter(function (entry) {
           return validationErrorStep(entry) === activeStep;
@@ -1259,6 +1563,20 @@
       }
     }
 
+    function positionStep3Controls(targets) {
+      var controls = document.querySelector('[data-checkout-step-controls="3"]');
+      var step3Targets = targets[3] || [];
+      var lastMethodSection = step3Targets[step3Targets.length - 1];
+
+      if (!controls || !lastMethodSection || !lastMethodSection.parentNode) {
+        return;
+      }
+
+      if (controls.previousElementSibling !== lastMethodSection) {
+        lastMethodSection.parentNode.insertBefore(controls, lastMethodSection.nextSibling);
+      }
+    }
+
     function syncCheckoutStepper() {
       var checkoutBlock = document.querySelector('.wp-block-woocommerce-checkout');
 
@@ -1267,14 +1585,17 @@
       }
 
       var stepper = createStepper(checkoutBlock);
+      syncCheckoutFinalReview();
       var targets = checkoutStepTargets();
       var allTargets = uniqueElements(targets[2].concat(targets[3]).concat(targets[4]));
 
       createNavigationControls(targets);
+      positionStep3Controls(targets);
       document.body.classList.add('ak-checkout-multistep');
       document.body.classList.remove('ak-checkout-step-2', 'ak-checkout-step-3', 'ak-checkout-step-4');
       document.body.classList.add('ak-checkout-step-' + activeStep);
       document.body.setAttribute('data-ak-checkout-step', String(activeStep));
+      positionMobileFinalReviewSummary();
 
       allTargets.forEach(function (target) {
         var visible = targets[activeStep].indexOf(target) !== -1;
@@ -1337,6 +1658,10 @@
       childList: true,
       subtree: true
     });
+
+    document.addEventListener('change', scheduleCheckoutStepperSync);
+    document.addEventListener('input', scheduleCheckoutStepperSync);
+    window.addEventListener('resize', scheduleCheckoutStepperSync);
   }
 
   function initCheckoutPaymentAvailabilityGuard() {

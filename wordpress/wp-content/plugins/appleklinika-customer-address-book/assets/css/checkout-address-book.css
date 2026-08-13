@@ -1,24 +1,31 @@
 .ak-checkout-address-selector {
     display: grid;
-    gap: .7rem;
-    margin: 0 0 1.25rem;
-    padding: 1rem;
-    border: 1px solid #dbe3ee;
-    border-radius: .75rem;
-    background: #f8fafc;
+    gap: .4rem;
+    margin: 0 0 .75rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
 }
 
 .ak-checkout-address-selector__caption {
     margin: 0;
-    color: #172033;
-    font-size: 1rem;
+    color: #475467;
+    font-size: .8125rem;
     font-weight: 700;
 }
 
 .ak-checkout-address-selector select,
 .ak-checkout-address-selector input[type="text"] {
-    min-height: 44px;
+    box-sizing: border-box;
+    min-height: 50px;
     width: 100%;
+    padding: 0 .8rem;
+    border: 1px solid #d9e1eb;
+    border-radius: .75rem;
+    color: #172033;
+    background: #fff;
+    font: inherit;
+    font-weight: 600;
 }
 
 .ak-checkout-address-selector__notice {
@@ -30,13 +37,18 @@
 
 .ak-checkout-address-selector__save {
     display: grid;
-    gap: .65rem;
-    padding-top: .2rem;
+    gap: .5rem;
+    padding: .6rem 0 0;
+    border-top: 1px solid rgba(227, 232, 239, .9);
 }
 
 .ak-checkout-address-selector__save [data-ak-address-save-details] {
     display: grid;
-    gap: .65rem;
+    gap: .5rem;
+}
+
+.ak-checkout-address-selector__save [data-ak-address-save-details][hidden] {
+    display: none !important;
 }
 
 .ak-checkout-address-selector__save > label,
@@ -45,7 +57,9 @@
     align-items: center;
     min-height: 44px;
     gap: .55rem;
-    font-weight: 700;
+    color: #667085;
+    font-size: .8125rem;
+    font-weight: 650;
     cursor: pointer;
 }
 
@@ -62,6 +76,14 @@
     align-items: stretch;
 }
 
+.ak-checkout-address-selector.has-saved-address {
+    margin-bottom: .9rem;
+}
+
+.ak-checkout-address-selector.has-saved-address .ak-checkout-address-selector__save {
+    display: none;
+}
+
 .ak-checkout-address-selector.is-updating {
     opacity: .65;
 }
@@ -69,6 +91,6 @@
 @media (max-width: 479px) {
     .ak-checkout-address-selector {
         margin-inline: 0;
-        padding: .85rem;
+        margin-bottom: .9rem;
     }
 }

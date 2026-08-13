@@ -185,19 +185,36 @@
     padding: 0;
 }
 
+.ak-address-form__billing-type,
+.ak-address-form__identity-group {
+    grid-column: 1 / -1;
+    min-width: 0;
+    margin: 0;
+    border: 0;
+    padding: 0;
+}
+
+.ak-address-form__billing-type legend,
+.ak-address-form__identity-group legend {
+    padding: 0;
+    font-weight: 800;
+}
+
 .ak-address-form__purposes legend {
     padding: 0;
     font-weight: 800;
 }
 
 .ak-address-form__purpose-options,
-.ak-address-form__default-options {
+.ak-address-form__default-options,
+.ak-address-form__identity-options {
     display: flex;
     flex-wrap: wrap;
     gap: .5rem 1rem;
 }
 
 .ak-address-form__purposes label,
+.ak-address-form__identity-options label,
 .ak-address-form__default {
     display: inline-flex;
     align-items: center;
@@ -209,11 +226,31 @@
 }
 
 .ak-address-form__purposes input,
+.ak-address-form__identity-options input,
 .ak-address-form__default input {
     flex: 0 0 auto;
     width: 20px;
     min-height: 20px;
     margin: 0;
+}
+
+.ak-address-form__identity-group {
+    padding: .9rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #f8fafc;
+}
+
+.ak-address-form__company-identity {
+    border-color: rgba(214, 0, 28, .14);
+    background: rgba(214, 0, 28, .025);
+}
+
+.ak-address-form__identity-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: .65rem;
 }
 
 .ak-address-form__defaults {
@@ -248,7 +285,8 @@
 @media (max-width: 767px) {
     .ak-address-book__header,
     .ak-address-book__grid,
-    .ak-address-form__grid {
+    .ak-address-form__grid,
+    .ak-address-form__identity-grid {
         display: grid;
         grid-template-columns: minmax(0, 1fr);
     }
