@@ -101,6 +101,38 @@ try {
     wp_set_current_user($owner);
     WC()->customer = new WC_Customer($owner, true);
     $controller = new CheckoutAddressController($service, $selector, new WooUserMetaProjection());
+    $extensionSchema = $controller->storeApiSchema();
+    $expectedExtensionKeys = ['enabled', 'needs_shipping', 'billing', 'shipping', 'selection'];
+    $test->assert(array_keys($extensionSchema) === $expectedExtensionKeys, 'Store API ARRAY_A schema returns only Apple Klinika extension properties, not a root schema wrapper.');
+    foreach ($expectedExtensionKeys as $key) {
+        $test->assert(is_array($extensionSchema[$key] ?? null), 'Store API extension schema top-level ' . $key . ' entry is a schema-property array.');
+    }
+    $test->assert(! isset($extensionSchema['description'], $extensionSchema['type'], $extensionSchema['properties']), 'Store API ARRAY_A schema cannot reintroduce root metadata as extension properties.');
+    $test->assert(
+        $extensionSchema['enabled']['type'] === 'boolean'
+        && $extensionSchema['needs_shipping']['type'] === 'boolean'
+        && $extensionSchema['billing']['type'] === 'array'
+        && $extensionSchema['shipping']['type'] === 'array'
+        && $extensionSchema['selection']['type'] === 'object',
+        'Store API extension schema types match the checkout address-book data contract.'
+    );
+    $controller->registerStoreApi();
+    $extendSchema = \Automattic\WooCommerce\StoreApi\StoreApi::container()->get(\Automattic\WooCommerce\StoreApi\Schemas\ExtendSchema::class);
+    $registeredSchema = $extendSchema->get_endpoint_schema(\Automattic\WooCommerce\StoreApi\Schemas\V1\CartSchema::IDENTIFIER);
+    $test->assert(isset($registeredSchema->{'appleklinika/address-book'}) && is_array($registeredSchema->{'appleklinika/address-book'}), 'Real WooCommerce Store API registers the Apple Klinika cart extension schema without an exception.');
+    $cartSchema = \Automattic\WooCommerce\StoreApi\StoreApi::container()->get(\Automattic\WooCommerce\StoreApi\SchemaController::class)->get(\Automattic\WooCommerce\StoreApi\Schemas\V1\CartSchema::IDENTIFIER);
+    $publicCartSchema = $cartSchema->get_public_item_schema();
+    $test->assert(isset($publicCartSchema['properties']['extensions']['properties']['appleklinika/address-book']['properties']['enabled']), 'Real WooCommerce CartSchema public schema contains the valid Apple Klinika extension properties without string-offset errors.');
+    $storeApiData = $controller->storeApiData();
+    $test->assert(
+        isset($storeApiData['enabled'], $storeApiData['needs_shipping'], $storeApiData['billing'], $storeApiData['shipping'], $storeApiData['selection'])
+        && is_bool($storeApiData['enabled'])
+        && is_bool($storeApiData['needs_shipping'])
+        && is_array($storeApiData['billing'])
+        && is_array($storeApiData['shipping'])
+        && is_array($storeApiData['selection']),
+        'Store API data preserves the supported enabled, needs_shipping, billing, shipping and selection extension contract.'
+    );
     $controller->updateSelection([
         'billing' => ['mode' => 'saved', 'key' => $billing->key(), 'version' => $billing->version()],
     ]);
