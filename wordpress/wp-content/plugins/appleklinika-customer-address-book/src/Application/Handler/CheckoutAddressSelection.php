@@ -55,14 +55,18 @@ final class CheckoutAddressSelection
     }
 
     /** @return array<string, string> */
-    public function checkoutFields(Address $address): array
+    public function checkoutFields(Address $address, string $purpose = 'billing'): array
     {
         $data = $address->toArray();
+        $isCompanyBilling = $purpose === 'billing' && $address->isCompanyBilling();
 
         return [
-            'first_name' => (string) $data['first_name'],
-            'last_name' => (string) $data['last_name'],
-            'company' => (string) $data['company_name'],
+            // A company billing identity must never leak legacy recipient
+            // names into the invoice identity. Shipping receives its own
+            // physical recipient mapping from the same address record.
+            'first_name' => $isCompanyBilling ? '' : (string) $data['first_name'],
+            'last_name' => $isCompanyBilling ? '' : (string) $data['last_name'],
+            'company' => $isCompanyBilling ? (string) $data['company_name'] : '',
             'address_1' => (string) $data['address_1'],
             'address_2' => (string) $data['address_2'],
             'city' => (string) $data['city'],
@@ -73,9 +77,9 @@ final class CheckoutAddressSelection
             'appleklinika/staircase' => (string) $data['staircase'],
             'appleklinika/floor' => (string) $data['floor'],
             'appleklinika/door' => (string) $data['door'],
-            'appleklinika/company_purchase' => (string) $data['company_name'] !== '' ? '1' : '',
-            'appleklinika/company_name' => (string) $data['company_name'],
-            'appleklinika/tax_number' => (string) $data['tax_number'],
+            'appleklinika/company_purchase' => $isCompanyBilling ? '1' : '',
+            'appleklinika/company_name' => $isCompanyBilling ? (string) $data['company_name'] : '',
+            'appleklinika/tax_number' => $isCompanyBilling ? (string) $data['tax_number'] : '',
         ];
     }
 
@@ -95,7 +99,7 @@ final class CheckoutAddressSelection
                 'name' => trim((string) ($data['company_name'] !== '' ? $data['company_name'] : $data['first_name'] . ' ' . $data['last_name'])),
                 'preview' => trim((string) $data['postcode'] . ' ' . (string) $data['city'] . ', ' . (string) $data['address_1'] . ' ' . (string) $data['house_number']),
                 'is_default' => $default !== null && $default->key() === $address->key(),
-                'fields' => $this->checkoutFields($address),
+                'fields' => $this->checkoutFields($address, $purpose),
             ];
         }
         return $result;

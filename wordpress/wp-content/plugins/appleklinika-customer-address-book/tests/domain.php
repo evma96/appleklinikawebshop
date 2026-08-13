@@ -35,6 +35,42 @@ $contactFree = Address::create(42, str_repeat('c', 24), $test->addressData([
 ]));
 $test->assert($contactFree->canBeDefault('billing'), 'active address does not require profile contact values');
 
+$companyBilling = Address::create(42, str_repeat('b', 24), $test->addressData([
+    'capabilities' => Address::BILLING,
+    'first_name' => '',
+    'last_name' => '',
+    'company_name' => 'Teszt Kft.',
+    'tax_number' => '12345678-1-23',
+]));
+$test->assert($companyBilling->isCompanyBilling(), 'billing company identity is derived from canonical company data');
+$test->assert($companyBilling->toArray()['first_name'] === '' && $companyBilling->toArray()['last_name'] === '', 'billing-only company does not need a personal invoice name');
+
+$companyShippingRejected = false;
+try {
+    Address::create(42, str_repeat('s', 24), $test->addressData([
+        'capabilities' => Address::BOTH,
+        'first_name' => '',
+        'last_name' => '',
+        'company_name' => 'Teszt Kft.',
+        'tax_number' => '12345678-1-23',
+    ]));
+} catch (AddressException) {
+    $companyShippingRejected = true;
+}
+$test->assert($companyShippingRejected, 'company billing plus shipping requires a separate delivery recipient');
+
+$shippingCompanyRejected = false;
+try {
+    Address::create(42, str_repeat('h', 24), $test->addressData([
+        'capabilities' => Address::SHIPPING,
+        'company_name' => 'Teszt Kft.',
+        'tax_number' => '12345678-1-23',
+    ]));
+} catch (AddressException) {
+    $shippingCompanyRejected = true;
+}
+$test->assert($shippingCompanyRejected, 'shipping-only addresses cannot carry company invoice data');
+
 $invalid = [
     ['label' => '', 'message' => 'empty label'],
     ['label' => str_repeat('a', 81), 'message' => 'label max length'],

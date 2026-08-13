@@ -60,6 +60,10 @@ final class LegacyAddressImporter
                 ? Address::STATUS_ACTIVE
                 : Address::STATUS_NEEDS_REVIEW;
             $candidate['legacy_fingerprint'] = $this->fingerprint($candidate);
+            if ($this->matchesCanonicalAddress($customerId, $candidate)) {
+                $summary['skipped']++;
+                continue;
+            }
             if ($this->addresses->findByLegacyFingerprint($customerId, $candidate['legacy_fingerprint']) !== null) {
                 $summary['skipped']++;
                 continue;
@@ -162,6 +166,96 @@ final class LegacyAddressImporter
         unset($data['tax_number'], $data['label'], $data['capabilities']);
         ksort($data);
         return wp_json_encode($data) ?: '';
+    }
+
+    /** @param array<string, mixed> $candidate */
+    private function matchesCanonicalAddress(int $customerId, array $candidate): bool
+    {
+        $identity = $this->identity($candidate);
+        foreach ($this->addresses->listForCustomer($customerId) as $address) {
+            $canonical = $address->toArray();
+            if ($this->identity($canonical) === $identity) {
+                return true;
+            }
+            if (($candidate['capabilities'] ?? 0) === Address::BILLING
+                && ($candidate['company_name'] ?? '') !== ''
+                && $this->companyBillingProjectionIdentity($canonical) === $this->companyBillingProjectionIdentity($candidate)) {
+                return true;
+            }
+            if (($candidate['capabilities'] ?? 0) === Address::SHIPPING
+                && ($candidate['company_name'] ?? '') === ''
+                && ($candidate['tax_number'] ?? '') === ''
+                && $this->shippingProjectionIdentity($canonical) === $this->shippingProjectionIdentity($candidate)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** @param array<string, mixed> $data */
+    private function identity(array $data): string
+    {
+        $normalized = $this->normalize([
+            'first_name' => (string) ($data['first_name'] ?? ''),
+            'last_name' => (string) ($data['last_name'] ?? ''),
+            'company_name' => (string) ($data['company_name'] ?? ''),
+            'tax_number' => (string) ($data['tax_number'] ?? ''),
+            'country' => (string) ($data['country'] ?? ''),
+            'state' => (string) ($data['state'] ?? ''),
+            'postcode' => (string) ($data['postcode'] ?? ''),
+            'city' => (string) ($data['city'] ?? ''),
+            'address_1' => (string) ($data['address_1'] ?? ''),
+            'address_2' => (string) ($data['address_2'] ?? ''),
+            'house_number' => (string) ($data['house_number'] ?? ''),
+            'staircase' => (string) ($data['staircase'] ?? ''),
+            'floor' => (string) ($data['floor'] ?? ''),
+            'door' => (string) ($data['door'] ?? ''),
+        ]);
+        ksort($normalized);
+        return wp_json_encode($normalized) ?: '';
+    }
+
+    /** @param array<string, mixed> $data */
+    private function companyBillingProjectionIdentity(array $data): string
+    {
+        $normalized = $this->normalize([
+            'company_name' => (string) ($data['company_name'] ?? ''),
+            'tax_number' => (string) ($data['tax_number'] ?? ''),
+            'country' => (string) ($data['country'] ?? ''),
+            'state' => (string) ($data['state'] ?? ''),
+            'postcode' => (string) ($data['postcode'] ?? ''),
+            'city' => (string) ($data['city'] ?? ''),
+            'address_1' => (string) ($data['address_1'] ?? ''),
+            'address_2' => (string) ($data['address_2'] ?? ''),
+            'house_number' => (string) ($data['house_number'] ?? ''),
+            'staircase' => (string) ($data['staircase'] ?? ''),
+            'floor' => (string) ($data['floor'] ?? ''),
+            'door' => (string) ($data['door'] ?? ''),
+        ]);
+        ksort($normalized);
+        return wp_json_encode($normalized) ?: '';
+    }
+
+    /** @param array<string, mixed> $data */
+    private function shippingProjectionIdentity(array $data): string
+    {
+        $normalized = $this->normalize([
+            'first_name' => (string) ($data['first_name'] ?? ''),
+            'last_name' => (string) ($data['last_name'] ?? ''),
+            'country' => (string) ($data['country'] ?? ''),
+            'state' => (string) ($data['state'] ?? ''),
+            'postcode' => (string) ($data['postcode'] ?? ''),
+            'city' => (string) ($data['city'] ?? ''),
+            'address_1' => (string) ($data['address_1'] ?? ''),
+            'address_2' => (string) ($data['address_2'] ?? ''),
+            'house_number' => (string) ($data['house_number'] ?? ''),
+            'staircase' => (string) ($data['staircase'] ?? ''),
+            'floor' => (string) ($data['floor'] ?? ''),
+            'door' => (string) ($data['door'] ?? ''),
+        ]);
+        ksort($normalized);
+        return wp_json_encode($normalized) ?: '';
     }
 
     /** @param array<string, mixed> $data */

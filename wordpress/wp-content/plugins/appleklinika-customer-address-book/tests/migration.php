@@ -121,6 +121,38 @@ try {
     $inverseRepeat = $importer->import($inverseRetryUser);
     $test->assert($inverseRepeat['skipped'] === 1 && $inverseRepeat['invalid'] === 1 && $inverseRepeat['already_migrated'] === 0, 'invalid billing remains retryable without duplicating shipping');
 
+    $projectedCompanyUser = $test->createUser('migration-projected-company');
+    $users[] = $projectedCompanyUser;
+    $projectedCompany = $service->create($projectedCompanyUser, $test->addressData([
+        'label' => 'Kanonikus céges',
+        'capabilities' => \AppleKlinika\CustomerAddressBook\Domain\AddressBook\Address::BOTH,
+        'first_name' => 'Szállítási',
+        'last_name' => 'Címzett',
+        'company_name' => 'Vetített Minta Kft.',
+        'tax_number' => '12345678-1-23',
+        'city' => 'Szeged',
+    ]), true, true);
+    delete_user_meta($projectedCompanyUser, LegacyAddressImporter::USER_META_VERSION);
+    $companyProjectionImport = $importer->import($projectedCompanyUser);
+    $companyAfterImport = $service->list($projectedCompanyUser);
+    $test->assert($companyProjectionImport['imported'] === 0 && $companyProjectionImport['skipped'] >= 1, 'projected combined company default is not re-imported as legacy data');
+    $test->assert(count($companyAfterImport) === 1 && $companyAfterImport[0]->key() === $projectedCompany->key() && $companyAfterImport[0]->supports('billing') && $companyAfterImport[0]->supports('shipping'), 'projected company import preserves the original combined canonical address and capabilities');
+    $companyRepeat = $importer->import($projectedCompanyUser);
+    $test->assert($companyRepeat['already_migrated'] === 1 && count($service->list($projectedCompanyUser)) === 1, 'repeated account migration after projected company default remains idempotent');
+
+    $projectedPersonalUser = $test->createUser('migration-projected-personal');
+    $users[] = $projectedPersonalUser;
+    $projectedPersonal = $service->create($projectedPersonalUser, $test->addressData([
+        'label' => 'Kanonikus személyes',
+        'capabilities' => \AppleKlinika\CustomerAddressBook\Domain\AddressBook\Address::BOTH,
+        'city' => 'Pécs',
+    ]), true, true);
+    delete_user_meta($projectedPersonalUser, LegacyAddressImporter::USER_META_VERSION);
+    $personalProjectionImport = $importer->import($projectedPersonalUser);
+    $personalAfterImport = $service->list($projectedPersonalUser);
+    $test->assert($personalProjectionImport['imported'] === 0 && $personalProjectionImport['skipped'] >= 1, 'projected combined personal default is not re-imported as legacy data');
+    $test->assert(count($personalAfterImport) === 1 && $personalAfterImport[0]->key() === $projectedPersonal->key() && $personalAfterImport[0]->supports('billing') && $personalAfterImport[0]->supports('shipping'), 'projected personal import preserves the original combined canonical address and capabilities');
+
     $allInvalidUser = $test->createUser('migration-all-invalid');
     $users[] = $allInvalidUser;
     $set($allInvalidUser, 'billing', str_repeat('C', 101));

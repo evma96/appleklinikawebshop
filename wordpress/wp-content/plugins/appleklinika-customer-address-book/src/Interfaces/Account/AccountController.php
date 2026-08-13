@@ -201,6 +201,7 @@ final class AccountController
             echo '<div class="ak-address-card__heading"><h3>' . esc_html((string) $data['label']) . '</h3><div class="ak-address-card__badges">';
             if ($address->supports('billing')) echo '<span>Számlázási</span>';
             if ($address->supports('shipping')) echo '<span>Szállítási</span>';
+            if ($address->supports('billing')) echo '<span class="ak-address-card__identity">' . ($address->isCompanyBilling() ? 'Céges számlázás' : 'Magánszemély számlázás') . '</span>';
             if ($isBilling) echo '<span class="is-default">Alapértelmezett számlázási</span>';
             if ($isShipping) echo '<span class="is-default">Alapértelmezett szállítási</span>';
             if ($address->status() === Address::STATUS_NEEDS_REVIEW) echo '<span class="is-review">Ellenőrzést igényel</span>';
@@ -231,6 +232,11 @@ final class AccountController
     private function renderForm(?Address $address): void
     {
         $data = $address?->toArray() ?? ['label' => '', 'capabilities' => Address::BOTH, 'first_name' => '', 'last_name' => '', 'company_name' => '', 'tax_number' => '', 'country' => 'HU', 'state' => '', 'postcode' => '', 'city' => '', 'address_1' => '', 'address_2' => '', 'house_number' => '', 'staircase' => '', 'floor' => '', 'door' => ''];
+        $capabilities = (int) $data['capabilities'];
+        $isBilling = ($capabilities & Address::BILLING) !== 0;
+        $isShipping = ($capabilities & Address::SHIPPING) !== 0;
+        $isCompanyBilling = $address?->isCompanyBilling() ?? false;
+        $showRecipient = ! $isBilling || ! $isCompanyBilling || $isShipping;
         $operation = $address === null ? 'create' : 'update';
         echo '<header class="ak-address-book__header"><div><p class="ak-address-book__kicker">Címadatok</p><h2>' . ($address === null ? 'Új cím' : 'Cím szerkesztése') . '</h2></div></header>';
         echo '<form class="ak-address-form" method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
@@ -242,12 +248,21 @@ final class AccountController
         echo '<div class="ak-address-form__grid">';
         $this->field('label', 'Cím elnevezése', (string) $data['label'], true, 'text', 80);
         echo '<fieldset class="ak-address-form__purposes"><legend class="ak-address-form__label-text">Felhasználás</legend><div class="ak-address-form__purpose-options">';
-        echo '<label for="purpose_billing"><input id="purpose_billing" type="checkbox" name="purpose_billing" value="1" ' . checked(((int) $data['capabilities'] & Address::BILLING) > 0, true, false) . '><span>Számlázási</span></label>';
-        echo '<label for="purpose_shipping"><input id="purpose_shipping" type="checkbox" name="purpose_shipping" value="1" ' . checked(((int) $data['capabilities'] & Address::SHIPPING) > 0, true, false) . '><span>Szállítási</span></label></div></fieldset>';
-        $this->field('first_name', 'Keresztnév', (string) $data['first_name']);
-        $this->field('last_name', 'Vezetéknév', (string) $data['last_name']);
-        $this->field('company_name', 'Cégnév', (string) $data['company_name']);
-        $this->field('tax_number', 'Magyar adószám', (string) $data['tax_number']);
+        echo '<label for="purpose_billing"><input id="purpose_billing" type="checkbox" name="purpose_billing" value="1" ' . checked($isBilling, true, false) . '><span>Számlázási</span></label>';
+        echo '<label for="purpose_shipping"><input id="purpose_shipping" type="checkbox" name="purpose_shipping" value="1" ' . checked($isShipping, true, false) . '><span>Szállítási</span></label></div></fieldset>';
+        echo '<fieldset class="ak-address-form__billing-type" data-ak-billing-type' . ($isBilling ? '' : ' hidden') . '><legend class="ak-address-form__label-text">Számlázás típusa</legend><div class="ak-address-form__identity-options">';
+        echo '<label><input type="radio" name="billing_identity_type" value="personal" ' . checked(! $isCompanyBilling, true, false) . '><span>Magánszemély</span></label>';
+        echo '<label><input type="radio" name="billing_identity_type" value="company" ' . checked($isCompanyBilling, true, false) . '><span>Cég</span></label>';
+        echo '</div></fieldset>';
+        echo '<fieldset class="ak-address-form__identity-group ak-address-form__company-identity" data-ak-company-identity' . ($isBilling && $isCompanyBilling ? '' : ' hidden') . '><legend class="ak-address-form__label-text">Céges számlázási adatok</legend><div class="ak-address-form__identity-grid">';
+        $this->field('company_name', 'Cégnév', (string) $data['company_name'], $isBilling && $isCompanyBilling, 'text', 200, 'ak-address-form__identity-field');
+        $this->field('tax_number', 'Magyar adószám', (string) $data['tax_number'], $isBilling && $isCompanyBilling, 'text', 32, 'ak-address-form__identity-field');
+        echo '</div></fieldset>';
+        $recipientLegend = $isBilling && ! $isCompanyBilling ? 'Személyes számlázási név' : 'Szállítási címzett';
+        echo '<fieldset class="ak-address-form__identity-group ak-address-form__recipient-identity" data-ak-recipient-identity' . ($showRecipient ? '' : ' hidden') . '><legend class="ak-address-form__label-text" data-ak-recipient-legend>' . esc_html($recipientLegend) . '</legend><div class="ak-address-form__identity-grid">';
+        $this->field('first_name', 'Keresztnév', (string) $data['first_name'], $showRecipient, 'text', 100, 'ak-address-form__identity-field');
+        $this->field('last_name', 'Vezetéknév', (string) $data['last_name'], $showRecipient, 'text', 100, 'ak-address-form__identity-field');
+        echo '</div></fieldset>';
         echo '<label class="ak-address-form__field"><span class="ak-address-form__label-text">Ország <span class="ak-address-form__required" aria-hidden="true">*</span></span><select name="country" required aria-required="true">';
         foreach ($this->countries->all() as $code => $label) echo '<option value="' . esc_attr($code) . '" ' . selected($data['country'], $code, false) . '>' . esc_html($label) . '</option>';
         echo '</select></label>';
@@ -287,9 +302,9 @@ final class AccountController
         echo '<div class="ak-address-form__actions"><a class="button" href="' . esc_url($this->url()) . '">Mégse</a><button class="button ak-address-card__delete" type="submit">Cím végleges törlése</button></div></form></div>';
     }
 
-    private function field(string $name, string $label, string $value, bool $required = false, string $type = 'text', int $maxlength = 255): void
+    private function field(string $name, string $label, string $value, bool $required = false, string $type = 'text', int $maxlength = 255, string $extraClass = ''): void
     {
-        echo '<label class="ak-address-form__field"><span class="ak-address-form__label-text">' . esc_html($label) . ($required ? ' <span class="ak-address-form__required" aria-hidden="true">*</span>' : '') . '</span><input type="' . esc_attr($type) . '" name="' . esc_attr($name) . '" value="' . esc_attr($value) . '" maxlength="' . esc_attr((string) $maxlength) . '" ' . ($required ? 'aria-required="true" required' : '') . '></label>';
+        echo '<label class="ak-address-form__field ' . esc_attr($extraClass) . '"><span class="ak-address-form__label-text">' . esc_html($label) . ($required ? ' <span class="ak-address-form__required" aria-hidden="true">*</span>' : '') . '</span><input type="' . esc_attr($type) . '" name="' . esc_attr($name) . '" value="' . esc_attr($value) . '" maxlength="' . esc_attr((string) $maxlength) . '" ' . ($required ? 'aria-required="true" required' : '') . '></label>';
     }
 
     /** @return array<string, mixed> */
@@ -303,6 +318,22 @@ final class AccountController
         }
         $data['country'] = strtoupper((string) $data['country']);
         $data['capabilities'] = (isset($_POST['purpose_billing']) ? Address::BILLING : 0) | (isset($_POST['purpose_shipping']) ? Address::SHIPPING : 0);
+        $isBilling = ((int) $data['capabilities'] & Address::BILLING) !== 0;
+        $isShipping = ((int) $data['capabilities'] & Address::SHIPPING) !== 0;
+        $identityType = isset($_POST['billing_identity_type']) ? sanitize_key(wp_unslash((string) $_POST['billing_identity_type'])) : 'personal';
+
+        if (! $isBilling) {
+            $data['company_name'] = '';
+            $data['tax_number'] = '';
+        } elseif ($identityType === 'company') {
+            if (! $isShipping) {
+                $data['first_name'] = '';
+                $data['last_name'] = '';
+            }
+        } else {
+            $data['company_name'] = '';
+            $data['tax_number'] = '';
+        }
         $data['status'] = Address::STATUS_ACTIVE;
         $data['source'] = Address::SOURCE_ACCOUNT;
         return $data;
