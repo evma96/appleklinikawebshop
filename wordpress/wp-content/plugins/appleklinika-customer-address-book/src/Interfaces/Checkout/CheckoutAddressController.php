@@ -108,6 +108,8 @@ final class CheckoutAddressController
                     $next[$purpose]['key'],
                     $next[$purpose]['version']
                 ));
+            } elseif ($isEnvelope && is_array($candidate['fields'] ?? null)) {
+                $this->applyOneOffFieldsToCustomer($purpose, $candidate['fields']);
             }
         }
         $this->storeSessionSelection($next);
@@ -291,6 +293,37 @@ final class CheckoutAddressController
             $customer->update_meta_data('ak_billing_tax_number', $fields['appleklinika/tax_number']);
         }
         $customer->save();
+    }
+
+    /** @param array<string, mixed> $fields */
+    private function applyOneOffFieldsToCustomer(string $purpose, array $fields): void
+    {
+        if (! function_exists('WC') || WC()->customer === null) {
+            return;
+        }
+
+        $customer = WC()->customer;
+        foreach (['first_name', 'last_name', 'company', 'address_1', 'address_2', 'city', 'state', 'postcode', 'country'] as $field) {
+            $setter = 'set_' . $purpose . '_' . $field;
+            if (is_callable([$customer, $setter])) {
+                $customer->{$setter}(sanitize_text_field((string) ($fields[$field] ?? '')));
+            }
+        }
+        foreach (['house_number', 'staircase', 'floor', 'door'] as $field) {
+            $customer->update_meta_data(
+                'ak_' . $purpose . '_' . $field,
+                sanitize_text_field((string) ($fields['appleklinika/' . $field] ?? ''))
+            );
+        }
+        if ($purpose === 'billing') {
+            $companyPurchase = ! empty($fields['appleklinika/company_purchase']) ? '1' : '';
+            $companyName = sanitize_text_field((string) ($fields['appleklinika/company_name'] ?? ''));
+            $taxNumber = sanitize_text_field((string) ($fields['appleklinika/tax_number'] ?? ''));
+            $customer->update_meta_data('appleklinika_company_purchase', $companyPurchase);
+            $customer->update_meta_data('appleklinika_company_name', $companyName);
+            $customer->update_meta_data('appleklinika_tax_number', $taxNumber);
+            $customer->update_meta_data('ak_billing_tax_number', $taxNumber);
+        }
     }
 
     /** @param array<string, mixed> $item */
