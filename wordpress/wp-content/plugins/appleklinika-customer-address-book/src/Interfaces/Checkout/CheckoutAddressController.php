@@ -59,17 +59,63 @@ final class CheckoutAddressController
     public function storeApiSchema(): array
     {
         return [
-            'description' => 'Apple Klinika mentett cím választás',
-            'type' => 'object',
-            'context' => ['view', 'edit'],
-            'readonly' => true,
-            'properties' => [
-                'enabled' => ['type' => 'boolean', 'readonly' => true],
-                'needs_shipping' => ['type' => 'boolean', 'readonly' => true],
-                'billing' => ['type' => 'array', 'readonly' => true, 'items' => ['type' => 'object']],
-                'shipping' => ['type' => 'array', 'readonly' => true, 'items' => ['type' => 'object']],
-                'selection' => ['type' => 'object', 'readonly' => true],
+            // ARRAY_A endpoint extensions are already wrapped by WooCommerce as
+            // object properties. Returning another root schema wrapper here makes
+            // its scalar metadata look like a property and breaks schema cleanup.
+            'enabled' => [
+                'description' => 'Whether saved address selection is available for the current customer.',
+                'type' => 'boolean',
+                'context' => ['view', 'edit'],
+                'readonly' => true,
             ],
+            'needs_shipping' => [
+                'description' => 'Whether the current cart requires a shipping address.',
+                'type' => 'boolean',
+                'context' => ['view', 'edit'],
+                'readonly' => true,
+            ],
+            'billing' => [
+                'description' => 'Saved billing addresses available for checkout selection.',
+                'type' => 'array',
+                'context' => ['view', 'edit'],
+                'readonly' => true,
+                'items' => [
+                    'type' => 'object',
+                    'properties' => $this->storeApiAddressOptionSchema(),
+                ],
+            ],
+            'shipping' => [
+                'description' => 'Saved shipping addresses available for checkout selection.',
+                'type' => 'array',
+                'context' => ['view', 'edit'],
+                'readonly' => true,
+                'items' => [
+                    'type' => 'object',
+                    'properties' => $this->storeApiAddressOptionSchema(),
+                ],
+            ],
+            'selection' => [
+                'description' => 'Current saved-address or one-off checkout selection.',
+                'type' => 'object',
+                'context' => ['view', 'edit'],
+                'readonly' => true,
+            ],
+        ];
+    }
+
+    /** @return array<string, array<string, mixed>> */
+    private function storeApiAddressOptionSchema(): array
+    {
+        return [
+            'key' => ['type' => 'string', 'readonly' => true],
+            'version' => ['type' => 'integer', 'readonly' => true],
+            'label' => ['type' => 'string', 'readonly' => true],
+            'name' => ['type' => 'string', 'readonly' => true],
+            'preview' => ['type' => 'string', 'readonly' => true],
+            'is_default' => ['type' => 'boolean', 'readonly' => true],
+            // The fields object contains only checkout-safe data and follows the
+            // address form's WooCommerce/custom-field keys.
+            'fields' => ['type' => 'object', 'readonly' => true],
         ];
     }
 
