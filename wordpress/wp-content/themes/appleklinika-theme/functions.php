@@ -1776,6 +1776,13 @@ function appleklinika_render_shop_filters(): void
         return;
     }
 
+    $query = $GLOBALS['wp_query'] ?? null;
+    $isNativeDeviceCategory = $query instanceof WP_Query && appleklinika_product_category_device_type($query) !== null;
+
+    if ($query instanceof WP_Query && $query->is_search() && appleklinika_shop_query_device_type($query) === null) {
+        return;
+    }
+
     $action = is_product_taxonomy() ? get_term_link(get_queried_object()) : appleklinika_shop_url();
 
     if (! is_string($action) || $action === '') {
@@ -1792,7 +1799,7 @@ function appleklinika_render_shop_filters(): void
     <form class="ak-shop-filters" method="get" action="<?php echo esc_url($action); ?>" aria-label="Termékszűrők">
         <div class="ak-filter-heading">
             <strong>Szűrők</strong>
-            <a class="ak-shop-filters__reset" href="<?php echo esc_url(appleklinika_shop_url()); ?>">Szűrők törlése</a>
+            <a class="ak-shop-filters__reset" href="<?php echo esc_url($isNativeDeviceCategory ? $action : appleklinika_shop_url()); ?>">Szűrők törlése</a>
         </div>
         <?php if (isset($filters['ak_model'])) : ?>
             <?php appleklinika_render_filter_details('ak_model', $filters['ak_model']); ?>
@@ -1822,7 +1829,9 @@ function appleklinika_render_shop_filters(): void
         <div class="ak-filter-actions">
             <button type="submit">Szűrés alkalmazása</button>
         </div>
-        <input type="hidden" name="ak_type" value="<?php echo esc_attr($deviceType); ?>">
+        <?php if (! $isNativeDeviceCategory) : ?>
+            <input type="hidden" name="ak_type" value="<?php echo esc_attr($deviceType); ?>">
+        <?php endif; ?>
         <?php foreach ($_GET as $key => $value) : ?>
             <?php if (in_array($key, array_merge(['ak_type', 'ak_min_price', 'ak_max_price', 'paged'], appleklinika_shop_filter_query_keys()), true) || is_array($value)) { continue; } ?>
             <input type="hidden" name="<?php echo esc_attr((string) $key); ?>" value="<?php echo esc_attr((string) wp_unslash($value)); ?>">
@@ -1833,7 +1842,19 @@ function appleklinika_render_shop_filters(): void
 
 function appleklinika_current_shop_device_type(): string
 {
-    return appleklinika_normalize_shop_device_type(appleklinika_query_value('ak_type') ?: 'iphone');
+    $query = $GLOBALS['wp_query'] ?? null;
+
+    if ($query instanceof WP_Query) {
+        $deviceType = appleklinika_shop_query_device_type($query);
+
+        if ($deviceType !== null) {
+            return $deviceType;
+        }
+    }
+
+    $explicitDeviceType = appleklinika_explicit_shop_device_type();
+
+    return $explicitDeviceType ?? 'iphone';
 }
 
 function appleklinika_normalize_shop_device_type(string $type): string
@@ -1856,6 +1877,82 @@ function appleklinika_catalog_type_to_shop_type(string $type): string
         'mac' => 'macbook',
         'watch' => 'apple_watch',
     ][sanitize_key($type)] ?? sanitize_key($type);
+}
+
+function appleklinika_explicit_shop_device_type(): ?string
+{
+    $type = appleklinika_query_value('ak_type');
+
+    return $type === '' ? null : appleklinika_normalize_shop_device_type($type);
+}
+
+function appleklinika_product_category_device_type(WP_Query $query): ?string
+{
+    $category = $query->get('product_cat');
+
+    if (! is_string($category) || $category === '') {
+        $queriedObject = $query->is_main_query() ? get_queried_object() : null;
+        $category = $queriedObject instanceof WP_Term && $queriedObject->taxonomy === 'product_cat'
+            ? $queriedObject->slug
+            : '';
+    }
+
+    return [
+        'iphone' => 'iphone',
+        'ipad' => 'ipad',
+        'macbook' => 'macbook',
+        'apple-watch' => 'apple_watch',
+    ][sanitize_title($category)] ?? null;
+}
+
+function appleklinika_shop_query_device_type(WP_Query $query): ?string
+{
+    $categoryDeviceType = appleklinika_product_category_device_type($query);
+
+    if ($categoryDeviceType !== null) {
+        return $categoryDeviceType;
+    }
+
+    $explicitDeviceType = appleklinika_explicit_shop_device_type();
+
+    if ($explicitDeviceType !== null) {
+        return $explicitDeviceType;
+    }
+
+    if ($query->is_search()) {
+        return null;
+    }
+
+    return $query->is_post_type_archive('product') ? 'iphone' : null;
+}
+
+function appleklinika_shop_query_uses_device_model_scope(WP_Query $query): bool
+{
+    if (appleklinika_product_category_device_type($query) !== null || $query->is_search()) {
+        return false;
+    }
+
+    if (appleklinika_explicit_shop_device_type() !== null) {
+        return true;
+    }
+
+    return $query->is_post_type_archive('product');
+}
+
+function appleklinika_normalize_catalogue_search_term(string $search): string
+{
+    $patterns = [
+        '/\biphone(?=(?:\d|se|mini|pro|max))/iu' => 'iPhone ',
+        '/\bipad(?=(?:\d|air|pro|mini))/iu' => 'iPad ',
+        '/\bmacbook(?=(?:\d|air|pro))/iu' => 'MacBook ',
+        '/\bapplewatch\b/iu' => 'Apple Watch',
+    ];
+
+    foreach ($patterns as $pattern => $replacement) {
+        $search = (string) preg_replace($pattern, $replacement, $search);
+    }
+
+    return $search;
 }
 
 /**
@@ -2645,9 +2742,15 @@ function appleklinika_apply_shop_filters(WP_Query $query): void
         return;
     }
 
+    if ($query->is_search()) {
+        $query->set('s', appleklinika_normalize_catalogue_search_term((string) $query->get('s')));
+    }
+
     $metaQuery = (array) $query->get('meta_query');
-    $deviceType = appleklinika_current_shop_device_type();
-    $deviceModelKeys = appleklinika_device_model_keys_for_type($deviceType);
+    $deviceType = appleklinika_shop_query_device_type($query);
+    $deviceModelKeys = $deviceType !== null && appleklinika_shop_query_uses_device_model_scope($query)
+        ? appleklinika_device_model_keys_for_type($deviceType)
+        : [];
 
     if ($deviceModelKeys !== []) {
         $metaQuery[] = [
@@ -2657,7 +2760,23 @@ function appleklinika_apply_shop_filters(WP_Query $query): void
         ];
     }
 
-    $map = appleklinika_shop_filter_query_meta_map($deviceType);
+    $map = $deviceType === null
+        ? [
+            'ak_model' => '_appleklinika_device_model',
+            'ak_storage' => '_appleklinika_storage_capacity',
+            'ak_condition' => '_appleklinika_overall_grade',
+            'ak_color' => '_appleklinika_color',
+            'ak_sim' => '_appleklinika_sim_config',
+            'ak_connectivity' => '_appleklinika_connectivity',
+            'ak_screen_size' => '_appleklinika_screen_size',
+            'ak_chip' => '_appleklinika_processor_chip',
+            'ak_ram' => '_appleklinika_ram_size',
+            'ak_case_size' => '_appleklinika_case_size',
+            'ak_case_material' => '_appleklinika_case_material',
+            'ak_strap' => '_appleklinika_strap',
+            'ak_battery' => '_appleklinika_battery_health',
+        ]
+        : appleklinika_shop_filter_query_meta_map($deviceType);
 
     foreach ($map as $requestKey => $metaKey) {
         $values = appleklinika_query_values($requestKey);
