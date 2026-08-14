@@ -51,6 +51,8 @@ Use only these statuses:
 
 Fix `FAIL` items before starting unrelated new features.
 
+Transaction presentation changes must be checked at 320, 360, 390, 430, 640, 768, 1024, 1440, and 1920 px on checkout. Verify one meaningful H1, all four semantic progress labels, the original WooCommerce order button, effective billing consistency between Steps 3 and 4, no horizontal overflow, and no untranslated generic commerce labels. Provider and product names are not translation targets.
+
 ## DOM/CSS Targeting Gate
 
 When a visual CSS change does not appear in the browser, or when the project owner asks for the "red border test", verify the real DOM target before continuing.

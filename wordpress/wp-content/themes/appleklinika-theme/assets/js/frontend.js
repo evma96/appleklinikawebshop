@@ -784,6 +784,11 @@
         return input ? input.value.trim() : '';
       };
       var company = field('company');
+      var addressDetails = [
+        field('appleklinika-staircase') ? 'Lépcsőház: ' + field('appleklinika-staircase') : '',
+        field('appleklinika-floor') ? 'Emelet: ' + field('appleklinika-floor') : '',
+        field('appleklinika-door') ? 'Ajtó: ' + field('appleklinika-door') : ''
+      ].filter(Boolean);
 
       if (prefix === 'billing') {
         var companyToggle = document.getElementById('order-appleklinika-company_purchase');
@@ -798,11 +803,50 @@
         first_name: field('first_name'),
         last_name: field('last_name'),
         company: company,
-        address_1: field('address_1'),
-        address_2: field('address_2'),
+        address_1: [field('address_1'), field('appleklinika-house_number')].filter(Boolean).join(' '),
+        address_2: [field('address_2')].concat(addressDetails).filter(Boolean).join(', '),
         postcode: field('postcode'),
         city: field('city')
       };
+    }
+
+    function currentCheckoutAddress(prefix, storeAddress) {
+      var formAddress = checkoutFormAddress(prefix);
+      var address = Object.assign({}, storeAddress || {});
+
+      Object.keys(formAddress).forEach(function (key) {
+        if (formAddress[key]) {
+          address[key] = formAddress[key];
+        }
+      });
+
+      return address;
+    }
+
+    function checkoutUsesShippingAsBilling() {
+      var sameAddressField = checkoutFieldByLabel('A szállítási és számlázási cím megegyezik.');
+
+      return Boolean(sameAddressField && sameAddressField.input.checked);
+    }
+
+    function effectiveBillingAddress(billing, shipping) {
+      if (!checkoutUsesShippingAsBilling() || !shipping || !shipping.address_1) {
+        return billing;
+      }
+
+      var companyToggle = document.getElementById('order-appleklinika-company_purchase');
+
+      if (!companyToggle || !companyToggle.checked) {
+        return shipping;
+      }
+
+      var companyBilling = checkoutFormAddress('billing');
+
+      return Object.assign({}, shipping, {
+        company: companyBilling.company,
+        first_name: companyBilling.first_name,
+        last_name: companyBilling.last_name
+      });
     }
 
     function selectedShippingMethod(cart) {
@@ -880,16 +924,16 @@
       }).join('');
       var discount = Number(totals.total_discount || 0);
       var tax = Number(totals.total_tax || 0);
-      var billing = blocksSelector(cartStore, 'getBillingAddress', cart.billing_address || {});
-      var shipping = blocksSelector(cartStore, 'getShippingAddress', cart.shipping_address || {});
+      var billing = currentCheckoutAddress(
+        'billing',
+        blocksSelector(cartStore, 'getBillingAddress', cart.billing_address || {})
+      );
+      var shipping = currentCheckoutAddress(
+        'shipping',
+        blocksSelector(cartStore, 'getShippingAddress', cart.shipping_address || {})
+      );
 
-      if (!billing || !billing.address_1) {
-        billing = checkoutFormAddress('billing');
-      }
-
-      if (!shipping || !shipping.address_1) {
-        shipping = checkoutFormAddress('shipping');
-      }
+      billing = effectiveBillingAddress(billing, shipping);
       var detailRows = [
         ['Számlázási cím', addressSummary(billing)],
         ['Szállítási cím', addressSummary(shipping)],
@@ -986,8 +1030,8 @@
     var summaryHome = null;
     var stepLabels = {
       1: 'Kosár',
-      2: 'Szállítás és számlázás',
-      3: 'Szállítási mód és fizetés',
+      2: 'Adatok',
+      3: 'Szállítás és fizetés',
       4: 'Összegzés'
     };
 
@@ -1018,16 +1062,17 @@
       return field && typeof field.value === 'string' ? field.value.trim() : '';
     }
 
-    function addressReview(prefix) {
+    function addressReview(prefix, physicalPrefix) {
+      var addressPrefix = physicalPrefix || prefix;
       var companyPurchase = prefix === 'billing'
         && document.getElementById('order-appleklinika-company_purchase')
         && document.getElementById('order-appleklinika-company_purchase').checked;
       var companyName = companyPurchase ? checkoutFieldValue('order-appleklinika-company_name') : '';
       var recipient = companyName || [checkoutFieldValue(prefix + '-last_name'), checkoutFieldValue(prefix + '-first_name')].filter(Boolean).join(' ');
-      var locality = [checkoutFieldValue(prefix + '-postcode'), checkoutFieldValue(prefix + '-city')].filter(Boolean).join(' ');
-      var street = [checkoutFieldValue(prefix + '-address_1'), checkoutFieldValue(prefix + '-appleklinika-house_number')].filter(Boolean).join(' ');
+      var locality = [checkoutFieldValue(addressPrefix + '-postcode'), checkoutFieldValue(addressPrefix + '-city')].filter(Boolean).join(' ');
+      var street = [checkoutFieldValue(addressPrefix + '-address_1'), checkoutFieldValue(addressPrefix + '-appleklinika-house_number')].filter(Boolean).join(' ');
       var location = [locality, street].filter(Boolean).join(', ');
-      var lines = [recipient, location, checkoutFieldValue(prefix + '-address_2')].filter(Boolean);
+      var lines = [recipient, location, checkoutFieldValue(addressPrefix + '-address_2')].filter(Boolean);
 
       if (companyName) {
         var taxNumber = checkoutFieldValue('order-appleklinika-tax_number');
@@ -1037,6 +1082,18 @@
       }
 
       return lines;
+    }
+
+    function effectiveBillingReview() {
+      if (!checkoutUsesShippingAsBilling()) {
+        return addressReview('billing');
+      }
+
+      var companyToggle = document.getElementById('order-appleklinika-company_purchase');
+
+      return companyToggle && companyToggle.checked
+        ? addressReview('billing', 'shipping')
+        : addressReview('shipping');
     }
 
     function currentShippingReview() {
@@ -1114,7 +1171,7 @@
 
     function finalReviewHtml() {
       var contact = [checkoutFieldValue('email'), checkoutFieldValue('billing-phone') || checkoutFieldValue('shipping-phone')].filter(Boolean);
-      var billing = addressReview('billing');
+      var billing = effectiveBillingReview();
       var shipping = addressReview('shipping');
       var shippingMethod = currentShippingReview();
       var fulfilment = shippingReviewLines(shippingMethod);
@@ -1132,7 +1189,7 @@
           finalReviewValues(shipping)
           + '<div class="ak-checkout-final-review__delivery-method"><p>Szállítási mód</p>' + finalReviewValues(fulfilment) + '</div>',
           [{ label: 'Cím módosítása', step: 2 }, { label: 'Szállítás módosítása', step: 3 }])
-        + finalReviewTimelineItem('billing', 'Számlázási adatok', finalReviewValues(billing.length ? billing : shipping), [{ label: 'Módosítás', step: 2 }])
+        + finalReviewTimelineItem('billing', 'Számlázási adatok', finalReviewValues(billing), [{ label: 'Módosítás', step: 2 }])
         + finalReviewTimelineItem('payment', 'Fizetési mód', finalReviewValues(payment), [{ label: 'Módosítás', step: 3 }])
         + noteHtml
         + '</div></section>';
@@ -1446,10 +1503,19 @@
       }
 
       var stepper = document.createElement('nav');
+      var mobileStatus = document.createElement('p');
+      var mobileStatusCount = document.createElement('strong');
+      var mobileStatusLabel = document.createElement('span');
       var list = document.createElement('ol');
 
       stepper.className = 'ak-checkout-stepper';
       stepper.setAttribute('aria-label', 'Pénztár folyamat');
+      mobileStatus.className = 'ak-checkout-stepper__mobile-status';
+      mobileStatus.setAttribute('aria-live', 'polite');
+      mobileStatusCount.className = 'ak-checkout-stepper__mobile-count';
+      mobileStatusLabel.className = 'ak-checkout-stepper__mobile-label';
+      mobileStatus.appendChild(mobileStatusCount);
+      mobileStatus.appendChild(mobileStatusLabel);
 
       Object.keys(stepLabels).forEach(function (stepKey) {
         var step = Number(stepKey);
@@ -1461,6 +1527,7 @@
         item.className = 'ak-checkout-stepper__item';
         item.setAttribute('data-step-item', String(step));
         control.className = 'ak-checkout-stepper__control';
+        control.setAttribute('aria-label', String(step) + '. ' + stepLabels[step]);
         marker.className = 'ak-checkout-stepper__marker';
         label.className = 'ak-checkout-stepper__label';
         marker.textContent = step === 1 ? '✓' : String(step);
@@ -1482,10 +1549,26 @@
         list.appendChild(item);
       });
 
+      stepper.appendChild(mobileStatus);
       stepper.appendChild(list);
       checkoutBlock.parentNode.insertBefore(stepper, checkoutBlock);
 
       return stepper;
+    }
+
+    function createCheckoutHeading(checkoutBlock) {
+      var existingHeading = document.querySelector('.ak-checkout-title');
+
+      if (existingHeading) {
+        return existingHeading;
+      }
+
+      var heading = document.createElement('h1');
+      heading.className = 'ak-checkout-title';
+      heading.textContent = 'Pénztár';
+      checkoutBlock.parentNode.insertBefore(heading, checkoutBlock);
+
+      return heading;
     }
 
     function createNavigationControls(targets) {
@@ -1584,6 +1667,7 @@
         return false;
       }
 
+      createCheckoutHeading(checkoutBlock);
       var stepper = createStepper(checkoutBlock);
       syncCheckoutFinalReview();
       var targets = checkoutStepTargets();
@@ -1629,6 +1713,15 @@
         item.classList.toggle('is-pending', step > activeStep);
 
         if (control) {
+          var stateLabel = isActive ? 'aktuális' : (isComplete ? 'teljesítve' : 'következik');
+          var marker = item.querySelector('.ak-checkout-stepper__marker');
+
+          control.setAttribute('aria-label', String(step) + '. ' + stepLabels[step] + ', ' + stateLabel);
+
+          if (marker) {
+            marker.textContent = isComplete ? '✓' : String(step);
+          }
+
           if (isActive) {
             control.setAttribute('aria-current', 'step');
           } else {
@@ -1636,6 +1729,17 @@
           }
         }
       });
+
+      var mobileStatusCount = stepper.querySelector('.ak-checkout-stepper__mobile-count');
+      var mobileStatusLabel = stepper.querySelector('.ak-checkout-stepper__mobile-label');
+
+      if (mobileStatusCount) {
+        mobileStatusCount.textContent = String(activeStep) + ' / 4';
+      }
+
+      if (mobileStatusLabel) {
+        mobileStatusLabel.textContent = stepLabels[activeStep];
+      }
 
       return true;
     }

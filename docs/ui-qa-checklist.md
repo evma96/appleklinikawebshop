@@ -148,6 +148,11 @@ Scope: My Account V1 functional structure.
 | Checkout duplicate back links are not visible | PASS | Browser QA confirmed the default WooCommerce return-to-cart element still exists but is hidden during the multi-step shell; only the custom step back action is visible. |
 | Checkout stepper scope test completed | PASS | Temporary red outlines were applied only to the checkout stepper/layout/sidebar/order controls, with zero shop card, filter, account, or cart wrapper matches; the debug outlines were removed before finishing. |
 | WooCommerce fields are not broken | PASS | Browser QA confirmed checkout field sections remain present in the DOM; the stepper only toggles visibility classes and does not unmount WooCommerce Blocks fields. |
+| Checkout transaction localization | PASS | Browser QA confirmed Hungarian checkout section labels, country placeholder, free shipping, and the single real `Megrendelés` control; no product or provider title was rewritten. |
+| Checkout primary heading and progress semantics | PASS | Exactly one visible `Pénztár` H1 is present. All four steps retain accessible labels and current/completed/future state; 320–430 px uses compact markers plus the current label, while 768–1920 px preserves the desktop presentation. |
+| Effective billing summary | PASS | Guest and logged-in personal, same-address, separate-address, and company states showed consistent billing and shipping information on Steps 3 and 4 without a false missing-billing message. |
+| Transaction responsive matrix | PASS | Checkout had no horizontal overflow at 320, 360, 390, 430, 640, 768, 1024, 1440, or 1920 px; populated catalogue, representative in-stock product, and populated cart also remained contained at 390, 768, and 1440 px. |
+| Buyback questionnaire focus | PASS | The intentionally focused questionnaire heading keeps programmatic focus and now renders a 3 px brand-red, rounded focus indicator at 390 and 1440 px instead of the browser-native blue rectangle. |
 
 ## 6. WooCommerce Admin Check
 
