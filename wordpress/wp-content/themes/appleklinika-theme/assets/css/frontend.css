@@ -695,6 +695,10 @@ body.ak-header-hidden .ak-site-header {
   padding: 10px 0;
 }
 
+.ak-header-top > p:empty {
+  display: none;
+}
+
 .ak-header-logo {
   grid-area: logo;
   display: inline-flex;
@@ -864,6 +868,10 @@ body.woocommerce-checkout .ak-checkout-header__back:focus-visible {
   justify-content: end;
   gap: 14px;
   min-width: 0;
+}
+
+.ak-header-actions > br {
+  display: none;
 }
 
 .ak-header-sell-link {
@@ -1914,6 +1922,11 @@ body.tax-product_cat .woocommerce-breadcrumb,
   box-shadow: none;
 }
 
+/* WooCommerce Blocks can emit the same theme filter form twice; retain one usable form. */
+.ak-shop-filters ~ .ak-shop-filters {
+  display: none;
+}
+
 .ak-filter-heading {
   display: flex;
   align-items: center;
@@ -2385,8 +2398,9 @@ body.tax-product_cat .woocommerce-breadcrumb,
   position: relative;
   display: block;
   box-sizing: border-box;
-  height: 100%;
+  height: auto;
   min-height: 0;
+  align-self: start;
   margin: 0 !important;
   padding: 18px;
   overflow: hidden;
@@ -2414,8 +2428,8 @@ body.tax-product_cat .woocommerce-breadcrumb,
   position: static;
   display: flex;
   width: 100%;
-  height: 100%;
-  min-height: 100%;
+  height: auto;
+  min-height: 0;
   flex-direction: column;
   color: inherit;
   text-decoration: none;
@@ -2454,10 +2468,10 @@ body.tax-product_cat .woocommerce-breadcrumb,
   justify-content: center;
   margin: 0 0 16px;
   overflow: hidden;
-  border: 0;
+  border: 1px solid rgba(226, 232, 240, .78);
   border-radius: 12px;
-  background: transparent;
-  box-shadow: none;
+  background: linear-gradient(145deg, #fbfcfe 0%, #f2f5f8 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .88);
 }
 
 .woocommerce :is(ul.products, .wc-block-product-template) li.wc-block-product .ak-product-card__image img {
@@ -2466,6 +2480,7 @@ body.tax-product_cat .woocommerce-breadcrumb,
   max-height: 92%;
   object-fit: contain;
   margin: 0;
+  mix-blend-mode: multiply;
   transition: transform .24s ease;
 }
 
@@ -7963,5 +7978,83 @@ body.woocommerce-account:not(.logged-in).woocommerce-lost-password .woocommerce-
   body.post-type-archive-product .wp-block-group.is-content-justification-space-between.is-nowrap:has(> .wc-block-catalog-sorting),
   body.tax-product_cat .wp-block-group.is-content-justification-space-between.is-nowrap:has(> .wc-block-catalog-sorting) {
     flex-wrap: wrap;
+  }
+}
+
+/* Storefront visual polish: compact navigation, readable catalogue controls. */
+@media (min-width: 901px) and (max-width: 1200px) {
+  .woocommerce ul.products,
+  .woocommerce .wp-block-post-template,
+  .woocommerce .products-block-post-template,
+  .woocommerce .wc-block-product-template,
+  .woocommerce .wp-block-woocommerce-product-template {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 639px) {
+  .ak-header-top {
+    grid-template-columns: minmax(0, 1fr) 136px;
+    grid-template-areas:
+      "logo actions"
+      "search search";
+  }
+
+  .ak-header-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 136px;
+    gap: 8px;
+  }
+
+  .ak-header-actions br {
+    display: none;
+  }
+
+  .ak-header-actions .ak-header-pill {
+    width: 100%;
+    min-height: 42px;
+    padding: 6px 5px;
+    font-size: 11px;
+  }
+
+  .ak-category-nav {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0 var(--ak-space-2);
+  }
+
+  .ak-category-nav .ak-category-nav__sell {
+    grid-column: auto;
+    box-sizing: border-box;
+    justify-content: center;
+    min-height: 40px;
+    padding: 5px 8px;
+  }
+
+  body.woocommerce-shop .wp-block-group.alignwide.is-content-justification-space-between.is-nowrap.is-layout-flex,
+  body.post-type-archive-product .wp-block-group.alignwide.is-content-justification-space-between.is-nowrap.is-layout-flex,
+  body.tax-product_cat .wp-block-group.alignwide.is-content-justification-space-between.is-nowrap.is-layout-flex {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  body.woocommerce-shop .woocommerce .woocommerce-result-count,
+  body.post-type-archive-product .woocommerce .woocommerce-result-count,
+  body.tax-product_cat .woocommerce .woocommerce-result-count {
+    width: max-content;
+    max-width: 100%;
+    min-height: 38px;
+    padding: 0 12px;
+    white-space: nowrap;
+  }
+
+  body.woocommerce-shop .woocommerce .woocommerce-ordering,
+  body.post-type-archive-product .woocommerce .woocommerce-ordering,
+  body.tax-product_cat .woocommerce .woocommerce-ordering,
+  body.woocommerce-shop .ak-sort-dropdown,
+  body.post-type-archive-product .ak-sort-dropdown,
+  body.tax-product_cat .ak-sort-dropdown {
+    width: 100%;
   }
 }
