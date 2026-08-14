@@ -15,6 +15,7 @@ add_action('after_setup_theme', static function (): void {
 add_action('wp_enqueue_scripts', static function (): void {
     $frontendCssPath = get_stylesheet_directory() . '/assets/css/frontend.css';
     $frontendScriptPath = get_stylesheet_directory() . '/assets/js/frontend.js';
+    $commerceLocalizationPath = get_stylesheet_directory() . '/assets/js/commerce-localization.js';
     $frontendScriptVersion = (md5_file($frontendScriptPath) ?: 'frontend') . '-' . (string) filemtime($frontendScriptPath);
     wp_enqueue_style(
         'appleklinika-theme',
@@ -38,6 +39,14 @@ add_action('wp_enqueue_scripts', static function (): void {
     if (function_exists('is_checkout') && is_checkout()) {
         $frontendScriptDependencies = ['wp-data', 'wc-blocks-data-store'];
     }
+
+    wp_enqueue_script(
+        'appleklinika-commerce-localization',
+        get_stylesheet_directory_uri() . '/assets/js/commerce-localization.js',
+        ['wp-i18n'],
+        md5_file($commerceLocalizationPath) ?: null,
+        false
+    );
 
     wp_enqueue_script(
         'appleklinika-theme',
@@ -72,6 +81,9 @@ add_filter('wc_get_price_decimal_separator', static fn (): string => ',');
 add_filter('woocommerce_price_format', static fn (): string => '%2$s %1$s');
 add_filter('gettext', 'appleklinika_checkout_text_translations', 10, 3);
 add_filter('gettext_woocommerce', 'appleklinika_frontend_woocommerce_text_translations', 10, 3);
+add_filter('woocommerce_page_title', 'appleklinika_product_archive_page_title');
+add_filter('get_the_archive_title', 'appleklinika_product_archive_query_title');
+add_filter('woocommerce_get_breadcrumb', 'appleklinika_product_archive_breadcrumb');
 add_filter('woocommerce_shipping_rate_label', 'appleklinika_frontend_shipping_rate_label', 20, 2);
 add_filter('woocommerce_order_shipping_to_display', 'appleklinika_account_order_shipping_to_display', 20, 3);
 add_filter('woocommerce_order_details_status', 'appleklinika_account_order_details_status', 20, 2);
@@ -631,8 +643,57 @@ function appleklinika_frontend_woocommerce_text_translations(string $translation
     return match ($text) {
         'Original price was: %s.' => 'Eredeti ár: %s.',
         'Current price is: %s.' => 'Jelenlegi ár: %s.',
+        'Shop' => 'Termékek',
+        'Showing the single result' => '1 termék',
+        'Showing all %d results' => 'Összesen %d termék',
+        'Showing %1$d–%2$d of %3$d results',
+        'Showing %1$d-%2$d of %3$d results' => '%1$d–%2$d termék, összesen %3$d db',
+        '%s in stock' => '%s készleten',
+        'Free!', 'Free', 'FREE' => 'Ingyenes',
+        'Place order', 'Place Order' => 'Megrendelés',
+        'Contact information' => 'Kapcsolati adatok',
+        'Email address' => 'E-mail cím',
+        'Shipping address' => 'Szállítási cím',
+        'Country/Region' => 'Ország/régió',
+        'Shipping options' => 'Szállítási mód',
+        'Payment options' => 'Fizetési mód',
+        'Select a %s' => 'Válassz: %s',
+        'Undo' => 'Visszavonás',
+        '%s removed.' => '%s eltávolítva.',
         default => $translation,
     };
+}
+
+function appleklinika_product_archive_page_title(string $title): string
+{
+    return $title === 'Shop' ? 'Termékek' : $title;
+}
+
+function appleklinika_product_archive_query_title(string $title): string
+{
+    if (function_exists('is_shop') && is_shop()) {
+        return 'Termékek';
+    }
+
+    return $title;
+}
+
+/**
+ * @param list<array{0: string, 1: string}> $crumbs
+ * @return list<array{0: string, 1: string}>
+ */
+function appleklinika_product_archive_breadcrumb(array $crumbs): array
+{
+    if (! function_exists('is_shop') || ! is_shop()) {
+        return $crumbs;
+    }
+
+    return array_map(
+        static fn (array $crumb): array => ($crumb[0] ?? '') === 'Shop'
+            ? ['Termékek', (string) ($crumb[1] ?? '')]
+            : $crumb,
+        $crumbs
+    );
 }
 
 function appleklinika_frontend_shipping_rate_label(string $label, WC_Shipping_Rate $rate): string

@@ -5,6 +5,9 @@ declare(strict_types=1);
 $wordpressRoot = dirname(__DIR__, 4);
 require_once $wordpressRoot . '/wp-load.php';
 
+$buybackScript = file_get_contents(dirname(__DIR__) . '/assets/js/local-demo.js');
+$buybackCss = file_get_contents(dirname(__DIR__) . '/assets/css/local-demo.css');
+
 use AppleKlinika\Buyback\Application\LocalDemo\LocalDemoHostGuard;
 use AppleKlinika\Buyback\Application\LocalDemo\LocalDemoQuestionnaire;
 use AppleKlinika\Buyback\Application\LocalDemo\LocalDemoPriceMatrixBuilder;
@@ -38,6 +41,9 @@ function localDemoAssert(bool $condition, string $message): void
     }
     echo "PASS: {$message}\n";
 }
+
+localDemoAssert(is_string($buybackScript) && str_contains($buybackScript, "heading.setAttribute('tabindex', '-1')") && str_contains($buybackScript, 'heading.focus({ preventScroll: true })'), 'Buyback keeps intentional heading focus when entering a questionnaire step');
+localDemoAssert(is_string($buybackCss) && str_contains($buybackCss, '.ak-buyback-demo__panel h3[tabindex="-1"]:focus-visible') && str_contains($buybackCss, 'rgba(214, 0, 28, 0.32)') && ! str_contains($buybackCss, '.ak-buyback-demo *:focus { outline: none'), 'Buyback gives the intentional panel heading target a visible brand focus treatment without disabling global focus');
 
 /** @return array<string,int> */
 function localDemoPersistentCounts(wpdb $database): array

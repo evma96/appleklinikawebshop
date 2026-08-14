@@ -36,6 +36,7 @@ final class CartCheckoutTest
 $themeRoot = dirname(__DIR__);
 $functions = file_get_contents($themeRoot . '/functions.php');
 $script = file_get_contents($themeRoot . '/assets/js/frontend.js');
+$commerceLocalization = file_get_contents($themeRoot . '/assets/js/commerce-localization.js');
 $css = file_get_contents($themeRoot . '/assets/css/frontend.css');
 $summaryCss = file_get_contents($themeRoot . '/assets/css/checkout-sidebar.css');
 $test = new CartCheckoutTest();
@@ -86,5 +87,15 @@ $test->assert(is_string($css) && str_contains($css, '.wc-block-checkout__form') 
 $test->assert(is_string($css) && str_contains($css, '.wc-block-components-text-input label') && str_contains($css, 'color: #667085;'), 'Checkout preserves native WooCommerce field labels while applying one shared label treatment.');
 $test->assert(is_string($summaryCss) && str_contains($summaryCss, 'top: 96px;') && str_contains($summaryCss, 'max-height: calc(100vh - 120px);'), 'Desktop checkout summary remains visible with a bounded sticky viewport treatment.');
 $test->assert(is_string($summaryCss) && str_contains($summaryCss, '.ak-checkout-summary__details'), 'Checkout sidebar has a dedicated layout for dynamic fulfilment details.');
+$test->assert(is_string($functions) && str_contains($functions, "'appleklinika-commerce-localization'") && str_contains($functions, "['wp-i18n']"), 'WooCommerce Blocks localization loads through the supported WordPress i18n dependency before customer-facing components render.');
+$test->assert(is_string($commerceLocalization) && str_contains($commerceLocalization, "'i18n.gettext'") && str_contains($commerceLocalization, "'i18n.gettext_with_context'") && str_contains($commerceLocalization, "domain !== 'woocommerce'"), 'Commerce localization uses scoped WordPress i18n filters instead of replacing arbitrary rendered DOM text.');
+$test->assert(is_string($commerceLocalization) && str_contains($commerceLocalization, "'Place Order': 'Megrendelés'") && str_contains($commerceLocalization, "'Payment options': 'Fizetési mód'") && str_contains($commerceLocalization, "'Select a %s': 'Válassz: %s'"), 'Critical checkout labels, the native final CTA and select placeholder resolve to Hungarian.');
+$test->assert(is_string($script) && str_contains($script, 'function createCheckoutHeading(checkoutBlock)') && str_contains($script, "heading.textContent = 'Pénztár'") && str_contains($script, "document.querySelector('.ak-checkout-title')"), 'Checkout creates exactly one reusable, meaningful page-level H1.');
+$test->assert(is_string($script) && str_contains($script, "2: 'Adatok'") && str_contains($script, "3: 'Szállítás és fizetés'") && str_contains($script, "control.setAttribute('aria-current', 'step')") && str_contains($script, 'stateLabel'), 'Checkout keeps the complete four-step semantic journey and exposes current, completed and pending state.');
+$test->assert(is_string($script) && str_contains($script, 'ak-checkout-stepper__mobile-status') && str_contains($script, "String(activeStep) + ' / 4'") && str_contains($css, 'grid-template-columns: repeat(4, minmax(0, 1fr));'), 'Mobile checkout shows a compact four-marker progress rail with a labelled current-step summary.');
+$test->assert(is_string($script) && str_contains($script, 'function effectiveBillingAddress(billing, shipping)') && str_contains($script, 'checkoutUsesShippingAsBilling()') && str_contains($script, 'return shipping;'), 'Step 3 uses the shipping address as the effective personal billing address when the same-address contract is selected.');
+$test->assert(is_string($script) && str_contains($script, 'companyBilling.company') && str_contains($script, 'Object.assign({}, shipping') && str_contains($script, "checkoutFormAddress('billing')"), 'Step 3 keeps company billing identity while reusing only the selected shipping physical address.');
+$test->assert(is_string($script) && str_contains($script, 'function effectiveBillingReview()') && str_contains($script, "addressReview('billing', 'shipping')") && str_contains($script, "addressReview('shipping')"), 'Step 4 applies the same effective-billing contract for company and personal states.');
+$test->assert(is_string($css) && str_contains($css, '.ak-checkout-stepper__control:focus-visible') && str_contains($css, 'outline: 3px solid rgba(214, 0, 28, .26);'), 'Checkout step controls retain a visible brand-consistent keyboard focus indicator.');
 
 $test->finish();

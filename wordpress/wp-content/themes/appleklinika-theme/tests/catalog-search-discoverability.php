@@ -270,4 +270,11 @@ $ipadPageTwo = appleklinika_test_discovery_query([
 $test->assert($ipadPageOne['pages'] > 1, 'A populated native iPad category exposes pagination when its page size is limited.');
 $test->assert(array_intersect($ipadPageOne['ids'], $ipadPageTwo['ids']) === [], 'Adjacent native iPad category pages do not duplicate product IDs.');
 
+$test->assert(apply_filters('gettext_woocommerce', 'Shop', 'Shop', 'woocommerce') === 'Termékek', 'The WooCommerce product archive title resolves to Hungarian.');
+$test->assert(apply_filters('woocommerce_page_title', 'Shop') === 'Termékek', 'The rendered WooCommerce shop archive heading resolves to Hungarian at its owning page-title filter.');
+$test->assert(apply_filters('gettext_woocommerce', 'Showing %1$d–%2$d of %3$d results', 'Showing %1$d–%2$d of %3$d results', 'woocommerce') === '%1$d–%2$d termék, összesen %3$d db', 'The dynamic catalogue result-count format resolves to Hungarian without losing its range placeholders.');
+$test->assert(apply_filters('gettext_woocommerce', '%s in stock', '%s in stock', 'woocommerce') === '%s készleten', 'The dynamic stock label retains its quantity placeholder in Hungarian.');
+$test->assert(apply_filters('gettext_woocommerce', 'Free!', 'Free!', 'woocommerce') === 'Ingyenes', 'The generic zero-price commerce label resolves to Hungarian.');
+$test->assert(apply_filters('gettext_woocommerce', 'MacBook Air', 'MacBook Air', 'woocommerce') === 'MacBook Air', 'Commerce localization leaves legitimate product and model names unchanged.');
+
 $test->finish();
