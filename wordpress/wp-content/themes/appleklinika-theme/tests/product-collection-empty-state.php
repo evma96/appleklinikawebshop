@@ -99,10 +99,31 @@ try {
     $test->assert(
         $sellLink instanceof DOMElement
         && str_contains(' ' . $sellLink->getAttribute('class') . ' ', ' ak-category-nav__sell '),
-        'The Eladás link exposes the stable class used for its full-width mobile row.'
+        'The Eladás link exposes the stable class used for its compact mobile CTA treatment.'
     );
 } finally {
     $GLOBALS['wp_query'] = $originalQuery;
 }
+
+$stylesheet = (string) file_get_contents(dirname(__DIR__) . '/assets/css/frontend.css');
+$test->assert(
+    str_contains($stylesheet, 'grid-template-columns: repeat(3, minmax(0, 1fr));')
+    && str_contains($stylesheet, '.ak-header-actions br')
+    && str_contains($stylesheet, '.ak-header-top > p:empty')
+    && str_contains($stylesheet, 'grid-column: auto;'),
+    'The mobile header keeps all five category destinations compact without hiding the Eladás CTA.'
+);
+$test->assert(
+    str_contains($stylesheet, 'white-space: nowrap;')
+    && str_contains($stylesheet, 'body.tax-product_cat .woocommerce .woocommerce-ordering'),
+    'The narrow catalogue toolbar keeps the result count and sort control readable without wrapping them together.'
+);
+$test->assert(
+    str_contains($stylesheet, 'mix-blend-mode: multiply;')
+    && str_contains($stylesheet, 'linear-gradient(145deg, #fbfcfe 0%, #f2f5f8 100%)')
+    && str_contains($stylesheet, '.ak-shop-filters ~ .ak-shop-filters')
+    && str_contains($stylesheet, 'align-self: start;'),
+    'Product cards render their source images on one consistent neutral media surface.'
+);
 
 $test->finish();
