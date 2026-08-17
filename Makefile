@@ -2,7 +2,7 @@
 
 COMPOSE := docker compose
 
-.PHONY: install up down test test-unit test-integration test-inventory-catalog test-theme-storefront test-theme-account-shell test-cart-checkout test-checkout-stepper test-checkout-summary test-order-company-contract test-order-finalization test-order-flow test-order-presentation test-order-email test-checkout-lifecycle test-customer-address-book test-customer-address-book-persistence test-customer-address-book-migration test-customer-address-book-account test-customer-address-book-checkout test-customer-address-book-order-snapshot test-customer-address-book-privacy test-buyback test-buyback-domain test-buyback-persistence test-buyback-legacy test-buyback-pricing-admin test-buyback-condition-admin test-buyback-battery-admin test-buyback-offer-mode-admin test-buyback-pricing-engine test-buyback-pricebook-activation test-buyback-public-active-book test-buyback-public-request test-buyback-mail-notifications test-buyback-local-demo lint format static quality quality-fix check
+.PHONY: install up down test test-unit test-integration test-backoffice-workflow test-inventory-catalog test-theme-storefront test-theme-account-shell test-cart-checkout test-checkout-stepper test-checkout-summary test-order-company-contract test-order-finalization test-order-flow test-order-presentation test-order-email test-checkout-lifecycle test-customer-address-book test-customer-address-book-persistence test-customer-address-book-migration test-customer-address-book-account test-customer-address-book-checkout test-customer-address-book-order-snapshot test-customer-address-book-privacy test-buyback test-buyback-domain test-buyback-persistence test-buyback-legacy test-buyback-pricing-admin test-buyback-condition-admin test-buyback-battery-admin test-buyback-offer-mode-admin test-buyback-pricing-engine test-buyback-pricebook-activation test-buyback-public-active-book test-buyback-public-request test-buyback-mail-notifications test-buyback-local-demo lint format static quality quality-fix check
 
 install:
 	@if [ ! -f .env ]; then cp .env.example .env; fi
@@ -14,13 +14,16 @@ up:
 down:
 	$(COMPOSE) down
 
-test: test-unit test-integration
+test: test-unit test-integration test-backoffice-workflow
 
 test-unit:
 	@echo "No unit test suite is configured yet."
 
 test-integration:
 	@echo "No integration test suite is configured yet. External live API calls are not allowed in tests."
+
+test-backoffice-workflow:
+	$(COMPOSE) exec -T wordpress php /var/www/html/wp-content/plugins/appleklinika-backoffice/tests/fulfilment-workflow.php
 
 test-inventory-catalog:
 	$(COMPOSE) exec -T wordpress php /var/www/html/wp-content/plugins/appleklinika-inventory/tests/catalog-storage.php
