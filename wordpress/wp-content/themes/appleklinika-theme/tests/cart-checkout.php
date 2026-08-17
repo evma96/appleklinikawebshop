@@ -85,6 +85,9 @@ $sharedBillingDecision = is_string($script) ? cartCheckoutJavaScriptFunction($sc
 $checkoutSummaryInitializer = is_string($script) ? cartCheckoutJavaScriptFunction($script, 'initCheckoutSummary') : null;
 $checkoutStepperInitializer = is_string($script) ? cartCheckoutJavaScriptFunction($script, 'initCheckoutStepper') : null;
 $effectiveBillingReview = is_string($script) ? cartCheckoutJavaScriptFunction($script, 'effectiveBillingReview') : null;
+$companyBillingReviewState = is_string($script) ? cartCheckoutJavaScriptFunction($script, 'checkoutCompanyBillingReviewState') : null;
+$checkoutAddressSummary = is_string($script) ? cartCheckoutJavaScriptFunction($script, 'addressSummary') : null;
+$checkoutAddressReview = is_string($script) ? cartCheckoutJavaScriptFunction($script, 'addressReview') : null;
 
 $test->assert(is_string($functions) && str_contains($functions, "['wp-data', 'wc-blocks-data-store']"), 'Checkout loads after the WooCommerce Blocks data store.');
 $test->assert(is_string($script) && str_contains($script, "cartStore: 'wc/store/cart'") && str_contains($script, "validationStore: 'wc/store/validation'") && ! str_contains($script, 'window.wc.wcBlocksData'), 'Checkout uses supported store keys instead of directly accessing the WooCommerce global.');
@@ -157,6 +160,27 @@ $test->assert(
     && str_contains($effectiveBillingReview['body'], 'checkoutUsesShippingAsBilling()')
     && str_contains($sharedBillingDecision['body'], "checkoutFieldByLabel('A szállítási és számlázási cím megegyezik.')"),
     'The Step 4 effective-billing review executes the shared current same-address decision rather than a duplicated billing rule.'
+);
+$test->assert(
+    $companyBillingReviewState !== null
+    && $checkoutSummaryInitializer !== null
+    && $checkoutStepperInitializer !== null
+    && $companyBillingReviewState['start'] < $checkoutSummaryInitializer['start']
+    && $companyBillingReviewState['start'] < $checkoutStepperInitializer['start']
+    && str_contains($companyBillingReviewState['body'], "'order-appleklinika-tax_number'")
+    && str_contains($companyBillingReviewState['body'], 'checkoutCompanyBillingState')
+    && str_contains($companyBillingReviewState['body'], 'companyToggle && !companyToggle.checked')
+    && str_contains($companyBillingReviewState['body'], 'companyToggle && companyToggle.checked && companyName && taxNumber'),
+    'One shared checkout company-review state retains the current company name and tax number while same-address mode temporarily unmounts the billing fields.'
+);
+$test->assert(
+    $checkoutAddressSummary !== null
+    && $checkoutAddressReview !== null
+    && str_contains($checkoutSummaryInitializer['body'], 'addressSummary(billing, companyBilling)')
+    && str_contains($checkoutAddressSummary['body'], "'Adószám: ' + companyBilling.taxNumber")
+    && str_contains($checkoutAddressReview['body'], 'checkoutCompanyBillingReviewState()')
+    && str_contains($checkoutAddressReview['body'], "'Adószám: ' + taxNumber"),
+    'Step 3 and Step 4 render the same current company name, tax number and physical billing address without leaking company identity into personal billing.'
 );
 $test->assert(is_string($css) && str_contains($css, '.ak-checkout-stepper__control:focus-visible') && str_contains($css, 'outline: 3px solid rgba(214, 0, 28, .26);'), 'Checkout step controls retain a visible brand-consistent keyboard focus indicator.');
 
