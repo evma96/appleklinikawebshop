@@ -421,7 +421,7 @@ body.ak-buyback-demo-page.ak-buyback-entry-active .ak-buyback-demo {
   outline-offset: 3px;
 }
 
-.ak-buyback-demo__panel h3[tabindex="-1"]:focus-visible {
+.ak-buyback-demo__panel h3[tabindex="-1"]:focus {
   border-radius: 10px;
   outline: 3px solid rgba(214, 0, 28, 0.32);
   outline-offset: 5px;

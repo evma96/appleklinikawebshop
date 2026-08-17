@@ -128,6 +128,12 @@
     return checkoutFieldByLabelInContainer(document, labelText);
   }
 
+  function checkoutUsesShippingAsBilling() {
+    var sameAddressField = checkoutFieldByLabel('A szállítási és számlázási cím megegyezik.');
+
+    return Boolean(sameAddressField && sameAddressField.input.checked);
+  }
+
   function dispatchCheckoutFieldUpdate(input) {
     input.dispatchEvent(new Event('input', { bubbles: true }));
     input.dispatchEvent(new Event('change', { bubbles: true }));
@@ -821,12 +827,6 @@
       });
 
       return address;
-    }
-
-    function checkoutUsesShippingAsBilling() {
-      var sameAddressField = checkoutFieldByLabel('A szállítási és számlázási cím megegyezik.');
-
-      return Boolean(sameAddressField && sameAddressField.input.checked);
     }
 
     function effectiveBillingAddress(billing, shipping) {

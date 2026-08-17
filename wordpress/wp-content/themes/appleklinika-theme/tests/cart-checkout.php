@@ -33,6 +33,47 @@ final class CartCheckoutTest
     }
 }
 
+/**
+ * Extract one ordinary JavaScript function with a balanced-brace scan.
+ *
+ * This deliberately verifies ownership boundaries rather than merely looking
+ * for an identifier: a helper nested in another initializer is not callable
+ * from the checkout stepper initializer.
+ *
+ * @return array{start:int,end:int,body:string}|null
+ */
+function cartCheckoutJavaScriptFunction(string $source, string $name): ?array
+{
+    $match = [];
+
+    if (preg_match('/function\\s+' . preg_quote($name, '/') . '\\s*\\([^)]*\\)\\s*\\{/', $source, $match, PREG_OFFSET_CAPTURE) !== 1) {
+        return null;
+    }
+
+    $start = $match[0][1];
+    $openingBrace = $start + strlen($match[0][0]) - 1;
+    $depth = 0;
+    $length = strlen($source);
+
+    for ($index = $openingBrace; $index < $length; ++$index) {
+        if ($source[$index] === '{') {
+            ++$depth;
+        } elseif ($source[$index] === '}') {
+            --$depth;
+
+            if ($depth === 0) {
+                return [
+                    'start' => $start,
+                    'end' => $index,
+                    'body' => substr($source, $start, $index - $start + 1),
+                ];
+            }
+        }
+    }
+
+    return null;
+}
+
 $themeRoot = dirname(__DIR__);
 $functions = file_get_contents($themeRoot . '/functions.php');
 $script = file_get_contents($themeRoot . '/assets/js/frontend.js');
@@ -40,6 +81,10 @@ $commerceLocalization = file_get_contents($themeRoot . '/assets/js/commerce-loca
 $css = file_get_contents($themeRoot . '/assets/css/frontend.css');
 $summaryCss = file_get_contents($themeRoot . '/assets/css/checkout-sidebar.css');
 $test = new CartCheckoutTest();
+$sharedBillingDecision = is_string($script) ? cartCheckoutJavaScriptFunction($script, 'checkoutUsesShippingAsBilling') : null;
+$checkoutSummaryInitializer = is_string($script) ? cartCheckoutJavaScriptFunction($script, 'initCheckoutSummary') : null;
+$checkoutStepperInitializer = is_string($script) ? cartCheckoutJavaScriptFunction($script, 'initCheckoutStepper') : null;
+$effectiveBillingReview = is_string($script) ? cartCheckoutJavaScriptFunction($script, 'effectiveBillingReview') : null;
 
 $test->assert(is_string($functions) && str_contains($functions, "['wp-data', 'wc-blocks-data-store']"), 'Checkout loads after the WooCommerce Blocks data store.');
 $test->assert(is_string($script) && str_contains($script, "cartStore: 'wc/store/cart'") && str_contains($script, "validationStore: 'wc/store/validation'") && ! str_contains($script, 'window.wc.wcBlocksData'), 'Checkout uses supported store keys instead of directly accessing the WooCommerce global.');
@@ -96,6 +141,23 @@ $test->assert(is_string($script) && str_contains($script, 'ak-checkout-stepper__
 $test->assert(is_string($script) && str_contains($script, 'function effectiveBillingAddress(billing, shipping)') && str_contains($script, 'checkoutUsesShippingAsBilling()') && str_contains($script, 'return shipping;'), 'Step 3 uses the shipping address as the effective personal billing address when the same-address contract is selected.');
 $test->assert(is_string($script) && str_contains($script, 'companyBilling.company') && str_contains($script, 'Object.assign({}, shipping') && str_contains($script, "checkoutFormAddress('billing')"), 'Step 3 keeps company billing identity while reusing only the selected shipping physical address.');
 $test->assert(is_string($script) && str_contains($script, 'function effectiveBillingReview()') && str_contains($script, "addressReview('billing', 'shipping')") && str_contains($script, "addressReview('shipping')"), 'Step 4 applies the same effective-billing contract for company and personal states.');
+$test->assert(
+    $sharedBillingDecision !== null
+    && $checkoutSummaryInitializer !== null
+    && $checkoutStepperInitializer !== null
+    && $sharedBillingDecision['start'] < $checkoutSummaryInitializer['start']
+    && $sharedBillingDecision['start'] < $checkoutStepperInitializer['start']
+    && ! str_contains($checkoutSummaryInitializer['body'], 'function checkoutUsesShippingAsBilling')
+    && ! str_contains($checkoutStepperInitializer['body'], 'function checkoutUsesShippingAsBilling'),
+    'The same-address decision is one shared module helper, not a nested initializer helper that can abort the checkout stepper.'
+);
+$test->assert(
+    $sharedBillingDecision !== null
+    && $effectiveBillingReview !== null
+    && str_contains($effectiveBillingReview['body'], 'checkoutUsesShippingAsBilling()')
+    && str_contains($sharedBillingDecision['body'], "checkoutFieldByLabel('A szállítási és számlázási cím megegyezik.')"),
+    'The Step 4 effective-billing review executes the shared current same-address decision rather than a duplicated billing rule.'
+);
 $test->assert(is_string($css) && str_contains($css, '.ak-checkout-stepper__control:focus-visible') && str_contains($css, 'outline: 3px solid rgba(214, 0, 28, .26);'), 'Checkout step controls retain a visible brand-consistent keyboard focus indicator.');
 
 $test->finish();

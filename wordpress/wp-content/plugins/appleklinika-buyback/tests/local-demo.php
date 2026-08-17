@@ -42,8 +42,14 @@ function localDemoAssert(bool $condition, string $message): void
     echo "PASS: {$message}\n";
 }
 
-localDemoAssert(is_string($buybackScript) && str_contains($buybackScript, "heading.setAttribute('tabindex', '-1')") && str_contains($buybackScript, 'heading.focus({ preventScroll: true })'), 'Buyback keeps intentional heading focus when entering a questionnaire step');
-localDemoAssert(is_string($buybackCss) && str_contains($buybackCss, '.ak-buyback-demo__panel h3[tabindex="-1"]:focus-visible') && str_contains($buybackCss, 'rgba(214, 0, 28, 0.32)') && ! str_contains($buybackCss, '.ak-buyback-demo *:focus { outline: none'), 'Buyback gives the intentional panel heading target a visible brand focus treatment without disabling global focus');
+localDemoAssert(is_string($buybackScript) && preg_match('/heading\\.setAttribute\\(\\x27tabindex\\x27,\\s*\\x27-1\\x27\\);\\s*heading\\.focus\\(\\{ preventScroll: true \\}\\);/', $buybackScript) === 1, 'Buyback keeps intentional programmatic focus on the question heading when entering a questionnaire step');
+localDemoAssert(
+    is_string($buybackCss)
+    && preg_match('/\\.ak-buyback-demo__panel h3\\[tabindex="-1"\\]:focus\\s*\\{[^}]*border-radius:\\s*10px;[^}]*outline:\\s*3px solid rgba\\(214, 0, 28, 0\\.32\\);[^}]*outline-offset:\\s*5px;/s', $buybackCss) === 1
+    && ! str_contains($buybackCss, '.ak-buyback-demo__panel h3[tabindex="-1"]:focus-visible')
+    && ! str_contains($buybackCss, '.ak-buyback-demo *:focus { outline: none'),
+    'The exact programmatically focusable Buyback heading has a direct visible focus rule without disabling global focus'
+);
 
 /** @return array<string,int> */
 function localDemoPersistentCounts(wpdb $database): array
