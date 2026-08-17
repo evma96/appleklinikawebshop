@@ -93,6 +93,8 @@
     return String(value || '').replace(/\s+/g, ' ').trim();
   }
 
+  var checkoutCompanyBillingState = { company: '', taxNumber: '' };
+
   function checkoutFieldByLabelInContainer(container, labelText) {
     var root = container || document;
     var labels = Array.prototype.slice.call(root.querySelectorAll('label'));
@@ -132,6 +134,28 @@
     var sameAddressField = checkoutFieldByLabel('A szállítási és számlázási cím megegyezik.');
 
     return Boolean(sameAddressField && sameAddressField.input.checked);
+  }
+
+  function checkoutCompanyBillingReviewState() {
+    var companyToggle = document.getElementById('order-appleklinika-company_purchase');
+
+    if (companyToggle && !companyToggle.checked) {
+      checkoutCompanyBillingState = { company: '', taxNumber: '' };
+
+      return { company: '', taxNumber: '' };
+    }
+
+    var companyName = document.getElementById('order-appleklinika-company_name');
+    var taxNumber = document.getElementById('order-appleklinika-tax_number');
+
+    if (companyToggle && companyToggle.checked && companyName && taxNumber) {
+      checkoutCompanyBillingState = {
+        company: normalizeText(companyName.value),
+        taxNumber: normalizeText(taxNumber.value)
+      };
+    }
+
+    return checkoutCompanyBillingState;
   }
 
   function dispatchCheckoutFieldUpdate(input) {
@@ -772,16 +796,17 @@
       }
     }
 
-    function addressSummary(address) {
+    function addressSummary(address, companyBilling) {
       if (!address || !address.address_1) {
         return 'Még nincs megadva';
       }
 
-      var recipient = address.company
-        ? address.company
-        : [address.first_name, address.last_name].filter(Boolean).join(' ');
+      var companyName = companyBilling ? companyBilling.company : address.company;
+      var recipient = companyName || [address.first_name, address.last_name].filter(Boolean).join(' ');
       var locality = [address.postcode, address.city].filter(Boolean).join(' ');
-      return [recipient, address.address_1, address.address_2, locality].filter(Boolean).join(', ');
+      var taxNumber = companyName && companyBilling.taxNumber ? 'Adószám: ' + companyBilling.taxNumber : '';
+
+      return [recipient, taxNumber, address.address_1, address.address_2, locality].filter(Boolean).join(', ');
     }
 
     function checkoutFormAddress(prefix) {
@@ -797,11 +822,10 @@
       ].filter(Boolean);
 
       if (prefix === 'billing') {
-        var companyToggle = document.getElementById('order-appleklinika-company_purchase');
-        var companyName = document.getElementById('order-appleklinika-company_name');
+        var companyBilling = checkoutCompanyBillingReviewState();
 
-        if (companyToggle && companyToggle.checked && companyName) {
-          company = companyName.value.trim();
+        if (companyBilling.company) {
+          company = companyBilling.company;
         }
       }
 
@@ -834,18 +858,18 @@
         return billing;
       }
 
-      var companyToggle = document.getElementById('order-appleklinika-company_purchase');
+      var companyBilling = checkoutCompanyBillingReviewState();
 
-      if (!companyToggle || !companyToggle.checked) {
+      if (!companyBilling.company) {
         return shipping;
       }
 
-      var companyBilling = checkoutFormAddress('billing');
+      var companyAddress = checkoutFormAddress('billing');
 
       return Object.assign({}, shipping, {
         company: companyBilling.company,
-        first_name: companyBilling.first_name,
-        last_name: companyBilling.last_name
+        first_name: companyAddress.first_name,
+        last_name: companyAddress.last_name
       });
     }
 
@@ -932,10 +956,11 @@
         'shipping',
         blocksSelector(cartStore, 'getShippingAddress', cart.shipping_address || {})
       );
+      var companyBilling = checkoutCompanyBillingReviewState();
 
       billing = effectiveBillingAddress(billing, shipping);
       var detailRows = [
-        ['Számlázási cím', addressSummary(billing)],
+        ['Számlázási cím', addressSummary(billing, companyBilling)],
         ['Szállítási cím', addressSummary(shipping)],
         ['Szállítási mód', selectedShippingMethod(cart)],
         ['Fizetési mód', selectedPaymentMethod()]
@@ -1064,10 +1089,8 @@
 
     function addressReview(prefix, physicalPrefix) {
       var addressPrefix = physicalPrefix || prefix;
-      var companyPurchase = prefix === 'billing'
-        && document.getElementById('order-appleklinika-company_purchase')
-        && document.getElementById('order-appleklinika-company_purchase').checked;
-      var companyName = companyPurchase ? checkoutFieldValue('order-appleklinika-company_name') : '';
+      var companyBilling = prefix === 'billing' ? checkoutCompanyBillingReviewState() : { company: '', taxNumber: '' };
+      var companyName = companyBilling.company;
       var recipient = companyName || [checkoutFieldValue(prefix + '-last_name'), checkoutFieldValue(prefix + '-first_name')].filter(Boolean).join(' ');
       var locality = [checkoutFieldValue(addressPrefix + '-postcode'), checkoutFieldValue(addressPrefix + '-city')].filter(Boolean).join(' ');
       var street = [checkoutFieldValue(addressPrefix + '-address_1'), checkoutFieldValue(addressPrefix + '-appleklinika-house_number')].filter(Boolean).join(' ');
@@ -1075,7 +1098,7 @@
       var lines = [recipient, location, checkoutFieldValue(addressPrefix + '-address_2')].filter(Boolean);
 
       if (companyName) {
-        var taxNumber = checkoutFieldValue('order-appleklinika-tax_number');
+        var taxNumber = companyBilling.taxNumber;
         if (taxNumber) {
           lines.splice(1, 0, 'Adószám: ' + taxNumber);
         }
@@ -1089,9 +1112,9 @@
         return addressReview('billing');
       }
 
-      var companyToggle = document.getElementById('order-appleklinika-company_purchase');
+      var companyBilling = checkoutCompanyBillingReviewState();
 
-      return companyToggle && companyToggle.checked
+      return companyBilling.company
         ? addressReview('billing', 'shipping')
         : addressReview('shipping');
     }
