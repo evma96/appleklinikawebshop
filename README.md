@@ -221,6 +221,16 @@ Product cards intentionally stay compact: non-iPhone archive cards only show sto
 
 Internal identifier / IMEI remains admin-only and is not rendered on the frontend.
 
+## Back Office order fulfilment
+
+The `appleklinika-backoffice` custom plugin provides a private, operational order-fulfilment workspace at:
+
+```text
+/backoffice/
+```
+
+It uses WooCommerce orders and existing unique-product device metadata as the only source of truth. The default server-side, HPOS-compatible 25-order worklist includes only submitted operational order statuses (`pending`, `on-hold`, `processing`), never checkout drafts or terminal orders. It uses a deterministic descending creation-date then order-ID order, so orders sharing a timestamp do not cross pagination boundaries. Queue-only metadata filters retain their direct group, alternative values of the same fulfilment-state key use one equivalent `IN` condition, and an exact device condition is combined with a queue only through an explicit outer `AND`. Summary counts request paginated IDs with a one-row limit instead of hydrating full order pages. Device identifier search uses an exact HPOS-compatible metadata query. Delivery mode comes only from the canonical WooCommerce shipping-method ID: supported GLS IDs follow the courier workflow and `local_pickup` follows the personal-pickup workflow; unknown IDs are blocked for operational review. Unpaid submitted orders remain visible with a clear payment block; every mutation returns a visible Post/Redirect/Get result. Order detail links, the explicit return action, and mutation redirects retain only validated queue, search, search-type, and page context—never a supplied return URL. The same internal fulfilment state supplies a safe customer-facing progress section on the authenticated My Account order detail screen, while a Back Office-only daily activity view shows employee actions. It has its own internal fulfilment state and audit history, but does not alter stock, reservation, payment, or public storefront behaviour. Access requires the `manage_appleklinika_backoffice` capability; administrators also have access. See [Back Office documentation](docs/appleklinika-backoffice.md).
+
 ## Local Selector Demo Products
 
 For local verification, an admin-only development seeder can create a full iPhone 13 Pro selector matrix and a small iPad/MacBook/Apple Watch test set as real WooCommerce products.

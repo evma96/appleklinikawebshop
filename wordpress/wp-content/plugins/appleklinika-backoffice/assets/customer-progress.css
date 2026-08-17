@@ -1,0 +1,7 @@
+.akbo-customer-progress { border: 1px solid #dbe4ee; border-radius: 12px; margin: 24px 0; padding: 18px; }
+.akbo-customer-progress h2 { font-size: 18px; margin: 0 0 6px; }
+.akbo-customer-progress > p { margin: 0 0 14px; }
+.akbo-customer-progress ol { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.akbo-customer-progress li { background: #f1f4f7; border-radius: 99px; color: #687589; font-size: 13px; padding: 6px 10px; }
+.akbo-customer-progress li.is-complete { background: #e3f5ea; color: #176b3d; }
+.akbo-customer-progress li.is-current { background: #e8f0fa; color: #174b7d; font-weight: 700; }
