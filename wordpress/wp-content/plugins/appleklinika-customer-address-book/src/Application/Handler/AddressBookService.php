@@ -14,6 +14,7 @@ use AppleKlinika\CustomerAddressBook\Application\Port\AllowedCountries;
 use AppleKlinika\CustomerAddressBook\Application\Port\TransactionManager;
 use AppleKlinika\CustomerAddressBook\Domain\AddressBook\Address;
 use AppleKlinika\CustomerAddressBook\Domain\AddressBook\AddressException;
+use AppleKlinika\CustomerAddressBook\Domain\AddressBook\AddressNotFound;
 use AppleKlinika\CustomerAddressBook\Domain\AddressBook\VersionConflict;
 use AppleKlinika\CustomerAddressBook\Application\Query\GetCustomerAddress;
 use AppleKlinika\CustomerAddressBook\Application\Query\ListCustomerAddresses;
@@ -253,7 +254,8 @@ final class AddressBookService
     {
         $address = $this->addresses->getByKeyForCustomer($key, $customerId, $forUpdate);
         if ($address === null) {
-            throw new AddressException('A cím nem található.');
+            // Keep a missing key and another customer's key indistinguishable.
+            throw new AddressNotFound('A cím nem található.');
         }
         return $address;
     }

@@ -1857,12 +1857,29 @@
     form.appendChild(wrapper);
   });
 
+  function syncCartQuantityControl(control) {
+    var input = control.querySelector('input[type="number"]');
+    var increase = control.querySelector('[data-cart-qty-increase]');
+
+    if (!input || !increase) {
+      return;
+    }
+
+    var max = Number(input.getAttribute('max')) || 0;
+    var current = Number(input.value) || 0;
+    var atMaximum = max > 0 && current >= max;
+    increase.disabled = atMaximum;
+    increase.setAttribute('aria-disabled', atMaximum ? 'true' : 'false');
+  }
+
   document.querySelectorAll('[data-cart-qty-control]').forEach(function (control) {
     var input = control.querySelector('input[type="number"]');
 
     if (!input) {
       return;
     }
+
+    syncCartQuantityControl(control);
 
     control.addEventListener('click', function (event) {
       var button = event.target.closest('button');
@@ -1894,6 +1911,8 @@
       if (max > 0 && nextValue > max) {
         input.value = String(max);
       }
+
+      syncCartQuantityControl(control);
     });
   });
 
