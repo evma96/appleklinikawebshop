@@ -10,6 +10,8 @@ use AppleKlinika\CustomerAddressBook\Application\Handler\CheckoutAddressSelectio
 use AppleKlinika\CustomerAddressBook\Application\Port\AddressProjection;
 use AppleKlinika\CustomerAddressBook\Domain\AddressBook\Address;
 use AppleKlinika\CustomerAddressBook\Domain\AddressBook\AddressException;
+use AppleKlinika\CustomerAddressBook\Domain\AddressBook\AddressNotFound;
+use AppleKlinika\CustomerAddressBook\Domain\AddressBook\VersionConflict;
 
 /** Supported WooCommerce Checkout Blocks adapter; all address resolution remains server-side. */
 final class CheckoutAddressController
@@ -140,23 +142,43 @@ final class CheckoutAddressController
         $selectionData = is_array($data['selection'] ?? null) ? $data['selection'] : $data;
         $intentData = is_array($data['intent'] ?? null) ? $data['intent'] : [];
         $next = [];
-        foreach ($this->purposesForCurrentCart() as $purpose) {
-            $candidate = is_array($selectionData[$purpose] ?? null) ? $selectionData[$purpose] : ($current[$purpose] ?? ['mode' => 'one_off']);
-            $next[$purpose] = $this->normalizeAddressSelection($customerId, $purpose, $candidate);
-            $intent = $isEnvelope
-                ? (is_array($intentData[$purpose] ?? null) ? $intentData[$purpose] : [])
-                : $candidate;
-            $next[$purpose] = array_merge($next[$purpose], $this->normalizeSaveIntent($intent));
-            if ($next[$purpose]['mode'] === 'saved') {
-                $this->applyAddressToCustomer($purpose, $this->selection->resolve(
-                    $customerId,
-                    $purpose,
-                    $next[$purpose]['key'],
-                    $next[$purpose]['version']
-                ));
-            } elseif ($isEnvelope && is_array($candidate['fields'] ?? null)) {
-                $this->applyOneOffFieldsToCustomer($purpose, $candidate['fields']);
+        try {
+            foreach ($this->purposesForCurrentCart() as $purpose) {
+                $candidate = is_array($selectionData[$purpose] ?? null) ? $selectionData[$purpose] : ($current[$purpose] ?? ['mode' => 'one_off']);
+                $next[$purpose] = $this->normalizeAddressSelection($customerId, $purpose, $candidate);
+                $intent = $isEnvelope
+                    ? (is_array($intentData[$purpose] ?? null) ? $intentData[$purpose] : [])
+                    : $candidate;
+                $next[$purpose] = array_merge($next[$purpose], $this->normalizeSaveIntent($intent));
+                if ($next[$purpose]['mode'] === 'saved') {
+                    $this->applyAddressToCustomer($purpose, $this->selection->resolve(
+                        $customerId,
+                        $purpose,
+                        $next[$purpose]['key'],
+                        $next[$purpose]['version']
+                    ));
+                } elseif ($isEnvelope && is_array($candidate['fields'] ?? null)) {
+                    $this->applyOneOffFieldsToCustomer($purpose, $candidate['fields']);
+                }
             }
+        } catch (VersionConflict) {
+            throw new \WC_REST_Exception(
+                'appleklinika_address_book_stale_selection',
+                'A kiválasztott mentett cím időközben megváltozott. Kérjük, válaszd ki újra a címet.',
+                409
+            );
+        } catch (AddressNotFound) {
+            throw new \WC_REST_Exception(
+                'appleklinika_address_book_selection_not_found',
+                'A kiválasztott mentett cím nem elérhető. Kérjük, válassz másik címet.',
+                404
+            );
+        } catch (AddressException) {
+            throw new \WC_REST_Exception(
+                'appleklinika_address_book_invalid_selection',
+                'A kiválasztott mentett cím nem használható. Kérjük, ellenőrizd a választást.',
+                400
+            );
         }
         $this->storeSessionSelection($next);
     }
@@ -297,6 +319,9 @@ final class CheckoutAddressController
         }
         $key = sanitize_text_field((string) ($candidate['key'] ?? ''));
         $version = absint($candidate['version'] ?? 0);
+        if (! preg_match('/^[A-Za-z0-9_-]{20,64}$/', $key) || $version < 1) {
+            throw new AddressException('A kiválasztott cím nem használható.');
+        }
         $this->selection->resolve($customerId, $purpose, $key, $version);
         return ['mode' => 'saved', 'key' => $key, 'version' => $version];
     }

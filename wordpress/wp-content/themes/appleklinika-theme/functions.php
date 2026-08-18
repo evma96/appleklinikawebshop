@@ -780,6 +780,7 @@ function appleklinika_render_cart_item(string $cartItemKey, array $cartItem): vo
     $savings = $regularPrice > $currentPrice ? ($regularPrice - $currentPrice) * $quantity : 0;
     $removeUrl = wc_get_cart_remove_url($cartItemKey);
     $maximumQuantity = $product->get_max_purchase_quantity();
+    $atMaximumQuantity = $maximumQuantity > 0 && $quantity >= $maximumQuantity;
     ?>
     <article class="ak-cart-item">
         <div class="ak-cart-item__row">
@@ -816,7 +817,13 @@ function appleklinika_render_cart_item(string $cartItemKey, array $cartItem): vo
                             name="cart[<?php echo esc_attr($cartItemKey); ?>][qty]"
                             value="<?php echo esc_attr((string) $quantity); ?>"
                         >
-                        <button type="button" aria-label="Mennyiség növelése" data-cart-qty-increase>+</button>
+                        <button
+                            type="button"
+                            aria-label="Mennyiség növelése"
+                            aria-disabled="<?php echo $atMaximumQuantity ? 'true' : 'false'; ?>"
+                            data-cart-qty-increase
+                            <?php disabled($atMaximumQuantity); ?>
+                        >+</button>
                     </div>
                     <a
                         class="ak-cart-item__remove"
