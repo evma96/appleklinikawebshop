@@ -142,6 +142,33 @@ try {
     $test->assert(WC()->customer->get_billing_first_name() === '' && WC()->customer->get_billing_last_name() === '' && WC()->customer->get_billing_company() === 'Apple Klinika Teszt Kft.', 'saved company selection projects legal company name without a fake personal billing identity');
     $test->assert(WC()->customer->get_billing_email() === 'profil@example.test' && WC()->customer->get_billing_phone() === '+36 30 999 0000', 'server selection never overwrites profile contacts');
 
+    $storeApiSelectionResponse = static function (array $selection): array {
+        $request = new WP_REST_Request('POST', '/wc/store/v1/cart/extensions');
+        $request->set_header('Nonce', wp_create_nonce('wc_store_api'));
+        $request->set_param('namespace', 'appleklinika/address-book');
+        $request->set_param('data', [
+            'selection' => ['billing' => $selection],
+            'intent' => ['billing' => ['save' => false, 'set_default' => false, 'label' => '']],
+        ]);
+        $response = rest_ensure_response(rest_do_request($request));
+
+        return ['status' => $response->get_status(), 'data' => $response->get_data()];
+    };
+    $unknownSelection = $storeApiSelectionResponse(['mode' => 'saved', 'key' => str_repeat('A', 20), 'version' => 1]);
+    $foreignSelection = $storeApiSelectionResponse(['mode' => 'saved', 'key' => $foreignAddress->key(), 'version' => $foreignAddress->version()]);
+    $staleSelection = $storeApiSelectionResponse(['mode' => 'saved', 'key' => $billing->key(), 'version' => $billing->version() + 1]);
+    $malformedSelection = $storeApiSelectionResponse(['mode' => 'saved', 'key' => 'bad!', 'version' => 0]);
+    $validSelection = $storeApiSelectionResponse(['mode' => 'saved', 'key' => $billing->key(), 'version' => $billing->version()]);
+    $test->assert($unknownSelection['status'] === 404 && ($unknownSelection['data']['code'] ?? '') === 'appleklinika_address_book_selection_not_found', 'actual Store API returns a controlled 404 for an unknown opaque saved-address key instead of a 500');
+    $test->assert($foreignSelection['status'] === 404 && $foreignSelection['data'] === $unknownSelection['data'], 'actual Store API gives a foreign saved-address key the same non-disclosing response as an unknown key');
+    $test->assert($staleSelection['status'] === 409 && ($staleSelection['data']['code'] ?? '') === 'appleklinika_address_book_stale_selection', 'actual Store API returns a controlled conflict for a stale saved-address version');
+    $test->assert($malformedSelection['status'] === 400 && ($malformedSelection['data']['code'] ?? '') === 'appleklinika_address_book_invalid_selection', 'actual Store API rejects malformed saved-address selection input as a client error');
+    $test->assert($validSelection['status'] >= 200 && $validSelection['status'] < 300, 'actual Store API still accepts a valid owned saved-address selection');
+    $controller->clearSession();
+    $controller->updateSelection([
+        'billing' => ['mode' => 'saved', 'key' => $billing->key(), 'version' => $billing->version()],
+    ]);
+
     $draftOrder = wc_create_order(['customer_id' => $owner]);
     $controller->syncDraftMetadata($draftOrder, new WP_REST_Request());
     $test->assert($draftOrder->get_meta('_appleklinika_address_book_billing_key', true) === $billing->key() && $draftOrder->get_meta('_appleklinika_address_book_shipping_key', true) === '', 'draft keeps only current checkout opaque address selection audit metadata');
