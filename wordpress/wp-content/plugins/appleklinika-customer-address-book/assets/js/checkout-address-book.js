@@ -299,6 +299,23 @@
         }
     }
 
+    function clearSavedBillingIdentityProjection(section) {
+        if (!section || section.getAttribute('data-ak-address-purpose') !== 'billing') {
+            return;
+        }
+
+        var companyPurchaseInput = document.getElementById('order-appleklinika-company_purchase');
+        if (companyPurchaseInput) {
+            setCheckoutControlChecked(companyPurchaseInput, false);
+        }
+        ['billing-company', 'order-appleklinika-company_name', 'order-appleklinika-tax_number'].forEach(function (id) {
+            var input = document.getElementById(id);
+            if (input) {
+                setCheckoutControlValue(input, '');
+            }
+        });
+    }
+
     function syncPresentation(section) {
         var select = section.querySelector('select');
         var isOneOff = !select || select.value === '__one_off__';
@@ -391,7 +408,14 @@
             }
         });
         syncPresentation(section);
-        setCustomFields(section, matchingOption());
+        var initialOption = matchingOption();
+        if (initialOption) {
+            setCustomFields(section, initialOption);
+        } else if (purpose === 'billing' && current && current.mode === 'one_off') {
+            // A persisted one-off physical address may be restored by WooCommerce,
+            // but it must never inherit the prior saved company's invoice identity.
+            clearSavedBillingIdentityProjection(section);
+        }
         return !current && select.value !== '__one_off__';
     }
 
