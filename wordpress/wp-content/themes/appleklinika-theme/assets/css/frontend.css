@@ -4961,10 +4961,6 @@ body.woocommerce-checkout .ak-checkout-company-toggle label {
   font-weight: 900;
 }
 
-body.woocommerce-checkout .ak-checkout-company-source-hidden {
-  display: none !important;
-}
-
 body.woocommerce-checkout #billing-fields .ak-checkout-company-billing-slot {
   --ak-checkout-billing-gap: 34px;
   --ak-checkout-company-toggle-height: 52px;
