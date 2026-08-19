@@ -613,6 +613,8 @@
         purchaseField.wrapper.classList.add('ak-checkout-company-toggle');
       }
 
+      bindCompanyCheckboxKeyboardActivation(purchaseField.input);
+
       prepareTaxNumberInput(taxField.input);
 
       var companyStep = keepCompanyFieldsInOwnedStep(purchaseField);
@@ -652,6 +654,30 @@
       rememberSharedPhysicalCompanyIdentity(purchaseField, companyField, taxField);
 
       return true;
+    }
+
+    function bindCompanyCheckboxKeyboardActivation(input) {
+      if (!input || input.type !== 'checkbox' || input.getAttribute('data-ak-company-keyboard-bound') === '1') {
+        return;
+      }
+
+      // Woo Blocks keeps the registered input as the source of truth. On a
+      // remounted order-field control, restore the native Space activation on
+      // that same input rather than cloning or replacing it. Preventing the
+      // browser default before invoking click guarantees one change event.
+      input.setAttribute('data-ak-company-keyboard-bound', '1');
+      input.addEventListener('keydown', function (event) {
+        if (event.key !== ' ' && event.key !== 'Spacebar' && event.code !== 'Space') {
+          return;
+        }
+
+        if (input.disabled) {
+          return;
+        }
+
+        event.preventDefault();
+        input.click();
+      });
     }
 
     document.addEventListener('change', function (event) {
@@ -1040,6 +1066,7 @@
     var syncFrame = null;
     var lastFinalReviewHtml = '';
     var summaryHome = null;
+    var validationInProgress = false;
     var stepLabels = {
       1: 'Kosár',
       2: 'Szállítás és számlázás',
@@ -1321,6 +1348,75 @@
         return { key: key, error: errors[key] || {} };
       }).filter(function (entry) {
         return entry.error.message || entry.error.hidden === false;
+      });
+    }
+
+    function validationError(key, message) {
+      return {
+        key: key,
+        error: {
+          message: message,
+          hidden: false
+        }
+      };
+    }
+
+    function activeIdentityValidationErrors(step) {
+      if (step !== 2) {
+        return [];
+      }
+
+      var errors = [];
+      var companyToggle = document.getElementById('order-appleklinika-company_purchase');
+      var companyMode = Boolean(companyToggle && companyToggle.checked);
+      var billingSaved = checkoutAddressMode('billing') === 'saved';
+      var shippingSaved = checkoutAddressMode('shipping') === 'saved';
+
+      if (!billingSaved) {
+        if (companyMode) {
+          if (checkoutFieldValue('order-appleklinika-company_name') === '') {
+            errors.push(validationError('order-appleklinika-company_name', 'Cégnév megadása kötelező, ha cégként vásárolsz.'));
+          }
+          var taxNumber = checkoutFieldValue('order-appleklinika-tax_number');
+          if (taxNumber === '') {
+            errors.push(validationError('order-appleklinika-tax_number', 'Adószám megadása kötelező, ha cégként vásárolsz.'));
+          } else if (!checkoutTaxNumberIsValid(taxNumber)) {
+            errors.push(validationError('order-appleklinika-tax_number', 'Az adószám formátuma hibás. Példa: 12345678-1-23'));
+          }
+        } else {
+          if (checkoutFieldValue('billing-first_name') === '') {
+            errors.push(validationError('billing-first_name', 'Keresztnév megadása kötelező személyes számlázáshoz.'));
+          }
+          if (checkoutFieldValue('billing-last_name') === '') {
+            errors.push(validationError('billing-last_name', 'Vezetéknév megadása kötelező személyes számlázáshoz.'));
+          }
+        }
+      }
+
+      if (!shippingSaved) {
+        if (checkoutFieldValue('shipping-first_name') === '') {
+          errors.push(validationError('shipping-first_name', 'A szállítási címzetthez keresztnév megadása kötelező.'));
+        }
+        if (checkoutFieldValue('shipping-last_name') === '') {
+          errors.push(validationError('shipping-last_name', 'A szállítási címzetthez vezetéknév megadása kötelező.'));
+        }
+      }
+
+      return errors;
+    }
+
+    function uniqueValidationErrors(entries) {
+      var seen = {};
+
+      return entries.filter(function (entry) {
+        var key = String(entry.key || '');
+
+        if (seen[key]) {
+          return false;
+        }
+
+        seen[key] = true;
+        return true;
       });
     }
 
@@ -1609,34 +1705,59 @@
       }
     }
 
+    function completeCurrentStepValidation(onValid, errors) {
+      validationInProgress = false;
+
+      if (errors.length) {
+        announceValidationError(activeStep, errors);
+        focusValidationError(activeStep, errors);
+        return;
+      }
+
+      var message = document.querySelector('.ak-checkout-step-validation-message');
+      if (message) {
+        message.textContent = '';
+      }
+      onValid();
+    }
+
     function validateCurrentStep(onValid) {
+      if (validationInProgress) {
+        return;
+      }
+
+      validationInProgress = true;
+      var immediateErrors = activeIdentityValidationErrors(activeStep);
+
+      // The address-book progress flush has already persisted the current
+      // one-off values before replaying Continue. These active identity fields
+      // are consequently the same canonical values the server validates.
+      // Gate them before a remount can advance the custom stepper while Woo
+      // Blocks is still publishing its asynchronous validation-store result.
+      if (immediateErrors.length) {
+        completeCurrentStepValidation(onValid, immediateErrors);
+        return;
+      }
+
       var validation = checkoutValidationApi();
 
       if (!validation || !validation.dispatch || typeof validation.dispatch.showAllValidationErrors !== 'function') {
         announceValidationError(activeStep, []);
+        validationInProgress = false;
         return;
       }
 
       validation.dispatch.showAllValidationErrors();
-      window.setTimeout(function () {
+      window.requestAnimationFrame(function () {
         clearInactiveBillingValidationErrors();
-        var errors = validationErrors();
-        var currentErrors = errors.filter(function (entry) {
-          return validationErrorStep(entry) === activeStep;
+        window.requestAnimationFrame(function () {
+          var currentErrors = uniqueValidationErrors(validationErrors().filter(function (entry) {
+            return validationErrorStep(entry) === activeStep;
+          }).concat(activeIdentityValidationErrors(activeStep)));
+
+          completeCurrentStepValidation(onValid, currentErrors);
         });
-
-        if (currentErrors.length) {
-          announceValidationError(activeStep, currentErrors);
-          focusValidationError(activeStep, currentErrors);
-          return;
-        }
-
-        var message = document.querySelector('.ak-checkout-step-validation-message');
-        if (message) {
-          message.textContent = '';
-        }
-        onValid();
-      }, 0);
+      });
     }
 
     function requestStep(step) {
