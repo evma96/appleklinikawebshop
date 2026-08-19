@@ -39,6 +39,26 @@ $test = new CartCheckoutCompanyContractTest();
 $companyOrder = null;
 $personalOrder = null;
 
+$missingCompanyErrors = new WP_Error();
+appleklinika_validate_company_checkout_fields($missingCompanyErrors, [
+    'appleklinika/company_purchase' => '1',
+    'appleklinika/company_name' => '',
+    'appleklinika/tax_number' => '',
+], 'other');
+$test->assert(
+    in_array('appleklinika_company_name_required', $missingCompanyErrors->get_error_codes(), true)
+    && in_array('appleklinika_tax_number_required', $missingCompanyErrors->get_error_codes(), true),
+    'The authoritative server validation rejects an active company checkout without its name and tax number.'
+);
+
+$validCompanyErrors = new WP_Error();
+appleklinika_validate_company_checkout_fields($validCompanyErrors, [
+    'appleklinika/company_purchase' => '1',
+    'appleklinika/company_name' => 'Kosár QA Kft.',
+    'appleklinika/tax_number' => '12345678-1-23',
+], 'other');
+$test->assert($validCompanyErrors->has_errors() === false, 'The authoritative server validation accepts a corrected active company checkout.');
+
 try {
     $companyOrder = wc_create_order();
     $companyRequest = new WP_REST_Request('POST', '/wc/store/v1/checkout');
