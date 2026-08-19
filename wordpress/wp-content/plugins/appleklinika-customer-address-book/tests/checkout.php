@@ -71,7 +71,9 @@ try {
     $test->assert(str_contains((string) $checkoutScript, 'Válassz mentett számlázási címet') && str_contains($checkoutScript, 'Válassz mentett szállítási címet') && ! str_contains($checkoutScript, "document.createElement('h3')"), 'saved-address selectors use descriptive labels instead of duplicate visible section headings');
     $test->assert(str_contains((string) $checkoutScript, "section.classList.toggle('is-one-off', isOneOff)") && str_contains($checkoutScript, "section.classList.toggle('has-saved-address', !isOneOff)") && str_contains($checkoutScript, 'save.checked = false;') && str_contains($checkoutScript, 'defaultControl.disabled = true;'), 'checkout keeps the saved-address and one-off address presentation states explicit and clears one-off save intent before a saved address is submitted');
     $test->assert(str_contains((string) $checkoutScript, 'function selectionData(root)') && str_contains($checkoutScript, 'data[purpose].fields = oneOffAddressFields(root, purpose) || {};') && str_contains($checkoutScript, 'function saveIntentData(root)') && str_contains($checkoutScript, 'function sendSaveIntent(root)') && ! str_contains($checkoutScript, 'function sendSelection(root)') && str_contains($checkoutScript, 'function installProgressFlush(root)') && str_contains($checkoutScript, 'data-ak-address-flushed'), 'checkout keeps the complete current one-off address and save intent local until the normal continue flow flushes them together');
-    $test->assert(str_contains((string) $checkoutScript, 'function oneOffAddressFields(root, purpose)') && str_contains($checkoutScript, 'function waitForOneOffAddressSync(root)') && str_contains($checkoutScript, "cart[purpose + 'Address']") && str_contains($checkoutScript, 'sameAddressFields(expected[purpose]'), 'checkout blocks progression until the WooCommerce cart state contains the latest visible one-off physical address fields');
+    $test->assert(str_contains((string) $checkoutScript, 'function oneOffAddressFields(root, purpose)') && str_contains($checkoutScript, 'return sendSaveIntent(root).then(function () { return true; })') && !str_contains($checkoutScript, "window.wp && window.wp.data"), 'checkout blocks progression persists the complete canonical selection before replaying the native checkout action without relying on an unavailable client-side cart store');
+    $test->assert(str_contains((string) $checkoutScript, 'function announceAddressMode(section)') && str_contains($checkoutScript, 'appleklinika:checkout-address-mode-changed'), 'checkout publishes the active saved/one-off mode after initial render and every selector change so stale validation can be cleared without a refresh');
+    $test->assert(str_contains((string) $checkoutScript, 'function observeCheckout(checkout)') && str_contains($checkoutScript, 'checkoutObserver.observe(checkout, { childList: true, subtree: true })') && str_contains($checkoutScript, 'function queueSync()') && ! str_contains($checkoutScript, "attempts > 60 || document.querySelector('[data-ak-address-purpose]')"), 'checkout keeps one scoped, idempotent lifecycle observer so a remounted billing host receives exactly one selector after same-address is disabled');
     $checkoutCss = file_get_contents(dirname(__DIR__) . '/assets/css/checkout-address-book.css');
     $test->assert(is_string($checkoutCss) && str_contains($checkoutCss, '[data-ak-address-save-details][hidden]') && str_contains($checkoutCss, 'display: none !important;') && str_contains($checkoutCss, '.has-saved-address .ak-checkout-address-selector__save'), 'checkout keeps collapsed saved-address details hidden and reserves address-save controls for one-off addresses');
     $test->assert(is_string($checkoutCss) && str_contains($checkoutCss, '.ak-checkout-address-selector') && str_contains($checkoutCss, 'background: transparent;') && str_contains($checkoutCss, 'border: 0;'), 'saved-address selection remains an integrated checkout control rather than a nested card');
@@ -118,6 +120,57 @@ try {
         'Store API extension schema types match the checkout address-book data contract.'
     );
     $controller->registerStoreApi();
+
+    $controller->updateSelection([
+        'selection' => [
+            'billing' => [
+                'mode' => 'one_off',
+                'fields' => [
+                    'first_name' => '',
+                    'last_name' => '',
+                    'company' => 'Életciklus Teszt Kft.',
+                    'address_1' => 'Céges utca',
+                    'city' => 'Szeged',
+                    'postcode' => '6721',
+                    'country' => 'HU',
+                    'appleklinika/company_purchase' => '1',
+                    'appleklinika/company_name' => 'Életciklus Teszt Kft.',
+                    'appleklinika/tax_number' => '12345678-1-23',
+                ],
+            ],
+            'shipping' => ['mode' => 'saved', 'key' => $shipping->key(), 'version' => $shipping->version()],
+        ],
+        'intent' => ['billing' => [], 'shipping' => []],
+    ]);
+    $storedCompanyOneOff = WC()->session->get('appleklinika_address_book_checkout', []);
+    $test->assert(($storedCompanyOneOff['billing']['fields']['appleklinika/company_name'] ?? '') === 'Életciklus Teszt Kft.' && ($storedCompanyOneOff['billing']['fields']['appleklinika/tax_number'] ?? '') === '12345678-1-23', 'one-off company extension updates retain the current company identity in the checkout session without writing a customer profile field.');
+    $storedCompanyOneOff['shipping'] = ['mode' => 'saved', 'key' => $shipping->key(), 'version' => $shipping->version()];
+    WC()->session->set('appleklinika_address_book_checkout', $storedCompanyOneOff);
+    add_filter('appleklinika_customer_address_book_checkout_selection', [$controller, 'checkoutSelectionForPurpose'], 10, 2);
+    $companyOneOffErrors = new WP_Error();
+    appleklinika_validate_company_checkout_fields($companyOneOffErrors, [], 'other');
+    appleklinika_validate_checkout_address_identity($companyOneOffErrors, ['first_name' => '', 'last_name' => ''], 'billing');
+    appleklinika_validate_checkout_address_identity($companyOneOffErrors, ['first_name' => '', 'last_name' => ''], 'shipping');
+    $test->assert($companyOneOffErrors->has_errors() === false, 'one-off company billing with empty inactive personal names and a saved shipping selection passes the server-side checkout contract');
+
+    $companyMissingErrors = new WP_Error();
+    WC()->session->set('appleklinika_address_book_checkout', [
+        'billing' => ['mode' => 'one_off', 'fields' => ['appleklinika/company_purchase' => '1']],
+        'shipping' => ['mode' => 'saved', 'key' => $shipping->key(), 'version' => $shipping->version()],
+    ]);
+    appleklinika_validate_company_checkout_fields($companyMissingErrors, [], 'other');
+    $test->assert($companyMissingErrors->has_errors(), 'one-off company billing still rejects missing company and tax values server-side');
+
+    $personalOneOffErrors = new WP_Error();
+    WC()->session->set('appleklinika_address_book_checkout', [
+        'billing' => ['mode' => 'one_off', 'fields' => ['appleklinika/company_purchase' => '']],
+        'shipping' => ['mode' => 'one_off', 'fields' => []],
+    ]);
+    appleklinika_validate_checkout_address_identity($personalOneOffErrors, ['first_name' => '', 'last_name' => ''], 'billing');
+    appleklinika_validate_checkout_address_identity($personalOneOffErrors, ['first_name' => '', 'last_name' => ''], 'shipping');
+    $test->assert(count($personalOneOffErrors->get_error_codes()) === 4, 'personal one-off billing and one-off shipping retain their independently active recipient-name requirements');
+    remove_filter('appleklinika_customer_address_book_checkout_selection', [$controller, 'checkoutSelectionForPurpose'], 10);
+    $controller->clearSession();
     $extendSchema = \Automattic\WooCommerce\StoreApi\StoreApi::container()->get(\Automattic\WooCommerce\StoreApi\Schemas\ExtendSchema::class);
     $registeredSchema = $extendSchema->get_endpoint_schema(\Automattic\WooCommerce\StoreApi\Schemas\V1\CartSchema::IDENTIFIER);
     $test->assert(isset($registeredSchema->{'appleklinika/address-book'}) && is_array($registeredSchema->{'appleklinika/address-book'}), 'Real WooCommerce Store API registers the Apple Klinika cart extension schema without an exception.');

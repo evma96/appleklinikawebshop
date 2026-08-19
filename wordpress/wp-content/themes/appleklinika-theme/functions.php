@@ -4602,6 +4602,56 @@ function appleklinika_checkout_company_enabled($value): bool
 }
 
 /**
+ * The address-book adapter owns the selected-address session shape. The theme
+ * only needs the current mode and the safe one-off values needed by checkout
+ * validation, so it receives them through this narrow integration boundary.
+ *
+ * @return array<string, mixed>
+ */
+function appleklinika_checkout_address_book_selection(string $purpose): array
+{
+    $selection = apply_filters('appleklinika_customer_address_book_checkout_selection', [], $purpose);
+
+    return is_array($selection) ? $selection : [];
+}
+
+function appleklinika_checkout_uses_saved_address(string $purpose): bool
+{
+    return (appleklinika_checkout_address_book_selection($purpose)['mode'] ?? 'one_off') === 'saved';
+}
+
+/** @param array<string, mixed> $fields */
+function appleklinika_checkout_company_enabled_for_validation(array $fields): bool
+{
+    if (appleklinika_checkout_company_enabled($fields['appleklinika/company_purchase'] ?? false)) {
+        return true;
+    }
+
+    $selection = appleklinika_checkout_address_book_selection('billing');
+
+    return ($selection['mode'] ?? 'one_off') === 'one_off'
+        && appleklinika_checkout_company_enabled($selection['fields']['appleklinika/company_purchase'] ?? false);
+}
+
+/** @param array<string, mixed> $fields */
+function appleklinika_checkout_company_validation_value(array $fields, string $key): string
+{
+    $value = trim((string) ($fields[$key] ?? ''));
+
+    if ($value !== '') {
+        return $value;
+    }
+
+    $selection = appleklinika_checkout_address_book_selection('billing');
+
+    if (($selection['mode'] ?? 'one_off') !== 'one_off') {
+        return '';
+    }
+
+    return trim((string) ($selection['fields'][$key] ?? ''));
+}
+
+/**
  * @param array<string, mixed> $fields
  */
 function appleklinika_validate_company_checkout_fields(WP_Error $errors, array $fields, string $group): void
@@ -4610,12 +4660,12 @@ function appleklinika_validate_company_checkout_fields(WP_Error $errors, array $
         return;
     }
 
-    if (! appleklinika_checkout_company_enabled($fields['appleklinika/company_purchase'] ?? false)) {
+    if (! appleklinika_checkout_company_enabled_for_validation($fields)) {
         return;
     }
 
-    $companyName = trim(appleklinika_sanitize_checkout_text_field($fields['appleklinika/company_name'] ?? ''));
-    $taxNumber = trim(appleklinika_sanitize_checkout_tax_number($fields['appleklinika/tax_number'] ?? ''));
+    $companyName = trim(appleklinika_sanitize_checkout_text_field(appleklinika_checkout_company_validation_value($fields, 'appleklinika/company_name')));
+    $taxNumber = trim(appleklinika_sanitize_checkout_tax_number(appleklinika_checkout_company_validation_value($fields, 'appleklinika/tax_number')));
 
     if ($companyName === '') {
         $errors->add(
@@ -4655,7 +4705,12 @@ function appleklinika_validate_checkout_address_identity(WP_Error $errors, array
 
     $firstName = trim(sanitize_text_field((string) ($fields['first_name'] ?? '')));
     $lastName = trim(sanitize_text_field((string) ($fields['last_name'] ?? '')));
-    $requiresRecipientName = $group === 'shipping' || ! appleklinika_checkout_company_identity_from_request();
+    if (appleklinika_checkout_uses_saved_address($group)) {
+        return;
+    }
+
+    $requiresRecipientName = $group === 'shipping'
+        || ! (appleklinika_checkout_company_identity_from_request() || appleklinika_checkout_company_enabled_for_validation([]));
 
     if (! $requiresRecipientName) {
         return;

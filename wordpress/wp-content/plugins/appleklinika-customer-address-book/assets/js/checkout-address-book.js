@@ -119,60 +119,13 @@
         return fields;
     }
 
-    function sameAddressFields(expected, actual) {
-        return Object.keys(expected).every(function (field) {
-            return String(actual && actual[field] || '') === expected[field];
-        });
-    }
-
-    function waitForOneOffAddressSync(root) {
-        var expected = {};
-
-        ['billing', 'shipping'].forEach(function (purpose) {
-            var fields = oneOffAddressFields(root, purpose);
-            if (fields) {
-                expected[purpose] = fields;
-            }
-        });
-
-        if (Object.keys(expected).length === 0) {
-            return Promise.resolve(true);
-        }
-
-        return new Promise(function (resolve) {
-            var deadline = Date.now() + 3000;
-            var verify = function () {
-                var cart = window.wp && window.wp.data
-                    ? window.wp.data.select('wc/store/cart').getCartData()
-                    : null;
-                var synchronized = cart && Object.keys(expected).every(function (purpose) {
-                    return sameAddressFields(expected[purpose], cart[purpose + 'Address']);
-                });
-
-                if (synchronized) {
-                    resolve(true);
-                    return;
-                }
-                if (Date.now() >= deadline) {
-                    resolve(false);
-                    return;
-                }
-                window.setTimeout(verify, 50);
-            };
-            verify();
-        });
-    }
-
     function flushSelection(root) {
-        return waitForOneOffAddressSync(root).then(function (addressesSynchronized) {
-            if (!addressesSynchronized) {
-                root.querySelectorAll('[data-ak-address-notice]').forEach(function (notice) {
-                    notice.textContent = 'A megadott címet még szinkronizáljuk. Kérjük, próbáld újra.';
-                });
-                return false;
-            }
-            return sendSaveIntent(root).catch(function () { return false; });
-        });
+        // Store the complete currently selected canonical address state first.
+        // This makes a saved shipping selection authoritative immediately and
+        // keeps one-off company identity available to server validation. Woo
+        // Blocks receives the ordinary replayed button click below, so its own
+        // address lifecycle remains responsible for native address updates.
+        return sendSaveIntent(root).then(function () { return true; }).catch(function () { return false; });
     }
 
     function installProgressFlush(root) {
@@ -339,6 +292,17 @@
         }
     }
 
+    function announceAddressMode(section) {
+        var select = section.querySelector('select');
+
+        document.dispatchEvent(new CustomEvent('appleklinika:checkout-address-mode-changed', {
+            detail: {
+                purpose: section.getAttribute('data-ak-address-purpose'),
+                mode: select && select.value !== '__one_off__' ? 'saved' : 'one_off'
+            }
+        }));
+    }
+
     function renderPurpose(root, purpose, options, current) {
         var host = document.getElementById(purpose + '-fields');
         if (!host || host.querySelector('[data-ak-address-purpose="' + purpose + '"]')) {
@@ -391,6 +355,7 @@
         select.addEventListener('change', function () {
             var item = matchingOption();
             syncPresentation(section);
+            announceAddressMode(section);
             if (item) {
                 setCustomFields(section, item);
             } else {
@@ -408,6 +373,7 @@
             }
         });
         syncPresentation(section);
+        announceAddressMode(section);
         var initialOption = matchingOption();
         if (initialOption) {
             setCustomFields(section, initialOption);
@@ -428,6 +394,7 @@
         if (!checkout) {
             return;
         }
+        observeCheckout(checkout);
         var changed = renderPurpose(checkout, 'billing', data.billing || [], data.selection ? data.selection.billing : null);
         if (data.needs_shipping) {
             changed = renderPurpose(checkout, 'shipping', data.shipping || [], data.selection ? data.selection.shipping : null) || changed;
@@ -435,11 +402,41 @@
         installProgressFlush(checkout);
     }
 
+    var observedCheckout = null;
+    var checkoutObserver = null;
+    var syncQueued = false;
+
+    function queueSync() {
+        if (syncQueued) {
+            return;
+        }
+
+        syncQueued = true;
+        window.requestAnimationFrame(function () {
+            syncQueued = false;
+            sync();
+        });
+    }
+
+    function observeCheckout(checkout) {
+        if (observedCheckout === checkout) {
+            return;
+        }
+
+        if (checkoutObserver) {
+            checkoutObserver.disconnect();
+        }
+
+        observedCheckout = checkout;
+        checkoutObserver = new MutationObserver(queueSync);
+        checkoutObserver.observe(checkout, { childList: true, subtree: true });
+    }
+
     var attempts = 0;
     var timer = window.setInterval(function () {
         sync();
         attempts += 1;
-        if (attempts > 60 || document.querySelector('[data-ak-address-purpose]')) {
+        if (attempts > 60) {
             window.clearInterval(timer);
         }
     }, 300);
