@@ -36,6 +36,7 @@ final class CheckoutAddressController
         add_action('woocommerce_store_api_checkout_update_order_from_request', [$this, 'syncCheckoutOrderIntent'], 20, 2);
         add_action('woocommerce_store_api_checkout_order_processed', [$this, 'finalizeOrder'], 20, 1);
         add_action('wp_logout', [$this, 'clearSession']);
+        add_filter('appleklinika_customer_address_book_checkout_selection', [$this, 'checkoutSelectionForPurpose'], 10, 2);
     }
 
     public function registerStoreApi(): void
@@ -158,7 +159,9 @@ final class CheckoutAddressController
                         $next[$purpose]['version']
                     ));
                 } elseif ($isEnvelope && is_array($candidate['fields'] ?? null)) {
-                    $this->applyOneOffFieldsToCustomer($purpose, $candidate['fields']);
+                    $oneOffFields = $this->normalizeOneOffFields($candidate['fields']);
+                    $next[$purpose]['fields'] = $oneOffFields;
+                    $this->applyOneOffFieldsToCustomer($purpose, $oneOffFields);
                 }
             }
         } catch (VersionConflict) {
@@ -288,6 +291,24 @@ final class CheckoutAddressController
         }
     }
 
+    /**
+     * Gives the checkout's server-side validators the currently selected
+     * canonical address state without exposing the session storage detail.
+     *
+     * @param array<string, mixed> $fallback
+     * @return array<string, mixed>
+     */
+    public function checkoutSelectionForPurpose(array $fallback, string $purpose): array
+    {
+        if (! in_array($purpose, ['billing', 'shipping'], true)) {
+            return $fallback;
+        }
+
+        $selection = $this->sessionSelection()[$purpose] ?? null;
+
+        return is_array($selection) ? $selection : $fallback;
+    }
+
     public function assets(): void
     {
         if (! function_exists('is_checkout') || ! is_checkout() || ! is_user_logged_in()) {
@@ -339,6 +360,24 @@ final class CheckoutAddressController
             throw new \WC_REST_Exception('appleklinika_address_book_label', 'A mentett címhez adj meg egy címelnevezést.', 400);
         }
         return ['save' => $save, 'set_default' => $setDefault, 'label' => $label];
+    }
+
+    /** @param array<string, mixed> $fields @return array<string, string> */
+    private function normalizeOneOffFields(array $fields): array
+    {
+        $normalized = [];
+
+        foreach (['first_name', 'last_name', 'company', 'address_1', 'address_2', 'city', 'state', 'postcode', 'country'] as $field) {
+            $normalized[$field] = sanitize_text_field((string) ($fields[$field] ?? ''));
+        }
+        foreach (['house_number', 'staircase', 'floor', 'door'] as $field) {
+            $normalized['appleklinika/' . $field] = sanitize_text_field((string) ($fields['appleklinika/' . $field] ?? ''));
+        }
+        $normalized['appleklinika/company_purchase'] = ! empty($fields['appleklinika/company_purchase']) ? '1' : '';
+        $normalized['appleklinika/company_name'] = sanitize_text_field((string) ($fields['appleklinika/company_name'] ?? ''));
+        $normalized['appleklinika/tax_number'] = sanitize_text_field((string) ($fields['appleklinika/tax_number'] ?? ''));
+
+        return $normalized;
     }
 
     private function applyAddressToCustomer(string $purpose, Address $address): void

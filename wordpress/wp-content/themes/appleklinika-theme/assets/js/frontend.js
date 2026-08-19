@@ -1407,6 +1407,19 @@
       return /(appleklinika.*(company|tax)|(company|tax).*appleklinika|cégnév|adószám)/.test(identity);
     }
 
+    function shippingPersonalNameValidation(entry) {
+      var identity = validationIdentity(entry);
+
+      return /shipping[-_](first_name|last_name)/.test(identity)
+        || (/(keresztnév|vezetéknév|first.?name|last.?name)/.test(identity) && /(shipping|szállítás)/.test(identity));
+    }
+
+    function checkoutAddressMode(purpose) {
+      var select = document.getElementById('ak-checkout-address-selector-' + purpose);
+
+      return select && select.value !== '__one_off__' ? 'saved' : 'one_off';
+    }
+
     function clearInactiveBillingValidationErrors() {
       var validation = checkoutValidationApi();
 
@@ -1416,12 +1429,16 @@
 
       var companyToggle = document.getElementById('order-appleklinika-company_purchase');
       var companyMode = Boolean(companyToggle && companyToggle.checked);
+      var billingSaved = checkoutAddressMode('billing') === 'saved';
+      var shippingSaved = checkoutAddressMode('shipping') === 'saved';
       var cleared = false;
 
       validationErrors().forEach(function (entry) {
-        var inactive = companyMode
-          ? billingPersonalNameValidation(entry)
-          : companyBillingValidation(entry);
+        var inactive = (companyMode || billingSaved) && billingPersonalNameValidation(entry);
+
+        inactive = inactive || (billingSaved && companyBillingValidation(entry));
+        inactive = inactive || (shippingSaved && shippingPersonalNameValidation(entry));
+        inactive = inactive || (!companyMode && companyBillingValidation(entry));
 
         if (inactive) {
           validation.dispatch.clearValidationError(entry.key);
@@ -1444,6 +1461,7 @@
     }
 
     document.addEventListener('appleklinika:checkout-company-mode-changed', clearInactiveBillingValidationErrors);
+    document.addEventListener('appleklinika:checkout-address-mode-changed', clearInactiveBillingValidationErrors);
 
     function validationErrorStep(entry) {
       var identity = (entry.key + ' ' + String(entry.error.message || '')).toLowerCase();
@@ -1481,6 +1499,10 @@
           field = target.querySelector('[aria-invalid="true"]');
           return Boolean(field);
         });
+      }
+
+      if (field && (field.disabled || field.offsetParent === null || field.closest('[aria-hidden="true"], .is-hidden, .is-company-hidden'))) {
+        field = null;
       }
 
       if (field && typeof field.focus === 'function') {
