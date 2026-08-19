@@ -40,6 +40,55 @@ $companyOrder = null;
 $personalOrder = null;
 
 try {
+    WC()->session->set('appleklinika_address_book_company_identity', [
+        'purchase' => true,
+        'name' => 'Egyszeri QA Kft.',
+        'tax_number' => '12345678-1-23',
+    ]);
+    $oneOffRequest = new WP_REST_Request('PUT', '/wc/store/v1/checkout');
+    appleklinika_capture_checkout_company_identity(null, [], $oneOffRequest);
+    $oneOffFields = (array) $oneOffRequest->get_param('additional_fields');
+    $test->assert($oneOffFields === [
+        'appleklinika/company_purchase' => true,
+        'appleklinika/company_name' => 'Egyszeri QA Kft.',
+        'appleklinika/tax_number' => '12345678-1-23',
+    ], 'A one-off company identity from the active checkout session is projected into the authoritative Store API additional-fields request without relying on customer profile metadata.');
+    WC()->session->set('appleklinika_address_book_company_identity', null);
+
+    $validCompanyFields = [
+        'appleklinika/company_purchase' => true,
+        'appleklinika/company_name' => 'Egyszeri QA Kft.',
+        'appleklinika/tax_number' => '12345678-1-23',
+    ];
+    $validCompanyErrors = new WP_Error();
+    appleklinika_validate_company_checkout_fields($validCompanyErrors, $validCompanyFields, 'other');
+    $GLOBALS['appleklinika_checkout_company_identity'] = true;
+    appleklinika_validate_checkout_address_identity($validCompanyErrors, ['first_name' => '', 'last_name' => ''], 'billing');
+    appleklinika_validate_checkout_address_identity($validCompanyErrors, ['first_name' => 'Átvevő', 'last_name' => 'Minta'], 'shipping');
+    $test->assert($validCompanyErrors->get_error_codes() === [], 'A current one-off company identity with empty billing personal names and valid saved or one-off shipping recipient fields passes the server validation contract.');
+
+    $missingCompanyErrors = new WP_Error();
+    appleklinika_validate_company_checkout_fields($missingCompanyErrors, [
+        'appleklinika/company_purchase' => true,
+        'appleklinika/company_name' => '',
+        'appleklinika/tax_number' => '12345678-1-23',
+    ], 'other');
+    $test->assert(in_array('appleklinika_company_name_required', $missingCompanyErrors->get_error_codes(), true), 'A company checkout without a legal company name remains rejected server-side.');
+
+    $invalidTaxErrors = new WP_Error();
+    appleklinika_validate_company_checkout_fields($invalidTaxErrors, [
+        'appleklinika/company_purchase' => true,
+        'appleklinika/company_name' => 'Egyszeri QA Kft.',
+        'appleklinika/tax_number' => '12345678-1-2',
+    ], 'other');
+    $test->assert(in_array('appleklinika_tax_number_invalid', $invalidTaxErrors->get_error_codes(), true), 'A company checkout with an invalid Hungarian tax number remains rejected server-side.');
+
+    $GLOBALS['appleklinika_checkout_company_identity'] = false;
+    $personalIdentityErrors = new WP_Error();
+    appleklinika_validate_checkout_address_identity($personalIdentityErrors, ['first_name' => '', 'last_name' => ''], 'billing');
+    $test->assert(in_array('appleklinika_billing_first_name_required', $personalIdentityErrors->get_error_codes(), true) && in_array('appleklinika_billing_last_name_required', $personalIdentityErrors->get_error_codes(), true), 'A personal one-off billing address without its active personal name fields remains rejected server-side.');
+    unset($GLOBALS['appleklinika_checkout_company_identity']);
+
     $companyOrder = wc_create_order();
     $companyRequest = new WP_REST_Request('POST', '/wc/store/v1/checkout');
     $companyRequest->set_param('additional_fields', [

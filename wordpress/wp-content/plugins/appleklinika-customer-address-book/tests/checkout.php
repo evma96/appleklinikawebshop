@@ -70,6 +70,7 @@ try {
     $test->assert(str_contains((string) $checkoutScript, 'Válassz mentett számlázási címet') && str_contains($checkoutScript, 'Válassz mentett szállítási címet') && ! str_contains($checkoutScript, "document.createElement('h3')"), 'saved-address selectors use descriptive labels instead of duplicate visible section headings');
     $test->assert(str_contains((string) $checkoutScript, "section.classList.toggle('is-one-off', isOneOff)") && str_contains($checkoutScript, "section.classList.toggle('has-saved-address', !isOneOff)") && str_contains($checkoutScript, 'save.checked = false;') && str_contains($checkoutScript, 'defaultControl.disabled = true;'), 'checkout keeps the saved-address and one-off address presentation states explicit and clears one-off save intent before a saved address is submitted');
     $test->assert(str_contains((string) $checkoutScript, 'function selectionData(root)') && str_contains($checkoutScript, 'data[purpose].fields = oneOffAddressFields(root, purpose) || {};') && str_contains($checkoutScript, 'function saveIntentData(root)') && str_contains($checkoutScript, 'function sendSaveIntent(root)') && ! str_contains($checkoutScript, 'function sendSelection(root)') && str_contains($checkoutScript, 'function installProgressFlush(root)') && str_contains($checkoutScript, 'data-ak-address-flushed'), 'checkout keeps the complete current one-off address and save intent local until the normal continue flow flushes them together');
+    $test->assert(str_contains((string) $checkoutScript, "root.addEventListener('change'") && str_contains($checkoutScript, "A szállítási és számlázási cím megegyezik.") && str_contains($checkoutScript, 'window.setTimeout(sync, 0);'), 'switching off the shared-address control re-runs the existing address-selector sync so the now-mounted billing fields receive their selector without an observer or DOM relocation');
     $test->assert(str_contains((string) $checkoutScript, 'function oneOffAddressFields(root, purpose)') && str_contains($checkoutScript, 'function waitForOneOffAddressSync(root)') && str_contains($checkoutScript, "cart[purpose + 'Address']") && str_contains($checkoutScript, 'sameAddressFields(expected[purpose]'), 'checkout blocks progression until the WooCommerce cart state contains the latest visible one-off physical address fields');
     $checkoutCss = file_get_contents(dirname(__DIR__) . '/assets/css/checkout-address-book.css');
     $test->assert(is_string($checkoutCss) && str_contains($checkoutCss, '[data-ak-address-save-details][hidden]') && str_contains($checkoutCss, 'display: none !important;') && str_contains($checkoutCss, '.has-saved-address .ak-checkout-address-selector__save'), 'checkout keeps collapsed saved-address details hidden and reserves address-save controls for one-off addresses');
@@ -233,6 +234,19 @@ try {
     ]);
     $latestOneOffIntent = $controller->storeApiData()['selection']['billing'];
     $test->assert($latestOneOffIntent['mode'] === 'one_off' && $latestOneOffIntent['save'] === true && $latestOneOffIntent['set_default'] === true && $latestOneOffIntent['label'] === 'Gyors végleges cím új neve' && WC()->customer->get_billing_address_1() === 'Merge Gate utca' && WC()->customer->get_billing_address_2() === '' && WC()->customer->get_billing_company() === '' && WC()->customer->get_meta('ak_billing_staircase') === 'MG' && WC()->customer->get_meta('ak_billing_floor') === '9' && WC()->customer->get_meta('ak_billing_door') === '87', 'repeated save, label and default intent updates preserve the complete live one-off address without restoring any saved-address residue');
+
+    $controller->updateSelection([
+        'selection' => ['billing' => ['mode' => 'one_off', 'fields' => [
+            'first_name' => '', 'last_name' => '', 'company' => 'Egyedi cég', 'country' => 'HU', 'state' => '', 'postcode' => '6728', 'city' => 'Szeged', 'address_1' => 'Merge Gate utca', 'address_2' => '',
+            'appleklinika/house_number' => '987', 'appleklinika/staircase' => 'MG', 'appleklinika/floor' => '9', 'appleklinika/door' => '87',
+            'appleklinika/company_purchase' => '1', 'appleklinika/company_name' => 'Egyedi cég', 'appleklinika/tax_number' => '12345678-1-23',
+        ]]],
+        'intent' => ['billing' => ['save' => false, 'set_default' => false, 'label' => '']],
+    ]);
+    $oneOffCompanyIdentity = WC()->session?->get('appleklinika_address_book_company_identity');
+    $test->assert($oneOffCompanyIdentity === ['purchase' => true, 'name' => 'Egyedi cég', 'tax_number' => '12345678-1-23'], 'one-off company identity is kept only in the active checkout session so the next Store API request can use its authoritative additional-fields contract without saving profile data');
+    $controller->clearSession();
+    $test->assert(WC()->session?->get('appleklinika_address_book_company_identity') === null, 'checkout-session cleanup removes the transient one-off company identity');
 
     $addressCountBeforeIntent = count($service->list($owner));
     $controller->updateSelection([
