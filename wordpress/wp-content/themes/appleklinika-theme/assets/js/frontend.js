@@ -890,8 +890,9 @@
       if (!shipping || !shipping.address_1) {
         shipping = checkoutFormAddress('shipping');
       }
+      var effectiveBilling = billing && billing.address_1 ? billing : shipping;
       var detailRows = [
-        ['Számlázási cím', addressSummary(billing)],
+        ['Számlázási cím', addressSummary(effectiveBilling)],
         ['Szállítási cím', addressSummary(shipping)],
         ['Szállítási mód', selectedShippingMethod(cart)],
         ['Fizetési mód', selectedPaymentMethod()]
