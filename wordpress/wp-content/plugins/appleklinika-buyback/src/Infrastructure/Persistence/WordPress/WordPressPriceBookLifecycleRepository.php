@@ -59,9 +59,8 @@ final class WordPressPriceBookLifecycleRepository implements PriceBookLifecycleR
 
     public function hasLifecycleDependencies(PriceBookId $priceBookId): bool
     {
-        $needle = '%"price_book_id"%' . $priceBookId->toInt() . '%';
-        return (int) $this->database->get_var($this->database->prepare("SELECT COUNT(*) FROM `{$this->snapshots}` WHERE payload_json LIKE %s", $needle)) > 0
-            || (int) $this->database->get_var($this->database->prepare("SELECT COUNT(*) FROM `{$this->requestEvents}` WHERE private_payload_json LIKE %s", $needle)) > 0;
+        return $this->hasExactPriceBookReference($this->snapshots, 'payload_json', $priceBookId)
+            || $this->hasExactPriceBookReference($this->requestEvents, 'private_payload_json', $priceBookId);
     }
 
     public function record(string $eventType, PriceBookId $priceBookId, int $actorId, array $payload, \DateTimeImmutable $at): void
@@ -72,5 +71,14 @@ final class WordPressPriceBookLifecycleRepository implements PriceBookLifecycleR
         ], ['%d', '%s', '%d', '%s', '%s']) !== 1) {
             throw new PersistenceException('Az árkönyv-életciklus esemény naplózása nem sikerült.');
         }
+    }
+
+    private function hasExactPriceBookReference(string $table, string $column, PriceBookId $priceBookId): bool
+    {
+        $pattern = '"price_book_id"[[:space:]]*:[[:space:]]*"?' . $priceBookId->toInt() . '"?[[:space:]]*[,}]';
+        return (int) $this->database->get_var($this->database->prepare(
+            "SELECT COUNT(*) FROM `{$table}` WHERE `{$column}` REGEXP %s",
+            $pattern
+        )) > 0;
     }
 }

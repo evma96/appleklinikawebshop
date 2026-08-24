@@ -27,25 +27,12 @@ final class WordPressDraftPriceBookDiscardRepository implements DraftPriceBookDi
 
     public function hasBusinessReferences(PriceBookId $priceBookId): bool
     {
-        $referenceNeedle = '%"price_book_id"%' . $priceBookId->toInt() . '%';
-        $snapshotReferences = (int) $this->database->get_var($this->database->prepare(
-            "SELECT COUNT(*) FROM `{$this->snapshots}` WHERE payload_json LIKE %s",
-            $referenceNeedle
-        ));
-        if ($snapshotReferences > 0) {
-            return true;
-        }
-
-        $eventReferences = (int) $this->database->get_var($this->database->prepare(
-            "SELECT COUNT(*) FROM `{$this->events}` WHERE private_payload_json LIKE %s",
-            $referenceNeedle
-        ));
-        if ($eventReferences > 0) {
+        if ($this->hasExactPriceBookReference($this->snapshots, 'payload_json', $priceBookId)) {
             return true;
         }
 
         // The current request schema deliberately has no price-book field or foreign key.
-        return false;
+        return $this->hasExactPriceBookReference($this->events, 'private_payload_json', $priceBookId);
     }
 
     public function discardDraftWithRules(PriceBookId $priceBookId): int
@@ -65,5 +52,14 @@ final class WordPressDraftPriceBookDiscardRepository implements DraftPriceBookDi
         }
 
         return (int) $ruleResult;
+    }
+
+    private function hasExactPriceBookReference(string $table, string $column, PriceBookId $priceBookId): bool
+    {
+        $pattern = '"price_book_id"[[:space:]]*:[[:space:]]*"?' . $priceBookId->toInt() . '"?[[:space:]]*[,}]';
+        return (int) $this->database->get_var($this->database->prepare(
+            "SELECT COUNT(*) FROM `{$table}` WHERE `{$column}` REGEXP %s",
+            $pattern
+        )) > 0;
     }
 }

@@ -273,6 +273,9 @@ function pricingIndexNames(wpdb $database, string $table): array
 
 function pricingCleanup(wpdb $database, array $tables, string $marker): void
 {
+    $markerNeedle = '%' . $database->esc_like($marker) . '%';
+    $database->query($database->prepare("DELETE FROM `{$tables[Schema::SNAPSHOTS]}` WHERE payload_json LIKE %s", $markerNeedle));
+    $database->query($database->prepare("DELETE FROM `{$tables[Schema::EVENTS]}` WHERE private_payload_json LIKE %s OR idempotency_key LIKE %s", $markerNeedle, $markerNeedle));
     $ids = $database->get_col($database->prepare(
         "SELECT id FROM `{$tables[Schema::PRICE_BOOKS]}` WHERE label LIKE %s",
         $database->esc_like($marker) . '%'
@@ -285,7 +288,7 @@ function pricingCleanup(wpdb $database, array $tables, string $marker): void
         $database->query($database->prepare("DELETE FROM `{$tables[Schema::PRICE_RULES]}` WHERE price_book_id IN ({$placeholders})", ...$ids));
         $database->query($database->prepare("DELETE FROM `{$tables[Schema::PRICE_BOOKS]}` WHERE id IN ({$placeholders})", ...$ids));
     }
-    $database->query($database->prepare("DELETE FROM `{$tables[Schema::PRICE_BOOK_LIFECYCLE_EVENTS]}` WHERE payload_json LIKE %s", '%' . $database->esc_like($marker) . '%'));
+    $database->query($database->prepare("DELETE FROM `{$tables[Schema::PRICE_BOOK_LIFECYCLE_EVENTS]}` WHERE payload_json LIKE %s", $markerNeedle));
 }
 
 function pricingDefinition(string $kind, string $code, int $priority = 100, bool $enabled = true): PricingRuleDefinition
@@ -660,6 +663,19 @@ try {
 
     $discardRepository = new WordPressDraftPriceBookDiscardRepository($wpdb);
     $discardDraft = new DiscardDraftPriceBookHandler($books, $discardRepository, $transactions);
+    $referenceFixturePayload = wp_json_encode(['price_book_id' => 552, 'priority' => 9223372036854775807, 'qa_marker' => $marker]);
+    $test->assert(is_string($referenceFixturePayload) && $wpdb->insert($tables[Schema::SNAPSHOTS], ['request_id' => 0, 'snapshot_type' => 'qa_reference_detection', 'schema_version' => '1.0', 'payload_json' => $referenceFixturePayload, 'created_by_type' => 'system', 'created_by_id' => null, 'checksum' => hash('sha256', $referenceFixturePayload), 'created_at' => $clock->now()->format('Y-m-d H:i:s')], ['%d', '%s', '%s', '%s', '%s', '%d', '%s', '%s']) === 1, 'Reference-detection QA snapshot fixture is created');
+    $eventFixturePayload = wp_json_encode(['price_book_id' => 553, 'priority' => 9223372036854775807, 'qa_marker' => $marker]);
+    $test->assert(is_string($eventFixturePayload) && $wpdb->insert($tables[Schema::EVENTS], ['request_id' => 0, 'event_type' => 'qa_reference_detection', 'actor_type' => 'system', 'actor_id' => null, 'public_summary' => null, 'private_payload_json' => $eventFixturePayload, 'correlation_id' => null, 'idempotency_key' => $marker . '-reference-event', 'created_at' => $clock->now()->format('Y-m-d H:i:s')], ['%d', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s']) === 1, 'Reference-detection QA event fixture is created');
+    $lifecycleReferences = new WordPressPriceBookLifecycleRepository($wpdb);
+    $test->assert(! $discardRepository->hasBusinessReferences(new PriceBookId(2233)) && ! $lifecycleReferences->hasLifecycleDependencies(new PriceBookId(2233)), 'A priority containing 9223372036854775807 does not falsely reference price book 2233');
+    $test->assert($discardRepository->hasBusinessReferences(new PriceBookId(552)) && $lifecycleReferences->hasLifecycleDependencies(new PriceBookId(552)), 'The structured snapshot price_book_id 552 remains a real protected business reference');
+    $test->assert($discardRepository->hasBusinessReferences(new PriceBookId(553)) && $lifecycleReferences->hasLifecycleDependencies(new PriceBookId(553)), 'The structured event price_book_id 553 remains a real protected business reference');
+    $genuinelyReferenced = pricingCreateBook($createBook, $marker . '-STRUCTURED-REFERENCE', $adminId);
+    pricingAddRule($addRule, $books, $genuinelyReferenced->id(), pricingDefinition(PricingRuleKind::BASE_PRICE, $marker . '-structured-reference-base'));
+    $genuineReferencePayload = wp_json_encode(['price_book_id' => $genuinelyReferenced->id()->toInt(), 'qa_marker' => $marker]);
+    $test->assert(is_string($genuineReferencePayload) && $wpdb->insert($tables[Schema::SNAPSHOTS], ['request_id' => 0, 'snapshot_type' => 'qa_structured_reference', 'schema_version' => '1.0', 'payload_json' => $genuineReferencePayload, 'created_by_type' => 'system', 'created_by_id' => null, 'checksum' => hash('sha256', $genuineReferencePayload), 'created_at' => $clock->now()->format('Y-m-d H:i:s')], ['%d', '%s', '%s', '%s', '%s', '%d', '%s', '%s']) === 1, 'Genuinely referenced draft QA snapshot fixture is created');
+    $test->throws(fn () => $discardDraft->handle(new DiscardDraftPriceBook($genuinelyReferenced->id()->toInt(), $genuinelyReferenced->label())), AppleKlinika\Buyback\Application\Exception\PriceBookHasBusinessReferencesException::class, 'A genuinely structured price-book reference still blocks draft deletion');
     $discardable = pricingCreateBook($createBook, $marker . '-DISCARD', $adminId);
     pricingAddRule($addRule, $books, $discardable->id(), pricingDefinition(PricingRuleKind::BASE_PRICE, $marker . '-discard-base'));
     $activeRulesBeforeDiscard = count($rules->listForPriceBook($activeBook->id()));
