@@ -1016,6 +1016,11 @@ try {
         $lifecycle,
         new ProtectPriceBookHandler($books, $lifecycle, $transactions, $clock)
     );
+    $legacyFastRule = PricingRule::create($matrixBook->id(), new PricingRuleDefinition(new PricingRuleCode('legacy-fast-' . $runToken), new PricingRuleKind(PricingRuleKind::MODE_ADJUSTMENT), 'iphone', null, null, 'fast_online', null, null, null, new Money(-5000, 'HUF'), null, new RulePriority(100), true, 'Elavult gyors felvásárlás címke', null), $clock->now());
+    $legacyTradeRule = PricingRule::create($activeBook->id(), new PricingRuleDefinition(new PricingRuleCode('legacy-trade-' . $runToken), new PricingRuleKind(PricingRuleKind::MODE_ADJUSTMENT), 'iphone', null, null, 'trade_in', null, null, null, new Money(5000, 'HUF'), null, new RulePriority(100), true, 'Elavult beszámítási címke', null), $clock->now());
+    $previewRuleDetails = new ReflectionMethod(PriceBooksPage::class, 'previewRuleDetails');
+    $legacyPreviewDetails = $previewRuleDetails->invoke($uiPage, [$legacyFastRule, $legacyTradeRule]);
+    $test->assert($legacyPreviewDetails['legacy-fast-' . $runToken]['label'] === 'Gyorsított felvásárlás (beérkezéstől 1–3 nap)' && $legacyPreviewDetails['legacy-trade-' . $runToken]['label'] === 'Személyes beszámítás másik készülékbe' && ! str_contains(serialize($legacyPreviewDetails), 'Elavult'), 'Admin preview ignores legacy stored offer labels from different price books and uses the canonical shared titles');
     $_GET = [];
     ob_start();
     $uiPage->render();
@@ -1064,7 +1069,7 @@ try {
     ob_start();
     $uiPage->render();
     $offerModesHtml = (string) ob_get_clean();
-    $test->assert(substr_count($offerModesHtml, 'data-ak-offer-mode-row') === 4 && str_contains($offerModesHtml, 'Ajánlattípusok mentése') && str_contains($offerModesHtml, 'Személyes felvásárlás (készpénz)') && str_contains($offerModesHtml, 'Gyorsított felvásárlás (beérkezéstől 1–3 nap)') && str_contains($offerModesHtml, 'Normál felvásárlás (magasabb ár, beérkezéstől 5–10 nap)') && str_contains($offerModesHtml, 'Személyes beszámítás másik készülékbe'), 'Offer-mode tab renders exactly four shared public offer modes and one clear save action');
+    $test->assert(substr_count($offerModesHtml, 'data-ak-offer-mode-row') === 4 && str_contains($offerModesHtml, 'Ajánlattípusok mentése') && str_contains($offerModesHtml, 'Az ajánlattípusok neve és leírása minden árkönyvben azonos.') && str_contains($offerModesHtml, 'Személyes felvásárlás (készpénz)') && str_contains($offerModesHtml, 'Személyes átadás és bevizsgálás után, a lehető leggyorsabb helyi ügyintézéssel.') && str_contains($offerModesHtml, 'Gyorsított felvásárlás (beérkezéstől 1–3 nap)') && str_contains($offerModesHtml, 'Gyors feldolgozás és kifizetés a készülék beérkezése és bevizsgálása után.') && str_contains($offerModesHtml, 'Normál felvásárlás (magasabb ár, beérkezéstől 5–10 nap)') && str_contains($offerModesHtml, 'Magasabb előzetes összeg hosszabb, rugalmasabb feldolgozási idő mellett.') && str_contains($offerModesHtml, 'Személyes beszámítás másik készülékbe') && str_contains($offerModesHtml, 'A bevizsgálás után elfogadott összeg új készülék vásárlásába számítható be.'), 'Offer-mode tab renders the four shared canonical titles and descriptions, plus one clear save action');
     $test->assert(! str_contains($offerModesHtml, 'Szabálykód') && ! str_contains($offerModesHtml, 'Prioritás') && ! str_contains($offerModesHtml, 'Összehasonlítás értéke') && ! str_contains($offerModesHtml, 'model_key'), 'Offer-mode UI omits raw technical pricing-rule fields and any model selector');
     $offerModeScript = file_get_contents(APPLEKLINIKA_BUYBACK_PATH . '/assets/admin/price-books.js');
     $test->assert(is_string($offerModeScript) && str_contains($offerModeScript, "if (value) value.value = '';") && str_contains($offerModeScript, "if (remove.checked) value.value = '';") && str_contains($offerModeScript, "'missing|' + type.value"), 'Offer-mode client contract clears incompatible type-switch values and keeps missing-row change tracking type-aware');
