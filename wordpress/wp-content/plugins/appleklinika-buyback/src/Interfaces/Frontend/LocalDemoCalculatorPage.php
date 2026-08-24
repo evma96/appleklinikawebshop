@@ -714,6 +714,7 @@ final class LocalDemoCalculatorPage
                         >
                             <input type="radio" id="<?php echo esc_attr($id); ?>" name="selected_offer_mode" value="<?php echo esc_attr($mode); ?>" data-mode-input>
                             <div class="ak-buyback-demo__mode-badges">
+                                <?php if (isset($meta['badge'])) : ?><span data-offer-badge="best-price"><?php echo esc_html($meta['badge']); ?></span><?php endif; ?>
                                 <?php if ($isHighest) : ?><span>Legmagasabb összeg</span><?php endif; ?>
                                 <?php if ($mode === ServiceMode::FAST_ONLINE) : ?><span>Kényelmes választás</span><?php endif; ?>
                             </div>
@@ -729,7 +730,7 @@ final class LocalDemoCalculatorPage
                             <?php if ($result->breakdown !== []) : ?>
                                 <details>
                                     <summary>Számítás részletei</summary>
-                                    <ul><?php foreach ($result->breakdown as $line) : ?><li><span><?php echo esc_html($line->publicLabel ?: $this->breakdownLabel($line->type)); ?></span><strong><?php echo esc_html($this->money($line->afterAmountMinor)); ?></strong></li><?php endforeach; ?></ul>
+                                    <ul><?php foreach ($result->breakdown as $line) : ?><li><span><?php echo esc_html($line->ruleKind === 'mode_adjustment' ? $meta['label'] : ($line->publicLabel ?: $this->breakdownLabel($line->type))); ?></span><strong><?php echo esc_html($this->money($line->afterAmountMinor)); ?></strong></li><?php endforeach; ?></ul>
                                 </details>
                             <?php endif; ?>
                         </label>

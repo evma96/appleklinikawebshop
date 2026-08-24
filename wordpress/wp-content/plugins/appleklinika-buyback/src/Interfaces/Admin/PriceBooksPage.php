@@ -984,7 +984,7 @@ final class PriceBooksPage
         }
         $configured = count($modeRules);
         echo '<section class="ak-buyback-card ak-offer-modes-editor"><h3>Ajánlattípusok</h3>';
-        echo '<p>' . esc_html($readOnly ? 'Az ajánlattípusok módosítói itt csak olvashatók.' : 'A négy átvételi mód az egész árkönyvre érvényes. A mentés csak ezeknek a piszkozat-szabályait módosítja; modellhez és tárhelyhez nem kötődik.') . '</p>';
+        echo '<p>' . esc_html($readOnly ? 'Az ajánlattípusok neve és leírása minden árkönyvben azonos; a módosítók itt csak olvashatók.' : 'Az ajánlattípusok neve és leírása minden árkönyvben azonos. Itt csak az egész árkönyvre érvényes korrekciókat módosíthatod; modellhez és tárhelyhez nem kötődnek.') . '</p>';
         echo '<div class="ak-offer-mode-summary"><strong><span data-ak-offer-configured>' . esc_html((string) $configured) . '</span> / 4</strong> beállítva · <strong><span data-ak-offer-missing>' . esc_html((string) (4 - $configured)) . '</span></strong> nincs beállítva · <strong><span data-ak-offer-changes>0</span></strong> mentetlen módosítás</div>';
         if ($duplicates !== []) {
             echo '<div class="notice notice-error inline"><p>Egy vagy több ajánlattípushoz több szabály tartozik. A szerkesztés biztonsági okból nem elérhető, amíg ezt külön nem rendezik.</p></div>';
@@ -1360,7 +1360,9 @@ final class PriceBooksPage
         $details = [];
         foreach ($rules as $rule) {
             $definition = $rule->definition();
-            $label = $definition->publicLabel ?? '';
+            $label = $definition->serviceMode !== null
+                ? $this->serviceModeLabel($definition->serviceMode)
+                : ($definition->publicLabel ?? '');
             if ($label === '' && $definition->conditionKey === 'battery_health') {
                 $label = 'Akkumulátor ' . $this->comparisonLabel($definition->comparisonValue);
             }

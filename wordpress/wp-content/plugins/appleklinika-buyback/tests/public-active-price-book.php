@@ -11,6 +11,7 @@ use AppleKlinika\Buyback\Application\Pricing\PriceBookPage;
 use AppleKlinika\Buyback\Application\Pricing\RepositoryActivePriceBookResolver;
 use AppleKlinika\Buyback\Application\LocalDemo\LocalDemoQuestionnaire;
 use AppleKlinika\Buyback\Domain\Pricing\CurrencyCode;
+use AppleKlinika\Buyback\Domain\Buyback\OfferModeDefinition;
 use AppleKlinika\Buyback\Domain\Pricing\MinimumOfferPolicy;
 use AppleKlinika\Buyback\Domain\Pricing\PriceBook;
 use AppleKlinika\Buyback\Domain\Pricing\PriceBookId;
@@ -182,6 +183,35 @@ function publicBaseRule(int $id, PriceBookId $bookId, string $model, int $storag
     );
 }
 
+function publicModeRule(int $id, PriceBookId $bookId, string $mode, int $amount, string $legacyLabel): PricingRule
+{
+    $at = new DateTimeImmutable('2026-07-21T12:00:00+00:00');
+    return PricingRule::reconstitute(
+        new PricingRuleId($id),
+        $bookId,
+        new PricingRuleDefinition(
+            new PricingRuleCode('public-mode-' . $mode . '-' . $id),
+            new PricingRuleKind(PricingRuleKind::MODE_ADJUSTMENT),
+            'iphone',
+            null,
+            null,
+            $mode,
+            null,
+            null,
+            null,
+            new Money($amount, 'HUF'),
+            null,
+            new RulePriority(500),
+            true,
+            $legacyLabel,
+            'In-memory public runtime fixture'
+        ),
+        new AggregateVersion(1),
+        $at,
+        $at
+    );
+}
+
 global $wpdb;
 $runner = new PublicActiveBookTestRunner();
 $before = publicActiveBookCounts($wpdb);
@@ -192,6 +222,10 @@ $rules = [
     publicBaseRule(940001, $active->id(), 'iphone_11', 64),
     publicBaseRule(940002, $active->id(), 'iphone_11', 128),
     publicBaseRule(940003, $active->id(), 'iphone_11', 256),
+    publicModeRule(940004, $active->id(), 'in_store_instant', -1000, 'Legacy A személyes cím'),
+    publicModeRule(940005, $active->id(), 'fast_online', -2000, 'Legacy A gyors cím'),
+    publicModeRule(940006, $active->id(), 'higher_offer', 0, 'Legacy A normál cím'),
+    publicModeRule(940007, $active->id(), 'trade_in', 5000, 'Legacy A beszámítás cím'),
 ];
 $books = new InMemoryPublicPriceBooks([$retired, $draft, $active]);
 $ruleRepository = new InMemoryPublicPricingRules([$active->id()->toInt() => $rules]);
@@ -287,6 +321,35 @@ $_POST['color_key'] = 'black';
 $validColorHtml = $page->render();
 $runner->assert(! str_contains($validColorHtml, 'Válassz az ehhez a modellhez elérhető színek közül.'), 'A canonical iPhone 11 inventory color is accepted server-side');
 $runner->assert(str_contains($validColorHtml, 'ELŐZETES AJÁNLAT') && ! str_contains($validColorHtml, 'HELYI DEMÓ') && ! str_contains($validColorHtml, 'tesztelési célú'), 'Public offer result uses customer-facing wording without internal demo text');
+$offersPanelStart = (int) strpos($validColorHtml, '<section class="ak-buyback-demo__panel ak-buyback-demo__panel--offers"');
+$reviewPanelStart = (int) strpos($validColorHtml, '<section class="ak-buyback-demo__panel ak-buyback-demo__panel--review"');
+$offersPanel = substr($validColorHtml, $offersPanelStart, $reviewPanelStart - $offersPanelStart);
+$canonicalOfferCopy = [
+    'in_store_instant' => ['label' => 'Személyes felvásárlás (készpénz)', 'description' => 'Személyes átadás és bevizsgálás után, a lehető leggyorsabb helyi ügyintézéssel.'],
+    'fast_online' => ['label' => 'Gyorsított felvásárlás (beérkezéstől 1–3 nap)', 'description' => 'Gyors feldolgozás és kifizetés a készülék beérkezése és bevizsgálása után.'],
+    'higher_offer' => ['label' => 'Normál felvásárlás (magasabb ár, beérkezéstől 5–10 nap)', 'description' => 'Magasabb előzetes összeg hosszabb, rugalmasabb feldolgozási idő mellett.'],
+    'trade_in' => ['label' => 'Személyes beszámítás másik készülékbe', 'description' => 'A bevizsgálás után elfogadott összeg új készülék vásárlásába számítható be.'],
+];
+$runner->assert(array_map(static fn (array $meta): array => ['label' => $meta['label'], 'description' => $meta['description']], OfferModeDefinition::all()) === $canonicalOfferCopy, 'Offer types have one exact canonical global title and description mapping');
+$runner->assert(array_reduce($canonicalOfferCopy, static fn (bool $present, array $copy): bool => $present && str_contains($offersPanel, $copy['label']) && str_contains($offersPanel, $copy['description']), true) && ! str_contains($offersPanel, 'Legacy A személyes cím') && ! str_contains($offersPanel, 'Legacy A gyors cím') && ! str_contains($offersPanel, 'Legacy A normál cím') && ! str_contains($offersPanel, 'Legacy A beszámítás cím'), 'Public offer cards ignore stored legacy mode titles and use canonical global copy');
+$runner->assert(str_contains($offersPanel, '79 000 Ft') && str_contains($offersPanel, '78 000 Ft') && str_contains($offersPanel, '80 000 Ft') && str_contains($offersPanel, '85 000 Ft'), 'Public offer amounts still come from the active price book corrections');
+$runner->assert(preg_match('/data-mode-code="trade_in".*?data-offer-badge="best-price">LEGJOBB ÁR/s', $offersPanel) === 1 && substr_count($offersPanel, 'data-offer-badge="best-price"') === 1, 'LEGJOBB ÁR belongs only to the trade-in offer type');
+$alternative = publicActiveBook(930005, 987657, 'Alternative public prices', PriceBookStatus::ACTIVE);
+$alternativeRules = [
+    publicBaseRule(940101, $alternative->id(), 'iphone_11', 64),
+    publicBaseRule(940102, $alternative->id(), 'iphone_11', 128),
+    publicBaseRule(940103, $alternative->id(), 'iphone_11', 256),
+    publicModeRule(940104, $alternative->id(), 'in_store_instant', -5000, 'Legacy B személyes cím'),
+    publicModeRule(940105, $alternative->id(), 'fast_online', -6000, 'Legacy B gyors cím'),
+    publicModeRule(940106, $alternative->id(), 'higher_offer', 1000, 'Legacy B normál cím'),
+    publicModeRule(940107, $alternative->id(), 'trade_in', 12000, 'Legacy B beszámítás cím'),
+];
+$alternativePage = new LocalDemoCalculatorPage(new RepositoryActivePriceBookResolver(new InMemoryPublicPriceBooks([$retired, $draft, $alternative]), new InMemoryPublicPricingRules([$alternative->id()->toInt() => $alternativeRules])), new PricingEngine(), new WordPressDeviceCatalogReader(), new WordPressLocalDemoProductReader(), new LocalDemoQuestionnaire());
+$alternativeHtml = $alternativePage->render();
+$alternativeOffersPanelStart = (int) strpos($alternativeHtml, '<section class="ak-buyback-demo__panel ak-buyback-demo__panel--offers"');
+$alternativeReviewPanelStart = (int) strpos($alternativeHtml, '<section class="ak-buyback-demo__panel ak-buyback-demo__panel--review"');
+$alternativeOffersPanel = substr($alternativeHtml, $alternativeOffersPanelStart, $alternativeReviewPanelStart - $alternativeOffersPanelStart);
+$runner->assert(array_reduce($canonicalOfferCopy, static fn (bool $present, array $copy): bool => $present && str_contains($alternativeOffersPanel, $copy['label']) && str_contains($alternativeOffersPanel, $copy['description']), true) && ! str_contains($alternativeOffersPanel, 'Legacy B személyes cím') && ! str_contains($alternativeOffersPanel, 'Legacy B gyors cím') && ! str_contains($alternativeOffersPanel, 'Legacy B normál cím') && ! str_contains($alternativeOffersPanel, 'Legacy B beszámítás cím') && str_contains($alternativeOffersPanel, '75 000 Ft') && str_contains($alternativeOffersPanel, '74 000 Ft') && str_contains($alternativeOffersPanel, '81 000 Ft') && str_contains($alternativeOffersPanel, '92 000 Ft'), 'Different stored legacy labels cannot change public copy while each active price book keeps its own corrections');
 $_POST['color_key'] = '';
 $noColorHtml = $page->render();
 $runner->assert(! str_contains($noColorHtml, 'Válassz az ehhez a modellhez elérhető színek közül.') && str_contains($noColorHtml, 'Nincs megadva'), 'An omitted optional color is accepted and summarized naturally');
@@ -313,9 +376,6 @@ $legacyErrorHtml = $page->render();
 $runner->assert(! str_contains($legacyErrorHtml, 'A biztonsági ellenőrzés sikertelen.'), 'A legacy error message in browser history is never rendered as trusted page state');
 $_GET = [];
 $runner->assert(publicActiveBookCounts($wpdb) === $failureCounts, 'Recovering from a rejected or expired nonce creates no public request data');
-$offersPanelStart = (int) strpos($validColorHtml, '<section class="ak-buyback-demo__panel ak-buyback-demo__panel--offers"');
-$reviewPanelStart = (int) strpos($validColorHtml, '<section class="ak-buyback-demo__panel ak-buyback-demo__panel--review"');
-$offersPanel = substr($validColorHtml, $offersPanelStart, $reviewPanelStart - $offersPanelStart);
 $runner->assert(substr_count($offersPanel, 'data-customer-summary') === 1 && str_contains($offersPanel, 'A készüléked összefoglalója') && str_contains($offersPanel, 'Ellenőrizd, hogy minden megadott adat helyes-e.'), 'Offer page renders one customer-readable review summary from the public state');
 $runner->assert(str_contains($offersPanel, 'ak-buyback-demo__customer-summary-device') && str_contains($offersPanel, 'ak-buyback-demo__customer-summary-section') && str_contains($offersPanel, 'ak-buyback-demo__customer-summary-offer') && ! str_contains($offersPanel, 'ak-buyback-demo__customer-summary-groups'), 'Offer summary uses one ordered top-to-bottom review layout');
 $runner->assert(str_contains($offersPanel, 'Folyadékérintkezés') && str_contains($offersPanel, 'Hálózatfüggetlen') && ! str_contains($offersPanel, 'visual_key'), 'Offer summary presents public labels without technical visual metadata');
