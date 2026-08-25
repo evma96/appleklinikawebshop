@@ -15,6 +15,7 @@ use AppleKlinika\Buyback\Application\Pricing\PriceBookActivationReadinessService
 use AppleKlinika\Buyback\Application\Pricing\RepositoryActivePriceBookResolver;
 use AppleKlinika\Buyback\Domain\Pricing\PriceBookActivationReadinessEvaluator;
 use AppleKlinika\Buyback\Domain\Pricing\PricingEngine;
+use AppleKlinika\Buyback\Domain\Buyback\OfferModeConfiguration;
 use AppleKlinika\Buyback\Infrastructure\Inventory\WordPressDeviceCatalogReader;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\MySqlPriceBookActivationLock;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressPriceBookRepository;
@@ -37,7 +38,7 @@ final class LocalDemoModule
     ) {
     }
 
-    public static function create(): self
+    public static function create(?OfferModeConfiguration $offerModes = null): self
     {
         global $wpdb;
         $transactions = new WordPressTransactionManager($wpdb);
@@ -51,7 +52,7 @@ final class LocalDemoModule
         $requests = new WordPressBuybackRequestRepository($wpdb, new WordPressBuybackRequestMapper());
         $publicStore = new WordPressPublicBuybackRequestStore($wpdb);
         $mailConfiguration = BuybackSmtpConfiguration::fromEnvironment();
-        $mailer = new WordPressBuybackRequestMailer($mailConfiguration);
+        $mailer = new WordPressBuybackRequestMailer($mailConfiguration, $offerModes);
         $seeder = new LocalDemoSeeder(
             $books,
             $rules,
@@ -72,9 +73,10 @@ final class LocalDemoModule
             new WordPressDomainEventStore($wpdb, new WordPressBuybackRequestMapper()),
             new WordPressRequestNumberGenerator($requests, $clock),
             $transactions,
-            $clock
+            $clock,
+            $offerModes
         );
-        return new self($seeder, new LocalDemoCalculatorPage($resolver, new PricingEngine(), $catalog, $localProducts, $questionnaire, $submission, $publicStore, new DispatchBuybackRequestNotifications($mailer, $publicStore, $clock), $mailer));
+        return new self($seeder, new LocalDemoCalculatorPage($resolver, new PricingEngine(), $catalog, $localProducts, $questionnaire, $submission, $publicStore, new DispatchBuybackRequestNotifications($mailer, $publicStore, $clock), $mailer, $offerModes));
     }
 
     public function register(): void

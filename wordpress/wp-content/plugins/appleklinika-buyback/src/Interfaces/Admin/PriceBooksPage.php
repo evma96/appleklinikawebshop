@@ -63,6 +63,7 @@ use AppleKlinika\Buyback\Domain\Pricing\PricingRule;
 use AppleKlinika\Buyback\Domain\Pricing\PricingRuleId;
 use AppleKlinika\Buyback\Domain\Pricing\PricingRuleKind;
 use AppleKlinika\Buyback\Domain\Pricing\SystemDefaultQuestionnairePolicy;
+use AppleKlinika\Buyback\Domain\Buyback\OfferModeConfiguration;
 use AppleKlinika\Buyback\Domain\Buyback\OfferModeDefinition;
 use AppleKlinika\Buyback\Infrastructure\WordPress\CapabilityManager;
 
@@ -107,7 +108,8 @@ final class PriceBooksPage
         private readonly AdminSubmissionGuard $submissionGuard,
         private readonly LocalDemoQuestionnaire $questionnaire,
         private readonly ?PriceBookLifecycleRepository $lifecycle = null,
-        private readonly ?ProtectPriceBookHandler $protectBook = null
+        private readonly ?ProtectPriceBookHandler $protectBook = null,
+        private readonly ?OfferModeConfiguration $offerModes = null
     ) {
     }
 
@@ -527,9 +529,9 @@ final class PriceBooksPage
                 echo '</div></div>';
             }
             if ($canDeleteDraft) {
-                echo '<section class="ak-pricebook-confirmation ak-pricebook-confirmation--danger" id="' . esc_attr($confirmationPrefix . '-deletion') . '" data-ak-confirmation-panel hidden><h4>Piszkozat törlése</h4><p>A piszkozat és a hozzá tartozó felvásárlási szabályok véglegesen törlődnek. Ez a művelet nem vonható vissza.</p><form method="post">';
+                echo '<section class="ak-pricebook-confirmation ak-pricebook-confirmation--danger" id="' . esc_attr($confirmationPrefix . '-deletion') . '" data-ak-confirmation-panel hidden><h4>Piszkozat törlése</h4><p>A piszkozat és a hozzá tartozó felvásárlási szabályok véglegesen törlődnek. Ez a művelet nem vonható vissza.</p><p><strong>Árkönyv:</strong> ' . esc_html($book->label()) . ' (#' . esc_html((string) $book->id()?->toInt()) . ')</p><form method="post">';
                 $this->securityFields('discard_draft_price_book', $book);
-                echo '<label>A megerősítéshez írd be az árkönyv pontos nevét:<input type="text" name="discard_confirmation" required></label><div class="ak-pricebook-confirmation-actions"><button type="submit" class="button-link-delete">Piszkozat végleges törlése</button><button type="button" class="button-link" data-ak-confirmation-cancel>Mégse</button></div></form></section>';
+                echo '<label>A megerősítéshez írd be pontosan ezt: <strong>' . esc_html(DiscardDraftPriceBookHandler::CONFIRMATION_TOKEN) . '</strong><input type="text" name="discard_confirmation" required></label><div class="ak-pricebook-confirmation-actions"><button type="submit" class="button-link-delete">Piszkozat végleges törlése</button><button type="button" class="button-link" data-ak-confirmation-cancel>Mégse</button></div></form></section>';
             }
             if ($canProtect) {
                 $protectionAction = $replacesProtectedReference ? 'Védett alap áthelyezése ide' : 'Beállítás védett alapárkönyvként';
@@ -997,7 +999,7 @@ final class PriceBooksPage
             echo '<div class="ak-offer-mode-save ak-offer-mode-save-top"><span data-ak-offer-change-message aria-live="polite">Nincs mentetlen változás.</span><button type="submit" class="button button-primary">Ajánlattípusok mentése</button></div>';
         }
         echo '<div class="ak-offer-mode-list">';
-        foreach (OfferModeDefinition::all() as $mode => $meta) {
+        foreach ($this->offerModes()->all() as $mode => $meta) {
             $this->renderOfferModeRow($mode, $meta, $modeRules[$mode] ?? null, $readOnly);
         }
         echo '</div>';
@@ -2029,7 +2031,12 @@ final class PriceBooksPage
 
     private function serviceModeLabel(string $mode): string
     {
-        return OfferModeDefinition::all()[$mode]['label'] ?? $mode;
+        return $this->offerModes()->all()[$mode]['label'] ?? $mode;
+    }
+
+    private function offerModes(): OfferModeConfiguration
+    {
+        return $this->offerModes ?? OfferModeConfiguration::defaults();
     }
 
     private function outcomeLabel(string $outcome): string

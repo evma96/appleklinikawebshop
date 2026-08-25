@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AppleKlinika\Buyback\Interfaces\Admin;
 
-use AppleKlinika\Buyback\Domain\Buyback\OfferModeDefinition;
+use AppleKlinika\Buyback\Domain\Buyback\OfferModeConfiguration;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressPublicBuybackRequestStore;
 use AppleKlinika\Buyback\Infrastructure\WordPress\CapabilityManager;
 
@@ -13,7 +13,7 @@ final class BuybackRequestsPage
 {
     public const SLUG = 'appleklinika-buyback-requests';
 
-    public function __construct(private readonly WordPressPublicBuybackRequestStore $store)
+    public function __construct(private readonly WordPressPublicBuybackRequestStore $store, private readonly ?OfferModeConfiguration $offerModes = null)
     {
     }
 
@@ -108,6 +108,6 @@ final class BuybackRequestsPage
             return 'Személyes bevizsgálást kérek';
         }
 
-        return OfferModeDefinition::all()[(string) $mode]['label'] ?? (string) $mode;
+        return ($this->offerModes ?? OfferModeConfiguration::defaults())->all()[(string) $mode]['label'] ?? (string) $mode;
     }
 }
