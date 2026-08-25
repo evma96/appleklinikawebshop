@@ -6,12 +6,12 @@ namespace AppleKlinika\Buyback\Infrastructure\WordPress;
 
 use AppleKlinika\Buyback\Application\Port\BuybackRequestMailer;
 use AppleKlinika\Buyback\Application\PublicRequest\PublicBuybackSubmissionResult;
-use AppleKlinika\Buyback\Domain\Buyback\OfferModeDefinition;
+use AppleKlinika\Buyback\Domain\Buyback\OfferModeConfiguration;
 
 /** Keeps Buyback on wp_mail(), with SMTP configured only through deployment environment. */
 final class WordPressBuybackRequestMailer implements BuybackRequestMailer
 {
-    public function __construct(private readonly BuybackSmtpConfiguration $configuration)
+    public function __construct(private readonly BuybackSmtpConfiguration $configuration, private readonly ?OfferModeConfiguration $offerModes = null)
     {
     }
 
@@ -84,7 +84,7 @@ final class WordPressBuybackRequestMailer implements BuybackRequestMailer
             return $prefix . "\n\nSzemélyes bevizsgálás szükséges. A pontos ajánlatot rövid személyes ellenőrzés után adjuk meg." . $reasons;
         }
 
-        $mode = OfferModeDefinition::all()[$result->serviceMode ?? '']['label'] ?? (string) $result->serviceMode;
+        $mode = ($this->offerModes ?? OfferModeConfiguration::defaults())->all()[$result->serviceMode ?? '']['label'] ?? (string) $result->serviceMode;
         $offer = number_format((int) $result->amountMinor, 0, ',', ' ') . ' Ft';
         return $prefix . "\nVálasztott lehetőség: {$mode}\nElőzetes ajánlat: {$offer}\n\nA végleges érték fizikai bevizsgálás után kerül megerősítésre.";
     }
@@ -99,7 +99,7 @@ final class WordPressBuybackRequestMailer implements BuybackRequestMailer
                 $body .= "\nRögzített okok: " . implode(' · ', $result->manualReviewReasons);
             }
         } else {
-            $mode = OfferModeDefinition::all()[$result->serviceMode ?? '']['label'] ?? (string) $result->serviceMode;
+            $mode = ($this->offerModes ?? OfferModeConfiguration::defaults())->all()[$result->serviceMode ?? '']['label'] ?? (string) $result->serviceMode;
             $body .= "\nVálasztott lehetőség: {$mode}";
         }
 

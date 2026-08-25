@@ -10,6 +10,7 @@ use AppleKlinika\Buyback\Application\Pricing\RepositoryActivePriceBookResolver;
 use AppleKlinika\Buyback\Application\PublicRequest\PublicBuybackRequestSubmission;
 use AppleKlinika\Buyback\Application\PublicRequest\PublicBuybackSubmissionException;
 use AppleKlinika\Buyback\Domain\Pricing\PricingEngine;
+use AppleKlinika\Buyback\Domain\Buyback\OfferModeConfiguration;
 use AppleKlinika\Buyback\Infrastructure\Identifier\WordPressRequestNumberGenerator;
 use AppleKlinika\Buyback\Infrastructure\Inventory\WordPressDeviceCatalogReader;
 use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\Schema;
@@ -27,6 +28,18 @@ final class PublicRequestSubmissionTest
     private int $assertions = 0;
     /** @var list<string> */ private array $failures = [];
     public function assert(bool $condition, string $message): void { ++$this->assertions; if (! $condition) { $this->failures[] = $message; } }
+    /** @param class-string<Throwable> $expected */
+    public function throws(callable $operation, string $expected, string $message): void {
+        ++$this->assertions;
+        try {
+            $operation();
+            $this->failures[] = $message . ' (no exception thrown)';
+        } catch (Throwable $exception) {
+            if (! $exception instanceof $expected) {
+                $this->failures[] = $message . ' (unexpected ' . $exception::class . ')';
+            }
+        }
+    }
     public function finish(): never {
         if ($this->failures !== []) { fwrite(STDERR, implode("\n", array_map(static fn (string $message): string => 'FAIL: ' . $message, $this->failures)) . "\n"); exit(1); }
         echo "Buyback public request-submission tests passed: {$this->assertions} assertions.\n"; exit(0);
@@ -90,6 +103,19 @@ try {
     $payload = is_string($snapshot) ? json_decode($snapshot, true) : null;
     $test->assert(is_array($payload) && isset($payload['offers']['fast_online'], $payload['questionnaire']['canonical_answers'], $payload['price_book']['rules_hash'], $payload['effective_rule_sources']['fast_online']), 'Immutable snapshot contains recalculated offers, canonical answers, rule hash and effective rule sources');
     $test->assert((int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM `{$tables[Schema::EVENTS]}` WHERE request_id = %d", $requestId)) === 1, 'Exactly one initial event is persisted before notifications');
+
+    $disabledFastInput = OfferModeConfiguration::defaults()->toStored()['modes'];
+    $disabledFastInput['fast_online']['enabled'] = false;
+    $disabledFast = OfferModeConfiguration::fromSubmitted($disabledFastInput);
+    $disabledSubmission = new PublicBuybackRequestSubmission(
+        new RepositoryActivePriceBookResolver($books, $rules), new PricingEngine(), $questionnaire, $requests, $store,
+        new WordPressDomainEventStore($wpdb, new WordPressBuybackRequestMapper()), new WordPressRequestNumberGenerator($requests, $clock), $transactions, $clock, $disabledFast
+    );
+    $disabledAttempt = $input;
+    $disabledAttempt['idempotency_token'] = bin2hex(random_bytes(32));
+    $test->throws(fn () => $disabledSubmission->submit($disabledAttempt, $catalog), PublicBuybackSubmissionException::class, 'A client-forged submission using a now-disabled offer mode is rejected server-side');
+    $snapshotAfterDisabledAttempt = $wpdb->get_var($wpdb->prepare("SELECT payload_json FROM `{$tables[Schema::SNAPSHOTS]}` WHERE request_id = %d AND snapshot_type = %s", $requestId, 'public_submission'));
+    $test->assert($snapshotAfterDisabledAttempt === $snapshot, 'A historical request using a now-disabled mode remains readable and byte-for-byte unchanged');
 
     $forcedManual = $input;
     $forcedManual['idempotency_token'] = bin2hex(random_bytes(32));

@@ -16,6 +16,8 @@ use AppleKlinika\Buyback\Domain\Pricing\PriceBookId;
 
 final class DiscardDraftPriceBookHandler
 {
+    public const CONFIRMATION_TOKEN = 'TÖRLÉS';
+
     public function __construct(
         private readonly PriceBookRepository $books,
         private readonly DraftPriceBookDiscardRepository $discardRepository,
@@ -36,8 +38,8 @@ final class DiscardDraftPriceBookHandler
             }
             $book->assertDraftMutation();
 
-            if (! hash_equals($book->label(), trim($command->confirmationName))) {
-                throw new \InvalidArgumentException('A végleges törléshez írd be pontosan az árkönyv nevét.');
+            if (! hash_equals(self::CONFIRMATION_TOKEN, trim($command->confirmationName))) {
+                throw new \InvalidArgumentException('A végleges törléshez írd be pontosan ezt: ' . self::CONFIRMATION_TOKEN . '.');
             }
 
             if ($this->lifecycle?->isProtected($id)) {

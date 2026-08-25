@@ -13,6 +13,7 @@ use AppleKlinika\Buyback\Domain\Buyback\BuybackStatus;
 use AppleKlinika\Buyback\Domain\Buyback\DeviceCategory;
 use AppleKlinika\Buyback\Domain\Buyback\DeviceDisplayName;
 use AppleKlinika\Buyback\Domain\Buyback\ModelKey;
+use AppleKlinika\Buyback\Domain\Buyback\OfferModeConfiguration;
 use AppleKlinika\Buyback\Domain\Buyback\RequestSource;
 use AppleKlinika\Buyback\Domain\Buyback\ServiceMode;
 use AppleKlinika\Buyback\Domain\Buyback\StatusTransitionPolicy;
@@ -42,7 +43,8 @@ final class PublicBuybackRequestSubmission
         private readonly WordPressDomainEventStore $events,
         private readonly WordPressRequestNumberGenerator $numbers,
         private readonly TransactionManager $transactions,
-        private readonly Clock $clock
+        private readonly Clock $clock,
+        private readonly ?OfferModeConfiguration $offerModes = null
     ) {
     }
 
@@ -120,7 +122,7 @@ final class PublicBuybackRequestSubmission
         $canonicalAnswers = $this->questionnaire->mapToConditions($answers);
         $questionnaireManualReasons = $this->questionnaire->manualReviewReasons($answers);
         $results = [];
-        foreach (ServiceMode::supportedCodes() as $modeCode) {
+        foreach (array_keys($this->offerModes()->enabled()) as $modeCode) {
             $currentMode = new ServiceMode($modeCode);
             $calculated = $this->engine->calculate($resolved->priceBook, $resolved->enabledRules, new PricingCalculationInput(
                     new DeviceCategory('iphone'),
@@ -132,7 +134,7 @@ final class PublicBuybackRequestSubmission
                 ));
             $results[$modeCode] = $this->manualResultIfRequired($resolved->priceBook, $currentMode, $questionnaireManualReasons, $calculated);
         }
-        $representative = $results[ServiceMode::FAST_ONLINE] ?? null;
+        $representative = $results[ServiceMode::FAST_ONLINE] ?? reset($results);
         if ($representative === null || in_array($representative->outcome->code(), [PricingOutcome::REJECTED, PricingOutcome::CONFIGURATION_ERROR], true)) {
             throw new PublicBuybackSubmissionException('Ehhez a készülékhez most nem küldhető be automatikus felvásárlási igény.');
         }
@@ -147,6 +149,9 @@ final class PublicBuybackRequestSubmission
             $mode = $isManualReview ? null : new ServiceMode((string) $selectedMode);
         } catch (\Throwable) {
             throw new PublicBuybackSubmissionException('Válassz egy érvényes ajánlattípust.');
+        }
+        if (! $isManualReview && ! $this->offerModes()->isEnabled($mode->code())) {
+            throw new PublicBuybackSubmissionException('A kiválasztott ajánlattípus jelenleg nem érhető el. Kérjük, számold újra az ajánlatot.');
         }
         $selected = $isManualReview ? null : ($results[$mode->code()] ?? null);
         if (! $isManualReview && ($selected === null || $selected->outcome->code() !== PricingOutcome::OFFERED)) {
@@ -228,6 +233,11 @@ final class PublicBuybackRequestSubmission
     {
         $value = isset($input[$key]) && is_scalar($input[$key]) ? trim((string) $input[$key]) : '';
         return $value === '' ? null : $value;
+    }
+
+    private function offerModes(): OfferModeConfiguration
+    {
+        return $this->offerModes ?? OfferModeConfiguration::defaults();
     }
 
     private function isUsablePhone(string $phone): bool

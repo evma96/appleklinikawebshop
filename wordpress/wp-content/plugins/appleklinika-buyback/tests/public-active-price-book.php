@@ -12,6 +12,7 @@ use AppleKlinika\Buyback\Application\Pricing\RepositoryActivePriceBookResolver;
 use AppleKlinika\Buyback\Application\LocalDemo\LocalDemoQuestionnaire;
 use AppleKlinika\Buyback\Domain\Pricing\CurrencyCode;
 use AppleKlinika\Buyback\Domain\Buyback\OfferModeDefinition;
+use AppleKlinika\Buyback\Domain\Buyback\OfferModeConfiguration;
 use AppleKlinika\Buyback\Domain\Pricing\MinimumOfferPolicy;
 use AppleKlinika\Buyback\Domain\Pricing\PriceBook;
 use AppleKlinika\Buyback\Domain\Pricing\PriceBookId;
@@ -334,6 +335,20 @@ $runner->assert(array_map(static fn (array $meta): array => ['label' => $meta['l
 $runner->assert(array_reduce($canonicalOfferCopy, static fn (bool $present, array $copy): bool => $present && str_contains($offersPanel, $copy['label']) && str_contains($offersPanel, $copy['description']), true) && ! str_contains($offersPanel, 'Legacy A személyes cím') && ! str_contains($offersPanel, 'Legacy A gyors cím') && ! str_contains($offersPanel, 'Legacy A normál cím') && ! str_contains($offersPanel, 'Legacy A beszámítás cím'), 'Public offer cards ignore stored legacy mode titles and use canonical global copy');
 $runner->assert(str_contains($offersPanel, '79 000 Ft') && str_contains($offersPanel, '78 000 Ft') && str_contains($offersPanel, '80 000 Ft') && str_contains($offersPanel, '85 000 Ft'), 'Public offer amounts still come from the active price book corrections');
 $runner->assert(preg_match('/data-mode-code="trade_in".*?data-offer-badge="best-price">LEGJOBB ÁR/s', $offersPanel) === 1 && substr_count($offersPanel, 'data-offer-badge="best-price"') === 1, 'LEGJOBB ÁR belongs only to the trade-in offer type');
+$onlyNormalInput = OfferModeConfiguration::defaults()->toStored()['modes'];
+foreach ($onlyNormalInput as $mode => &$setting) {
+    $setting['enabled'] = $mode === 'higher_offer';
+}
+unset($setting);
+$onlyNormalInput['higher_offer']['label'] = 'Csak normál ajánlat';
+$onlyNormalInput['higher_offer']['description'] = 'Egyetlen engedélyezett globális ajánlattípus.';
+$onlyNormalConfiguration = OfferModeConfiguration::fromSubmitted($onlyNormalInput);
+$onlyNormalPage = new LocalDemoCalculatorPage($resolver, new PricingEngine(), new WordPressDeviceCatalogReader(), new WordPressLocalDemoProductReader(), new LocalDemoQuestionnaire(), null, null, null, null, $onlyNormalConfiguration);
+$onlyNormalHtml = $onlyNormalPage->render();
+$onlyNormalStart = (int) strpos($onlyNormalHtml, '<section class="ak-buyback-demo__panel ak-buyback-demo__panel--offers"');
+$onlyNormalEnd = (int) strpos($onlyNormalHtml, '<section class="ak-buyback-demo__panel ak-buyback-demo__panel--review"');
+$onlyNormalPanel = substr($onlyNormalHtml, $onlyNormalStart, $onlyNormalEnd - $onlyNormalStart);
+$runner->assert(substr_count($onlyNormalPanel, 'data-mode-card') === 1 && str_contains($onlyNormalPanel, 'data-mode-code="higher_offer"') && str_contains($onlyNormalPanel, 'Csak normál ajánlat') && str_contains($onlyNormalPanel, 'Egyetlen engedélyezett globális ajánlattípus.') && str_contains($onlyNormalPanel, '80 000 Ft') && ! str_contains($onlyNormalPanel, 'data-mode-code="fast_online"') && ! str_contains($onlyNormalPanel, 'data-offer-badge="best-price"'), 'A single enabled global mode renders as the only selectable calculated offer, with its configured copy and no disabled trade-in badge');
 $alternative = publicActiveBook(930005, 987657, 'Alternative public prices', PriceBookStatus::ACTIVE);
 $alternativeRules = [
     publicBaseRule(940101, $alternative->id(), 'iphone_11', 64),
