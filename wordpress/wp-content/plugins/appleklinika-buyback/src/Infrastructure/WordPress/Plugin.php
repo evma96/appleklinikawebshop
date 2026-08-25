@@ -15,6 +15,7 @@ use AppleKlinika\Buyback\Application\Handler\SaveDraftBasePriceMatrixHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftQuestionnaireConditionsHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftBatteryBandsHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftOfferModeModifiersHandler;
+use AppleKlinika\Buyback\Application\Handler\SaveOfferModeSettingsHandler;
 use AppleKlinika\Buyback\Application\Pricing\OfferModeExampleCalculator;
 use AppleKlinika\Buyback\Application\Handler\DeleteDraftPricingRuleHandler;
 use AppleKlinika\Buyback\Application\Handler\PreviewDraftPriceBookCalculationHandler;
@@ -47,6 +48,7 @@ use AppleKlinika\Buyback\Interfaces\Admin\DiagnosticsPage;
 use AppleKlinika\Buyback\Interfaces\Admin\PriceBooksPage;
 use AppleKlinika\Buyback\Interfaces\Admin\BuybackRequestsPage;
 use AppleKlinika\Buyback\Interfaces\Admin\PreviewCalculationFormParser;
+use AppleKlinika\Buyback\Interfaces\Admin\OfferModeSettingsPage;
 use AppleKlinika\Buyback\Interfaces\Admin\PricingRuleFormParser;
 use AppleKlinika\Buyback\Domain\Pricing\PricingEngine;
 use AppleKlinika\Buyback\Domain\Pricing\PriceBookActivationReadinessEvaluator;
@@ -61,7 +63,8 @@ final class Plugin
         private readonly DiagnosticsPage $diagnosticsPage,
         private readonly PriceBooksPage $priceBooksPage,
         private readonly BuybackRequestsPage $requestsPage,
-        private readonly LocalDemoModule $localDemoModule
+        private readonly LocalDemoModule $localDemoModule,
+        private readonly OfferModeSettingsPage $offerModeSettingsPage
     ) {
     }
 
@@ -76,6 +79,8 @@ final class Plugin
         $clock = new SystemClock();
         $catalog = new WordPressDeviceCatalogReader();
         $questionnaire = new LocalDemoQuestionnaire();
+        $offerModeSettings = new WordPressOfferModeSettingsStore();
+        $offerModes = $offerModeSettings->get();
         $readiness = new PriceBookActivationReadinessService($catalog, new PriceBookActivationReadinessEvaluator());
         $activeResolver = new RepositoryActivePriceBookResolver($books, $rules);
         $activationHandler = new ActivateDraftPriceBookHandler(
@@ -129,10 +134,12 @@ final class Plugin
                 new AdminSubmissionGuard(),
                 $questionnaire,
                 $lifecycle,
-                new ProtectPriceBookHandler($books, $lifecycle, $transactions, $clock)
+                new ProtectPriceBookHandler($books, $lifecycle, $transactions, $clock),
+                $offerModes
             ),
-            new BuybackRequestsPage(new WordPressPublicBuybackRequestStore($wpdb)),
-            LocalDemoModule::create()
+            new BuybackRequestsPage(new WordPressPublicBuybackRequestStore($wpdb), $offerModes),
+            LocalDemoModule::create($offerModes),
+            new OfferModeSettingsPage($offerModeSettings, new SaveOfferModeSettingsHandler($offerModeSettings), new AdminAuthorization())
         );
     }
 
@@ -165,6 +172,7 @@ final class Plugin
         $this->diagnosticsPage->register();
         (new RestrictedPriceEditorAdminAccess())->register();
         $this->priceBooksPage->register();
+        $this->offerModeSettingsPage->register();
         $this->requestsPage->register();
         $this->localDemoModule->register();
         $this->registerCli();

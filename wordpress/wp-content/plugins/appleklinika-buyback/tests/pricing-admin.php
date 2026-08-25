@@ -17,6 +17,7 @@ use AppleKlinika\Buyback\Application\Command\SaveDraftBasePriceMatrix;
 use AppleKlinika\Buyback\Application\Command\SaveDraftQuestionnaireConditions;
 use AppleKlinika\Buyback\Application\Command\SaveDraftBatteryBands;
 use AppleKlinika\Buyback\Application\Command\SaveDraftOfferModeModifiers;
+use AppleKlinika\Buyback\Application\Command\SaveOfferModeSettings;
 use AppleKlinika\Buyback\Application\Command\ToggleDraftPricingRule;
 use AppleKlinika\Buyback\Application\Command\UpdateDraftPriceBookSettings;
 use AppleKlinika\Buyback\Application\Command\UpdateDraftPricingRule;
@@ -36,6 +37,7 @@ use AppleKlinika\Buyback\Application\Handler\SaveDraftBasePriceMatrixHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftQuestionnaireConditionsHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftBatteryBandsHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftOfferModeModifiersHandler;
+use AppleKlinika\Buyback\Application\Handler\SaveOfferModeSettingsHandler;
 use AppleKlinika\Buyback\Application\Handler\ToggleDraftPricingRuleHandler;
 use AppleKlinika\Buyback\Application\Handler\UpdateDraftPriceBookSettingsHandler;
 use AppleKlinika\Buyback\Application\Handler\UpdateDraftPricingRuleHandler;
@@ -47,6 +49,7 @@ use AppleKlinika\Buyback\Domain\Exception\InvalidAggregateOperationException;
 use AppleKlinika\Buyback\Domain\Exception\InvalidValueObjectException;
 use AppleKlinika\Buyback\Domain\Exception\StaleAggregateVersionException;
 use AppleKlinika\Buyback\Domain\Buyback\OfferModeDefinition;
+use AppleKlinika\Buyback\Domain\Buyback\OfferModeConfiguration;
 use AppleKlinika\Buyback\Domain\Pricing\BasisPointsMultiplier;
 use AppleKlinika\Buyback\Domain\Pricing\ComparisonOperator;
 use AppleKlinika\Buyback\Domain\Pricing\CurrencyCode;
@@ -76,6 +79,7 @@ use AppleKlinika\Buyback\Infrastructure\Persistence\WordPress\WordPressTransacti
 use AppleKlinika\Buyback\Infrastructure\WordPress\CapabilityManager;
 use AppleKlinika\Buyback\Infrastructure\WordPress\Deactivator;
 use AppleKlinika\Buyback\Infrastructure\WordPress\Plugin;
+use AppleKlinika\Buyback\Infrastructure\WordPress\WordPressOfferModeSettingsStore;
 use AppleKlinika\Buyback\Interfaces\Admin\AdminAuthorization;
 use AppleKlinika\Buyback\Interfaces\Admin\AdminSubmissionGuard;
 use AppleKlinika\Buyback\Interfaces\Admin\PriceBooksPage;
@@ -396,6 +400,8 @@ $marker = 'QA-PRICEBOOK-' . $runToken;
 $countsBefore = pricingRowCounts($wpdb, $tables);
 $legacyHashBefore = pricingLegacyHash($wpdb);
 $catalogHashBefore = hash('sha256', serialize(get_option('appleklinika_device_catalog', null)));
+$offerSettingsBefore = get_option(WordPressOfferModeSettingsStore::OPTION_NAME, false);
+$hadOfferSettingsBefore = $offerSettingsBefore !== false;
 $schemaVersionBefore = (string) get_option(Schema::OPTION_SCHEMA_VERSION, '0.0.0');
 $pluginVersionBefore = (string) get_option(Schema::OPTION_PLUGIN_VERSION, '');
 $phaseOneStructureBefore = [];
@@ -675,11 +681,11 @@ try {
     pricingAddRule($addRule, $books, $genuinelyReferenced->id(), pricingDefinition(PricingRuleKind::BASE_PRICE, $marker . '-structured-reference-base'));
     $genuineReferencePayload = wp_json_encode(['price_book_id' => $genuinelyReferenced->id()->toInt(), 'qa_marker' => $marker]);
     $test->assert(is_string($genuineReferencePayload) && $wpdb->insert($tables[Schema::SNAPSHOTS], ['request_id' => 0, 'snapshot_type' => 'qa_structured_reference', 'schema_version' => '1.0', 'payload_json' => $genuineReferencePayload, 'created_by_type' => 'system', 'created_by_id' => null, 'checksum' => hash('sha256', $genuineReferencePayload), 'created_at' => $clock->now()->format('Y-m-d H:i:s')], ['%d', '%s', '%s', '%s', '%s', '%d', '%s', '%s']) === 1, 'Genuinely referenced draft QA snapshot fixture is created');
-    $test->throws(fn () => $discardDraft->handle(new DiscardDraftPriceBook($genuinelyReferenced->id()->toInt(), $genuinelyReferenced->label())), AppleKlinika\Buyback\Application\Exception\PriceBookHasBusinessReferencesException::class, 'A genuinely structured price-book reference still blocks draft deletion');
+    $test->throws(fn () => $discardDraft->handle(new DiscardDraftPriceBook($genuinelyReferenced->id()->toInt(), DiscardDraftPriceBookHandler::CONFIRMATION_TOKEN)), AppleKlinika\Buyback\Application\Exception\PriceBookHasBusinessReferencesException::class, 'A genuinely structured price-book reference still blocks draft deletion');
     $discardable = pricingCreateBook($createBook, $marker . '-DISCARD', $adminId);
     pricingAddRule($addRule, $books, $discardable->id(), pricingDefinition(PricingRuleKind::BASE_PRICE, $marker . '-discard-base'));
     $activeRulesBeforeDiscard = count($rules->listForPriceBook($activeBook->id()));
-    $discardDraft->handle(new DiscardDraftPriceBook($discardable->id()->toInt(), $discardable->label()));
+    $discardDraft->handle(new DiscardDraftPriceBook($discardable->id()->toInt(), DiscardDraftPriceBookHandler::CONFIRMATION_TOKEN));
     $test->assert($books->getById($discardable->id()) === null && $rules->listForPriceBook($discardable->id()) === [], 'Discarding an unreferenced draft removes only that draft and its rules');
     $test->assert($books->getById($activeBook->id())?->status()->isActive() && count($rules->listForPriceBook($activeBook->id())) === $activeRulesBeforeDiscard, 'Discarding a draft preserves other price books and their rules');
     $test->throws(fn () => $discardDraft->handle(new DiscardDraftPriceBook($activeBook->id()->toInt(), $activeBook->label())), InvalidAggregateOperationException::class, 'Discard handler rejects an active price book');
@@ -687,15 +693,16 @@ try {
     $test->throws(fn () => $discardDraft->handle(new DiscardDraftPriceBook($retiredForDiscard?->id()->toInt() ?? 0, $retiredForDiscard?->label() ?? '')), InvalidAggregateOperationException::class, 'Discard handler rejects an archived price book');
     $test->throws(fn () => $discardDraft->handle(new DiscardDraftPriceBook(999999999, 'Unknown')), AppleKlinika\Buyback\Application\Exception\PriceBookNotFoundException::class, 'Discard handler rejects an unknown price book');
     $test->throws(fn () => $discardDraft->handle(new DiscardDraftPriceBook($clone->id()->toInt(), '')), InvalidArgumentException::class, 'Discard handler requires explicit permanent-deletion confirmation');
+    $test->throws(fn () => $discardDraft->handle(new DiscardDraftPriceBook($clone->id()->toInt(), $clone->label())), InvalidArgumentException::class, 'Discard handler rejects the old long price-book-name confirmation');
     $referencedDraft = pricingCreateBook($createBook, $marker . '-REFERENCED', $adminId);
     pricingAddRule($addRule, $books, $referencedDraft->id(), pricingDefinition(PricingRuleKind::BASE_PRICE, $marker . '-referenced-base'));
     $referencedDiscard = new DiscardDraftPriceBookHandler($books, new ReferencedDraftPriceBookDiscardRepository($discardRepository), $transactions);
-    $test->throws(fn () => $referencedDiscard->handle(new DiscardDraftPriceBook($referencedDraft->id()->toInt(), $referencedDraft->label())), AppleKlinika\Buyback\Application\Exception\PriceBookHasBusinessReferencesException::class, 'Discard handler blocks a draft with historical or business references');
+    $test->throws(fn () => $referencedDiscard->handle(new DiscardDraftPriceBook($referencedDraft->id()->toInt(), DiscardDraftPriceBookHandler::CONFIRMATION_TOKEN)), AppleKlinika\Buyback\Application\Exception\PriceBookHasBusinessReferencesException::class, 'Discard handler blocks a draft with historical or business references');
     $test->assert($books->getById($referencedDraft->id()) !== null && count($rules->listForPriceBook($referencedDraft->id())) === 1, 'Reference-blocked discard leaves the draft and its rules intact');
     $rollbackDraft = pricingCreateBook($createBook, $marker . '-DISCARD-ROLLBACK', $adminId);
     pricingAddRule($addRule, $books, $rollbackDraft->id(), pricingDefinition(PricingRuleKind::BASE_PRICE, $marker . '-rollback-base'));
     $failingDiscard = new DiscardDraftPriceBookHandler($books, new FailingDraftPriceBookDiscardRepository($discardRepository), $transactions);
-    $test->throws(fn () => $failingDiscard->handle(new DiscardDraftPriceBook($rollbackDraft->id()->toInt(), $rollbackDraft->label())), AppleKlinika\Buyback\Infrastructure\Persistence\Exception\PersistenceException::class, 'A discard transaction failure rolls back both the draft and its rules');
+    $test->throws(fn () => $failingDiscard->handle(new DiscardDraftPriceBook($rollbackDraft->id()->toInt(), DiscardDraftPriceBookHandler::CONFIRMATION_TOKEN)), AppleKlinika\Buyback\Infrastructure\Persistence\Exception\PersistenceException::class, 'A discard transaction failure rolls back both the draft and its rules');
     $test->assert($books->getById($rollbackDraft->id()) !== null && count($rules->listForPriceBook($rollbackDraft->id())) === 1, 'Discard rollback leaves both the draft and its rules intact');
 
     $protectBook = new ProtectPriceBookHandler($books, $lifecycle, $transactions, $clock);
@@ -709,10 +716,10 @@ try {
     $secondProtection = $protectBook->handle(new ProtectPriceBook($protectedSecond->id()->toInt(), $adminId, $protectedSecond->label()));
     $test->assert($lifecycle->protectedReferenceFor(new CurrencyCode('HUF'))?->equals($protectedSecond->id()) === true && $secondProtection['previous_id'] === $protectedFirst->id()->toInt() && ! $lifecycle->isProtected($protectedFirst->id()), 'Protected-reference movement atomically leaves exactly one reference per currency');
     $protectedDiscard = new DiscardDraftPriceBookHandler($books, $discardRepository, $transactions, $lifecycle, $clock);
-    $test->throws(fn () => $protectedDiscard->handle(new DiscardDraftPriceBook($protectedSecond->id()->toInt(), $protectedSecond->label(), $adminId)), InvalidArgumentException::class, 'Protected reference cannot be deleted even through the server handler');
+    $test->throws(fn () => $protectedDiscard->handle(new DiscardDraftPriceBook($protectedSecond->id()->toInt(), DiscardDraftPriceBookHandler::CONFIRMATION_TOKEN, $adminId)), InvalidArgumentException::class, 'Protected reference cannot be deleted even through the server handler');
     $lifecycleDiscard = pricingCreateBook($createBook, $marker . '-LIFECYCLE-DISCARD', $adminId);
     pricingAddRule($addRule, $books, $lifecycleDiscard->id(), pricingDefinition(PricingRuleKind::BASE_PRICE, $marker . '-lifecycle-discard-rule'));
-    $deletedLifecycleDraft = $protectedDiscard->handle(new DiscardDraftPriceBook($lifecycleDiscard->id()->toInt(), $lifecycleDiscard->label(), $adminId));
+    $deletedLifecycleDraft = $protectedDiscard->handle(new DiscardDraftPriceBook($lifecycleDiscard->id()->toInt(), DiscardDraftPriceBookHandler::CONFIRMATION_TOKEN, $adminId));
     $auditRows = $wpdb->get_results($wpdb->prepare("SELECT event_type, payload_json FROM `{$tables[Schema::PRICE_BOOK_LIFECYCLE_EVENTS]}` WHERE price_book_id IN (%d, %d) OR payload_json LIKE %s ORDER BY id ASC", $protectedFirst->id()->toInt(), $protectedSecond->id()->toInt(), '%' . $wpdb->esc_like($marker) . '%'), ARRAY_A);
     $auditTypes = array_column(is_array($auditRows) ? $auditRows : [], 'event_type');
     $test->assert($deletedLifecycleDraft['id'] === $lifecycleDiscard->id()->toInt() && $deletedLifecycleDraft['deleted_rule_count'] === 1 && $books->getById($lifecycleDiscard->id()) === null, 'Eligible isolated draft deletion returns the exact deleted rule count');
@@ -1002,6 +1009,35 @@ try {
     $test->throws(fn () => $saveOfferModes->handle(new SaveDraftOfferModeModifiers($retiredBook->id()->toInt(), $books->getById($retiredBook->id())?->version()->value() ?? -1, $offerSubmission)), InvalidAggregateOperationException::class, 'Offer-mode handler rejects archived price-book edits');
     $offerIsolationAfter = array_values(array_filter($rules->listForPriceBook($matrixBook->id()), static fn (PricingRule $rule): bool => $rule->definition()->kind->code() !== PricingRuleKind::MODE_ADJUSTMENT));
     $test->assert(serialize(array_map(static fn (PricingRule $rule): string => $rule->definition()->code->code(), $offerIsolationAfter)) === serialize(array_map(static fn (PricingRule $rule): string => $rule->definition()->code->code(), $offerIsolationBefore)), 'Offer-mode saves preserve Base-price, Conditions, Battery and system rules');
+    delete_option(WordPressOfferModeSettingsStore::OPTION_NAME);
+    $offerSettings = new WordPressOfferModeSettingsStore();
+    $saveOfferSettings = new SaveOfferModeSettingsHandler($offerSettings);
+    $defaultOfferModes = $offerSettings->get();
+    $test->assert(array_map(static fn (array $mode): array => ['label' => $mode['label'], 'description' => $mode['description']], $defaultOfferModes->all()) === array_map(static fn (array $mode): array => ['label' => $mode['label'], 'description' => $mode['description']], OfferModeDefinition::all()) && count($defaultOfferModes->enabled()) === 4, 'Absent global offer settings retain all four canonical default titles, descriptions and enabled modes');
+    $offerRuleHashBefore = hash('sha256', serialize($rules->listForPriceBook($matrixBook->id())));
+    $customOfferInput = $defaultOfferModes->toStored()['modes'];
+    $customOfferInput['fast_online']['label'] = 'Egyedi gyors átvétel';
+    $customOfferInput['fast_online']['description'] = 'Egyedi globális gyors átvételi leírás.';
+    $customOfferInput['in_store_instant']['enabled'] = false;
+    $customOfferModes = $saveOfferSettings->handle(new SaveOfferModeSettings($customOfferInput));
+    $test->assert($customOfferModes->all()['fast_online']['label'] === 'Egyedi gyors átvétel' && $customOfferModes->all()['fast_online']['description'] === 'Egyedi globális gyors átvételi leírás.' && ! $customOfferModes->isEnabled('in_store_instant') && count($customOfferModes->enabled()) === 3, 'Global offer settings persist one shared copy override and a disabled mode without changing internal keys');
+    $normalOnlyInput = $customOfferModes->toStored()['modes'];
+    foreach ($normalOnlyInput as $mode => &$setting) {
+        $setting['enabled'] = $mode === 'higher_offer';
+    }
+    unset($setting);
+    $normalOnlyModes = $saveOfferSettings->handle(new SaveOfferModeSettings($normalOnlyInput));
+    $test->assert(array_keys($normalOnlyModes->enabled()) === ['higher_offer'], 'Global offer settings can intentionally expose exactly one offer mode');
+    $allDisabledInput = $normalOnlyModes->toStored()['modes'];
+    foreach ($allDisabledInput as &$setting) {
+        $setting['enabled'] = false;
+    }
+    unset($setting);
+    $test->throws(fn () => $saveOfferSettings->handle(new SaveOfferModeSettings($allDisabledInput)), InvalidArgumentException::class, 'Global offer settings reject a configuration with zero enabled modes');
+    $test->assert(array_keys($offerSettings->get()->enabled()) === ['higher_offer'], 'Rejected zero-mode save leaves the previous valid global configuration intact');
+    $restoredOfferModes = $saveOfferSettings->handle(new SaveOfferModeSettings($customOfferModes->toStored()['modes']));
+    $test->assert($restoredOfferModes->isEnabled('in_store_instant') === false && $restoredOfferModes->isEnabled('fast_online') && hash('sha256', serialize($rules->listForPriceBook($matrixBook->id()))) === $offerRuleHashBefore, 'Re-enabling preserved offer modes does not rewrite price-book correction rules');
+
     $uiPage = new PriceBooksPage(
         $books,
         $rules,
@@ -1030,18 +1066,19 @@ try {
         new AdminSubmissionGuard(),
         $questionnaire,
         $lifecycle,
-        new ProtectPriceBookHandler($books, $lifecycle, $transactions, $clock)
+        new ProtectPriceBookHandler($books, $lifecycle, $transactions, $clock),
+        $restoredOfferModes
     );
     $legacyFastRule = PricingRule::create($matrixBook->id(), new PricingRuleDefinition(new PricingRuleCode('legacy-fast-' . $runToken), new PricingRuleKind(PricingRuleKind::MODE_ADJUSTMENT), 'iphone', null, null, 'fast_online', null, null, null, new Money(-5000, 'HUF'), null, new RulePriority(100), true, 'Elavult gyors felvásárlás címke', null), $clock->now());
     $legacyTradeRule = PricingRule::create($activeBook->id(), new PricingRuleDefinition(new PricingRuleCode('legacy-trade-' . $runToken), new PricingRuleKind(PricingRuleKind::MODE_ADJUSTMENT), 'iphone', null, null, 'trade_in', null, null, null, new Money(5000, 'HUF'), null, new RulePriority(100), true, 'Elavult beszámítási címke', null), $clock->now());
     $previewRuleDetails = new ReflectionMethod(PriceBooksPage::class, 'previewRuleDetails');
     $legacyPreviewDetails = $previewRuleDetails->invoke($uiPage, [$legacyFastRule, $legacyTradeRule]);
-    $test->assert($legacyPreviewDetails['legacy-fast-' . $runToken]['label'] === 'Gyorsított felvásárlás (beérkezéstől 1–3 nap)' && $legacyPreviewDetails['legacy-trade-' . $runToken]['label'] === 'Személyes beszámítás másik készülékbe' && ! str_contains(serialize($legacyPreviewDetails), 'Elavult'), 'Admin preview ignores legacy stored offer labels from different price books and uses the canonical shared titles');
+    $test->assert($legacyPreviewDetails['legacy-fast-' . $runToken]['label'] === 'Egyedi gyors átvétel' && $legacyPreviewDetails['legacy-trade-' . $runToken]['label'] === 'Személyes beszámítás másik készülékbe' && ! str_contains(serialize($legacyPreviewDetails), 'Elavult'), 'Admin preview ignores legacy stored offer labels and uses the same effective global titles');
     $_GET = [];
     ob_start();
     $uiPage->render();
     $priceBookIndexHtml = (string) ob_get_clean();
-    $test->assert(str_contains($priceBookIndexHtml, 'Apple Klinika Felvásárlás – Árkönyvek') && str_contains($priceBookIndexHtml, 'Jelenleg aktív') && str_contains($priceBookIndexHtml, 'Védett alapárkönyv') && str_contains($priceBookIndexHtml, 'Piszkozatok') && str_contains($priceBookIndexHtml, 'data-ak-draft-filters') && str_contains($priceBookIndexHtml, 'Keresés név vagy azonosító alapján…') && str_contains($priceBookIndexHtml, 'További műveletek') && str_contains($priceBookIndexHtml, 'Korábban használt árkönyvek (') && str_contains($priceBookIndexHtml, 'Részletes adatok') && str_contains($priceBookIndexHtml, 'Új piszkozat készítése ebből') && str_contains($priceBookIndexHtml, 'expected_source_version') && str_contains($priceBookIndexHtml, 'Árkönyv használatba vétele') && str_contains($priceBookIndexHtml, 'Piszkozat végleges törlése') && str_contains($priceBookIndexHtml, 'discard_confirmation') && str_contains($priceBookIndexHtml, 'data-ak-confirmation-panel hidden') && str_contains($priceBookIndexHtml, 'Haladó beállítások'), 'Price-book index presents compact manager-facing summary, clone concurrency fields, filters, secondary-action menus and closed exact-name confirmations');
+    $test->assert(str_contains($priceBookIndexHtml, 'Apple Klinika Felvásárlás – Árkönyvek') && str_contains($priceBookIndexHtml, 'Jelenleg aktív') && str_contains($priceBookIndexHtml, 'Védett alapárkönyv') && str_contains($priceBookIndexHtml, 'Piszkozatok') && str_contains($priceBookIndexHtml, 'data-ak-draft-filters') && str_contains($priceBookIndexHtml, 'Keresés név vagy azonosító alapján…') && str_contains($priceBookIndexHtml, 'További műveletek') && str_contains($priceBookIndexHtml, 'Korábban használt árkönyvek (') && str_contains($priceBookIndexHtml, 'Részletes adatok') && str_contains($priceBookIndexHtml, 'Új piszkozat készítése ebből') && str_contains($priceBookIndexHtml, 'expected_source_version') && str_contains($priceBookIndexHtml, 'Piszkozat végleges törlése') && str_contains($priceBookIndexHtml, 'TÖRLÉS') && str_contains($priceBookIndexHtml, 'discard_confirmation') && str_contains($priceBookIndexHtml, 'data-ak-confirmation-panel hidden') && str_contains($priceBookIndexHtml, 'Haladó beállítások'), 'Price-book index presents compact manager-facing summary, clone concurrency fields, filters, secondary-action menus and token-protected draft deletion');
     set_transient('ak_buyback_lifecycle_notice_' . $adminId, ['type' => 'clone', 'label' => $marker . '-NOTICE', 'id' => 987654], MINUTE_IN_SECONDS);
     $_GET = ['ak_result' => 'success', 'ak_action' => 'clone_active_price_book'];
     ob_start();
@@ -1085,7 +1122,7 @@ try {
     ob_start();
     $uiPage->render();
     $offerModesHtml = (string) ob_get_clean();
-    $test->assert(substr_count($offerModesHtml, 'data-ak-offer-mode-row') === 4 && str_contains($offerModesHtml, 'Ajánlattípusok mentése') && str_contains($offerModesHtml, 'Az ajánlattípusok neve és leírása minden árkönyvben azonos.') && str_contains($offerModesHtml, 'Személyes felvásárlás (készpénz)') && str_contains($offerModesHtml, 'Személyes átadás és bevizsgálás után, a lehető leggyorsabb helyi ügyintézéssel.') && str_contains($offerModesHtml, 'Gyorsított felvásárlás (beérkezéstől 1–3 nap)') && str_contains($offerModesHtml, 'Gyors feldolgozás és kifizetés a készülék beérkezése és bevizsgálása után.') && str_contains($offerModesHtml, 'Normál felvásárlás (magasabb ár, beérkezéstől 5–10 nap)') && str_contains($offerModesHtml, 'Magasabb előzetes összeg hosszabb, rugalmasabb feldolgozási idő mellett.') && str_contains($offerModesHtml, 'Személyes beszámítás másik készülékbe') && str_contains($offerModesHtml, 'A bevizsgálás után elfogadott összeg új készülék vásárlásába számítható be.'), 'Offer-mode tab renders the four shared canonical titles and descriptions, plus one clear save action');
+    $test->assert(substr_count($offerModesHtml, 'data-ak-offer-mode-row') === 4 && str_contains($offerModesHtml, 'Ajánlattípusok mentése') && str_contains($offerModesHtml, 'Az ajánlattípusok neve és leírása minden árkönyvben azonos.') && str_contains($offerModesHtml, 'Személyes felvásárlás (készpénz)') && str_contains($offerModesHtml, 'Személyes átadás és bevizsgálás után, a lehető leggyorsabb helyi ügyintézéssel.') && str_contains($offerModesHtml, 'Egyedi gyors átvétel') && str_contains($offerModesHtml, 'Egyedi globális gyors átvételi leírás.') && str_contains($offerModesHtml, 'Normál felvásárlás (magasabb ár, beérkezéstől 5–10 nap)') && str_contains($offerModesHtml, 'Magasabb előzetes összeg hosszabb, rugalmasabb feldolgozási idő mellett.') && str_contains($offerModesHtml, 'Személyes beszámítás másik készülékbe') && str_contains($offerModesHtml, 'A bevizsgálás után elfogadott összeg új készülék vásárlásába számítható be.'), 'Offer-mode tab renders the same effective global titles and descriptions while keeping all pricing controls');
     $test->assert(! str_contains($offerModesHtml, 'Szabálykód') && ! str_contains($offerModesHtml, 'Prioritás') && ! str_contains($offerModesHtml, 'Összehasonlítás értéke') && ! str_contains($offerModesHtml, 'model_key'), 'Offer-mode UI omits raw technical pricing-rule fields and any model selector');
     $offerModeScript = file_get_contents(APPLEKLINIKA_BUYBACK_PATH . '/assets/admin/price-books.js');
     $test->assert(is_string($offerModeScript) && str_contains($offerModeScript, "if (value) value.value = '';") && str_contains($offerModeScript, "if (remove.checked) value.value = '';") && str_contains($offerModeScript, "'missing|' + type.value"), 'Offer-mode client contract clears incompatible type-switch values and keeps missing-row change tracking type-aware');
@@ -1155,6 +1192,11 @@ try {
         (new CapabilityManager())->grant();
         update_option(Schema::OPTION_SCHEMA_VERSION, APPLEKLINIKA_BUYBACK_SCHEMA_VERSION, false);
         update_option(Schema::OPTION_PLUGIN_VERSION, APPLEKLINIKA_BUYBACK_VERSION, false);
+        if ($hadOfferSettingsBefore) {
+            update_option(WordPressOfferModeSettingsStore::OPTION_NAME, $offerSettingsBefore, false);
+        } else {
+            delete_option(WordPressOfferModeSettingsStore::OPTION_NAME);
+        }
     } catch (Throwable $cleanupException) {
         $test->fail($cleanupException);
     }
