@@ -11,7 +11,7 @@ use AppleKlinika\Buyback\Application\PublicRequest\PublicBuybackRequestSubmissio
 use AppleKlinika\Buyback\Application\PublicRequest\PublicBuybackSubmissionException;
 use AppleKlinika\Buyback\Application\PublicRequest\DispatchBuybackRequestNotifications;
 use AppleKlinika\Buyback\Domain\Buyback\DeviceCategory;
-use AppleKlinika\Buyback\Domain\Buyback\OfferModeDefinition;
+use AppleKlinika\Buyback\Domain\Buyback\OfferModeConfiguration;
 use AppleKlinika\Buyback\Domain\Buyback\ServiceMode;
 use AppleKlinika\Buyback\Domain\Pricing\ConditionAnswerCollection;
 use AppleKlinika\Buyback\Domain\Pricing\CurrencyCode;
@@ -44,7 +44,8 @@ final class LocalDemoCalculatorPage
         private readonly ?PublicBuybackRequestSubmission $submission = null,
         private readonly ?WordPressPublicBuybackRequestStore $publicStore = null,
         private readonly ?DispatchBuybackRequestNotifications $notifications = null,
-        private readonly ?WordPressBuybackRequestMailer $mailer = null
+        private readonly ?WordPressBuybackRequestMailer $mailer = null,
+        private readonly ?OfferModeConfiguration $offerModes = null
     ) {
     }
 
@@ -293,7 +294,7 @@ final class LocalDemoCalculatorPage
     private function renderSuccess(array $success): string
     {
         $manualReview = ($success['manual_review'] ?? false) === true;
-        $mode = OfferModeDefinition::all()[(string) ($success['service_mode'] ?? '')]['label'] ?? 'Kiválasztott ajánlat';
+        $mode = $this->offerModes()->all()[(string) ($success['service_mode'] ?? '')]['label'] ?? 'Kiválasztott ajánlat';
         $amount = isset($success['amount_minor']) && is_numeric($success['amount_minor']) ? $this->money((int) $success['amount_minor']) : null;
         ob_start();
         ?>
@@ -648,7 +649,7 @@ final class LocalDemoCalculatorPage
         $results = [];
         $highest = 0;
 
-        foreach (OfferModeDefinition::keys() as $mode) {
+        foreach (array_keys($this->offerModes()->enabled()) as $mode) {
             $serviceMode = new ServiceMode($mode);
             $calculated = $this->engine->calculate(
                     $book,
@@ -694,7 +695,7 @@ final class LocalDemoCalculatorPage
             <fieldset class="ak-buyback-demo__mode-fieldset" data-offer-group>
                 <legend class="screen-reader-text">Ajánlattípus kiválasztása</legend>
                 <div class="ak-buyback-demo__mode-grid">
-                    <?php foreach (OfferModeDefinition::all() as $mode => $meta) :
+                    <?php foreach ($this->offerModes()->enabled() as $mode => $meta) :
                         $result = $results[$mode];
                         $isOffered = $result->outcome->code() === PricingOutcome::OFFERED;
                         $amount = $isOffered ? ($result->finalAmount?->amount() ?? 0) : 0;
@@ -871,9 +872,15 @@ final class LocalDemoCalculatorPage
             $models[$key]['storages'][$configuration->storageGb] = $configuration->storageGb;
             $models[$key]['colors'][$configuration->storageGb] = $catalog[$key]['colors'] ?? [];
             try {
-                $result = $this->engine->calculate($book, $rules, new PricingCalculationInput(new DeviceCategory('iphone'), new PricingModelKey($key), new StorageCapacity($configuration->storageGb), $perfect, new ServiceMode(ServiceMode::HIGHER_OFFER)));
-                if ($result->outcome->code() === PricingOutcome::OFFERED) {
-                    $models[$key]['teaser'] = max((int) ($models[$key]['teaser'] ?? 0), $result->finalAmount?->amount() ?? 0);
+                $enabledModes = $this->offerModes()->enabled();
+                $teaserMode = isset($enabledModes[ServiceMode::HIGHER_OFFER])
+                    ? ServiceMode::HIGHER_OFFER
+                    : array_key_first($enabledModes);
+                if ($teaserMode !== null) {
+                    $result = $this->engine->calculate($book, $rules, new PricingCalculationInput(new DeviceCategory('iphone'), new PricingModelKey($key), new StorageCapacity($configuration->storageGb), $perfect, new ServiceMode($teaserMode)));
+                    if ($result->outcome->code() === PricingOutcome::OFFERED) {
+                        $models[$key]['teaser'] = max((int) ($models[$key]['teaser'] ?? 0), $result->finalAmount?->amount() ?? 0);
+                    }
                 }
             } catch (\Throwable) {
                 $models[$key]['teaser'] = null;
@@ -921,6 +928,11 @@ final class LocalDemoCalculatorPage
             'bent_or_dented' => false,
             'replacement_parts' => 'none_known',
         ];
+    }
+
+    private function offerModes(): OfferModeConfiguration
+    {
+        return $this->offerModes ?? OfferModeConfiguration::defaults();
     }
 
     private function panelIntro(string $panel): string
