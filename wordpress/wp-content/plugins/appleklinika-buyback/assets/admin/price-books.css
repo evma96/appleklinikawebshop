@@ -198,7 +198,18 @@
 .ak-offer-mode-current p { margin: 5px 0 0; color: #50575e; }
 .ak-offer-mode-save { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; }
 .ak-offer-mode-save-top { position: sticky; top: 32px; z-index: 3; margin: 16px 0; padding: 12px; background: #fff; border: 1px solid #dcdcde; box-shadow: 0 2px 6px rgba(0, 0, 0, .08); }
+.ak-model-offer-modes-editor { max-width: 1080px; margin-top: 20px; }
+.ak-model-editor-picker { display: flex; gap: 12px; align-items: end; margin: 16px 0; }
+.ak-model-editor-picker label { display: grid; gap: 5px; font-weight: 600; }
+.ak-model-offer-mode-list { display: grid; gap: 12px; }
+.ak-model-offer-mode-row { display: grid; grid-template-columns: minmax(240px, 1fr) minmax(220px, .75fr) minmax(150px, .4fr) minmax(180px, .45fr); gap: 14px; align-items: end; padding: 16px; border: 1px solid #dcdcde; border-radius: 6px; background: #fff; }
+.ak-model-offer-mode-row.is-changed { background: #fff8e5; box-shadow: inset 3px 0 0 #dba617; }
+.ak-model-offer-mode-row.is-inherited { background: #f6f7f7; }
+.ak-model-offer-choice { display: grid; gap: 7px; border: 0; margin: 0; padding: 0; }
+.ak-model-offer-choice legend { font-weight: 600; margin-bottom: 5px; }
+.ak-model-offer-save { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin: 18px 0 0; }
 @media (max-width: 900px) { .ak-offer-mode-row { grid-template-columns: 1fr; } .ak-offer-mode-save { align-items: stretch; flex-direction: column; } .ak-offer-mode-save-top { top: 46px; } }
+@media (max-width: 900px) { .ak-model-offer-mode-row { grid-template-columns: 1fr; } .ak-model-editor-picker, .ak-model-offer-save { align-items: stretch; flex-direction: column; } }
 @media (max-width: 782px) { .ak-battery-band-fields { grid-template-columns: 1fr; } .ak-battery-save { align-items: stretch; flex-direction: column; } .ak-battery-save-top { top: 46px; } }
 @media (max-width: 782px) { .ak-condition-row, .ak-service-history-component-row { grid-template-columns: 1fr; } .ak-condition-save { align-items: stretch; flex-direction: column; } .ak-condition-save-top { top: 46px; } }
 @media (max-width: 1100px) { .ak-buyback-grid { grid-template-columns: 1fr; } }

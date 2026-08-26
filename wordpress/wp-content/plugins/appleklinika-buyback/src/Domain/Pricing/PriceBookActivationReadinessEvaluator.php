@@ -91,7 +91,8 @@ final class PriceBookActivationReadinessEvaluator
                 ++$enabledAdjustmentCount;
             }
             if ($kind === PricingRuleKind::MODE_ADJUSTMENT && $definition->serviceMode !== null) {
-                $modeKeys[$definition->serviceMode] = ($modeKeys[$definition->serviceMode] ?? 0) + 1;
+                $key = ($definition->modelKey ?? 'global') . '|' . $definition->serviceMode;
+                $modeKeys[$key] = ($modeKeys[$key] ?? 0) + 1;
             }
         }
 
@@ -104,7 +105,8 @@ final class PriceBookActivationReadinessEvaluator
                 break;
             }
         }
-        foreach ($modeKeys as $mode => $count) {
+        foreach ($modeKeys as $key => $count) {
+            [, $mode] = explode('|', $key, 2);
             if (! in_array($mode, ServiceMode::supportedCodes(), true)) {
                 $blocking[] = 'unsupported_service_mode';
             } elseif ($count > 1) {
@@ -119,7 +121,7 @@ final class PriceBookActivationReadinessEvaluator
         }
 
         foreach (ServiceMode::supportedCodes() as $mode) {
-            if (! isset($modeKeys[$mode])) {
+            if (! isset($modeKeys['global|' . $mode])) {
                 $warnings[] = 'missing_mode_adjustment_' . $mode;
             }
         }

@@ -413,6 +413,56 @@ document.addEventListener('DOMContentLoaded', function () {
     refresh();
   });
 
+  document.querySelectorAll('[data-ak-model-offer-form]').forEach(function (form) {
+    var dirty = false;
+    var refresh = function () {
+      var changes = 0;
+      form.querySelectorAll('[data-ak-model-offer-row]').forEach(function (row) {
+        var custom = row.querySelector('[data-ak-model-offer-setting][value="custom"]');
+        var type = row.querySelector('[data-ak-model-offer-type]');
+        var value = row.querySelector('[data-ak-model-offer-value]');
+        var unit = row.querySelector('[data-ak-model-offer-unit]');
+        var help = row.querySelector('[data-ak-model-offer-help]');
+        if (!custom || !type || !value || !unit || !help) return;
+        var inherited = !custom.checked;
+        var isAmount = type.value === 'amount';
+        type.disabled = inherited;
+        value.disabled = inherited;
+        unit.textContent = isAmount ? 'Ft' : '%';
+        help.textContent = isAmount ? 'Előjeles egész Ft: mínusz csökkent, plusz növel.' : 'Előjeles százalék: -100%–+400%, legfeljebb két tizedessel.';
+        value.step = isAmount ? '1' : '0.01';
+        value.min = isAmount ? String(-Number.MAX_SAFE_INTEGER) : '-100';
+        value.max = isAmount ? String(Number.MAX_SAFE_INTEGER) : '400';
+        row.classList.toggle('is-inherited', inherited);
+        var now = (inherited ? 'inherit' : 'custom') + '|' + type.value + '|' + value.value.trim();
+        row.classList.toggle('is-changed', now !== row.dataset.akModelOfferOriginal);
+        if (now !== row.dataset.akModelOfferOriginal) changes += 1;
+      });
+      form.querySelectorAll('[data-ak-model-offer-change-message]').forEach(function (target) {
+        target.textContent = changes ? changes + ' mentetlen módosítás van.' : 'Nincs mentetlen módosítás.';
+      });
+      dirty = changes > 0;
+    };
+    form.querySelectorAll('[data-ak-model-offer-type]').forEach(function (type) {
+      type.addEventListener('change', function () {
+        var value = type.closest('[data-ak-model-offer-row]').querySelector('[data-ak-model-offer-value]');
+        if (value) value.value = '';
+        refresh();
+      });
+    });
+    form.querySelectorAll('[data-ak-model-offer-setting], [data-ak-model-offer-value]').forEach(function (control) {
+      control.addEventListener('change', refresh);
+      control.addEventListener('input', refresh);
+    });
+    form.addEventListener('submit', function () { dirty = false; });
+    window.addEventListener('beforeunload', function (event) {
+      if (!dirty) return;
+      event.preventDefault();
+      event.returnValue = '';
+    });
+    refresh();
+  });
+
   document.querySelectorAll('[data-ak-preview-form]').forEach(function (form) {
     var payload;
     try { payload = JSON.parse(form.dataset.akPreviewCatalog || '{}'); } catch (error) { payload = {}; }

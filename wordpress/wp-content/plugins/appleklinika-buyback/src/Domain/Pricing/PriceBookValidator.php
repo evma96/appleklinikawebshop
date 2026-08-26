@@ -30,6 +30,7 @@ final class PriceBookValidator
         }
 
         $modelMinimumKeys = [];
+        $modelOfferModeKeys = [];
         foreach ($rules as $rule) {
             if ($book->id() === null || ! $rule->priceBookId()->equals($book->id())) {
                 $issues[] = 'rule_price_book_mismatch';
@@ -59,10 +60,20 @@ final class PriceBookValidator
                 $key = $definition->category . '|' . $definition->modelKey;
                 $modelMinimumKeys[$key] = ($modelMinimumKeys[$key] ?? 0) + 1;
             }
+            if ($definition->kind->code() === PricingRuleKind::MODE_ADJUSTMENT && $definition->serviceMode !== null) {
+                $key = $definition->category . '|' . ($definition->modelKey ?? 'global') . '|' . $definition->serviceMode;
+                $modelOfferModeKeys[$key] = ($modelOfferModeKeys[$key] ?? 0) + 1;
+            }
         }
         foreach ($modelMinimumKeys as $count) {
             if ($count > 1) {
                 $issues[] = 'duplicate_model_minimum_offer';
+                break;
+            }
+        }
+        foreach ($modelOfferModeKeys as $count) {
+            if ($count > 1) {
+                $issues[] = 'duplicate_mode_adjustment';
                 break;
             }
         }
@@ -79,7 +90,8 @@ final class PriceBookValidator
         }
 
         $baseMatches = 0;
-        $modeMatches = 0;
+        $globalModeMatches = 0;
+        $modelModeMatches = 0;
         foreach ($rules as $rule) {
             if ($book->id() === null || ! $rule->priceBookId()->equals($book->id())) {
                 $issues[] = 'rule_price_book_mismatch';
@@ -98,7 +110,11 @@ final class PriceBookValidator
             }
             if ($definition->kind->code() === PricingRuleKind::MODE_ADJUSTMENT
                 && $definition->serviceMode === $input->serviceMode->code()) {
-                ++$modeMatches;
+                if ($definition->modelKey === null) {
+                    ++$globalModeMatches;
+                } elseif ($definition->modelKey === $input->modelKey->value()) {
+                    ++$modelModeMatches;
+                }
             }
         }
 
@@ -107,7 +123,7 @@ final class PriceBookValidator
         } elseif ($baseMatches > 1) {
             $issues[] = 'duplicate_base_price';
         }
-        if ($modeMatches > 1) {
+        if (($modelModeMatches > 0 ? $modelModeMatches : $globalModeMatches) > 1) {
             $issues[] = 'duplicate_mode_adjustment';
         }
 
