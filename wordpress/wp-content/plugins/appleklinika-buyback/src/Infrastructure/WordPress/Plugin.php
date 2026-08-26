@@ -16,6 +16,7 @@ use AppleKlinika\Buyback\Application\Handler\SaveDraftModelMinimumOfferHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftQuestionnaireConditionsHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftBatteryBandsHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftOfferModeModifiersHandler;
+use AppleKlinika\Buyback\Application\Handler\SaveDraftModelOfferModeOverridesHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveOfferModeSettingsHandler;
 use AppleKlinika\Buyback\Application\Pricing\OfferModeExampleCalculator;
 use AppleKlinika\Buyback\Application\Handler\DeleteDraftPricingRuleHandler;
@@ -137,7 +138,8 @@ final class Plugin
                 $questionnaire,
                 $lifecycle,
                 new ProtectPriceBookHandler($books, $lifecycle, $transactions, $clock),
-                $offerModes
+                $offerModes,
+                new SaveDraftModelOfferModeOverridesHandler($books, $rules, $catalog, $transactions, $clock)
             ),
             new BuybackRequestsPage(new WordPressPublicBuybackRequestStore($wpdb), $offerModes),
             LocalDemoModule::create($offerModes),

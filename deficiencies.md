@@ -15,6 +15,7 @@
 - Buyback Phase 2B2 now provides readiness-gated, atomically serialized HUF price-book activation, immutable active/retired configuration, typed active resolution, and safe draft duplication. Public/live customer calculation, request-to-price-book linkage, offer persistence, standalone retirement/reactivation, inspection, payout, courier, trade-in credit, WooCommerce integration, and legacy import remain deferred.
 - Price-book labels intentionally remain limited to 120 bytes. Draft duplication preserves its current copy/version suffix and truncates only the source-name portion at a UTF-8 boundary when required by that limit.
 - Model-specific automatic-offer minimums are intentionally model-level only. Storage- or offer-mode-specific minimum policies would require separate business approval and validation rules.
+- Model-specific offer-mode adjustments intentionally support one explicit override per canonical model and offer mode. They do not add storage-specific adjustment scopes or a second pricebook-level default layer.
 - The `/eladas/` calculator remains a local-only demo: service-history and affected-parts answers are intentionally not persisted until the separately scoped request-submission phase.
 - The Buyback Phase 1A migration smoke test is a real Docker-backed WordPress integration check (`make test-buyback`), while the repository-wide `make test` and `make quality` commands still remain placeholders.
 - WooCommerce is not installed or configured by this bootstrap alone.

@@ -65,7 +65,7 @@ Nearest-increment rounding is half-up. With a 1,000 Ft increment, `138499` becom
 
 No matching base produces `configuration_error: missing_base_price`. Multiple enabled exact bases produce `duplicate_base_price`. Multiple enabled adjustments for the selected mode produce `duplicate_mode_adjustment`. Disabled rules are ignored.
 
-Hard reject wins over manual review. An enabled model-specific minimum is scoped only to its canonical model and uses `<=` before a service-mode adjustment; it produces the existing personal-inspection outcome with `below_model_minimum_offer`. If no such rule applies, the price-book global minimum remains the backward-compatible strict `<` fallback and follows its configured policy with `below_minimum_offer`; the engine never raises the amount to a fake minimum.
+Hard reject wins over manual review. An enabled model-specific minimum is scoped only to its canonical model and uses `<=` before a service-mode adjustment; it produces the existing personal-inspection outcome with `below_model_minimum_offer`. The effective service-mode adjustment is then the one explicit matching model/mode rule when present, otherwise the price-book-wide mode rule; the two rules never stack. If no such model minimum applies, the price-book global minimum remains the backward-compatible strict `<` fallback and follows its configured policy with `below_minimum_offer`; the engine never raises the amount to a fake minimum.
 
 Breakdown lines are immutable and follow execution order: base price, fixed deductions, condition multipliers, model-minimum policy when matched, mode adjustment, global minimum policy, and rounding.
 
