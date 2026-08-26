@@ -11,6 +11,8 @@ use AppleKlinika\Buyback\Domain\Shared\Money;
 
 final class PriceBook
 {
+    public const MAX_LABEL_BYTES = 120;
+
     private function __construct(
         private readonly ?PriceBookId $id,
         private readonly PriceBookVersionNumber $versionNumber,
@@ -136,7 +138,7 @@ final class PriceBook
 
     private function assertLabel(string $label): void
     {
-        if (trim($label) === '' || strlen($label) > 120) {
+        if (trim($label) === '' || strlen($label) > self::MAX_LABEL_BYTES) {
             throw new InvalidValueObjectException('Price-book label is required and limited to 120 characters.');
         }
     }

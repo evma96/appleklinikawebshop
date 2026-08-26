@@ -44,7 +44,7 @@ final class ClonePriceBookToDraftHandler
             $at = $this->clock->now();
             $draft = $this->books->createDraft(PriceBook::createDraft(
                 $this->books->nextAvailableVersionNumber(),
-                $source->label() . ' – Másolat v' . $source->versionNumber()->value(),
+                $this->cloneLabel($source),
                 $source->currency(),
                 $source->minimumOffer(),
                 $source->roundingIncrementMinor(),
@@ -69,5 +69,39 @@ final class ClonePriceBookToDraftHandler
 
             return $draft;
         });
+    }
+
+    private function cloneLabel(PriceBook $source): string
+    {
+        $suffix = ' – Másolat v' . $source->versionNumber()->value();
+        $sourceLabelBytes = PriceBook::MAX_LABEL_BYTES - strlen($suffix);
+
+        if (strlen($source->label()) <= $sourceLabelBytes) {
+            return $source->label() . $suffix;
+        }
+
+        return $this->utf8PrefixWithinByteLimit($source->label(), $sourceLabelBytes) . $suffix;
+    }
+
+    private function utf8PrefixWithinByteLimit(string $label, int $maximumBytes): string
+    {
+        if (function_exists('mb_strcut')) {
+            return mb_strcut($label, 0, $maximumBytes, 'UTF-8');
+        }
+
+        $characters = preg_split('//u', $label, -1, PREG_SPLIT_NO_EMPTY);
+        if ($characters === false) {
+            throw new \RuntimeException('Price-book label must be valid UTF-8.');
+        }
+
+        $prefix = '';
+        foreach ($characters as $character) {
+            if (strlen($prefix . $character) > $maximumBytes) {
+                break;
+            }
+            $prefix .= $character;
+        }
+
+        return $prefix;
     }
 }
