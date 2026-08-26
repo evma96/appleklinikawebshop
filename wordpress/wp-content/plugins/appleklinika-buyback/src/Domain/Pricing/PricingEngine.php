@@ -117,9 +117,8 @@ final class PricingEngine
             );
         }
 
-        $modeRules = array_values(array_filter($enabled, static fn (PricingRule $rule): bool => $rule->definition()->kind->code() === PricingRuleKind::MODE_ADJUSTMENT && $rule->definition()->serviceMode === $input->serviceMode->code()));
-        if ($modeRules !== []) {
-            $modeRule = $modeRules[0];
+        $modeRule = $this->effectiveModeAdjustment($enabled, $input);
+        if ($modeRule !== null) {
             $before = $amount;
             if ($modeRule->definition()->amount !== null) {
                 $adjustment = $modeRule->definition()->amount->amount();
@@ -212,6 +211,32 @@ final class PricingEngine
             }
         }
         return null;
+    }
+
+    /**
+     * An explicit model/mode adjustment replaces, rather than stacks with, the
+     * price-book-wide adjustment. Keeping the fallback here makes the public
+     * flow, draft preview and persisted request calculation share one rule.
+     *
+     * @param list<PricingRule> $rules
+     */
+    private function effectiveModeAdjustment(array $rules, PricingCalculationInput $input): ?PricingRule
+    {
+        $global = null;
+        foreach ($rules as $rule) {
+            $definition = $rule->definition();
+            if ($definition->kind->code() !== PricingRuleKind::MODE_ADJUSTMENT
+                || $definition->serviceMode !== $input->serviceMode->code()) {
+                continue;
+            }
+            if ($definition->modelKey === $input->modelKey->value()) {
+                return $rule;
+            }
+            if ($definition->modelKey === null) {
+                $global = $rule;
+            }
+        }
+        return $global;
     }
 
     /** @param list<PricingRule> $rules @return list<PricingRule> */

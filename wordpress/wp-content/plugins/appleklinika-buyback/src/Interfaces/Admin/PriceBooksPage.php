@@ -15,6 +15,7 @@ use AppleKlinika\Buyback\Application\Command\SaveDraftModelMinimumOffer;
 use AppleKlinika\Buyback\Application\Command\SaveDraftQuestionnaireConditions;
 use AppleKlinika\Buyback\Application\Command\SaveDraftBatteryBands;
 use AppleKlinika\Buyback\Application\Command\SaveDraftOfferModeModifiers;
+use AppleKlinika\Buyback\Application\Command\SaveDraftModelOfferModeOverrides;
 use AppleKlinika\Buyback\Application\Command\DeleteDraftPricingRule;
 use AppleKlinika\Buyback\Application\Command\ToggleDraftPricingRule;
 use AppleKlinika\Buyback\Application\Command\UpdateDraftPriceBookSettings;
@@ -33,6 +34,7 @@ use AppleKlinika\Buyback\Application\Handler\SaveDraftModelMinimumOfferHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftQuestionnaireConditionsHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftBatteryBandsHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftOfferModeModifiersHandler;
+use AppleKlinika\Buyback\Application\Handler\SaveDraftModelOfferModeOverridesHandler;
 use AppleKlinika\Buyback\Application\Handler\DeleteDraftPricingRuleHandler;
 use AppleKlinika\Buyback\Application\Handler\PreviewDraftPriceBookCalculationHandler;
 use AppleKlinika\Buyback\Application\Handler\ToggleDraftPricingRuleHandler;
@@ -112,7 +114,8 @@ final class PriceBooksPage
         private readonly LocalDemoQuestionnaire $questionnaire,
         private readonly ?PriceBookLifecycleRepository $lifecycle = null,
         private readonly ?ProtectPriceBookHandler $protectBook = null,
-        private readonly ?OfferModeConfiguration $offerModes = null
+        private readonly ?OfferModeConfiguration $offerModes = null,
+        private readonly ?SaveDraftModelOfferModeOverridesHandler $saveModelOfferModeOverrides = null
     ) {
     }
 
@@ -164,6 +167,7 @@ final class PriceBooksPage
                 'save_questionnaire_conditions' => 'Az állapotlevonások mentése nem sikerült: ' . $exception->getMessage(),
                 'save_battery_bands' => 'Az akkumulátorsávok mentése nem sikerült: ' . $exception->getMessage(),
                 'save_offer_mode_modifiers' => 'Az ajánlattípusok mentése nem sikerült: ' . $exception->getMessage(),
+                'save_model_offer_mode_overrides' => 'A modellenkénti ajánlattípus-korrekciók mentése nem sikerült: ' . $exception->getMessage(),
                 'discard_draft_price_book' => $this->discardErrorMessage($exception),
                 'clone_active_price_book' => $this->cloneErrorMessage($exception),
                 default => null,
@@ -313,6 +317,20 @@ final class PriceBooksPage
         if ($action === 'save_offer_mode_modifiers') {
             $modifiers = isset($post['offer_mode_modifiers']) && is_array($post['offer_mode_modifiers']) ? array_values($post['offer_mode_modifiers']) : [];
             $this->saveOfferModeModifiers->handle(new SaveDraftOfferModeModifiers($bookId, $bookVersion, $modifiers));
+            return;
+        }
+
+        if ($action === 'save_model_offer_mode_overrides') {
+            if ($this->saveModelOfferModeOverrides === null) {
+                throw new \RuntimeException('A modellenkénti ajánlattípus-korrekciók mentése jelenleg nem érhető el.');
+            }
+            $overrides = isset($post['model_offer_mode_overrides']) && is_array($post['model_offer_mode_overrides']) ? array_values($post['model_offer_mode_overrides']) : [];
+            $this->saveModelOfferModeOverrides->handle(new SaveDraftModelOfferModeOverrides(
+                $bookId,
+                $bookVersion,
+                sanitize_key((string) ($post['model_offer_mode_model_key'] ?? '')),
+                $overrides
+            ));
             return;
         }
 
@@ -1038,7 +1056,7 @@ final class PriceBooksPage
         $duplicates = [];
         foreach ($rules as $rule) {
             $definition = $rule->definition();
-            if ($definition->kind->code() !== PricingRuleKind::MODE_ADJUSTMENT || ! in_array($definition->serviceMode, OfferModeDefinition::keys(), true)) {
+            if ($definition->kind->code() !== PricingRuleKind::MODE_ADJUSTMENT || $definition->modelKey !== null || ! in_array($definition->serviceMode, OfferModeDefinition::keys(), true)) {
                 continue;
             }
             if (isset($modeRules[$definition->serviceMode])) {
@@ -1069,6 +1087,90 @@ final class PriceBooksPage
             echo '<div class="ak-offer-mode-save ak-offer-mode-save-bottom"><span data-ak-offer-change-message aria-live="polite">Nincs mentetlen változás.</span><button type="submit" class="button button-primary">Ajánlattípusok mentése</button></div></form>';
         }
         echo '</section>';
+        $this->renderModelOfferModeOverrides($book, $rules, $modeRules, $readOnly, $tab);
+    }
+
+    /**
+     * @param list<PricingRule> $rules
+     * @param array<string,PricingRule> $globalRules
+     */
+    private function renderModelOfferModeOverrides(PriceBook $book, array $rules, array $globalRules, bool $readOnly, string $tab): void
+    {
+        try {
+            $models = $this->catalog->iPhoneModels();
+        } catch (DeviceCatalogUnavailableException $exception) {
+            echo '<section class="ak-buyback-card"><h3>Modellenkénti ajánlattípus-korrekciók</h3><p>Az inventory készülékkatalógus nem érhető el.</p></section>';
+            return;
+        }
+        if ($models === []) {
+            echo '<section class="ak-buyback-card"><h3>Modellenkénti ajánlattípus-korrekciók</h3><p>Az iPhone modellek most nem tölthetők be.</p></section>';
+            return;
+        }
+        $selectedModel = $this->selectedConditionModel($models);
+        if ($selectedModel === null) {
+            echo '<section class="ak-buyback-card"><h3>Modellenkénti ajánlattípus-korrekciók</h3><p>A kiválasztott iPhone modell nem található.</p></section>';
+            return;
+        }
+        $selectedModelKey = $selectedModel->modelKey;
+        $overrides = [];
+        $duplicates = false;
+        foreach ($rules as $rule) {
+            $definition = $rule->definition();
+            if ($definition->kind->code() !== PricingRuleKind::MODE_ADJUSTMENT || $definition->modelKey !== $selectedModelKey || ! in_array($definition->serviceMode, OfferModeDefinition::keys(), true)) {
+                continue;
+            }
+            if (isset($overrides[$definition->serviceMode])) {
+                $duplicates = true;
+            }
+            $overrides[$definition->serviceMode] = $rule;
+        }
+
+        echo '<section class="ak-buyback-card ak-model-offer-modes-editor"><h3>Modellenkénti ajánlattípus-korrekciók</h3>';
+        echo '<p>Az árkönyvszintű korrekció az alapérték. Csak akkor jön létre külön modell-szabály, ha itt a „Saját korrekció” lehetőséget választod. Az alapérték későbbi módosítása automatikusan érvényes minden öröklődő modellre.</p>';
+        echo '<form method="get" class="ak-model-editor-picker"><input type="hidden" name="page" value="' . esc_attr(self::SLUG) . '"><input type="hidden" name="book_id" value="' . esc_attr((string) $book->id()?->toInt()) . '"><input type="hidden" name="tab" value="' . esc_attr($tab) . '"><label>iPhone modell<select name="model" data-ak-model-offer-picker data-ak-current-value="' . esc_attr($selectedModelKey) . '">';
+        foreach ($models as $model) {
+            echo '<option value="' . esc_attr($model->modelKey) . '" ' . selected($selectedModelKey, $model->modelKey, false) . '>' . esc_html($model->label) . '</option>';
+        }
+        echo '</select></label><button class="button">Modell betöltése</button></form>';
+        if ($duplicates) {
+            echo '<div class="notice notice-error inline"><p>Ehhez a modellhez ugyanahhoz az ajánlattípushoz több szabály tartozik. A szerkesztés biztonsági okból nem elérhető.</p></div>';
+            $readOnly = true;
+        }
+        if (! $readOnly && $this->saveModelOfferModeOverrides !== null) {
+            echo '<form method="post" data-ak-model-offer-form><input type="hidden" name="model_offer_mode_model_key" value="' . esc_attr($selectedModelKey) . '">';
+            $this->securityFields('save_model_offer_mode_overrides', $book);
+            $this->tabField($tab);
+        }
+        echo '<div class="ak-model-offer-mode-list">';
+        foreach ($this->offerModes()->all() as $mode => $meta) {
+            $this->renderModelOfferModeRow($mode, $meta, $globalRules[$mode] ?? null, $overrides[$mode] ?? null, $readOnly);
+        }
+        echo '</div>';
+        if (! $readOnly && $this->saveModelOfferModeOverrides !== null) {
+            echo '<p class="ak-model-offer-save"><span data-ak-model-offer-change-message aria-live="polite">Nincs mentetlen módosítás.</span><button type="submit" class="button button-primary">Modellenkénti korrekciók mentése</button></p></form>';
+        }
+        echo '</section>';
+    }
+
+    /** @param array{label:string,description:string,process:string} $meta */
+    private function renderModelOfferModeRow(string $mode, array $meta, ?PricingRule $globalRule, ?PricingRule $override, bool $readOnly): void
+    {
+        $default = $globalRule === null ? 'Nincs külön módosító (0)' : $this->offerModeValueLabel($globalRule);
+        $type = $override?->definition()->amount !== null ? SaveDraftOfferModeModifiersHandler::TYPE_AMOUNT : SaveDraftOfferModeModifiersHandler::TYPE_MULTIPLIER;
+        $value = $type === SaveDraftOfferModeModifiersHandler::TYPE_AMOUNT
+            ? $override?->definition()->amount?->amount()
+            : ($override?->definition()->multiplier === null ? '' : $this->offerModePercentage($override->definition()->multiplier->value()));
+        $setting = $override === null ? SaveDraftModelOfferModeOverridesHandler::SETTING_INHERIT : SaveDraftModelOfferModeOverridesHandler::SETTING_CUSTOM;
+        echo '<article class="ak-model-offer-mode-row" data-ak-model-offer-row data-ak-model-offer-original="' . esc_attr($setting . '|' . $type . '|' . $value) . '"><div class="ak-offer-mode-copy"><h4>' . esc_html($meta['label']) . '</h4><p>' . esc_html($meta['description']) . '</p><p class="description"><strong>Alapbeállítás:</strong> ' . esc_html($default) . '</p></div>';
+        if ($readOnly) {
+            echo '<div class="ak-offer-mode-current"><strong>' . esc_html($override === null ? 'Alapbeállítás használata' : $this->offerModeValueLabel($override)) . '</strong><p>' . esc_html($override === null ? $default : 'Saját modellkorrekció') . '</p></div></article>';
+            return;
+        }
+        $name = 'model_offer_mode_overrides[' . $mode . ']';
+        echo '<input type="hidden" name="' . esc_attr($name) . '[mode]" value="' . esc_attr($mode) . '">';
+        echo '<fieldset class="ak-model-offer-choice"><legend>Beállítás</legend><label><input type="radio" name="' . esc_attr($name) . '[setting]" value="inherit" data-ak-model-offer-setting ' . checked($setting, SaveDraftModelOfferModeOverridesHandler::SETTING_INHERIT, false) . '> Alapbeállítás használata</label><label><input type="radio" name="' . esc_attr($name) . '[setting]" value="custom" data-ak-model-offer-setting ' . checked($setting, SaveDraftModelOfferModeOverridesHandler::SETTING_CUSTOM, false) . '> Saját korrekció</label></fieldset>';
+        echo '<label class="ak-offer-mode-type">Korrekció típusa<select name="' . esc_attr($name) . '[type]" data-ak-model-offer-type><option value="amount" ' . selected($type, SaveDraftOfferModeModifiersHandler::TYPE_AMOUNT, false) . '>Fix összeg</option><option value="multiplier" ' . selected($type, SaveDraftOfferModeModifiersHandler::TYPE_MULTIPLIER, false) . '>Százalékos</option></select></label>';
+        echo '<label class="ak-offer-mode-value">Érték<div class="ak-price-input"><input type="number" min="' . esc_attr($type === SaveDraftOfferModeModifiersHandler::TYPE_AMOUNT ? (string) -PHP_INT_MAX : '-100') . '" max="' . esc_attr($type === SaveDraftOfferModeModifiersHandler::TYPE_AMOUNT ? (string) PHP_INT_MAX : '400') . '" step="' . esc_attr($type === SaveDraftOfferModeModifiersHandler::TYPE_AMOUNT ? '1' : '0.01') . '" inputmode="decimal" name="' . esc_attr($name) . '[value]" value="' . esc_attr((string) $value) . '" data-ak-model-offer-value ' . ($setting === SaveDraftModelOfferModeOverridesHandler::SETTING_INHERIT ? 'disabled' : '') . '><span data-ak-model-offer-unit>' . esc_html($type === SaveDraftOfferModeModifiersHandler::TYPE_AMOUNT ? 'Ft' : '%') . '</span></div><small data-ak-model-offer-help>' . esc_html($type === SaveDraftOfferModeModifiersHandler::TYPE_AMOUNT ? 'Előjeles egész Ft: mínusz csökkent, plusz növel.' : 'Előjeles százalék: -100%–+400%, legfeljebb két tizedessel.') . '</small></label></article>';
     }
 
     /** @param array{label:string,description:string,process:string} $meta */

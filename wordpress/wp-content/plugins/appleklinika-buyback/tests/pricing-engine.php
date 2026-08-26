@@ -485,6 +485,28 @@ try {
     $test->assert($modeReferenceAmounts === [ServiceMode::IN_STORE_INSTANT => 95000, ServiceMode::FAST_ONLINE => 90000, ServiceMode::HIGHER_OFFER => 100000, ServiceMode::TRADE_IN => 105000], 'All four canonical offer modes use the real engine in its documented calculation order');
     $duplicateMode = $engine->calculate($book, array_merge($rules, [engineRule(51, $bookId, PricingRuleKind::MODE_ADJUSTMENT, 'fast-copy', 41, true, ['service_mode' => ServiceMode::FAST_ONLINE, 'amount' => 1])]), engineInput());
     $test->assert(in_array('duplicate_mode_adjustment', $duplicateMode->reasonCodes, true), 'Duplicate mode adjustment is a configuration error');
+    $modelModeBook = engineBook(700026, 0, 1);
+    $modelModeRules = [
+        engineRule(820, $modelModeBook->id(), PricingRuleKind::BASE_PRICE, 'model-mode-base-13', 10, true, ['model_key' => 'iphone-13-pro', 'amount' => 100000]),
+        engineRule(821, $modelModeBook->id(), PricingRuleKind::BASE_PRICE, 'model-mode-base-16', 10, true, ['model_key' => 'iphone-16-pro', 'amount' => 100000]),
+        engineRule(822, $modelModeBook->id(), PricingRuleKind::MODE_ADJUSTMENT, 'model-mode-global-fast', 100, true, ['service_mode' => ServiceMode::FAST_ONLINE, 'amount' => -5000]),
+        engineRule(823, $modelModeBook->id(), PricingRuleKind::MODE_ADJUSTMENT, 'model-mode-13-fast', 110, true, ['model_key' => 'iphone-13-pro', 'service_mode' => ServiceMode::FAST_ONLINE, 'amount' => -12000]),
+        engineRule(824, $modelModeBook->id(), PricingRuleKind::MODE_ADJUSTMENT, 'model-mode-16-trade', 110, true, ['model_key' => 'iphone-16-pro', 'service_mode' => ServiceMode::TRADE_IN, 'multiplier' => 11000]),
+    ];
+    $modelMode13Fast = $engine->calculate($modelModeBook, $modelModeRules, engineInput([], ServiceMode::FAST_ONLINE, 'iphone-13-pro'));
+    $modelMode16Fast = $engine->calculate($modelModeBook, $modelModeRules, engineInput([], ServiceMode::FAST_ONLINE, 'iphone-16-pro'));
+    $modelMode13Trade = $engine->calculate($modelModeBook, $modelModeRules, engineInput([], ServiceMode::TRADE_IN, 'iphone-13-pro'));
+    $modelMode16Trade = $engine->calculate($modelModeBook, $modelModeRules, engineInput([], ServiceMode::TRADE_IN, 'iphone-16-pro'));
+    $test->assert($modelMode13Fast->finalAmount?->amount() === 88000 && $modelMode13Fast->matchedRules[count($modelMode13Fast->matchedRules) - 1]->ruleCode === 'model-mode-13-fast', 'An explicit model/mode offer adjustment overrides the price-book default without stacking');
+    $test->assert($modelMode16Fast->finalAmount?->amount() === 95000 && $modelMode16Fast->matchedRules[count($modelMode16Fast->matchedRules) - 1]->ruleCode === 'model-mode-global-fast', 'A model without a custom adjustment inherits the price-book-wide default');
+    $test->assert($modelMode13Trade->finalAmount?->amount() === 100000 && $modelMode16Trade->finalAmount?->amount() === 110000, 'Different models and modes resolve independently without cross-model leakage');
+    $zeroModelOverride = $engine->calculate($modelModeBook, array_merge($modelModeRules, [engineRule(825, $modelModeBook->id(), PricingRuleKind::MODE_ADJUSTMENT, 'model-mode-13-store-zero', 110, true, ['model_key' => 'iphone-13-pro', 'service_mode' => ServiceMode::IN_STORE_INSTANT, 'amount' => 0])]), engineInput([], ServiceMode::IN_STORE_INSTANT, 'iphone-13-pro'));
+    $test->assert($zeroModelOverride->finalAmount?->amount() === 100000 && $zeroModelOverride->matchedRules[count($zeroModelOverride->matchedRules) - 1]->ruleCode === 'model-mode-13-store-zero', 'An explicit zero model override is preserved and applied exactly');
+    $modelModeWithMinimum = array_merge($modelModeRules, [engineRule(826, $modelModeBook->id(), PricingRuleKind::MINIMUM_OFFER, 'model-mode-minimum', 90, true, ['model_key' => 'iphone-13-pro', 'amount' => 100000])]);
+    $test->assert($engine->calculate($modelModeBook, $modelModeWithMinimum, engineInput([], ServiceMode::FAST_ONLINE, 'iphone-13-pro'))->outcome->code() === PricingOutcome::MANUAL_REVIEW, 'The model minimum remains before the effective offer-mode adjustment');
+    $modelModeManual = array_merge($modelModeRules, [engineRule(827, $modelModeBook->id(), PricingRuleKind::MANUAL_REVIEW, 'model-mode-review', 20, true, ['model_key' => 'iphone-13-pro', 'condition_key' => 'replacement_parts', 'operator' => ComparisonOperator::EQUALS, 'comparison' => 'non_original', 'label' => 'Ellenőrzés'])]);
+    $modelModeReject = array_merge($modelModeRules, [engineRule(828, $modelModeBook->id(), PricingRuleKind::HARD_REJECT, 'model-mode-reject', 20, true, ['model_key' => 'iphone-13-pro', 'condition_key' => 'network_unlocked', 'operator' => ComparisonOperator::EQUALS, 'comparison' => false, 'label' => 'Elutasítás'])]);
+    $test->assert($engine->calculate($modelModeBook, $modelModeManual, engineInput(['replacement_parts' => 'non_original'], ServiceMode::FAST_ONLINE, 'iphone-13-pro'))->outcome->code() === PricingOutcome::MANUAL_REVIEW && $engine->calculate($modelModeBook, $modelModeReject, engineInput(['network_unlocked' => false], ServiceMode::FAST_ONLINE, 'iphone-13-pro'))->outcome->code() === PricingOutcome::REJECTED, 'Manual-review and rejection outcomes retain precedence over model offer adjustments');
     foreach (ServiceMode::supportedCodes() as $mode) {
         $test->assert($engine->calculate($book, $rules, engineInput([], $mode))->serviceMode->code() === $mode, "{$mode} calculates independently");
     }

@@ -18,6 +18,7 @@ use AppleKlinika\Buyback\Application\Command\SaveDraftModelMinimumOffer;
 use AppleKlinika\Buyback\Application\Command\SaveDraftQuestionnaireConditions;
 use AppleKlinika\Buyback\Application\Command\SaveDraftBatteryBands;
 use AppleKlinika\Buyback\Application\Command\SaveDraftOfferModeModifiers;
+use AppleKlinika\Buyback\Application\Command\SaveDraftModelOfferModeOverrides;
 use AppleKlinika\Buyback\Application\Command\SaveOfferModeSettings;
 use AppleKlinika\Buyback\Application\Command\ToggleDraftPricingRule;
 use AppleKlinika\Buyback\Application\Command\UpdateDraftPriceBookSettings;
@@ -39,6 +40,7 @@ use AppleKlinika\Buyback\Application\Handler\SaveDraftModelMinimumOfferHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftQuestionnaireConditionsHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftBatteryBandsHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftOfferModeModifiersHandler;
+use AppleKlinika\Buyback\Application\Handler\SaveDraftModelOfferModeOverridesHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveOfferModeSettingsHandler;
 use AppleKlinika\Buyback\Application\Handler\ToggleDraftPricingRuleHandler;
 use AppleKlinika\Buyback\Application\Handler\UpdateDraftPriceBookSettingsHandler;
@@ -848,6 +850,7 @@ try {
     $saveConditions = new SaveDraftQuestionnaireConditionsHandler($books, $rules, $transactions, $clock, $questionnaire, $catalog);
     $saveBatteryBands = new SaveDraftBatteryBandsHandler($books, $rules, $transactions, $clock, $questionnaire, $catalog);
     $saveOfferModes = new SaveDraftOfferModeModifiersHandler($books, $rules, $transactions, $clock);
+    $saveModelOfferModes = new SaveDraftModelOfferModeOverridesHandler($books, $rules, $catalog, $transactions, $clock);
     $publicQuestionKeys = [];
     foreach ($questionnaire->panelOrder() as $panel) {
         if (in_array($panel, ['model', 'battery', 'offers', 'review'], true)) {
@@ -1045,6 +1048,28 @@ try {
     $test->throws(fn () => $saveOfferModes->handle(new SaveDraftOfferModeModifiers($retiredBook->id()->toInt(), $books->getById($retiredBook->id())?->version()->value() ?? -1, $offerSubmission)), InvalidAggregateOperationException::class, 'Offer-mode handler rejects archived price-book edits');
     $offerIsolationAfter = array_values(array_filter($rules->listForPriceBook($matrixBook->id()), static fn (PricingRule $rule): bool => $rule->definition()->kind->code() !== PricingRuleKind::MODE_ADJUSTMENT));
     $test->assert(serialize(array_map(static fn (PricingRule $rule): string => $rule->definition()->code->code(), $offerIsolationAfter)) === serialize(array_map(static fn (PricingRule $rule): string => $rule->definition()->code->code(), $offerIsolationBefore)), 'Offer-mode saves preserve Base-price, Conditions, Battery and system rules');
+    $modelOfferSubmission = [
+        ['mode' => 'in_store_instant', 'setting' => 'inherit'],
+        ['mode' => 'fast_online', 'setting' => 'custom', 'type' => 'amount', 'value' => '-23000'],
+        ['mode' => 'higher_offer', 'setting' => 'inherit'],
+        ['mode' => 'trade_in', 'setting' => 'inherit'],
+    ];
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $saveModelOfferModes->handle(new SaveDraftModelOfferModeOverrides($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, $firstConfiguration->modelKey, $modelOfferSubmission));
+    $modelOfferRules = array_values(array_filter($rules->listForPriceBook($matrixBook->id()), static fn (PricingRule $rule): bool => $rule->definition()->kind->code() === PricingRuleKind::MODE_ADJUSTMENT && $rule->definition()->modelKey === $firstConfiguration->modelKey));
+    $test->assert(count($modelOfferRules) === 1 && $modelOfferRules[0]->definition()->serviceMode === 'fast_online' && $modelOfferRules[0]->definition()->amount?->amount() === -23000, 'Model offer-mode save persists only an explicit selected model/mode override');
+    $globalFastBefore = array_values(array_filter($rules->listForPriceBook($matrixBook->id()), static fn (PricingRule $rule): bool => $rule->definition()->kind->code() === PricingRuleKind::MODE_ADJUSTMENT && $rule->definition()->modelKey === null && $rule->definition()->serviceMode === 'fast_online'))[0] ?? null;
+    $test->assert($globalFastBefore?->definition()->multiplier?->value() === 9500, 'Saving a model offer override leaves the inherited price-book default unchanged');
+    $modelOfferSubmission[1]['setting'] = 'inherit';
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $saveModelOfferModes->handle(new SaveDraftModelOfferModeOverrides($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, $firstConfiguration->modelKey, $modelOfferSubmission));
+    $test->assert(count(array_filter($rules->listForPriceBook($matrixBook->id()), static fn (PricingRule $rule): bool => $rule->definition()->kind->code() === PricingRuleKind::MODE_ADJUSTMENT && $rule->definition()->modelKey === $firstConfiguration->modelKey)) === 0, 'Reset removes only the selected model/mode override and restores inheritance');
+    $modelOfferSubmission[1] = ['mode' => 'fast_online', 'setting' => 'custom', 'type' => 'amount', 'value' => '0'];
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $saveModelOfferModes->handle(new SaveDraftModelOfferModeOverrides($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, $firstConfiguration->modelKey, $modelOfferSubmission));
+    $test->assert((array_values(array_filter($rules->listForPriceBook($matrixBook->id()), static fn (PricingRule $rule): bool => $rule->definition()->kind->code() === PricingRuleKind::MODE_ADJUSTMENT && $rule->definition()->modelKey === $firstConfiguration->modelKey))[0] ?? null)?->definition()->amount?->amount() === 0, 'An explicit zero model override is persisted instead of being silently removed');
+    $test->throws(fn () => $saveModelOfferModes->handle(new SaveDraftModelOfferModeOverrides($activeBook->id()->toInt(), $books->getById($activeBook->id())?->version()->value() ?? -1, $firstConfiguration->modelKey, $modelOfferSubmission)), InvalidAggregateOperationException::class, 'Model offer-mode handler rejects crafted active price-book edits');
+    $test->throws(fn () => $saveModelOfferModes->handle(new SaveDraftModelOfferModeOverrides($matrixBook->id()->toInt(), $books->getById($matrixBook->id())?->version()->value() ?? -1, 'unknown_inventory_model', $modelOfferSubmission)), InvalidArgumentException::class, 'Model offer-mode handler rejects an unknown inventory model without writing a rule');
     $matrixCurrent = $books->getById($matrixBook->id());
     $saveModelMinimumOffer->handle(new SaveDraftModelMinimumOffer($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, $firstConfiguration->modelKey, 125000));
     $minimumRules = array_values(array_filter($rules->listForPriceBook($matrixBook->id()), static fn (PricingRule $rule): bool => $rule->definition()->kind->code() === PricingRuleKind::MINIMUM_OFFER));
@@ -1052,6 +1077,8 @@ try {
     $matrixClone = $cloneHandler->handle(new ClonePriceBookToDraft($matrixBook->id()->toInt(), $books->getById($matrixBook->id())?->version()->value() ?? -1, $adminId));
     $cloneMinimumRules = array_values(array_filter($rules->listForPriceBook($matrixClone->id()), static fn (PricingRule $rule): bool => $rule->definition()->kind->code() === PricingRuleKind::MINIMUM_OFFER));
     $test->assert(count($cloneMinimumRules) === 1 && $cloneMinimumRules[0]->definition()->modelKey === $firstConfiguration->modelKey && $cloneMinimumRules[0]->definition()->amount?->amount() === 125000, 'Cloning a draft preserves its explicit model minimum exactly');
+    $cloneModelOfferRules = array_values(array_filter($rules->listForPriceBook($matrixClone->id()), static fn (PricingRule $rule): bool => $rule->definition()->kind->code() === PricingRuleKind::MODE_ADJUSTMENT && $rule->definition()->modelKey === $firstConfiguration->modelKey));
+    $test->assert(count($cloneModelOfferRules) === 1 && $cloneModelOfferRules[0]->definition()->amount?->amount() === 0, 'Cloning a draft preserves its explicit model offer override exactly');
     $matrixCurrent = $books->getById($matrixBook->id());
     $saveModelMinimumOffer->handle(new SaveDraftModelMinimumOffer($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, $firstConfiguration->modelKey, null));
     $test->assert(count(array_filter($rules->listForPriceBook($matrixBook->id()), static fn (PricingRule $rule): bool => $rule->definition()->kind->code() === PricingRuleKind::MINIMUM_OFFER && $rule->definition()->modelKey === $firstConfiguration->modelKey)) === 0, 'Reset removes only the selected model override and restores the price-book default');
@@ -1118,7 +1145,8 @@ try {
         $questionnaire,
         $lifecycle,
         new ProtectPriceBookHandler($books, $lifecycle, $transactions, $clock),
-        $restoredOfferModes
+        $restoredOfferModes,
+        $saveModelOfferModes
     );
     $matrixCurrent = $books->getById($matrixBook->id());
     $saveModelMinimumOffer->handle(new SaveDraftModelMinimumOffer($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, $firstConfiguration->modelKey, 125000));
@@ -1127,6 +1155,11 @@ try {
     $uiPage->render();
     $modelMinimumEditorHtml = (string) ob_get_clean();
     $test->assert(str_contains($modelMinimumEditorHtml, 'Automatikus ajánlat minimuma') && str_contains($modelMinimumEditorHtml, 'Saját minimum:') && str_contains($modelMinimumEditorHtml, 'value="125000"') && str_contains($modelMinimumEditorHtml, 'Alapbeállítás visszaállítása') && str_contains($modelMinimumEditorHtml, 'save_model_minimum_offer') && str_contains($modelMinimumEditorHtml, 'model_minimum_model_key'), 'Draft base-price tab exposes the model-specific minimum editor, its explicit override, and the inheritance reset action');
+    $_GET = ['page' => PriceBooksPage::SLUG, 'book_id' => $matrixBook->id()->toInt(), 'tab' => 'offer-modes', 'model' => $firstConfiguration->modelKey];
+    ob_start();
+    $uiPage->render();
+    $modelOfferEditorHtml = (string) ob_get_clean();
+    $test->assert(str_contains($modelOfferEditorHtml, 'Modellenkénti ajánlattípus-korrekciók') && str_contains($modelOfferEditorHtml, 'Alapbeállítás használata') && str_contains($modelOfferEditorHtml, 'Saját korrekció') && str_contains($modelOfferEditorHtml, 'save_model_offer_mode_overrides') && str_contains($modelOfferEditorHtml, 'model_offer_mode_model_key'), 'Offer-mode tab exposes the selected model inheritance and custom override controls');
     $legacyFastRule = PricingRule::create($matrixBook->id(), new PricingRuleDefinition(new PricingRuleCode('legacy-fast-' . $runToken), new PricingRuleKind(PricingRuleKind::MODE_ADJUSTMENT), 'iphone', null, null, 'fast_online', null, null, null, new Money(-5000, 'HUF'), null, new RulePriority(100), true, 'Elavult gyors felvásárlás címke', null), $clock->now());
     $legacyTradeRule = PricingRule::create($activeBook->id(), new PricingRuleDefinition(new PricingRuleCode('legacy-trade-' . $runToken), new PricingRuleKind(PricingRuleKind::MODE_ADJUSTMENT), 'iphone', null, null, 'trade_in', null, null, null, new Money(5000, 'HUF'), null, new RulePriority(100), true, 'Elavult beszámítási címke', null), $clock->now());
     $previewRuleDetails = new ReflectionMethod(PriceBooksPage::class, 'previewRuleDetails');
@@ -1181,7 +1214,7 @@ try {
     $uiPage->render();
     $offerModesHtml = (string) ob_get_clean();
     $test->assert(substr_count($offerModesHtml, 'data-ak-offer-mode-row') === 4 && str_contains($offerModesHtml, 'Ajánlattípusok mentése') && str_contains($offerModesHtml, 'Az ajánlattípusok neve és leírása minden árkönyvben azonos.') && str_contains($offerModesHtml, 'Személyes felvásárlás (készpénz)') && str_contains($offerModesHtml, 'Személyes átadás és bevizsgálás után, a lehető leggyorsabb helyi ügyintézéssel.') && str_contains($offerModesHtml, 'Egyedi gyors átvétel') && str_contains($offerModesHtml, 'Egyedi globális gyors átvételi leírás.') && str_contains($offerModesHtml, 'Normál felvásárlás (magasabb ár, beérkezéstől 5–10 nap)') && str_contains($offerModesHtml, 'Magasabb előzetes összeg hosszabb, rugalmasabb feldolgozási idő mellett.') && str_contains($offerModesHtml, 'Személyes beszámítás másik készülékbe') && str_contains($offerModesHtml, 'A bevizsgálás után elfogadott összeg új készülék vásárlásába számítható be.'), 'Offer-mode tab renders the same effective global titles and descriptions while keeping all pricing controls');
-    $test->assert(! str_contains($offerModesHtml, 'Szabálykód') && ! str_contains($offerModesHtml, 'Prioritás') && ! str_contains($offerModesHtml, 'Összehasonlítás értéke') && ! str_contains($offerModesHtml, 'model_key'), 'Offer-mode UI omits raw technical pricing-rule fields and any model selector');
+    $test->assert(! str_contains($offerModesHtml, 'Szabálykód') && ! str_contains($offerModesHtml, 'Prioritás') && ! str_contains($offerModesHtml, 'Összehasonlítás értéke') && ! str_contains($offerModesHtml, 'rule_code'), 'Offer-mode UI omits raw technical pricing-rule fields while exposing only the business-facing model selector');
     $offerModeScript = file_get_contents(APPLEKLINIKA_BUYBACK_PATH . '/assets/admin/price-books.js');
     $test->assert(is_string($offerModeScript) && str_contains($offerModeScript, "if (value) value.value = '';") && str_contains($offerModeScript, "if (remove.checked) value.value = '';") && str_contains($offerModeScript, "'missing|' + type.value"), 'Offer-mode client contract clears incompatible type-switch values and keeps missing-row change tracking type-aware');
     $_GET = ['book_id' => (string) $activeBook->id()->toInt(), 'tab' => 'offer-modes'];

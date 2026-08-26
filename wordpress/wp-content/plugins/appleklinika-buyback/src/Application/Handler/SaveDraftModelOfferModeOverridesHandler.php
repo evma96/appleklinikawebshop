@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace AppleKlinika\Buyback\Application\Handler;
 
-use AppleKlinika\Buyback\Application\Command\SaveDraftOfferModeModifiers;
+use AppleKlinika\Buyback\Application\Command\SaveDraftModelOfferModeOverrides;
+use AppleKlinika\Buyback\Application\Exception\DeviceCatalogUnavailableException;
 use AppleKlinika\Buyback\Application\Exception\PriceBookNotFoundException;
 use AppleKlinika\Buyback\Application\Port\Clock;
+use AppleKlinika\Buyback\Application\Port\DeviceCatalogReader;
 use AppleKlinika\Buyback\Application\Port\PriceBookRepository;
 use AppleKlinika\Buyback\Application\Port\PricingRuleRepository;
 use AppleKlinika\Buyback\Application\Port\TransactionManager;
@@ -21,21 +23,22 @@ use AppleKlinika\Buyback\Domain\Pricing\RulePriority;
 use AppleKlinika\Buyback\Domain\Shared\AggregateVersion;
 use AppleKlinika\Buyback\Domain\Shared\Money;
 
-/** Reconciles only the four global offer-mode rules of one draft price book. */
-final class SaveDraftOfferModeModifiersHandler
+/** Saves only explicit model/mode overrides; inherited defaults intentionally have no rule. */
+final class SaveDraftModelOfferModeOverridesHandler
 {
-    public const TYPE_AMOUNT = 'amount';
-    public const TYPE_MULTIPLIER = 'multiplier';
+    public const SETTING_INHERIT = 'inherit';
+    public const SETTING_CUSTOM = 'custom';
 
     public function __construct(
         private readonly PriceBookRepository $books,
         private readonly PricingRuleRepository $rules,
+        private readonly DeviceCatalogReader $catalog,
         private readonly TransactionManager $transactions,
         private readonly Clock $clock
     ) {
     }
 
-    public function handle(SaveDraftOfferModeModifiers $command): void
+    public function handle(SaveDraftModelOfferModeOverrides $command): void
     {
         $this->transactions->transactional(function () use ($command): void {
             $bookId = new PriceBookId($command->priceBookId);
@@ -44,25 +47,27 @@ final class SaveDraftOfferModeModifiersHandler
                 throw PriceBookNotFoundException::forId($bookId);
             }
             $book->assertDraftMutation();
+            $this->assertKnownModel($command->modelKey);
 
-            $submitted = $this->validatedSubmission($command->modifiers);
-            $existing = $this->existingRules($this->rules->listForPriceBook($bookId));
+            $submitted = $this->validatedSubmission($command->overrides);
+            $existing = $this->existingRules($bookId, $command->modelKey);
             $changed = false;
             $at = $this->clock->now();
 
             foreach ($submitted as $mode => $item) {
                 $rule = $existing[$mode] ?? null;
-                if ($item['remove']) {
+                if ($item['inherit']) {
                     if ($rule !== null && $rule->id() !== null) {
                         $this->rules->deleteDraftRule($bookId, $rule->id(), $rule->version());
                         $changed = true;
                     }
                     continue;
                 }
-                $definition = $this->definition($bookId->toInt(), $mode, $item, $rule);
+
+                $definition = $this->definition($command->modelKey, $mode, $item, $rule);
                 if ($rule === null) {
                     if (! $this->rules->isCodeUnique($bookId, $definition->code)) {
-                        throw new \InvalidArgumentException('Az ajánlattípushoz tartozó szabályazonosító már foglalt. Frissítsd az oldalt és próbáld újra.');
+                        throw new \InvalidArgumentException('A modellhez és ajánlattípushoz tartozó szabályazonosító már foglalt. Frissítsd az oldalt és próbáld újra.');
                     }
                     $this->rules->insert(PricingRule::create($bookId, $definition, $at));
                     $changed = true;
@@ -76,6 +81,7 @@ final class SaveDraftOfferModeModifiersHandler
                 $this->rules->update($rule, $expectedRuleVersion);
                 $changed = true;
             }
+
             if ($changed) {
                 $book->recordRuleMutation($at);
                 $this->books->saveDraft($book, new AggregateVersion($command->expectedBookVersion));
@@ -83,55 +89,40 @@ final class SaveDraftOfferModeModifiersHandler
         });
     }
 
-    public static function ruleCode(int $priceBookId, string $mode): string
+    public static function ruleCode(string $modelKey, string $mode): string
     {
-        return 'offer-mode-' . $priceBookId . '-' . $mode;
+        return 'model-offer-mode-' . substr(hash('sha256', $modelKey . '|' . $mode), 0, 16);
     }
 
-    /** @param list<PricingRule> $rules @return array<string,PricingRule> */
-    private function existingRules(array $rules): array
-    {
-        $existing = [];
-        foreach ($rules as $rule) {
-            $definition = $rule->definition();
-            if ($definition->kind->code() !== PricingRuleKind::MODE_ADJUSTMENT || $definition->modelKey !== null || ! in_array($definition->serviceMode, OfferModeDefinition::keys(), true)) {
-                continue;
-            }
-            if (isset($existing[$definition->serviceMode])) {
-                throw new \RuntimeException('Egy ajánlattípushoz több szabály tartozik. A mentés biztonsági okból leállt.');
-            }
-            $existing[$definition->serviceMode] = $rule;
-        }
-        return $existing;
-    }
-
-    /** @param list<array<string,mixed>> $raw @return array<string,array{type:string,value:int,remove:bool}> */
+    /** @param list<array<string,mixed>> $raw @return array<string,array{type:string,value:int,inherit:bool}> */
     private function validatedSubmission(array $raw): array
     {
         $expected = array_fill_keys(OfferModeDefinition::keys(), true);
         $validated = [];
         foreach ($raw as $row) {
             if (! is_array($row)) {
-                throw new \InvalidArgumentException('Érvénytelen ajánlattípus-beállítás.');
+                throw new \InvalidArgumentException('Érvénytelen modellenkénti ajánlattípus-beállítás.');
             }
             $mode = $row['mode'] ?? null;
             if (! is_string($mode) || ! isset($expected[$mode]) || isset($validated[$mode])) {
                 throw new \InvalidArgumentException('Ismeretlen vagy többször beküldött ajánlattípus.');
             }
-            $remove = ($row['remove'] ?? '') === '1' || ($row['value'] ?? null) === '';
-            if ($remove) {
-                $validated[$mode] = ['type' => self::TYPE_MULTIPLIER, 'value' => BasisPointsMultiplier::ONE, 'remove' => true];
+            $setting = $row['setting'] ?? self::SETTING_INHERIT;
+            if (! is_string($setting) || ! in_array($setting, [self::SETTING_INHERIT, self::SETTING_CUSTOM], true)) {
+                throw new \InvalidArgumentException('A modellenkénti beállítás módja nem támogatott.');
+            }
+            if ($setting === self::SETTING_INHERIT) {
+                $validated[$mode] = ['type' => SaveDraftOfferModeModifiersHandler::TYPE_MULTIPLIER, 'value' => BasisPointsMultiplier::ONE, 'inherit' => true];
                 continue;
             }
             $type = $row['type'] ?? null;
-            if (! is_string($type) || ! in_array($type, [self::TYPE_AMOUNT, self::TYPE_MULTIPLIER], true)) {
+            if (! is_string($type) || ! in_array($type, [SaveDraftOfferModeModifiersHandler::TYPE_AMOUNT, SaveDraftOfferModeModifiersHandler::TYPE_MULTIPLIER], true)) {
                 throw new \InvalidArgumentException('Az ajánlattípus korrekciós típusa nem támogatott.');
             }
-            $value = self::parseValue($type, $row['value'] ?? null);
             $validated[$mode] = [
                 'type' => $type,
-                'value' => $value,
-                'remove' => $type === self::TYPE_AMOUNT ? $value === 0 : $value === BasisPointsMultiplier::ONE,
+                'value' => SaveDraftOfferModeModifiersHandler::parseValue($type, $row['value'] ?? null),
+                'inherit' => false,
             ];
         }
         if (count($validated) !== count($expected) || array_diff_key($expected, $validated) !== []) {
@@ -140,57 +131,57 @@ final class SaveDraftOfferModeModifiersHandler
         return $validated;
     }
 
-    public static function parseValue(string $type, mixed $raw): int
+    /** @return array<string,PricingRule> */
+    private function existingRules(PriceBookId $bookId, string $modelKey): array
     {
-        if (! is_string($raw) && ! is_int($raw)) {
-            throw new \InvalidArgumentException('A korrekció értéke egész szám legyen.');
-        }
-        $value = (string) $raw;
-        if ($type === self::TYPE_AMOUNT) {
-            if (preg_match('/^[+-]?(?:0|[1-9][0-9]*)$/', $value) !== 1) {
-                throw new \InvalidArgumentException('A fix korrekció értéke előjeles egész Ft legyen.');
+        $existing = [];
+        foreach ($this->rules->listForPriceBook($bookId) as $rule) {
+            $definition = $rule->definition();
+            if ($definition->kind->code() !== PricingRuleKind::MODE_ADJUSTMENT || $definition->modelKey !== $modelKey || ! in_array($definition->serviceMode, OfferModeDefinition::keys(), true)) {
+                continue;
             }
-            $normalized = ltrim($value, '+');
-            $number = (int) $normalized;
-            if ($normalized !== '-0' && (string) $number !== $normalized) {
-                throw new \InvalidArgumentException('A fix korrekció értéke kívül esik a támogatott egész tartományon.');
+            if (isset($existing[$definition->serviceMode])) {
+                throw new \RuntimeException('Ehhez a modellhez és ajánlattípushoz több szabály tartozik. A mentés biztonsági okból leállt.');
             }
-            return $number;
+            $existing[$definition->serviceMode] = $rule;
         }
-        if (preg_match('/^([+-]?)(0|[1-9][0-9]{0,2})(?:\.([0-9]{1,2}))?$/', $value, $matches) !== 1) {
-            throw new \InvalidArgumentException('A százalékos korrekció legfeljebb két tizedesjegyű előjeles szám legyen.');
-        }
-        $delta = ((int) $matches[2]) * 100 + (int) str_pad($matches[3] ?? '', 2, '0');
-        if ($matches[1] === '-') {
-            $delta *= -1;
-        }
-        $basisPoints = BasisPointsMultiplier::ONE + $delta;
-        if ($basisPoints < 0 || $basisPoints > BasisPointsMultiplier::MAX) {
-            throw new \InvalidArgumentException('A százalékos korrekció értéke -100% és +400% közé essen.');
-        }
-        return $basisPoints;
+        return $existing;
     }
 
-    /** @param array{type:string,value:int,remove:bool} $item */
-    private function definition(int $priceBookId, string $mode, array $item, ?PricingRule $existing): PricingRuleDefinition
+    /** @param array{type:string,value:int,inherit:bool} $item */
+    private function definition(string $modelKey, string $mode, array $item, ?PricingRule $existing): PricingRuleDefinition
     {
         return new PricingRuleDefinition(
-            $existing?->definition()->code ?? new PricingRuleCode(self::ruleCode($priceBookId, $mode)),
+            $existing?->definition()->code ?? new PricingRuleCode(self::ruleCode($modelKey, $mode)),
             new PricingRuleKind(PricingRuleKind::MODE_ADJUSTMENT),
             'iphone',
-            null,
+            $modelKey,
             null,
             $mode,
             null,
             null,
             null,
-            $item['type'] === self::TYPE_AMOUNT ? new Money($item['value'], 'HUF') : null,
-            $item['type'] === self::TYPE_MULTIPLIER ? new BasisPointsMultiplier($item['value']) : null,
-            new RulePriority(6000 + array_search($mode, OfferModeDefinition::keys(), true)),
+            $item['type'] === SaveDraftOfferModeModifiersHandler::TYPE_AMOUNT ? new Money($item['value'], 'HUF') : null,
+            $item['type'] === SaveDraftOfferModeModifiersHandler::TYPE_MULTIPLIER ? new BasisPointsMultiplier($item['value']) : null,
+            new RulePriority(6100 + array_search($mode, OfferModeDefinition::keys(), true)),
             true,
             null,
-            null
+            'Model-specific offer-mode adjustment override'
         );
+    }
+
+    private function assertKnownModel(string $modelKey): void
+    {
+        try {
+            foreach ($this->catalog->iPhoneModels() as $model) {
+                if ($model->modelKey === $modelKey) {
+                    return;
+                }
+            }
+        } catch (DeviceCatalogUnavailableException $exception) {
+            throw new \RuntimeException('Az Apple Klinika készülékkatalógus nem érhető el; a modellenkénti korrekció nem menthető.', 0, $exception);
+        }
+        throw new \InvalidArgumentException('Az inventory katalógusban nem szereplő iPhone modellhez nem menthető saját ajánlattípus-korrekció.');
     }
 
     private function sameDefinition(PricingRuleDefinition $left, PricingRuleDefinition $right): bool
