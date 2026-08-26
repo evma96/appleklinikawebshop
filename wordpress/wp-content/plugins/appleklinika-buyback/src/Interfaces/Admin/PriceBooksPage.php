@@ -11,6 +11,7 @@ use AppleKlinika\Buyback\Application\Command\ClonePriceBookToDraft;
 use AppleKlinika\Buyback\Application\Command\DiscardDraftPriceBook;
 use AppleKlinika\Buyback\Application\Command\ProtectPriceBook;
 use AppleKlinika\Buyback\Application\Command\SaveDraftBasePriceMatrix;
+use AppleKlinika\Buyback\Application\Command\SaveDraftModelMinimumOffer;
 use AppleKlinika\Buyback\Application\Command\SaveDraftQuestionnaireConditions;
 use AppleKlinika\Buyback\Application\Command\SaveDraftBatteryBands;
 use AppleKlinika\Buyback\Application\Command\SaveDraftOfferModeModifiers;
@@ -28,6 +29,7 @@ use AppleKlinika\Buyback\Application\Handler\ClonePriceBookToDraftHandler;
 use AppleKlinika\Buyback\Application\Handler\DiscardDraftPriceBookHandler;
 use AppleKlinika\Buyback\Application\Handler\ProtectPriceBookHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftBasePriceMatrixHandler;
+use AppleKlinika\Buyback\Application\Handler\SaveDraftModelMinimumOfferHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftQuestionnaireConditionsHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftBatteryBandsHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftOfferModeModifiersHandler;
@@ -88,6 +90,7 @@ final class PriceBooksPage
         private readonly ClonePriceBookToDraftHandler $cloneBook,
         private readonly DiscardDraftPriceBookHandler $discardDraft,
         private readonly SaveDraftBasePriceMatrixHandler $saveBasePriceMatrix,
+        private readonly SaveDraftModelMinimumOfferHandler $saveModelMinimumOffer,
         private readonly SaveDraftQuestionnaireConditionsHandler $saveQuestionnaireConditions,
         private readonly SaveDraftBatteryBandsHandler $saveBatteryBands,
         private readonly SaveDraftOfferModeModifiersHandler $saveOfferModeModifiers,
@@ -277,6 +280,20 @@ final class PriceBooksPage
         if ($action === 'save_base_price_matrix') {
             $basePrices = isset($post['base_prices']) && is_array($post['base_prices']) ? $post['base_prices'] : [];
             $this->saveBasePriceMatrix->handle(new SaveDraftBasePriceMatrix($bookId, $bookVersion, $basePrices));
+            return;
+        }
+
+        if ($action === 'save_model_minimum_offer') {
+            $mode = sanitize_key((string) ($post['model_minimum_mode'] ?? ''));
+            if (! in_array($mode, ['custom', 'inherit'], true)) {
+                throw new \InvalidArgumentException('Érvénytelen modellminimum-beállítás.');
+            }
+            $this->saveModelMinimumOffer->handle(new SaveDraftModelMinimumOffer(
+                $bookId,
+                $bookVersion,
+                sanitize_key((string) ($post['model_minimum_model_key'] ?? '')),
+                $mode === 'custom' ? $this->requiredNonNegativeInt($post, 'model_minimum_amount') : null
+            ));
             return;
         }
 
@@ -651,7 +668,52 @@ final class PriceBooksPage
     /** @param list<PricingRule> $rules */
     private function renderBasePricesTab(PriceBook $book, array $rules, string $tab): void
     {
+        $this->renderModelMinimumOfferEditor($book, $rules, $tab);
         $this->renderBasePriceMatrix($book, $rules, false, $tab);
+    }
+
+    /** @param list<PricingRule> $rules */
+    private function renderModelMinimumOfferEditor(PriceBook $book, array $rules, string $tab): void
+    {
+        try {
+            $models = $this->catalog->iPhoneModels();
+        } catch (DeviceCatalogUnavailableException $exception) {
+            echo '<section class="ak-buyback-card"><h3>Automatikus ajánlat minimuma</h3><div class="notice notice-error inline"><p>Az inventory készülékkatalógus nem érhető el, ezért a modellminimum nem szerkeszthető.</p></div></section>';
+            return;
+        }
+        $model = $this->selectedConditionModel($models);
+        if ($model === null) {
+            echo '<section class="ak-buyback-card"><h3>Automatikus ajánlat minimuma</h3><div class="notice notice-error inline"><p>A megadott iPhone modell nem szerepel az inventory készülékkatalógusban.</p></div></section>';
+            return;
+        }
+
+        $matches = array_values(array_filter($rules, static fn (PricingRule $rule): bool => $rule->definition()->kind->code() === PricingRuleKind::MINIMUM_OFFER && $rule->definition()->modelKey === $model->modelKey));
+        if (count($matches) > 1) {
+            echo '<section class="ak-buyback-card"><h3>Automatikus ajánlat minimuma</h3><div class="notice notice-error inline"><p>Ehhez a modellhez több minimumszabály tartozik. A beállítás biztonsági okból nem módosítható.</p></div></section>';
+            return;
+        }
+        $override = $matches[0] ?? null;
+        $amount = $override?->definition()->amount?->amount();
+
+        echo '<section class="ak-buyback-card ak-model-minimum-offer"><h3>Automatikus ajánlat minimuma</h3>';
+        echo '<p>Modellhez külön minimumot adhatsz meg. Ha a feltételek szerinti összeg ezt eléri vagy alá csökken, a készülék személyes bevizsgálásra kerül. A globális árkönyvminimum továbbra is érvényes marad.</p>';
+        echo '<form method="get" class="ak-condition-model-selector"><input type="hidden" name="page" value="' . esc_attr(self::SLUG) . '"><input type="hidden" name="book_id" value="' . esc_attr((string) $book->id()?->toInt()) . '"><input type="hidden" name="tab" value="' . esc_attr($tab) . '"><label for="ak-model-minimum-model">Modell<select name="model" id="ak-model-minimum-model">';
+        foreach ($models as $item) {
+            echo '<option value="' . esc_attr($item->modelKey) . '" ' . selected($model->modelKey, $item->modelKey, false) . '>' . esc_html($item->label) . '</option>';
+        }
+        echo '</select></label><button type="submit" class="button">Modell betöltése</button></form>';
+        echo '<p><strong>' . esc_html($model->label) . '</strong> · ' . esc_html($amount === null ? 'Alapbeállítás használata: ' . number_format_i18n($book->minimumOffer()->amount()) . ' Ft' : 'Saját minimum: ' . number_format_i18n($amount) . ' Ft') . '</p>';
+        echo '<form method="post" class="ak-model-minimum-form">';
+        $this->securityFields('save_model_minimum_offer', $book);
+        $this->tabField($tab);
+        echo '<input type="hidden" name="model_minimum_model_key" value="' . esc_attr($model->modelKey) . '"><input type="hidden" name="model_minimum_mode" value="custom"><label for="ak-model-minimum-amount">Saját minimum (Ft)</label><div class="ak-price-input"><input type="number" min="0" step="1" inputmode="numeric" id="ak-model-minimum-amount" name="model_minimum_amount" value="' . esc_attr($amount === null ? '' : (string) $amount) . '" required><span>Ft</span></div><button type="submit" class="button button-primary">Saját minimum mentése</button></form>';
+        if ($override !== null) {
+            echo '<form method="post" class="ak-inline-form">';
+            $this->securityFields('save_model_minimum_offer', $book);
+            $this->tabField($tab);
+            echo '<input type="hidden" name="model_minimum_model_key" value="' . esc_attr($model->modelKey) . '"><input type="hidden" name="model_minimum_mode" value="inherit"><button type="submit" class="button">Alapbeállítás visszaállítása</button></form>';
+        }
+        echo '</section>';
     }
 
     /** @param list<PricingRule> $rules */
@@ -1351,6 +1413,7 @@ final class PriceBooksPage
     {
         return match ($reason) {
             'below_minimum_offer' => 'Az összeg az árkönyvben beállított minimum alatt van.',
+            'below_model_minimum_offer' => 'Az összeg elérte a modellhez beállított automatikus ajánlati minimumot.',
             'missing_base_price' => 'Ehhez a modell- és tárhely-konfigurációhoz nincs alapár.',
             default => str_starts_with($reason, 'A ') ? $reason : 'A kiválasztott állapothoz kézi ellenőrzés szükséges.',
         };
@@ -1929,7 +1992,7 @@ final class PriceBooksPage
         if ($message !== null && $message !== '') {
             $args['ak_message'] = $message;
         }
-        if ($bookId > 0 && in_array($tab, [self::TAB_CONDITIONS, self::TAB_BATTERY], true) && $model !== null && $model !== '') {
+        if ($bookId > 0 && in_array($tab, [self::TAB_BASE_PRICES, self::TAB_CONDITIONS, self::TAB_BATTERY], true) && $model !== null && $model !== '') {
             $args['model'] = $model;
         }
         wp_safe_redirect(add_query_arg($args, admin_url('admin.php')));
@@ -1942,7 +2005,11 @@ final class PriceBooksPage
     private function postedTab(): ?string { return isset($_POST['editor_tab']) ? $this->normalizeTab(sanitize_key((string) wp_unslash($_POST['editor_tab']))) : null; }
     private function postedModel(): ?string
     {
-        $key = $this->postedTab() === self::TAB_BATTERY ? 'battery_model_key' : 'condition_model_key';
+        $key = match ($this->postedTab()) {
+            self::TAB_BASE_PRICES => 'model_minimum_model_key',
+            self::TAB_BATTERY => 'battery_model_key',
+            default => 'condition_model_key',
+        };
         return isset($_POST[$key]) ? sanitize_key((string) wp_unslash($_POST[$key])) : null;
     }
     private function resolveTab(): string { return $this->normalizeTab(sanitize_key((string) ($_GET['tab'] ?? ''))); }
@@ -1994,6 +2061,7 @@ final class PriceBooksPage
             'missing_base_price' => 'Az árkönyv nem tartalmaz aktív alapárat.',
             'duplicate_base_price' => 'Ugyanahhoz a modellhez és tárhelyhez több aktív alapár tartozik.',
             'duplicate_mode_adjustment' => 'Egy átvételi módhoz több aktív korrekció tartozik.',
+            'duplicate_model_minimum_offer' => 'Egy modellhez több automatikus ajánlati minimum tartozik.',
             'invalid_rule_shape' => 'Az egyik szabály mezői ellentmondásosak vagy hiányosak.',
             'unknown_condition_key' => 'Az egyik szabály nem támogatott feltételt használ.',
             'unsupported_category' => 'Az árkönyv csak iPhone-modelleket tartalmazhat a V1-ben.',

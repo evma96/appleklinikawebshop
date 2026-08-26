@@ -12,6 +12,7 @@ use AppleKlinika\Buyback\Application\Handler\ClonePriceBookToDraftHandler;
 use AppleKlinika\Buyback\Application\Handler\DiscardDraftPriceBookHandler;
 use AppleKlinika\Buyback\Application\Handler\ProtectPriceBookHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftBasePriceMatrixHandler;
+use AppleKlinika\Buyback\Application\Handler\SaveDraftModelMinimumOfferHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftQuestionnaireConditionsHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftBatteryBandsHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftOfferModeModifiersHandler;
@@ -114,6 +115,7 @@ final class Plugin
                 new ClonePriceBookToDraftHandler($books, $rules, $transactions, $clock, $lifecycle),
                 new DiscardDraftPriceBookHandler($books, new WordPressDraftPriceBookDiscardRepository($wpdb), $transactions, $lifecycle, $clock),
                 new SaveDraftBasePriceMatrixHandler($books, $rules, $catalog, $transactions, $clock),
+                new SaveDraftModelMinimumOfferHandler($books, $rules, $catalog, $transactions, $clock),
                 new SaveDraftQuestionnaireConditionsHandler($books, $rules, $transactions, $clock, $questionnaire, $catalog),
                 new SaveDraftBatteryBandsHandler($books, $rules, $transactions, $clock, $questionnaire, $catalog),
                 new SaveDraftOfferModeModifiersHandler($books, $rules, $transactions, $clock),

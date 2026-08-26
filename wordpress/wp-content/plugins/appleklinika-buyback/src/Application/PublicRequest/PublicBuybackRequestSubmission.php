@@ -301,7 +301,7 @@ final class PublicBuybackRequestSubmission
             if ($reason === '' || in_array($reason, $matchedCodes, true)) {
                 continue;
             }
-            $reasons[] = $reason === 'below_minimum_offer'
+            $reasons[] = in_array($reason, ['below_minimum_offer', 'below_model_minimum_offer'], true)
                 ? 'Az előzetes ajánlat pontosításához személyes bevizsgálás szükséges.'
                 : $this->questionnaire->publicManualReviewReason(null, $reason, $answers);
         }

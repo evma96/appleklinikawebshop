@@ -42,9 +42,10 @@ Execution order is fixed:
 4. Evaluate all enabled manual-review rules. A match stops calculation as `manual_review`.
 5. Apply matching fixed deductions in priority order, clamped at zero.
 6. Apply matching condition multipliers in priority order.
-7. Apply zero or one matching service-mode fixed or multiplier adjustment.
-8. Compare the raw amount with the price-book minimum.
-9. Apply deterministic nearest-increment half-up rounding to offered results only.
+7. Compare the post-condition amount with an enabled exact model-specific automatic-offer minimum, when one exists. At or below the configured threshold, stop on the existing `manual_review` path with `below_model_minimum_offer`.
+8. Apply zero or one matching service-mode fixed or multiplier adjustment.
+9. Compare the raw amount with the price-book minimum.
+10. Apply deterministic nearest-increment half-up rounding to offered results only.
 
 Rules are sorted by ascending priority, persisted rule ID, then rule code. Database return order is never authoritative.
 
@@ -64,9 +65,9 @@ Nearest-increment rounding is half-up. With a 1,000 Ft increment, `138499` becom
 
 No matching base produces `configuration_error: missing_base_price`. Multiple enabled exact bases produce `duplicate_base_price`. Multiple enabled adjustments for the selected mode produce `duplicate_mode_adjustment`. Disabled rules are ignored.
 
-Hard reject wins over manual review. If the raw amount is below the minimum, `manual_review` or `rejected` follows the price-book policy with `below_minimum_offer`; the engine never raises the amount to a fake minimum.
+Hard reject wins over manual review. An enabled model-specific minimum is scoped only to its canonical model and uses `<=` before a service-mode adjustment; it produces the existing personal-inspection outcome with `below_model_minimum_offer`. If no such rule applies, the price-book global minimum remains the backward-compatible strict `<` fallback and follows its configured policy with `below_minimum_offer`; the engine never raises the amount to a fake minimum.
 
-Breakdown lines are immutable and follow execution order: base price, fixed deductions, condition multipliers, mode adjustment, minimum policy, and rounding.
+Breakdown lines are immutable and follow execution order: base price, fixed deductions, condition multipliers, model-minimum policy when matched, mode adjustment, global minimum policy, and rounding.
 
 ## Application and admin preview
 

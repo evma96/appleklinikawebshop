@@ -1090,7 +1090,7 @@ final class LocalDemoCalculatorPage
             if ($reason === '' || in_array($reason, $matchedCodes, true)) {
                 continue;
             }
-            $reasons[] = $reason === 'below_minimum_offer'
+            $reasons[] = in_array($reason, ['below_minimum_offer', 'below_model_minimum_offer'], true)
                 ? 'Az előzetes ajánlat pontosításához személyes bevizsgálás szükséges.'
                 : $this->questionnaire->publicManualReviewReason(null, $reason, $answers);
         }
@@ -1108,6 +1108,7 @@ final class LocalDemoCalculatorPage
 
         $knownReasons = [
             'below_minimum_offer' => 'A számított összeg a beállított minimum alatt van, ezért személyes ellenőrzés szükséges.',
+            'below_model_minimum_offer' => 'A modellhez beállított minimum elérése miatt személyes ellenőrzés szükséges.',
             'missing_base_price' => 'Ehhez a modellhez és tárhelyhez nincs használható alapár.',
             'duplicate_base_price' => 'Az árkönyvben egymásnak ellentmondó alapárak találhatók.',
             'duplicate_mode_adjustment' => 'Az árkönyvben egymásnak ellentmondó ajánlattípus-szabályok találhatók.',

@@ -31,6 +31,7 @@ final class PriceBookActivationReadinessEvaluator
         $enabledAdjustmentCount = 0;
         $baseKeys = [];
         $modeKeys = [];
+        $modelMinimumKeys = [];
         $kindCounts = [];
         $validBaseRules = [];
 
@@ -72,6 +73,20 @@ final class PriceBookActivationReadinessEvaluator
                 continue;
             }
 
+            if ($kind === PricingRuleKind::MINIMUM_OFFER) {
+                if ($definition->category !== 'iphone') {
+                    $blocking[] = 'unsupported_category';
+                    continue;
+                }
+                if ($definition->modelKey === null || ! in_array($definition->modelKey, $knownIphoneModelKeys, true)) {
+                    $blocking[] = 'unknown_model_key';
+                    continue;
+                }
+                $key = $definition->category . '|' . $definition->modelKey;
+                $modelMinimumKeys[$key] = ($modelMinimumKeys[$key] ?? 0) + 1;
+                continue;
+            }
+
             if (in_array($kind, [PricingRuleKind::FIXED_DEDUCTION, PricingRuleKind::MULTIPLIER, PricingRuleKind::MODE_ADJUSTMENT], true)) {
                 ++$enabledAdjustmentCount;
             }
@@ -94,6 +109,12 @@ final class PriceBookActivationReadinessEvaluator
                 $blocking[] = 'unsupported_service_mode';
             } elseif ($count > 1) {
                 $blocking[] = 'duplicate_mode_adjustment';
+            }
+        }
+        foreach ($modelMinimumKeys as $count) {
+            if ($count > 1) {
+                $blocking[] = 'duplicate_model_minimum_offer';
+                break;
             }
         }
 
