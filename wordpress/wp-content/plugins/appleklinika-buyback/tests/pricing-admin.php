@@ -664,6 +664,37 @@ try {
     $test->assert($clone->status()->isDraft() && $clone->label() === $activeBook->label() . ' – Másolat v' . $activeBook->versionNumber()->value(), 'Active price book clones to a separately named draft');
     $test->assert(count($rules->listForPriceBook($clone->id())) === count($rules->listForPriceBook($activeBook->id())), 'Clone preserves all source pricing rules');
     $test->assert($books->getById($activeBook->id())?->status()->isActive(), 'Clone leaves the active source immutable and active');
+
+    $exactLimitVersion = $books->nextAvailableVersionNumber()->value();
+    $exactLimitSuffix = ' – Másolat v' . $exactLimitVersion;
+    $exactLimitPrefix = $marker . '-EXACT-LIMIT-';
+    $exactLimitSourceLabel = $exactLimitPrefix . str_repeat('X', PriceBook::MAX_LABEL_BYTES - strlen($exactLimitPrefix) - strlen($exactLimitSuffix));
+    $exactLimitSource = pricingCreateBook($createBook, $exactLimitSourceLabel, $adminId);
+    $test->assert(strlen($exactLimitSource->label() . $exactLimitSuffix) === PriceBook::MAX_LABEL_BYTES, 'A source label that exactly fits with its clone suffix reaches the domain byte limit without truncation');
+    $exactLimitClone = $cloneHandler->handle(new ClonePriceBookToDraft($exactLimitSource->id()->toInt(), $exactLimitSource->version()->value(), $adminId));
+    $test->assert($exactLimitClone->label() === $exactLimitSource->label() . $exactLimitSuffix && strlen($exactLimitClone->label()) === PriceBook::MAX_LABEL_BYTES, 'An exactly fitting price-book clone keeps its source label unchanged');
+
+    $utf8LimitPrefix = $marker . '-UTF8-LIMIT-';
+    $utf8LimitSourceLabel = $utf8LimitPrefix . str_repeat('Á', intdiv(PriceBook::MAX_LABEL_BYTES - strlen($utf8LimitPrefix), 2));
+    $utf8LimitSource = pricingCreateBook($createBook, $utf8LimitSourceLabel, $adminId);
+    $utf8LimitRule = pricingAddRule($addRule, $books, $utf8LimitSource->id(), pricingDefinition(PricingRuleKind::BASE_PRICE, $marker . '-utf8-limit-base'));
+    $utf8LimitSource = $books->getById($utf8LimitSource->id());
+    if ($utf8LimitSource === null) {
+        throw new RuntimeException('UTF-8 clone source could not be reloaded after its rule was added.');
+    }
+    $utf8LimitSuffix = ' – Másolat v' . $utf8LimitSource->versionNumber()->value();
+    $utf8LimitClone = $cloneHandler->handle(new ClonePriceBookToDraft($utf8LimitSource->id()->toInt(), $utf8LimitSource->version()->value(), $adminId));
+    $utf8LimitBaseBytes = PriceBook::MAX_LABEL_BYTES - strlen($utf8LimitSuffix);
+    $utf8LimitExpectedBase = $utf8LimitPrefix . str_repeat('Á', intdiv($utf8LimitBaseBytes - strlen($utf8LimitPrefix), 2));
+    $test->assert($utf8LimitClone->label() === $utf8LimitExpectedBase . $utf8LimitSuffix && strlen($utf8LimitClone->label()) <= PriceBook::MAX_LABEL_BYTES && preg_match('//u', $utf8LimitClone->label()) === 1, 'An over-limit UTF-8 source is shortened only before the suffix without splitting Hungarian characters');
+    $test->assert(array_map(static fn (PricingRule $rule): string => serialize($rule->definition()), $rules->listForPriceBook($utf8LimitClone->id())) === array_map(static fn (PricingRule $rule): string => serialize($rule->definition()), $rules->listForPriceBook($utf8LimitSource->id())), 'An over-limit clone preserves every pricing-rule definition unchanged');
+    $test->assert($utf8LimitRule->id() !== null, 'The over-limit clone source retains its original pricing-rule identity');
+
+    $repeatedCloneSuffix = ' – Másolat v' . $utf8LimitClone->versionNumber()->value();
+    $repeatedClone = $cloneHandler->handle(new ClonePriceBookToDraft($utf8LimitClone->id()->toInt(), $utf8LimitClone->version()->value(), $adminId));
+    $test->assert(str_ends_with($repeatedClone->label(), $repeatedCloneSuffix) && strlen($repeatedClone->label()) <= PriceBook::MAX_LABEL_BYTES && $repeatedClone->label() !== $utf8LimitClone->label(), 'Repeated cloning keeps a unique current copy/version suffix within the domain limit');
+    $test->throws(fn () => PriceBook::reconstitute(new PriceBookId(999003), new PriceBookVersionNumber(999003), str_repeat('X', PriceBook::MAX_LABEL_BYTES + 1), new PriceBookStatus(PriceBookStatus::DRAFT), new CurrencyCode('HUF'), new Money(0, 'HUF'), 1, new MinimumOfferPolicy(MinimumOfferPolicy::REJECT), new PricingActorId($adminId), new AggregateVersion(0), $clock->now(), $clock->now()), InvalidValueObjectException::class, 'A historical over-limit price-book representation cannot enter the domain through repository reconstitution');
+
     $retiredClone = $cloneHandler->handle(new ClonePriceBookToDraft($retiredBook->id()->toInt(), $retiredBook->version()->value(), $adminId));
     $test->assert($retiredClone->status()->isDraft() && count($rules->listForPriceBook($retiredClone->id())) === count($rules->listForPriceBook($retiredBook->id())), 'Retired price book clones to an independent editable draft');
     $draftClone = $cloneHandler->handle(new ClonePriceBookToDraft($clone->id()->toInt(), $clone->version()->value(), $adminId));
