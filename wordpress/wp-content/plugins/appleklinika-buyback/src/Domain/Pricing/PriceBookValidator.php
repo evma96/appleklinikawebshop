@@ -29,6 +29,7 @@ final class PriceBookValidator
             $issues[] = 'invalid_minimum_policy';
         }
 
+        $modelMinimumKeys = [];
         foreach ($rules as $rule) {
             if ($book->id() === null || ! $rule->priceBookId()->equals($book->id())) {
                 $issues[] = 'rule_price_book_mismatch';
@@ -52,6 +53,17 @@ final class PriceBookValidator
                 RuleShapeValidator::assertValid($definition);
             } catch (\Throwable $exception) {
                 $issues[] = 'invalid_rule_shape';
+            }
+
+            if ($definition->kind->code() === PricingRuleKind::MINIMUM_OFFER && $definition->modelKey !== null) {
+                $key = $definition->category . '|' . $definition->modelKey;
+                $modelMinimumKeys[$key] = ($modelMinimumKeys[$key] ?? 0) + 1;
+            }
+        }
+        foreach ($modelMinimumKeys as $count) {
+            if ($count > 1) {
+                $issues[] = 'duplicate_model_minimum_offer';
+                break;
             }
         }
 

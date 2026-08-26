@@ -496,6 +496,38 @@ try {
     $rejectMinimumBook = engineBook(700004, 300000, 1000, MinimumOfferPolicy::REJECT);
     $minimumReject = $engine->calculate($rejectMinimumBook, [engineRule(60, $rejectMinimumBook->id(), PricingRuleKind::BASE_PRICE, 'minimum-base', 1, true, ['amount' => 200000])], engineInput());
     $test->assert($minimumReject->outcome->code() === PricingOutcome::REJECTED && $minimumReject->finalAmount === null, 'Below minimum reject policy has no offer');
+
+    $modelMinimumBook = engineBook(700024, 0, 1);
+    $modelMinimumRules = [
+        engineRule(801, $modelMinimumBook->id(), PricingRuleKind::BASE_PRICE, 'model-minimum-base-13', 10, true, ['model_key' => 'iphone_13_pro', 'amount' => 30000]),
+        engineRule(802, $modelMinimumBook->id(), PricingRuleKind::BASE_PRICE, 'model-minimum-base-16', 10, true, ['model_key' => 'iphone_16_pro', 'amount' => 20000]),
+        engineRule(803, $modelMinimumBook->id(), PricingRuleKind::FIXED_DEDUCTION, 'model-minimum-exact', 20, true, ['model_key' => 'iphone_13_pro', 'condition_key' => 'screen_condition', 'operator' => ComparisonOperator::EQUALS, 'comparison' => 'damaged', 'amount' => 5000]),
+        engineRule(804, $modelMinimumBook->id(), PricingRuleKind::FIXED_DEDUCTION, 'model-minimum-below', 21, true, ['model_key' => 'iphone_13_pro', 'condition_key' => 'frame_condition', 'operator' => ComparisonOperator::EQUALS, 'comparison' => 'damaged', 'amount' => 6000]),
+        engineRule(805, $modelMinimumBook->id(), PricingRuleKind::FIXED_DEDUCTION, 'model-minimum-zero', 22, true, ['model_key' => 'iphone_13_pro', 'condition_key' => 'display_yellowing', 'operator' => ComparisonOperator::EQUALS, 'comparison' => true, 'amount' => 30000]),
+        engineRule(806, $modelMinimumBook->id(), PricingRuleKind::MINIMUM_OFFER, 'model-minimum-13', 90, true, ['model_key' => 'iphone_13_pro', 'amount' => 25000]),
+        engineRule(807, $modelMinimumBook->id(), PricingRuleKind::MODE_ADJUSTMENT, 'model-minimum-fast-reduction', 100, true, ['service_mode' => ServiceMode::FAST_ONLINE, 'amount' => -10000]),
+        engineRule(808, $modelMinimumBook->id(), PricingRuleKind::MANUAL_REVIEW, 'model-minimum-explicit-review', 30, true, ['model_key' => 'iphone_13_pro', 'condition_key' => 'replacement_parts', 'operator' => ComparisonOperator::EQUALS, 'comparison' => 'non_original', 'label' => 'Alkatrész-ellenőrzés']),
+        engineRule(809, $modelMinimumBook->id(), PricingRuleKind::HARD_REJECT, 'model-minimum-hard-reject', 31, true, ['model_key' => 'iphone_13_pro', 'condition_key' => 'network_unlocked', 'operator' => ComparisonOperator::EQUALS, 'comparison' => false, 'label' => 'Hálózati zárolás']),
+    ];
+    $modelMinimumAbove = $engine->calculate($modelMinimumBook, $modelMinimumRules, engineInput([], ServiceMode::HIGHER_OFFER, 'iphone_13_pro', 128));
+    $modelMinimumExact = $engine->calculate($modelMinimumBook, $modelMinimumRules, engineInput(['screen_condition' => 'damaged'], ServiceMode::HIGHER_OFFER, 'iphone_13_pro', 128));
+    $modelMinimumBelow = $engine->calculate($modelMinimumBook, $modelMinimumRules, engineInput(['frame_condition' => 'damaged'], ServiceMode::HIGHER_OFFER, 'iphone_13_pro', 128));
+    $modelMinimumZero = $engine->calculate($modelMinimumBook, $modelMinimumRules, engineInput(['display_yellowing' => true], ServiceMode::HIGHER_OFFER, 'iphone_13_pro', 128));
+    $modelMinimumOtherModel = $engine->calculate($modelMinimumBook, $modelMinimumRules, engineInput([], ServiceMode::HIGHER_OFFER, 'iphone_16_pro', 128));
+    $modelMinimumAfterMode = $engine->calculate($modelMinimumBook, $modelMinimumRules, engineInput([], ServiceMode::FAST_ONLINE, 'iphone_13_pro', 128));
+    $modelMinimumExplicitManual = $engine->calculate($modelMinimumBook, $modelMinimumRules, engineInput(['replacement_parts' => 'non_original'], ServiceMode::HIGHER_OFFER, 'iphone_13_pro', 128));
+    $modelMinimumHardReject = $engine->calculate($modelMinimumBook, $modelMinimumRules, engineInput(['network_unlocked' => false], ServiceMode::HIGHER_OFFER, 'iphone_13_pro', 128));
+    $duplicateModelMinimum = $engine->calculate($modelMinimumBook, array_merge($modelMinimumRules, [engineRule(810, $modelMinimumBook->id(), PricingRuleKind::MINIMUM_OFFER, 'model-minimum-13-duplicate', 91, true, ['model_key' => 'iphone_13_pro', 'amount' => 24000])]), engineInput([], ServiceMode::HIGHER_OFFER, 'iphone_13_pro', 128));
+    $test->assert($modelMinimumAbove->outcome->code() === PricingOutcome::OFFERED && $modelMinimumAbove->finalAmount?->amount() === 30000, 'A model-specific minimum allows an amount strictly above its threshold');
+    $test->assert($modelMinimumExact->outcome->code() === PricingOutcome::MANUAL_REVIEW && $modelMinimumExact->reasonCodes === ['below_model_minimum_offer'], 'A model-specific minimum sends the exact threshold to manual review');
+    $test->assert($modelMinimumBelow->outcome->code() === PricingOutcome::MANUAL_REVIEW && $modelMinimumBelow->reasonCodes === ['below_model_minimum_offer'] && $modelMinimumZero->outcome->code() === PricingOutcome::MANUAL_REVIEW, 'Amounts below the model threshold, including zero, never receive an automatic offer');
+    $test->assert($modelMinimumOtherModel->outcome->code() === PricingOutcome::OFFERED && $modelMinimumOtherModel->finalAmount?->amount() === 20000, 'A model-specific minimum does not leak to another model when no override exists');
+    $test->assert($modelMinimumAfterMode->outcome->code() === PricingOutcome::OFFERED && $modelMinimumAfterMode->finalAmount?->amount() === 20000, 'The model minimum is evaluated before a later offer-mode adjustment');
+    $test->assert($modelMinimumExplicitManual->outcome->code() === PricingOutcome::MANUAL_REVIEW && $modelMinimumExplicitManual->reasonCodes === ['model-minimum-explicit-review'] && $modelMinimumHardReject->outcome->code() === PricingOutcome::REJECTED && $modelMinimumHardReject->reasonCodes === ['model-minimum-hard-reject'], 'Explicit manual review and hard rejection retain precedence over the model minimum');
+    $test->assert($duplicateModelMinimum->outcome->code() === PricingOutcome::CONFIGURATION_ERROR && in_array('duplicate_model_minimum_offer', $duplicateModelMinimum->reasonCodes, true), 'Duplicate enabled model minimums are rejected as a price-book configuration error');
+    $globalEqualBook = engineBook(700025, 25000, 1, MinimumOfferPolicy::MANUAL_REVIEW);
+    $globalEqual = $engine->calculate($globalEqualBook, [engineRule(810, $globalEqualBook->id(), PricingRuleKind::BASE_PRICE, 'global-equal-base', 10, true, ['amount' => 25000])], engineInput());
+    $test->assert($globalEqual->outcome->code() === PricingOutcome::OFFERED, 'Without a model override, the existing global minimum retains its strict-less-than behavior');
     $test->assert($engine->roundHalfUp(138499, 1000) === 138000, 'Rounding below half goes down');
     $test->assert($engine->roundHalfUp(138500, 1000) === 139000, 'Rounding at half goes up');
     $test->assert($engine->roundHalfUp(138501, 1000) === 139000, 'Rounding above half goes up');
@@ -547,8 +579,14 @@ try {
     foreach ($preview->modeResults as $mode => $result) {
         $test->assert($result->outcome->code() === PricingOutcome::OFFERED && $result->serviceMode->code() === $mode, "Preview returns offered result for {$mode}");
     }
+    $previewMinimumRule = $ruleRepository->insert(PricingRule::create($persistedBook->id(), new PricingRuleDefinition(new PricingRuleCode('qa-preview-model-minimum'), new PricingRuleKind(PricingRuleKind::MINIMUM_OFFER), 'iphone', $modelKey, null, null, null, null, null, new Money(200000, 'HUF'), null, new RulePriority(90), true, null, 'QA preview model minimum'), $now));
+    $previewAtModelMinimum = $handler->handle(new PreviewDraftPriceBookCalculation($persistedBook->id()->toInt(), $modelKey, 128, $publicQuestionnaire->defaults()));
+    foreach ($previewAtModelMinimum->modeResults as $mode => $result) {
+        $test->assert($result->outcome->code() === PricingOutcome::MANUAL_REVIEW && $result->reasonCodes === ['below_model_minimum_offer'], "Preview uses the same model-minimum decision for {$mode}");
+    }
     $test->assert($books->getById($persistedBook->id())->version()->value() === $bookVersionPersisted, 'Preview does not modify persisted price book');
     $test->assert($ruleRepository->getById($persistedRule->id())->version()->value() === $ruleVersionPersisted, 'Preview does not modify persisted rule');
+    $test->assert($ruleRepository->getById($previewMinimumRule->id())?->definition()->amount?->amount() === 200000, 'Preview reads the persisted model minimum without rewriting it');
     $persistedPrecedenceBook = $books->createDraft(PriceBook::createDraft($books->nextAvailableVersionNumber(), $marker . '-PRECEDENCE', new CurrencyCode('HUF'), new Money(0, 'HUF'), 1, new MinimumOfferPolicy(MinimumOfferPolicy::MANUAL_REVIEW), new PricingActorId(max(1, $originalUser)), $now));
     $persistedPrecedenceDefinitions = [
         engineRule(601, $persistedPrecedenceBook->id(), PricingRuleKind::BASE_PRICE, 'qa-precedence-base-11', 10, true, ['model_key' => 'iphone_11', 'amount' => 100000])->definition(),

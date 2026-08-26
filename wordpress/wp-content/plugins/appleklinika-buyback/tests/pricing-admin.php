@@ -14,6 +14,7 @@ use AppleKlinika\Buyback\Application\Command\DiscardDraftPriceBook;
 use AppleKlinika\Buyback\Application\Command\ProtectPriceBook;
 use AppleKlinika\Buyback\Application\Command\DeleteDraftPricingRule;
 use AppleKlinika\Buyback\Application\Command\SaveDraftBasePriceMatrix;
+use AppleKlinika\Buyback\Application\Command\SaveDraftModelMinimumOffer;
 use AppleKlinika\Buyback\Application\Command\SaveDraftQuestionnaireConditions;
 use AppleKlinika\Buyback\Application\Command\SaveDraftBatteryBands;
 use AppleKlinika\Buyback\Application\Command\SaveDraftOfferModeModifiers;
@@ -34,6 +35,7 @@ use AppleKlinika\Buyback\Application\Handler\ProtectPriceBookHandler;
 use AppleKlinika\Buyback\Application\Handler\DeleteDraftPricingRuleHandler;
 use AppleKlinika\Buyback\Application\Handler\PreviewDraftPriceBookCalculationHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftBasePriceMatrixHandler;
+use AppleKlinika\Buyback\Application\Handler\SaveDraftModelMinimumOfferHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftQuestionnaireConditionsHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftBatteryBandsHandler;
 use AppleKlinika\Buyback\Application\Handler\SaveDraftOfferModeModifiersHandler;
@@ -484,7 +486,9 @@ try {
     $test->throws(fn () => new PricingRuleDefinition(new PricingRuleCode('bad-base'), new PricingRuleKind(PricingRuleKind::BASE_PRICE), 'iphone', 'iphone-13-pro', new StorageCapacity(128), null, null, null, null, new Money(1000, 'HUF'), new BasisPointsMultiplier(9000), new RulePriority(1), true, null, null), InvalidValueObjectException::class, 'Base price rejects conflicting multiplier');
     $test->throws(fn () => new PricingRuleDefinition(new PricingRuleCode('bad-mode'), new PricingRuleKind(PricingRuleKind::MODE_ADJUSTMENT), 'iphone', null, null, 'fast_online', null, null, null, new Money(1000, 'HUF'), new BasisPointsMultiplier(9000), new RulePriority(1), true, null, null), InvalidValueObjectException::class, 'Mode adjustment rejects amount and multiplier together');
     $test->throws(fn () => new PricingRuleDefinition(new PricingRuleCode('bad-review'), new PricingRuleKind(PricingRuleKind::MANUAL_REVIEW), 'iphone', null, null, null, 'liquid_damage', new ComparisonOperator(ComparisonOperator::EQUALS), true, null, null, new RulePriority(1), true, null, null), InvalidValueObjectException::class, 'Manual review requires a public label');
-    $test->throws(fn () => new PricingRuleDefinition(new PricingRuleCode('bad-minimum'), new PricingRuleKind(PricingRuleKind::MINIMUM_OFFER), 'iphone', null, null, null, null, null, null, new Money(1000, 'HUF'), null, new RulePriority(1), true, null, null), InvalidValueObjectException::class, 'Rule-level minimum is not editable in Phase 2A');
+    $modelMinimumDefinition = new PricingRuleDefinition(new PricingRuleCode('model-minimum'), new PricingRuleKind(PricingRuleKind::MINIMUM_OFFER), 'iphone', 'iphone_13_pro', null, null, null, null, null, new Money(1000, 'HUF'), null, new RulePriority(1), true, null, null);
+    $test->assert($modelMinimumDefinition->modelKey === 'iphone_13_pro' && $modelMinimumDefinition->amount?->amount() === 1000, 'Model-level automatic-offer minimum accepts exactly one model and non-negative HUF amount');
+    $test->throws(fn () => new PricingRuleDefinition(new PricingRuleCode('bad-minimum'), new PricingRuleKind(PricingRuleKind::MINIMUM_OFFER), 'iphone', null, null, null, null, null, null, new Money(1000, 'HUF'), null, new RulePriority(1), true, null, null), InvalidValueObjectException::class, 'Model-level automatic-offer minimum requires a model scope');
     $test->assert((new PricingRuleDefinition(new PricingRuleCode('model-scope'), new PricingRuleKind(PricingRuleKind::FIXED_DEDUCTION), 'iphone', 'iphone-13-pro', null, null, 'battery_health', new ComparisonOperator(ComparisonOperator::LESS_THAN), 80, new Money(1000, 'HUF'), null, new RulePriority(1), true, null, null))->modelKey === 'iphone-13-pro', 'Conditional rule may use the existing optional model scope');
 
     $parser = new PricingRuleFormParser();
@@ -782,6 +786,7 @@ try {
     }
     pricingAddRule($addRule, $books, $matrixBook->id(), pricingDefinition(PricingRuleKind::FIXED_DEDUCTION, 'matrix-unrelated-' . $runToken));
     $saveMatrix = new SaveDraftBasePriceMatrixHandler($books, $rules, $catalog, $transactions, $clock);
+    $saveModelMinimumOffer = new SaveDraftModelMinimumOfferHandler($books, $rules, $catalog, $transactions, $clock);
     $matrixCurrent = $books->getById($matrixBook->id());
     $saveMatrix->handle(new SaveDraftBasePriceMatrix($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, [
         $firstConfiguration->modelKey => [(string) $firstConfiguration->storageGb => '120000'],
@@ -1009,6 +1014,20 @@ try {
     $test->throws(fn () => $saveOfferModes->handle(new SaveDraftOfferModeModifiers($retiredBook->id()->toInt(), $books->getById($retiredBook->id())?->version()->value() ?? -1, $offerSubmission)), InvalidAggregateOperationException::class, 'Offer-mode handler rejects archived price-book edits');
     $offerIsolationAfter = array_values(array_filter($rules->listForPriceBook($matrixBook->id()), static fn (PricingRule $rule): bool => $rule->definition()->kind->code() !== PricingRuleKind::MODE_ADJUSTMENT));
     $test->assert(serialize(array_map(static fn (PricingRule $rule): string => $rule->definition()->code->code(), $offerIsolationAfter)) === serialize(array_map(static fn (PricingRule $rule): string => $rule->definition()->code->code(), $offerIsolationBefore)), 'Offer-mode saves preserve Base-price, Conditions, Battery and system rules');
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $saveModelMinimumOffer->handle(new SaveDraftModelMinimumOffer($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, $firstConfiguration->modelKey, 125000));
+    $minimumRules = array_values(array_filter($rules->listForPriceBook($matrixBook->id()), static fn (PricingRule $rule): bool => $rule->definition()->kind->code() === PricingRuleKind::MINIMUM_OFFER));
+    $test->assert(count($minimumRules) === 1 && $minimumRules[0]->definition()->modelKey === $firstConfiguration->modelKey && $minimumRules[0]->definition()->amount?->amount() === 125000, 'Draft minimum editor persists one model-scoped threshold without changing other rule categories');
+    $matrixClone = $cloneHandler->handle(new ClonePriceBookToDraft($matrixBook->id()->toInt(), $books->getById($matrixBook->id())?->version()->value() ?? -1, $adminId));
+    $cloneMinimumRules = array_values(array_filter($rules->listForPriceBook($matrixClone->id()), static fn (PricingRule $rule): bool => $rule->definition()->kind->code() === PricingRuleKind::MINIMUM_OFFER));
+    $test->assert(count($cloneMinimumRules) === 1 && $cloneMinimumRules[0]->definition()->modelKey === $firstConfiguration->modelKey && $cloneMinimumRules[0]->definition()->amount?->amount() === 125000, 'Cloning a draft preserves its explicit model minimum exactly');
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $saveModelMinimumOffer->handle(new SaveDraftModelMinimumOffer($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, $firstConfiguration->modelKey, null));
+    $test->assert(count(array_filter($rules->listForPriceBook($matrixBook->id()), static fn (PricingRule $rule): bool => $rule->definition()->kind->code() === PricingRuleKind::MINIMUM_OFFER && $rule->definition()->modelKey === $firstConfiguration->modelKey)) === 0, 'Reset removes only the selected model override and restores the price-book default');
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $test->throws(fn () => $saveModelMinimumOffer->handle(new SaveDraftModelMinimumOffer($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, 'iphone_not_in_inventory', 1)), InvalidArgumentException::class, 'Model minimum editor rejects an unknown inventory model without writing a rule');
+    $activeCurrent = $books->getById($activeBook->id());
+    $test->throws(fn () => $saveModelMinimumOffer->handle(new SaveDraftModelMinimumOffer($activeBook->id()->toInt(), $activeCurrent?->version()->value() ?? -1, $firstConfiguration->modelKey, 1)), InvalidAggregateOperationException::class, 'Active price books reject model-minimum edits');
     delete_option(WordPressOfferModeSettingsStore::OPTION_NAME);
     $offerSettings = new WordPressOfferModeSettingsStore();
     $saveOfferSettings = new SaveOfferModeSettingsHandler($offerSettings);
@@ -1046,6 +1065,7 @@ try {
         new ClonePriceBookToDraftHandler($books, $rules, $transactions, $clock, $lifecycle),
         new DiscardDraftPriceBookHandler($books, new WordPressDraftPriceBookDiscardRepository($wpdb), $transactions, $lifecycle, $clock),
         $saveMatrix,
+        $saveModelMinimumOffer,
         $saveConditions,
         $saveBatteryBands,
         $saveOfferModes,
@@ -1069,6 +1089,13 @@ try {
         new ProtectPriceBookHandler($books, $lifecycle, $transactions, $clock),
         $restoredOfferModes
     );
+    $matrixCurrent = $books->getById($matrixBook->id());
+    $saveModelMinimumOffer->handle(new SaveDraftModelMinimumOffer($matrixBook->id()->toInt(), $matrixCurrent?->version()->value() ?? -1, $firstConfiguration->modelKey, 125000));
+    $_GET = ['page' => PriceBooksPage::SLUG, 'book_id' => $matrixBook->id()->toInt(), 'tab' => 'base-prices', 'model' => $firstConfiguration->modelKey];
+    ob_start();
+    $uiPage->render();
+    $modelMinimumEditorHtml = (string) ob_get_clean();
+    $test->assert(str_contains($modelMinimumEditorHtml, 'Automatikus ajánlat minimuma') && str_contains($modelMinimumEditorHtml, 'Saját minimum:') && str_contains($modelMinimumEditorHtml, 'value="125000"') && str_contains($modelMinimumEditorHtml, 'Alapbeállítás visszaállítása') && str_contains($modelMinimumEditorHtml, 'save_model_minimum_offer') && str_contains($modelMinimumEditorHtml, 'model_minimum_model_key'), 'Draft base-price tab exposes the model-specific minimum editor, its explicit override, and the inheritance reset action');
     $legacyFastRule = PricingRule::create($matrixBook->id(), new PricingRuleDefinition(new PricingRuleCode('legacy-fast-' . $runToken), new PricingRuleKind(PricingRuleKind::MODE_ADJUSTMENT), 'iphone', null, null, 'fast_online', null, null, null, new Money(-5000, 'HUF'), null, new RulePriority(100), true, 'Elavult gyors felvásárlás címke', null), $clock->now());
     $legacyTradeRule = PricingRule::create($activeBook->id(), new PricingRuleDefinition(new PricingRuleCode('legacy-trade-' . $runToken), new PricingRuleKind(PricingRuleKind::MODE_ADJUSTMENT), 'iphone', null, null, 'trade_in', null, null, null, new Money(5000, 'HUF'), null, new RulePriority(100), true, 'Elavult beszámítási címke', null), $clock->now());
     $previewRuleDetails = new ReflectionMethod(PriceBooksPage::class, 'previewRuleDetails');

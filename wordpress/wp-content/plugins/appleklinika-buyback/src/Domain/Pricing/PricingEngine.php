@@ -93,6 +93,30 @@ final class PricingEngine
         }
         $afterMultipliers = new Money($amount, $book->currency()->code());
 
+        $modelMinimum = $this->modelMinimumOffer($enabled, $input);
+        if ($modelMinimum !== null && $amount <= $modelMinimum->definition()->amount->amount()) {
+            $breakdown[] = new PricingBreakdownLine(
+                'model_minimum_policy',
+                $modelMinimum->definition()->code->code(),
+                PricingRuleKind::MINIMUM_OFFER,
+                $amount,
+                null,
+                null,
+                $amount,
+                null,
+                'manual_review',
+                $modelMinimum->definition()->priority->value()
+            );
+            $matchedRules[] = $this->matched($modelMinimum);
+            return PricingCalculationResult::manualReview(
+                $book,
+                $input->serviceMode,
+                ['below_model_minimum_offer'],
+                $matchedRules,
+                $breakdown
+            );
+        }
+
         $modeRules = array_values(array_filter($enabled, static fn (PricingRule $rule): bool => $rule->definition()->kind->code() === PricingRuleKind::MODE_ADJUSTMENT && $rule->definition()->serviceMode === $input->serviceMode->code()));
         if ($modeRules !== []) {
             $modeRule = $modeRules[0];
@@ -175,6 +199,19 @@ final class PricingEngine
             && $definition->category === $input->category->code()
             && $definition->modelKey === $input->modelKey->value()
             && $definition->storage?->gigabytes() === $input->storage->gigabytes();
+    }
+
+    /** @param list<PricingRule> $rules */
+    private function modelMinimumOffer(array $rules, PricingCalculationInput $input): ?PricingRule
+    {
+        foreach ($rules as $rule) {
+            $definition = $rule->definition();
+            if ($definition->kind->code() === PricingRuleKind::MINIMUM_OFFER
+                && $definition->modelKey === $input->modelKey->value()) {
+                return $rule;
+            }
+        }
+        return null;
     }
 
     /** @param list<PricingRule> $rules @return list<PricingRule> */
