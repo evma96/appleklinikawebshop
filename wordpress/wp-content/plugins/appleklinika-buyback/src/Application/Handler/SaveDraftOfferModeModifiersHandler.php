@@ -94,7 +94,7 @@ final class SaveDraftOfferModeModifiersHandler
         $existing = [];
         foreach ($rules as $rule) {
             $definition = $rule->definition();
-            if ($definition->kind->code() !== PricingRuleKind::MODE_ADJUSTMENT || ! in_array($definition->serviceMode, OfferModeDefinition::keys(), true)) {
+            if ($definition->kind->code() !== PricingRuleKind::MODE_ADJUSTMENT || $definition->modelKey !== null || ! in_array($definition->serviceMode, OfferModeDefinition::keys(), true)) {
                 continue;
             }
             if (isset($existing[$definition->serviceMode])) {
@@ -127,7 +127,7 @@ final class SaveDraftOfferModeModifiersHandler
             if (! is_string($type) || ! in_array($type, [self::TYPE_AMOUNT, self::TYPE_MULTIPLIER], true)) {
                 throw new \InvalidArgumentException('Az ajánlattípus korrekciós típusa nem támogatott.');
             }
-            $value = $this->value($type, $row['value'] ?? null);
+            $value = self::parseValue($type, $row['value'] ?? null);
             $validated[$mode] = [
                 'type' => $type,
                 'value' => $value,
@@ -140,7 +140,7 @@ final class SaveDraftOfferModeModifiersHandler
         return $validated;
     }
 
-    private function value(string $type, mixed $raw): int
+    public static function parseValue(string $type, mixed $raw): int
     {
         if (! is_string($raw) && ! is_int($raw)) {
             throw new \InvalidArgumentException('A korrekció értéke egész szám legyen.');

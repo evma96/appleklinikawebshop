@@ -43,7 +43,7 @@ final class RuleShapeValidator
         if ($kind === PricingRuleKind::MODE_ADJUSTMENT) {
             self::required(in_array($rule->serviceMode, [ServiceMode::IN_STORE_INSTANT, ServiceMode::FAST_ONLINE, ServiceMode::HIGHER_OFFER, ServiceMode::TRADE_IN], true), 'Mode adjustment requires a supported service mode.');
             self::required(($rule->amount === null) !== ($rule->multiplier === null), 'Mode adjustment requires exactly one amount or multiplier.');
-            self::required($rule->modelKey === null && $rule->storage === null && $rule->conditionKey === null && $rule->operator === null && $rule->comparisonValue === null, 'Mode adjustment contains conflicting fields.');
+            self::required($rule->storage === null && $rule->conditionKey === null && $rule->operator === null && $rule->comparisonValue === null, 'Mode adjustment contains conflicting fields.');
             return;
         }
 
