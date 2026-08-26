@@ -1,5 +1,7 @@
 # Change Log
 
+- Added draft-only, model-specific automatic-offer minimums for canonical iPhone models. The pricing engine routes amounts at or below an enabled model threshold to the existing personal-inspection path before service-mode adjustments; the legacy price-book global minimum remains the strict `<` fallback. No schema or price-book-data migration was added.
+
 - Refined the approved local `/eladas/` buyback flow without changing its pricing data: display functionality now follows screen condition, parts/service history and affected parts are captured as transient state with accessible help, the final review summarizes them, and the storefront header links to the flow. No request, customer, order, cart, or price-book data is written.
 
 - Added Apple Klinika Buyback Phase 2B2 with pure activation readiness, strict `draft -> active -> retired` lifecycle rules, immutable active/retired price books, currency-scoped advisory locking, atomic replacement activation, typed current-active resolution, admin activation confirmation, diagnostics, and a fully cleaning real MariaDB activation suite. Plugin version is now `0.7.0`; schema remains `1.1.0`, and no public calculator, request linkage, or offer persistence was added.

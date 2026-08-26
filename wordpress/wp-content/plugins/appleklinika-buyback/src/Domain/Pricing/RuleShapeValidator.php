@@ -14,7 +14,23 @@ final class RuleShapeValidator
         $kind = $rule->kind->code();
 
         if ($kind === PricingRuleKind::MINIMUM_OFFER) {
-            throw new InvalidValueObjectException('Rule-level minimum offers are not editable in Phase 2A.');
+            self::required(
+                $rule->modelKey !== null && $rule->amount !== null,
+                'Model minimum offer requires a model and amount.'
+            );
+            self::required($rule->amount->amount() >= 0, 'Model minimum offer cannot be negative.');
+            self::required(
+                $rule->storage === null
+                && $rule->serviceMode === null
+                && $rule->conditionKey === null
+                && $rule->operator === null
+                && $rule->comparisonValue === null
+                && $rule->multiplier === null
+                && $rule->publicLabel === null
+                && $rule->affectedComponentKey === null,
+                'Model minimum offer contains conflicting fields.'
+            );
+            return;
         }
 
         if ($kind === PricingRuleKind::BASE_PRICE) {
