@@ -1126,7 +1126,7 @@ final class LocalDemoCalculatorPage
     private function resultHeadline(PricingCalculationResult $result): string
     {
         return match ($result->outcome->code()) {
-            PricingOutcome::REJECTED => 'Automatikus ajánlat nem adható',
+            PricingOutcome::REJECTED => 'Nem vásároljuk fel',
             PricingOutcome::CONFIGURATION_ERROR => 'Az árkönyv ellenőrzése szükséges',
             default => 'Személyes ellenőrzés szükséges',
         };

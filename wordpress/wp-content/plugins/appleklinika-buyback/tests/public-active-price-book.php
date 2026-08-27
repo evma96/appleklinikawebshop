@@ -11,6 +11,7 @@ use AppleKlinika\Buyback\Application\Pricing\PriceBookPage;
 use AppleKlinika\Buyback\Application\Pricing\RepositoryActivePriceBookResolver;
 use AppleKlinika\Buyback\Application\LocalDemo\LocalDemoQuestionnaire;
 use AppleKlinika\Buyback\Domain\Pricing\CurrencyCode;
+use AppleKlinika\Buyback\Domain\Pricing\ComparisonOperator;
 use AppleKlinika\Buyback\Domain\Buyback\OfferModeDefinition;
 use AppleKlinika\Buyback\Domain\Buyback\OfferModeConfiguration;
 use AppleKlinika\Buyback\Domain\Pricing\MinimumOfferPolicy;
@@ -213,6 +214,35 @@ function publicModeRule(int $id, PriceBookId $bookId, string $mode, int $amount,
     );
 }
 
+function publicDecisionRule(int $id, PriceBookId $bookId, string $kind, string $code): PricingRule
+{
+    $at = new DateTimeImmutable('2026-07-21T12:00:00+00:00');
+    return PricingRule::reconstitute(
+        new PricingRuleId($id),
+        $bookId,
+        new PricingRuleDefinition(
+            new PricingRuleCode($code),
+            new PricingRuleKind($kind),
+            'iphone',
+            null,
+            null,
+            null,
+            'network_unlocked',
+            new ComparisonOperator(ComparisonOperator::EQUALS),
+            false,
+            null,
+            null,
+            new RulePriority(20),
+            true,
+            'Hálózatfüggő készülék',
+            'In-memory public runtime fixture'
+        ),
+        new AggregateVersion(1),
+        $at,
+        $at
+    );
+}
+
 global $wpdb;
 $runner = new PublicActiveBookTestRunner();
 $before = publicActiveBookCounts($wpdb);
@@ -335,6 +365,51 @@ $runner->assert(array_map(static fn (array $meta): array => ['label' => $meta['l
 $runner->assert(array_reduce($canonicalOfferCopy, static fn (bool $present, array $copy): bool => $present && str_contains($offersPanel, $copy['label']) && str_contains($offersPanel, $copy['description']), true) && ! str_contains($offersPanel, 'Legacy A személyes cím') && ! str_contains($offersPanel, 'Legacy A gyors cím') && ! str_contains($offersPanel, 'Legacy A normál cím') && ! str_contains($offersPanel, 'Legacy A beszámítás cím'), 'Public offer cards ignore stored legacy mode titles and use canonical global copy');
 $runner->assert(str_contains($offersPanel, '79 000 Ft') && str_contains($offersPanel, '78 000 Ft') && str_contains($offersPanel, '80 000 Ft') && str_contains($offersPanel, '85 000 Ft'), 'Public offer amounts still come from the active price book corrections');
 $runner->assert(preg_match('/data-mode-code="trade_in".*?data-offer-badge="best-price">LEGJOBB ÁR/s', $offersPanel) === 1 && substr_count($offersPanel, 'data-offer-badge="best-price"') === 1, 'LEGJOBB ÁR belongs only to the trade-in offer type');
+$runner->assert(str_contains($offersPanel, 'ELŐZETES AJÁNLAT') && str_contains($offersPanel, 'Válaszd ki a számodra megfelelő lehetőséget') && ! str_contains($offersPanel, 'Nem vásároljuk fel'), 'An offered public calculation keeps the automatic-offer flow unchanged');
+
+$validCalculationPost = $_POST;
+$lockedCalculationPost = $validCalculationPost;
+$lockedCalculationPost['questionnaire']['network_status'] = 'locked';
+$rejectedRules = array_merge($rules, [publicDecisionRule(940008, $active->id(), PricingRuleKind::HARD_REJECT, 'public-network-locked-reject')]);
+$rejectedPage = new LocalDemoCalculatorPage(
+    new RepositoryActivePriceBookResolver($books, new InMemoryPublicPricingRules([$active->id()->toInt() => $rejectedRules])),
+    new PricingEngine(),
+    new WordPressDeviceCatalogReader(),
+    new WordPressLocalDemoProductReader(),
+    new LocalDemoQuestionnaire()
+);
+$_POST = $lockedCalculationPost;
+$rejectedHtml = $rejectedPage->render();
+$rejectedPanelStart = (int) strpos($rejectedHtml, '<section class="ak-buyback-demo__panel ak-buyback-demo__panel--offers"');
+$rejectedPanelEnd = (int) strpos($rejectedHtml, '<section class="ak-buyback-demo__panel ak-buyback-demo__panel--review"');
+$rejectedPanel = substr($rejectedHtml, $rejectedPanelStart, $rejectedPanelEnd - $rejectedPanelStart);
+$runner->assert(str_contains($rejectedPanel, '<h3>Nem vásároljuk fel</h3>') && str_contains($rejectedPanel, 'data-non-offer-result') && ! str_contains($rejectedPanel, 'Automatikus ajánlat nem adható'), 'A rejected public calculation displays the approved not-purchased heading');
+$runner->assert(
+    (new PricingEngine())->calculate($active, $rejectedRules, new \AppleKlinika\Buyback\Domain\Pricing\PricingCalculationInput(
+        new \AppleKlinika\Buyback\Domain\Buyback\DeviceCategory('iphone'),
+        new \AppleKlinika\Buyback\Domain\Pricing\PricingModelKey('iphone_11'),
+        new StorageCapacity(64),
+        \AppleKlinika\Buyback\Domain\Pricing\ConditionAnswerCollection::fromAssociative((new LocalDemoQuestionnaire())->mapToConditions($lockedCalculationPost['questionnaire'])),
+        new \AppleKlinika\Buyback\Domain\Buyback\ServiceMode('fast_online')
+    ))->outcome->code() === 'rejected',
+    'A network-locked public calculation remains a pricing-engine hard reject'
+);
+
+$manualRules = array_merge($rules, [publicDecisionRule(940009, $active->id(), PricingRuleKind::MANUAL_REVIEW, 'public-network-locked-manual')]);
+$manualPage = new LocalDemoCalculatorPage(
+    new RepositoryActivePriceBookResolver($books, new InMemoryPublicPricingRules([$active->id()->toInt() => $manualRules])),
+    new PricingEngine(),
+    new WordPressDeviceCatalogReader(),
+    new WordPressLocalDemoProductReader(),
+    new LocalDemoQuestionnaire()
+);
+$_POST = $lockedCalculationPost;
+$manualHtml = $manualPage->render();
+$manualPanelStart = (int) strpos($manualHtml, '<section class="ak-buyback-demo__panel ak-buyback-demo__panel--offers"');
+$manualPanelEnd = (int) strpos($manualHtml, '<section class="ak-buyback-demo__panel ak-buyback-demo__panel--review"');
+$manualPanel = substr($manualHtml, $manualPanelStart, $manualPanelEnd - $manualPanelStart);
+$runner->assert(str_contains($manualPanel, '<h3>Személyes bevizsgálás szükséges</h3>') && str_contains($manualPanel, 'data-manual-review-result') && ! str_contains($manualPanel, 'Nem vásároljuk fel'), 'A manual-review public calculation keeps its existing distinct heading');
+$_POST = $validCalculationPost;
 $onlyNormalInput = OfferModeConfiguration::defaults()->toStored()['modes'];
 foreach ($onlyNormalInput as $mode => &$setting) {
     $setting['enabled'] = $mode === 'higher_offer';
