@@ -131,6 +131,12 @@
         ['billing', 'shipping'].forEach(function (purpose) {
             var fields = oneOffAddressFields(root, purpose);
             if (fields) {
+                // Company identity belongs to the checkout's additional-fields
+                // contract, never to the Cart API address object. Waiting for it
+                // here would make a valid one-off company address time out.
+                delete fields['appleklinika/company_purchase'];
+                delete fields['appleklinika/company_name'];
+                delete fields['appleklinika/tax_number'];
                 expected[purpose] = fields;
             }
         });
@@ -180,6 +186,16 @@
             return;
         }
         root.setAttribute('data-ak-address-progress-flush', '1');
+        root.addEventListener('change', function (event) {
+            var control = event.target;
+            var label = control && control.closest ? control.closest('label') : null;
+
+            if (!label || label.textContent.indexOf('A szállítási és számlázási cím megegyezik.') === -1) {
+                return;
+            }
+
+            window.setTimeout(sync, 0);
+        });
         document.addEventListener('click', function (event) {
             var button = event.target.closest('[data-checkout-step-controls="2"] .ak-checkout-step-controls__button');
             if (!button) {
