@@ -774,8 +774,9 @@
       var recipient = address.company
         ? address.company
         : [address.first_name, address.last_name].filter(Boolean).join(' ');
+      var taxNumber = address.tax_number ? 'Adószám: ' + address.tax_number : '';
       var locality = [address.postcode, address.city].filter(Boolean).join(' ');
-      return [recipient, address.address_1, address.address_2, locality].filter(Boolean).join(', ');
+      return [recipient, taxNumber, address.address_1, address.address_2, locality].filter(Boolean).join(', ');
     }
 
     function checkoutFormAddress(prefix) {
@@ -784,13 +785,16 @@
         return input ? input.value.trim() : '';
       };
       var company = field('company');
+      var taxNumber = '';
 
       if (prefix === 'billing') {
         var companyToggle = document.getElementById('order-appleklinika-company_purchase');
         var companyName = document.getElementById('order-appleklinika-company_name');
+        var companyTaxNumber = document.getElementById('order-appleklinika-tax_number');
 
         if (companyToggle && companyToggle.checked && companyName) {
           company = companyName.value.trim();
+          taxNumber = companyTaxNumber ? companyTaxNumber.value.trim() : '';
         }
       }
 
@@ -801,7 +805,8 @@
         address_1: field('address_1'),
         address_2: field('address_2'),
         postcode: field('postcode'),
-        city: field('city')
+        city: field('city'),
+        tax_number: taxNumber
       };
     }
 
@@ -882,9 +887,12 @@
       var tax = Number(totals.total_tax || 0);
       var billing = blocksSelector(cartStore, 'getBillingAddress', cart.billing_address || {});
       var shipping = blocksSelector(cartStore, 'getShippingAddress', cart.shipping_address || {});
+      var currentBilling = checkoutFormAddress('billing');
 
-      if (!billing || !billing.address_1) {
-        billing = checkoutFormAddress('billing');
+      if (currentBilling.company) {
+        billing = currentBilling;
+      } else if (!billing || !billing.address_1) {
+        billing = currentBilling;
       }
 
       if (!shipping || !shipping.address_1) {
