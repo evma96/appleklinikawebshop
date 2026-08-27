@@ -4701,6 +4701,17 @@ function appleklinika_capture_checkout_company_identity($response, array $handle
     }
 
     $additionalFields = (array) $request->get_param('additional_fields');
+    if (! array_key_exists('appleklinika/company_purchase', $additionalFields)
+        && function_exists('WC')
+        && WC()->session !== null) {
+        $oneOffIdentity = WC()->session->get('appleklinika_address_book_company_identity', []);
+        if (is_array($oneOffIdentity)) {
+            $additionalFields['appleklinika/company_purchase'] = ! empty($oneOffIdentity['purchase']);
+            $additionalFields['appleklinika/company_name'] = (string) ($oneOffIdentity['name'] ?? '');
+            $additionalFields['appleklinika/tax_number'] = (string) ($oneOffIdentity['tax_number'] ?? '');
+            $request->set_param('additional_fields', $additionalFields);
+        }
+    }
     $GLOBALS['appleklinika_checkout_company_identity'] = appleklinika_checkout_company_enabled($additionalFields['appleklinika/company_purchase'] ?? false);
 
     return $response;

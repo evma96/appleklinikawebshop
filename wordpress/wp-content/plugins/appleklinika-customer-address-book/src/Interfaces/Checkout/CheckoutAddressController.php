@@ -18,6 +18,7 @@ final class CheckoutAddressController
 {
     private const NAMESPACE = 'appleklinika/address-book';
     private const SESSION_KEY = 'appleklinika_address_book_checkout';
+    private const COMPANY_IDENTITY_SESSION_KEY = 'appleklinika_address_book_company_identity';
     private const ORDER_META_PREFIX = '_appleklinika_address_book_';
 
     public function __construct(
@@ -159,6 +160,12 @@ final class CheckoutAddressController
                     ));
                 } elseif ($isEnvelope && is_array($candidate['fields'] ?? null)) {
                     $this->applyOneOffFieldsToCustomer($purpose, $candidate['fields']);
+                    if ($purpose === 'billing') {
+                        $this->storeOneOffCompanyIdentity($candidate['fields']);
+                    }
+                }
+                if ($purpose === 'billing' && $next[$purpose]['mode'] === 'saved') {
+                    $this->clearOneOffCompanyIdentity();
                 }
             }
         } catch (VersionConflict) {
@@ -285,6 +292,7 @@ final class CheckoutAddressController
     {
         if (function_exists('WC') && WC()->session !== null) {
             WC()->session->set(self::SESSION_KEY, null);
+            $this->clearOneOffCompanyIdentity();
         }
     }
 
@@ -394,6 +402,27 @@ final class CheckoutAddressController
             $customer->update_meta_data('appleklinika_company_name', $companyName);
             $customer->update_meta_data('appleklinika_tax_number', $taxNumber);
             $customer->update_meta_data('ak_billing_tax_number', $taxNumber);
+        }
+    }
+
+    /** @param array<string, mixed> $fields */
+    private function storeOneOffCompanyIdentity(array $fields): void
+    {
+        if (! function_exists('WC') || WC()->session === null) {
+            return;
+        }
+
+        WC()->session->set(self::COMPANY_IDENTITY_SESSION_KEY, [
+            'purchase' => ! empty($fields['appleklinika/company_purchase']),
+            'name' => sanitize_text_field((string) ($fields['appleklinika/company_name'] ?? '')),
+            'tax_number' => sanitize_text_field((string) ($fields['appleklinika/tax_number'] ?? '')),
+        ]);
+    }
+
+    private function clearOneOffCompanyIdentity(): void
+    {
+        if (function_exists('WC') && WC()->session !== null) {
+            WC()->session->set(self::COMPANY_IDENTITY_SESSION_KEY, null);
         }
     }
 
