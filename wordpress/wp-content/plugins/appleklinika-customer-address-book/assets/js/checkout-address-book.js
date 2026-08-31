@@ -194,7 +194,10 @@
                 return;
             }
 
-            window.setTimeout(sync, 0);
+            window.setTimeout(function () {
+                sync();
+                window.requestAnimationFrame(sync);
+            }, 0);
         });
         document.addEventListener('click', function (event) {
             var button = event.target.closest('[data-checkout-step-controls="2"] .ak-checkout-step-controls__button');
