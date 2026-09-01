@@ -188,16 +188,14 @@
         root.setAttribute('data-ak-address-progress-flush', '1');
         root.addEventListener('change', function (event) {
             var control = event.target;
-            var label = control && control.closest ? control.closest('label') : null;
-
-            if (!label || label.textContent.indexOf('A szállítási és számlázási cím megegyezik.') === -1) {
+            if (!control || !control.matches || !control.matches('.wc-block-checkout__use-address-for-billing input[type="checkbox"]')) {
                 return;
             }
 
-            window.setTimeout(function () {
-                sync();
-                window.requestAnimationFrame(sync);
-            }, 0);
+            // Woo Blocks handles this control on its checkout root before this
+            // bubbling handler runs. Sync against the current live host, rather
+            // than a translated label or a speculative rendered frame.
+            sync();
         });
         document.addEventListener('click', function (event) {
             var button = event.target.closest('[data-checkout-step-controls="2"] .ak-checkout-step-controls__button');
@@ -341,8 +339,13 @@
         }
     }
 
-    function renderPurpose(root, purpose, options, current) {
+    function liveCheckoutHost(purpose) {
         var host = document.getElementById(purpose + '-fields');
+        return host && host.isConnected ? host : null;
+    }
+
+    function renderPurpose(root, purpose, options, current) {
+        var host = liveCheckoutHost(purpose);
         if (!host || host.querySelector('[data-ak-address-purpose="' + purpose + '"]')) {
             return false;
         }
@@ -439,4 +442,7 @@
         }
     }, 300);
     document.addEventListener('wc-blocks_render_blocks_frontend', sync);
+    if (window.wp && window.wp.data && typeof window.wp.data.subscribe === 'function') {
+        window.wp.data.subscribe(sync);
+    }
 }());
