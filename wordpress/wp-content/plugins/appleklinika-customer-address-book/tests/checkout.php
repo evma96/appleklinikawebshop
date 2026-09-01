@@ -70,7 +70,26 @@ try {
     $test->assert(str_contains((string) $checkoutScript, 'Válassz mentett számlázási címet') && str_contains($checkoutScript, 'Válassz mentett szállítási címet') && ! str_contains($checkoutScript, "document.createElement('h3')"), 'saved-address selectors use descriptive labels instead of duplicate visible section headings');
     $test->assert(str_contains((string) $checkoutScript, "section.classList.toggle('is-one-off', isOneOff)") && str_contains($checkoutScript, "section.classList.toggle('has-saved-address', !isOneOff)") && str_contains($checkoutScript, 'save.checked = false;') && str_contains($checkoutScript, 'defaultControl.disabled = true;'), 'checkout keeps the saved-address and one-off address presentation states explicit and clears one-off save intent before a saved address is submitted');
     $test->assert(str_contains((string) $checkoutScript, 'function selectionData(root)') && str_contains($checkoutScript, 'data[purpose].fields = oneOffAddressFields(root, purpose) || {};') && str_contains($checkoutScript, 'function saveIntentData(root)') && str_contains($checkoutScript, 'function sendSaveIntent(root)') && ! str_contains($checkoutScript, 'function sendSelection(root)') && str_contains($checkoutScript, 'function installProgressFlush(root)') && str_contains($checkoutScript, 'data-ak-address-flushed'), 'checkout keeps the complete current one-off address and save intent local until the normal continue flow flushes them together');
-    $test->assert(str_contains((string) $checkoutScript, "root.addEventListener('change'") && str_contains($checkoutScript, "A szállítási és számlázási cím megegyezik.") && str_contains($checkoutScript, 'window.setTimeout(function () {') && str_contains($checkoutScript, 'window.requestAnimationFrame(sync);'), 'switching off the shared-address control re-runs the existing address-selector sync both after the change and on the following rendered frame, so remounted billing fields receive exactly one selector without an observer, polling loop or DOM relocation');
+    $test->assert(str_contains((string) $checkoutScript, "root.addEventListener('change'") && str_contains($checkoutScript, "control.matches('.wc-block-checkout__use-address-for-billing input[type=\"checkbox\"]')") && ! str_contains($checkoutScript, 'A szállítási és számlázási cím megegyezik.') && ! str_contains($checkoutScript, 'window.requestAnimationFrame(sync);'), 'same-address lifecycle detection uses WooCommerce Blocks structural markup rather than a translated label or speculative animation frame');
+    $test->assert(str_contains((string) $checkoutScript, 'function liveCheckoutHost(purpose)') && str_contains($checkoutScript, 'host && host.isConnected') && str_contains($checkoutScript, 'var host = liveCheckoutHost(purpose);'), 'selector rendering resolves the current connected WooCommerce fields host and cannot treat a detached prior host as authoritative');
+    $test->assert(str_contains((string) $checkoutScript, 'window.wp.data.subscribe(sync);'), 'checkout selector follows the existing WooCommerce Blocks data-store lifecycle after a checkout host remount');
+    $mountIntoLiveHost = static function (array &$host): bool {
+        if (! $host['connected'] || $host['selector_count'] > 0) {
+            return false;
+        }
+        $host['selector_count']++;
+        return true;
+    };
+    $firstBillingHost = ['connected' => true, 'selector_count' => 0];
+    $test->assert($mountIntoLiveHost($firstBillingHost) && $firstBillingHost['selector_count'] === 1, 'lifecycle regression: the initial live billing host receives exactly one selector');
+    $firstBillingHost['connected'] = false;
+    $firstBillingHost['selector_count'] = 0;
+    $secondBillingHost = ['connected' => true, 'selector_count' => 0];
+    $test->assert($mountIntoLiveHost($secondBillingHost) && $secondBillingHost['selector_count'] === 1 && $firstBillingHost['selector_count'] === 0, 'lifecycle regression: after WooCommerce replaces the billing host, only the new connected host receives the remounted selector');
+    $secondBillingHost['connected'] = false;
+    $secondBillingHost['selector_count'] = 0;
+    $thirdBillingHost = ['connected' => true, 'selector_count' => 0];
+    $test->assert($mountIntoLiveHost($thirdBillingHost) && ! $mountIntoLiveHost($thirdBillingHost) && $thirdBillingHost['selector_count'] === 1 && $secondBillingHost['selector_count'] === 0, 'lifecycle regression: a repeated host replacement still mounts exactly one selector and leaves detached hosts non-authoritative');
     $test->assert(str_contains((string) $checkoutScript, 'function oneOffAddressFields(root, purpose)') && str_contains($checkoutScript, 'function waitForOneOffAddressSync(root)') && str_contains($checkoutScript, "cart[purpose + 'Address']") && str_contains($checkoutScript, 'sameAddressFields(expected[purpose]'), 'checkout blocks progression until the WooCommerce cart state contains the latest visible one-off physical address fields');
     $checkoutCss = file_get_contents(dirname(__DIR__) . '/assets/css/checkout-address-book.css');
     $test->assert(is_string($checkoutCss) && str_contains($checkoutCss, '[data-ak-address-save-details][hidden]') && str_contains($checkoutCss, 'display: none !important;') && str_contains($checkoutCss, '.has-saved-address .ak-checkout-address-selector__save'), 'checkout keeps collapsed saved-address details hidden and reserves address-save controls for one-off addresses');
