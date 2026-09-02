@@ -368,7 +368,7 @@
       }
     }
 
-    function setWooBillingCompany(value, persist) {
+    function setWooBillingCompany(value) {
       if (!window.wp || !window.wp.data) {
         return false;
       }
@@ -396,17 +396,13 @@
           cartStore.setBillingAddress(nextBillingAddress);
         }
 
-        if (persist && typeof cartStore.updateCustomerData === 'function') {
-          cartStore.updateCustomerData({ billing_address: nextBillingAddress }, true, false).catch(function () {});
-        }
-
         return changed;
       } catch (error) {
         return false;
       }
     }
 
-    function syncBillingCompanyValue(billingSection, companyField, enabled, inputValue, persist) {
+    function syncBillingCompanyValue(billingSection, companyField, enabled, inputValue) {
       if (!billingSection) {
         return;
       }
@@ -423,7 +419,7 @@
         setCheckoutFieldValue(companyField.input, value);
       }
 
-      setWooBillingCompany(value, persist);
+      setWooBillingCompany(value);
 
       var companyWrapper = checkoutAddressFieldWrapper(standardCompany);
       if (companyWrapper) {
@@ -459,7 +455,7 @@
 
       companyField.input.addEventListener('change', function (event) {
         if (billingSection.classList.contains('ak-checkout-company-mode')) {
-          syncBillingCompanyValue(billingSection, { input: event.currentTarget }, true, event.currentTarget.value, true);
+          syncBillingCompanyValue(billingSection, { input: event.currentTarget }, true, event.currentTarget.value);
         }
       });
     }
@@ -766,14 +762,11 @@
     syncCheckoutAddressDetails();
     syncCompanyCheckoutFields();
 
-    var observer = new MutationObserver(function () {
-      syncCompanyCheckoutFields();
-    });
+    document.addEventListener('wc-blocks_render_blocks_frontend', syncCompanyCheckoutFields);
 
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
+    if (window.wp && window.wp.data && typeof window.wp.data.subscribe === 'function') {
+      window.wp.data.subscribe(syncCompanyCheckoutFields);
+    }
   }
 
   function initCheckoutSummary() {
