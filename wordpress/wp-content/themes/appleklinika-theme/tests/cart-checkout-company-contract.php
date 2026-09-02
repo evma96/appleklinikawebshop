@@ -51,14 +51,63 @@ try {
         && str_contains($frontendScript, "window.wp.data.select('wc/store/cart').getCustomerData()")
         && str_contains($frontendScript, "window.wp.data.dispatch('wc/store/cart')")
         && str_contains($frontendScript, 'cartStore.setBillingAddress(nextBillingAddress);')
-        && str_contains($frontendScript, 'cartStore.updateCustomerData({ billing_address: nextBillingAddress }, true, false)')
+        && ! str_contains($frontendScript, 'cartStore.updateCustomerData({ billing_address: nextBillingAddress }, true, false)')
         && str_contains($frontendScript, "var value = enabled ? (hasUserInput ? normalizeText(inputValue) : (stateValue || visibleValue)) : '';")
         && str_contains($frontendScript, 'setCheckoutFieldValue(companyField.input, value);')
         && str_contains($frontendScript, 'companyField.input.dataset.akBillingCompanyNameSyncBound')
         && str_contains($frontendScript, 'syncBillingCompanyValue(billingSection, { input: event.currentTarget }, true, event.currentTarget.value);')
-        && str_contains($frontendScript, 'syncBillingCompanyValue(billingSection, { input: event.currentTarget }, true, event.currentTarget.value, true);')
+        && ! str_contains($frontendScript, 'function setWooBillingCompany(value, persist)')
+        && str_contains($frontendScript, "document.addEventListener('wc-blocks_render_blocks_frontend', syncCompanyCheckoutFields);")
+        && str_contains($frontendScript, 'window.wp.data.subscribe(syncCompanyCheckoutFields);')
+        && ! str_contains($frontendScript, "var observer = new MutationObserver(function () {\n      syncCompanyCheckoutFields();")
         && ! str_contains($frontendScript, 'billingSection.dataset.akBillingCompanyNameSyncBound'),
-        'Guest company synchronization reads and updates the authoritative Woo Blocks billing state, restores a remounted visible field from that state, and binds the current remounted company input exactly once instead of treating its replaced parent section as already bound.'
+        'Guest company synchronization updates only the authoritative Woo Blocks billing state, lets Blocks persist the complete current customer snapshot, follows official Blocks render/store changes without a DOM observer, restores a remounted visible field from that state, and binds the current remounted company input exactly once instead of treating its replaced parent section as already bound.'
+    );
+
+    $guestContactState = [
+        'billing_address' => [
+            'company' => 'Point One Final QA Kft.',
+            'email' => 'point-one@example.test',
+            'phone' => '+36305550123',
+        ],
+        'shipping_address' => [
+            'phone' => '+36305550123',
+        ],
+    ];
+    for ($render = 1; $render <= 3; ++$render) {
+        $storeApiRequest = new WP_REST_Request('POST', '/wc/store/v1/cart/update-customer');
+        $storeApiRequest->set_param('billing_address', $guestContactState['billing_address']);
+        $storeApiRequest->set_param('shipping_address', $guestContactState['shipping_address']);
+        $storeApiBilling = (array) $storeApiRequest->get_param('billing_address');
+        $storeApiShipping = (array) $storeApiRequest->get_param('shipping_address');
+
+        $test->assert(
+            $storeApiBilling['company'] === 'Point One Final QA Kft.'
+            && $storeApiBilling['email'] === 'point-one@example.test'
+            && $storeApiBilling['phone'] === '+36305550123'
+            && $storeApiShipping['phone'] === '+36305550123',
+            "Guest contact Store API request {$render} keeps the current company, e-mail and both address-phone values together through a Blocks state rebuild."
+        );
+        $test->assert(
+            $guestContactState['billing_address']['company'] === $storeApiBilling['company']
+            && $guestContactState['billing_address']['email'] === $storeApiBilling['email']
+            && $guestContactState['billing_address']['phone'] === $storeApiBilling['phone']
+            && $guestContactState['shipping_address']['phone'] === $storeApiShipping['phone'],
+            "Guest contact render {$render} derives its visible company, e-mail and phone fields from the same authoritative Woo state sent to Store API."
+        );
+    }
+
+    $guestContactState['billing_address']['company'] = 'Point One Updated QA Kft.';
+    $guestContactState['billing_address']['email'] = 'point-one-updated@example.test';
+    $guestContactState['billing_address']['phone'] = '+36305550999';
+    $guestContactState['shipping_address']['phone'] = '+36305550999';
+    $latestStoreApiRequest = new WP_REST_Request('POST', '/wc/store/v1/cart/update-customer');
+    $latestStoreApiRequest->set_param('billing_address', $guestContactState['billing_address']);
+    $latestStoreApiRequest->set_param('shipping_address', $guestContactState['shipping_address']);
+    $test->assert(
+        $latestStoreApiRequest->get_param('billing_address') === $guestContactState['billing_address']
+        && $latestStoreApiRequest->get_param('shipping_address') === $guestContactState['shipping_address'],
+        'A later guest edit sends only the newest company, e-mail and billing/shipping phone values; no first-render snapshot can restore stale contact data.'
     );
 
     WC()->session->set('appleklinika_address_book_company_identity', [
