@@ -4701,17 +4701,40 @@ function appleklinika_capture_checkout_company_identity($response, array $handle
     }
 
     $additionalFields = (array) $request->get_param('additional_fields');
+    $billingAddress = (array) $request->get_param('billing_address');
+
+    // Cart customer updates validate the billing address but do not carry
+    // order-located additional fields. A request-local company value wins;
+    // otherwise a selected saved company address is already projected onto the
+    // current Woo customer and remains authoritative for Step 3 revalidation.
+    $billingCompanyFromRequest = null;
+    if (array_key_exists('company', $billingAddress)) {
+        $billingCompanyFromRequest = sanitize_text_field((string) $billingAddress['company']);
+    }
+
+    if (! array_key_exists('appleklinika/company_purchase', $additionalFields)
+        && $billingCompanyFromRequest !== null) {
+        $additionalFields['appleklinika/company_purchase'] = trim($billingCompanyFromRequest) !== '';
+    }
+
     if (! array_key_exists('appleklinika/company_purchase', $additionalFields)
         && function_exists('WC')
         && WC()->session !== null) {
         $oneOffIdentity = WC()->session->get('appleklinika_address_book_company_identity', []);
-        if (is_array($oneOffIdentity)) {
+        if (is_array($oneOffIdentity) && array_key_exists('purchase', $oneOffIdentity)) {
             $additionalFields['appleklinika/company_purchase'] = ! empty($oneOffIdentity['purchase']);
             $additionalFields['appleklinika/company_name'] = (string) ($oneOffIdentity['name'] ?? '');
             $additionalFields['appleklinika/tax_number'] = (string) ($oneOffIdentity['tax_number'] ?? '');
             $request->set_param('additional_fields', $additionalFields);
         }
     }
+
+    if (! array_key_exists('appleklinika/company_purchase', $additionalFields)
+        && function_exists('WC')
+        && WC()->customer !== null) {
+        $additionalFields['appleklinika/company_purchase'] = trim(WC()->customer->get_billing_company()) !== '';
+    }
+
     $GLOBALS['appleklinika_checkout_company_identity'] = appleklinika_checkout_company_enabled($additionalFields['appleklinika/company_purchase'] ?? false);
 
     return $response;
