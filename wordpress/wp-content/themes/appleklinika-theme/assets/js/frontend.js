@@ -1264,6 +1264,21 @@
       }
     }
 
+    function checkoutNoticesApi() {
+      if (!window.wp || !window.wp.data) {
+        return null;
+      }
+
+      try {
+        return {
+          selectors: window.wp.data.select('core/notices'),
+          dispatch: window.wp.data.dispatch('core/notices')
+        };
+      } catch (error) {
+        return null;
+      }
+    }
+
     function validationErrors() {
       var validation = checkoutValidationApi();
 
@@ -1284,6 +1299,14 @@
       return (String(entry.key || '') + ' ' + String((entry.error || {}).message || '')).toLowerCase();
     }
 
+    function companyNameValidationIdentity(identity) {
+      return /(appleklinika.*company|company.*appleklinika|cégnév)/.test(identity);
+    }
+
+    function companyTaxNumberValidationIdentity(identity) {
+      return /(appleklinika.*tax|tax.*appleklinika|adószám)/.test(identity);
+    }
+
     function billingPersonalNameValidation(entry) {
       var identity = validationIdentity(entry);
 
@@ -1292,48 +1315,166 @@
     }
 
     function companyBillingValidation(entry) {
-      var identity = validationIdentity(entry);
-
-      return /(appleklinika.*(company|tax)|(company|tax).*appleklinika|cégnév|adószám)/.test(identity);
+      return companyNameBillingValidation(entry) || companyTaxNumberValidation(entry);
     }
 
-    function clearInactiveBillingValidationErrors() {
+    function companyNameBillingValidation(entry) {
+      return companyNameValidationIdentity(validationIdentity(entry));
+    }
+
+    function companyTaxNumberValidation(entry) {
+      return companyTaxNumberValidationIdentity(validationIdentity(entry));
+    }
+
+    function clearValidationErrors(matcher) {
       var validation = checkoutValidationApi();
 
       if (!validation || !validation.dispatch || typeof validation.dispatch.clearValidationError !== 'function') {
-        return;
+        return false;
       }
 
-      var companyToggle = document.getElementById('order-appleklinika-company_purchase');
-      var companyMode = Boolean(companyToggle && companyToggle.checked);
       var cleared = false;
 
       validationErrors().forEach(function (entry) {
-        var inactive = companyMode
-          ? billingPersonalNameValidation(entry)
-          : companyBillingValidation(entry);
-
-        if (inactive) {
+        if (matcher(entry)) {
           validation.dispatch.clearValidationError(entry.key);
           cleared = true;
         }
       });
 
-      if (cleared) {
-        window.setTimeout(function () {
-          var message = document.querySelector('.ak-checkout-step-validation-message');
-          var currentErrors = validationErrors().filter(function (entry) {
-            return validationErrorStep(entry) === activeStep;
-          });
+      return cleared;
+    }
 
-          if (message && currentErrors.length === 0) {
-            message.textContent = '';
+    function checkoutNotices() {
+      var notices = checkoutNoticesApi();
+
+      if (!notices || !notices.selectors || typeof notices.selectors.getNotices !== 'function') {
+        return [];
+      }
+
+      var contexts = ['global', 'wc/checkout'];
+
+      try {
+        var registeredContainers = window.wp.data.select('wc/store/store-notices').getRegisteredContainers() || [];
+        registeredContainers.forEach(function (context) {
+          if (contexts.indexOf(context) === -1) {
+            contexts.push(context);
           }
-        }, 0);
+        });
+      } catch (error) {
+        // The normal checkout contexts above still cover older Blocks versions.
+      }
+
+      var seen = {};
+      var entries = [];
+
+      contexts.forEach(function (context) {
+        (notices.selectors.getNotices(context) || []).forEach(function (notice) {
+          var identifier = context + ':' + notice.id;
+
+          if (!seen[identifier]) {
+            entries.push({ notice: notice, context: context });
+            seen[identifier] = true;
+          }
+        });
+      });
+
+      return entries;
+    }
+
+    function checkoutNoticeIdentity(notice) {
+      return (String(notice.id || '') + ' ' + String(notice.content || '')).toLowerCase();
+    }
+
+    function clearCheckoutNotices(matcher) {
+      var notices = checkoutNoticesApi();
+
+      if (!notices || !notices.dispatch || typeof notices.dispatch.removeNotice !== 'function') {
+        return false;
+      }
+
+      var cleared = false;
+
+      checkoutNotices().forEach(function (entry) {
+        if (matcher(entry.notice)) {
+          notices.dispatch.removeNotice(entry.notice.id, entry.context);
+          cleared = true;
+        }
+      });
+
+      return cleared;
+    }
+
+    function clearResolvedCompanyValidationErrors() {
+      var companyToggle = document.getElementById('order-appleklinika-company_purchase');
+      var companyName = document.getElementById('order-appleklinika-company_name');
+      var taxNumber = document.getElementById('order-appleklinika-tax_number');
+
+      if (!companyToggle || !companyToggle.checked) {
+        return false;
+      }
+
+      var clearedValidation = clearValidationErrors(function (entry) {
+        return (companyName && companyName.validity.valid && companyNameBillingValidation(entry))
+          || (taxNumber && taxNumber.validity.valid && companyTaxNumberValidation(entry));
+      });
+
+      var clearedNotices = clearCheckoutNotices(function (notice) {
+        var identity = checkoutNoticeIdentity(notice);
+        var hasCompanyNameError = companyNameValidationIdentity(identity);
+        var hasTaxNumberError = companyTaxNumberValidationIdentity(identity);
+
+        return (hasCompanyNameError || hasTaxNumberError)
+          && (!hasCompanyNameError || (companyName && companyName.validity.valid))
+          && (!hasTaxNumberError || (taxNumber && taxNumber.validity.valid));
+      });
+
+      return clearedValidation || clearedNotices;
+    }
+
+    function clearCheckoutStepValidationMessage() {
+      var message = document.querySelector('.ak-checkout-step-validation-message');
+      var currentErrors = validationErrors().filter(function (entry) {
+        return validationErrorStep(entry) === activeStep;
+      });
+
+      if (message && currentErrors.length === 0) {
+        message.textContent = '';
+      }
+    }
+
+    function clearInactiveBillingValidationErrors() {
+      var companyToggle = document.getElementById('order-appleklinika-company_purchase');
+      var companyMode = Boolean(companyToggle && companyToggle.checked);
+      var clearedValidation = clearValidationErrors(function (entry) {
+        var inactive = companyMode
+          ? billingPersonalNameValidation(entry)
+          : companyBillingValidation(entry);
+
+        return inactive;
+      });
+
+      var clearedNotices = clearCheckoutNotices(function (notice) {
+        var identity = checkoutNoticeIdentity(notice);
+
+        return companyMode
+          ? billingPersonalNameValidation({ key: '', error: { message: identity } })
+          : companyNameValidationIdentity(identity) || companyTaxNumberValidationIdentity(identity);
+      });
+
+      if (clearedValidation || clearedNotices) {
+        clearCheckoutStepValidationMessage();
       }
     }
 
     document.addEventListener('appleklinika:checkout-company-mode-changed', clearInactiveBillingValidationErrors);
+    document.addEventListener('input', function (event) {
+      if (event.target && (event.target.id === 'order-appleklinika-company_name' || event.target.id === 'order-appleklinika-tax_number')) {
+        if (clearResolvedCompanyValidationErrors()) {
+          clearCheckoutStepValidationMessage();
+        }
+      }
+    });
 
     function validationErrorStep(entry) {
       var identity = (entry.key + ' ' + String(entry.error.message || '')).toLowerCase();
@@ -1404,6 +1545,26 @@
       }
     }
 
+    function firstNativeValidationError(step) {
+      var targets = checkoutStepTargets()[step] || [];
+
+      for (var i = 0; i < targets.length; i += 1) {
+        var fields = targets[i].querySelectorAll('input, select, textarea');
+
+        for (var index = 0; index < fields.length; index += 1) {
+          var field = fields[index];
+
+          if (field.disabled || !field.willValidate || field.getClientRects().length === 0 || !field.validity || field.validity.valid) {
+            continue;
+          }
+
+          return field;
+        }
+      }
+
+      return null;
+    }
+
     function validateCurrentStep(onValid) {
       var validation = checkoutValidationApi();
 
@@ -1413,25 +1574,25 @@
       }
 
       validation.dispatch.showAllValidationErrors();
-      window.setTimeout(function () {
-        clearInactiveBillingValidationErrors();
-        var errors = validationErrors();
-        var currentErrors = errors.filter(function (entry) {
-          return validationErrorStep(entry) === activeStep;
-        });
+      clearInactiveBillingValidationErrors();
+      clearResolvedCompanyValidationErrors();
+      var errors = validationErrors();
+      var currentErrors = errors.filter(function (entry) {
+        return validationErrorStep(entry) === activeStep;
+      });
+      var nativeError = firstNativeValidationError(activeStep);
 
-        if (currentErrors.length) {
-          announceValidationError(activeStep, currentErrors);
-          focusValidationError(activeStep, currentErrors);
-          return;
+      if (currentErrors.length || nativeError) {
+        announceValidationError(activeStep, currentErrors);
+        if (nativeError && typeof nativeError.reportValidity === 'function') {
+          nativeError.reportValidity();
         }
+        focusValidationError(activeStep, currentErrors);
+        return;
+      }
 
-        var message = document.querySelector('.ak-checkout-step-validation-message');
-        if (message) {
-          message.textContent = '';
-        }
-        onValid();
-      }, 0);
+      clearCheckoutStepValidationMessage();
+      onValid();
     }
 
     function requestStep(step) {
