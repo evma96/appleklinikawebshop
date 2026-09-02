@@ -36,6 +36,7 @@ final class CartCheckoutCompanyContractTest
 }
 
 $test = new CartCheckoutCompanyContractTest();
+$frontendScript = file_get_contents(dirname(__DIR__) . '/assets/js/frontend.js');
 $companyOrder = null;
 $personalOrder = null;
 $originalBillingCompany = WC()->customer?->get_billing_company();
@@ -44,6 +45,20 @@ try {
     $test->assert(
         apply_filters('pre_option_woocommerce_checkout_company_field', false) === 'optional',
         'The standard WooCommerce company address field remains available to Checkout Blocks as the canonical guest Store API billing identity signal.'
+    );
+    $test->assert(
+        is_string($frontendScript)
+        && str_contains($frontendScript, "window.wp.data.select('wc/store/cart').getCustomerData()")
+        && str_contains($frontendScript, "window.wp.data.dispatch('wc/store/cart')")
+        && str_contains($frontendScript, 'cartStore.setBillingAddress(nextBillingAddress);')
+        && str_contains($frontendScript, 'cartStore.updateCustomerData({ billing_address: nextBillingAddress }, true, false)')
+        && str_contains($frontendScript, "var value = enabled ? (hasUserInput ? normalizeText(inputValue) : (stateValue || visibleValue)) : '';")
+        && str_contains($frontendScript, 'setCheckoutFieldValue(companyField.input, value);')
+        && str_contains($frontendScript, 'companyField.input.dataset.akBillingCompanyNameSyncBound')
+        && str_contains($frontendScript, 'syncBillingCompanyValue(billingSection, { input: event.currentTarget }, true, event.currentTarget.value);')
+        && str_contains($frontendScript, 'syncBillingCompanyValue(billingSection, { input: event.currentTarget }, true, event.currentTarget.value, true);')
+        && ! str_contains($frontendScript, 'billingSection.dataset.akBillingCompanyNameSyncBound'),
+        'Guest company synchronization reads and updates the authoritative Woo Blocks billing state, restores a remounted visible field from that state, and binds the current remounted company input exactly once instead of treating its replaced parent section as already bound.'
     );
 
     WC()->session->set('appleklinika_address_book_company_identity', [
@@ -129,6 +144,36 @@ try {
     $guestCompanyStoreApiErrors = new WP_Error();
     appleklinika_validate_checkout_address_identity($guestCompanyStoreApiErrors, ['first_name' => '', 'last_name' => ''], 'billing');
     $test->assert($guestCompanyStoreApiErrors->get_error_codes() === [], 'A fresh guest company cart update with the canonical Woo billing company signal keeps inactive personal billing names valid without relying on saved customer or address-book session state.');
+
+    $guestCompanySecondRequest = new WP_REST_Request('POST', '/wc/store/v1/cart/update-customer');
+    $guestCompanySecondRequest->set_param('billing_address', [
+        'first_name' => '',
+        'last_name' => '',
+        'company' => 'Vendég QA Kft.',
+        'address_1' => 'Vendég QA utca 1.',
+        'city' => 'Szeged',
+        'postcode' => '6720',
+        'country' => 'HU',
+    ]);
+    appleklinika_capture_checkout_company_identity(null, [], $guestCompanySecondRequest);
+    $guestCompanySecondErrors = new WP_Error();
+    appleklinika_validate_checkout_address_identity($guestCompanySecondErrors, ['first_name' => '', 'last_name' => ''], 'billing');
+    $test->assert($guestCompanySecondErrors->get_error_codes() === [], 'A second consecutive guest company cart update retains the same canonical billing company signal after the simulated Blocks rerender.');
+
+    $guestCompanyUpdatedRequest = new WP_REST_Request('POST', '/wc/store/v1/cart/update-customer');
+    $guestCompanyUpdatedRequest->set_param('billing_address', [
+        'first_name' => '',
+        'last_name' => '',
+        'company' => 'Vendég Frissített QA Kft.',
+        'address_1' => 'Vendég QA utca 1.',
+        'city' => 'Szeged',
+        'postcode' => '6720',
+        'country' => 'HU',
+    ]);
+    appleklinika_capture_checkout_company_identity(null, [], $guestCompanyUpdatedRequest);
+    $guestCompanyUpdatedErrors = new WP_Error();
+    appleklinika_validate_checkout_address_identity($guestCompanyUpdatedErrors, ['first_name' => '', 'last_name' => ''], 'billing');
+    $test->assert($guestCompanyUpdatedErrors->get_error_codes() === [], 'A later guest company cart update accepts the newest company value rather than restoring a stale first value.');
 
     $guestPersonalStoreApiRequest = new WP_REST_Request('POST', '/wc/store/v1/cart/update-customer');
     $guestPersonalStoreApiRequest->set_param('billing_address', [
