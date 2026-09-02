@@ -5118,6 +5118,10 @@ body.woocommerce-checkout #billing-fields .ak-checkout-billing-standard-company 
   display: none !important;
 }
 
+body.woocommerce-checkout #shipping-fields .ak-checkout-shipping-standard-company {
+  display: none !important;
+}
+
 body.woocommerce-checkout #billing-fields .ak-checkout-company-field {
   margin: 0 !important;
 }

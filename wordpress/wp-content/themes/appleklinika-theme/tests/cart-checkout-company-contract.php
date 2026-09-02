@@ -41,6 +41,11 @@ $personalOrder = null;
 $originalBillingCompany = WC()->customer?->get_billing_company();
 
 try {
+    $test->assert(
+        apply_filters('pre_option_woocommerce_checkout_company_field', false) === 'optional',
+        'The standard WooCommerce company address field remains available to Checkout Blocks as the canonical guest Store API billing identity signal.'
+    );
+
     WC()->session->set('appleklinika_address_book_company_identity', [
         'purchase' => true,
         'name' => 'Egyszeri QA Kft.',
@@ -89,6 +94,75 @@ try {
     $stepThreeRepeatErrors = new WP_Error();
     appleklinika_validate_checkout_address_identity($stepThreeRepeatErrors, ['first_name' => '', 'last_name' => ''], 'billing');
     $test->assert($stepThreeRepeatErrors->get_error_codes() === [], 'A Step 3 → Step 2 → Step 3 revalidation does not recreate inactive personal billing-name errors.');
+
+    WC()->session->set('appleklinika_address_book_company_identity', null);
+    WC()->customer?->set_billing_company('');
+    $guestMissingCompanySignalRequest = new WP_REST_Request('POST', '/wc/store/v1/cart/update-customer');
+    $guestMissingCompanySignalRequest->set_param('billing_address', [
+        'first_name' => '',
+        'last_name' => '',
+        'address_1' => 'Vendég QA utca 1.',
+        'city' => 'Szeged',
+        'postcode' => '6720',
+        'country' => 'HU',
+    ]);
+    appleklinika_capture_checkout_company_identity(null, [], $guestMissingCompanySignalRequest);
+    $guestMissingCompanySignalErrors = new WP_Error();
+    appleklinika_validate_checkout_address_identity($guestMissingCompanySignalErrors, ['first_name' => '', 'last_name' => ''], 'billing');
+    $test->assert(
+        in_array('appleklinika_billing_first_name_required', $guestMissingCompanySignalErrors->get_error_codes(), true)
+        && in_array('appleklinika_billing_last_name_required', $guestMissingCompanySignalErrors->get_error_codes(), true),
+        'The historical guest request shape without a standard billing company signal still demonstrates the exact personal-name failure that Blocks produced while the field was hidden.'
+    );
+
+    $guestCompanyStoreApiRequest = new WP_REST_Request('POST', '/wc/store/v1/cart/update-customer');
+    $guestCompanyStoreApiRequest->set_param('billing_address', [
+        'first_name' => '',
+        'last_name' => '',
+        'company' => 'Vendég QA Kft.',
+        'address_1' => 'Vendég QA utca 1.',
+        'city' => 'Szeged',
+        'postcode' => '6720',
+        'country' => 'HU',
+    ]);
+    appleklinika_capture_checkout_company_identity(null, [], $guestCompanyStoreApiRequest);
+    $guestCompanyStoreApiErrors = new WP_Error();
+    appleklinika_validate_checkout_address_identity($guestCompanyStoreApiErrors, ['first_name' => '', 'last_name' => ''], 'billing');
+    $test->assert($guestCompanyStoreApiErrors->get_error_codes() === [], 'A fresh guest company cart update with the canonical Woo billing company signal keeps inactive personal billing names valid without relying on saved customer or address-book session state.');
+
+    $guestPersonalStoreApiRequest = new WP_REST_Request('POST', '/wc/store/v1/cart/update-customer');
+    $guestPersonalStoreApiRequest->set_param('billing_address', [
+        'first_name' => '',
+        'last_name' => '',
+        'company' => '',
+        'address_1' => 'Vendég QA utca 1.',
+        'city' => 'Szeged',
+        'postcode' => '6720',
+        'country' => 'HU',
+    ]);
+    appleklinika_capture_checkout_company_identity(null, [], $guestPersonalStoreApiRequest);
+    $guestPersonalStoreApiErrors = new WP_Error();
+    appleklinika_validate_checkout_address_identity($guestPersonalStoreApiErrors, ['first_name' => '', 'last_name' => ''], 'billing');
+    $test->assert(
+        in_array('appleklinika_billing_first_name_required', $guestPersonalStoreApiErrors->get_error_codes(), true)
+        && in_array('appleklinika_billing_last_name_required', $guestPersonalStoreApiErrors->get_error_codes(), true),
+        'The same guest switching from company to personal billing must again supply first and last name.'
+    );
+
+    $guestCompanyAgainStoreApiRequest = new WP_REST_Request('POST', '/wc/store/v1/cart/update-customer');
+    $guestCompanyAgainStoreApiRequest->set_param('billing_address', [
+        'first_name' => '',
+        'last_name' => '',
+        'company' => 'Vendég QA Kft.',
+        'address_1' => 'Vendég QA utca 1.',
+        'city' => 'Szeged',
+        'postcode' => '6720',
+        'country' => 'HU',
+    ]);
+    appleklinika_capture_checkout_company_identity(null, [], $guestCompanyAgainStoreApiRequest);
+    $guestCompanyAgainStoreApiErrors = new WP_Error();
+    appleklinika_validate_checkout_address_identity($guestCompanyAgainStoreApiErrors, ['first_name' => '', 'last_name' => ''], 'billing');
+    $test->assert($guestCompanyAgainStoreApiErrors->get_error_codes() === [], 'Switching the same guest back to company billing restores the canonical billing-company signal and clears personal-name validation.');
 
     WC()->session->set('appleklinika_address_book_company_identity', null);
     WC()->customer?->set_billing_company('Mentett QA Kft.');

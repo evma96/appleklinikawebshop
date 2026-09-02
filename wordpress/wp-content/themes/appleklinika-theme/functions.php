@@ -98,6 +98,7 @@ add_action('woocommerce_order_details_after_customer_details', 'appleklinika_ren
 add_action('woocommerce_email_customer_details', 'appleklinika_render_order_tax_number_in_email', 20, 4);
 add_filter('woocommerce_get_country_locale_default', 'appleklinika_checkout_default_locale_overrides');
 add_filter('woocommerce_get_country_locale', 'appleklinika_checkout_country_locale_overrides');
+add_filter('pre_option_woocommerce_checkout_company_field', 'appleklinika_checkout_company_field_visibility');
 add_filter('woocommerce_countries_shipping_countries', 'appleklinika_checkout_supported_shipping_countries');
 add_filter('woocommerce_get_default_value_for_appleklinika/company_purchase', 'appleklinika_company_checkout_default_value', 10, 3);
 add_filter('woocommerce_get_default_value_for_appleklinika/company_name', 'appleklinika_company_checkout_default_value', 10, 3);
@@ -4587,6 +4588,23 @@ function appleklinika_checkout_country_locale_overrides(array $locale): array
     );
 
     return $locale;
+}
+
+/**
+ * The checkout UI keeps WooCommerce's standard company address field as a
+ * hidden synchronization target for the visible Apple Klinika company fields.
+ * WooCommerce Blocks removes that address field completely when its global
+ * visibility setting is "hidden", leaving guest Store API address updates
+ * without the canonical billing company signal.
+ *
+ * Keep it optional at runtime: the theme owns its visible presentation and
+ * the existing company/tax validation remains authoritative.
+ *
+ * @param mixed $preOption
+ */
+function appleklinika_checkout_company_field_visibility($preOption): string
+{
+    return 'optional';
 }
 
 /**
