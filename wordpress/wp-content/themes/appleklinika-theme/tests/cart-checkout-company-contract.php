@@ -38,6 +38,7 @@ final class CartCheckoutCompanyContractTest
 $test = new CartCheckoutCompanyContractTest();
 $companyOrder = null;
 $personalOrder = null;
+$originalBillingCompany = WC()->customer?->get_billing_company();
 
 try {
     WC()->session->set('appleklinika_address_book_company_identity', [
@@ -67,6 +68,36 @@ try {
     appleklinika_validate_checkout_address_identity($validCompanyErrors, ['first_name' => 'Átvevő', 'last_name' => 'Minta'], 'shipping');
     $test->assert($validCompanyErrors->get_error_codes() === [], 'A current one-off company identity with empty billing personal names and valid saved or one-off shipping recipient fields passes the server validation contract.');
 
+    $stepThreeRevalidationRequest = new WP_REST_Request('POST', '/wc/store/v1/cart/update-customer');
+    $stepThreeRevalidationRequest->set_param('billing_address', [
+        'company' => 'Egyszeri QA Kft.',
+        'first_name' => '',
+        'last_name' => '',
+    ]);
+    appleklinika_capture_checkout_company_identity(null, [], $stepThreeRevalidationRequest);
+    $stepThreeCompanyErrors = new WP_Error();
+    appleklinika_validate_checkout_address_identity($stepThreeCompanyErrors, ['first_name' => '', 'last_name' => ''], 'billing');
+    $test->assert($stepThreeCompanyErrors->get_error_codes() === [], 'A Step 3 cart customer revalidation keeps empty inactive personal billing names valid when the current billing address carries the active company identity.');
+
+    $stepThreeRepeatRequest = new WP_REST_Request('POST', '/wc/store/v1/cart/update-customer');
+    $stepThreeRepeatRequest->set_param('billing_address', [
+        'company' => 'Egyszeri QA Kft.',
+        'first_name' => '',
+        'last_name' => '',
+    ]);
+    appleklinika_capture_checkout_company_identity(null, [], $stepThreeRepeatRequest);
+    $stepThreeRepeatErrors = new WP_Error();
+    appleklinika_validate_checkout_address_identity($stepThreeRepeatErrors, ['first_name' => '', 'last_name' => ''], 'billing');
+    $test->assert($stepThreeRepeatErrors->get_error_codes() === [], 'A Step 3 → Step 2 → Step 3 revalidation does not recreate inactive personal billing-name errors.');
+
+    WC()->session->set('appleklinika_address_book_company_identity', null);
+    WC()->customer?->set_billing_company('Mentett QA Kft.');
+    $savedCompanyStepThreeRequest = new WP_REST_Request('POST', '/wc/store/v1/cart/update-customer');
+    appleklinika_capture_checkout_company_identity(null, [], $savedCompanyStepThreeRequest);
+    $savedCompanyStepThreeErrors = new WP_Error();
+    appleklinika_validate_checkout_address_identity($savedCompanyStepThreeErrors, ['first_name' => '', 'last_name' => ''], 'billing');
+    $test->assert($savedCompanyStepThreeErrors->get_error_codes() === [], 'A selected saved company billing address keeps inactive personal names out of the Step 3 cart customer revalidation even when the update sends no order-level fields.');
+
     $missingCompanyErrors = new WP_Error();
     appleklinika_validate_company_checkout_fields($missingCompanyErrors, [
         'appleklinika/company_purchase' => true,
@@ -83,7 +114,13 @@ try {
     ], 'other');
     $test->assert(in_array('appleklinika_tax_number_invalid', $invalidTaxErrors->get_error_codes(), true), 'A company checkout with an invalid Hungarian tax number remains rejected server-side.');
 
-    $GLOBALS['appleklinika_checkout_company_identity'] = false;
+    $personalStepThreeRequest = new WP_REST_Request('POST', '/wc/store/v1/cart/update-customer');
+    $personalStepThreeRequest->set_param('billing_address', [
+        'company' => '',
+        'first_name' => '',
+        'last_name' => '',
+    ]);
+    appleklinika_capture_checkout_company_identity(null, [], $personalStepThreeRequest);
     $personalIdentityErrors = new WP_Error();
     appleklinika_validate_checkout_address_identity($personalIdentityErrors, ['first_name' => '', 'last_name' => ''], 'billing');
     $test->assert(in_array('appleklinika_billing_first_name_required', $personalIdentityErrors->get_error_codes(), true) && in_array('appleklinika_billing_last_name_required', $personalIdentityErrors->get_error_codes(), true), 'A personal one-off billing address without its active personal name fields remains rejected server-side.');
@@ -117,6 +154,10 @@ try {
     $test->assert($storedPersonalOrder instanceof WC_Order && $storedPersonalOrder->get_billing_company() === '', 'Personal checkout clears a stale standard billing_company value.');
     $test->assert($storedPersonalOrder instanceof WC_Order && $storedPersonalOrder->get_meta('appleklinika_company_purchase', true) === '', 'Personal checkout removes company-only order metadata.');
 } finally {
+    if (WC()->customer !== null && $originalBillingCompany !== null) {
+        WC()->customer->set_billing_company($originalBillingCompany);
+    }
+
     if ($companyOrder instanceof WC_Order) {
         $companyOrder->delete(true);
     }
