@@ -354,18 +354,76 @@
       field.input.setAttribute('aria-required', hidden ? 'false' : 'true');
     }
 
-    function syncBillingCompanyValue(billingSection, companyField, enabled) {
+    function wooBillingAddress() {
+      if (!window.wp || !window.wp.data) {
+        return null;
+      }
+
+      try {
+        var customer = window.wp.data.select('wc/store/cart').getCustomerData();
+
+        return customer && customer.billingAddress ? customer.billingAddress : null;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function setWooBillingCompany(value, persist) {
+      if (!window.wp || !window.wp.data) {
+        return false;
+      }
+
+      var billingAddress = wooBillingAddress();
+      var company = normalizeText(value);
+      var nextBillingAddress;
+      var changed;
+
+      if (!billingAddress) {
+        return false;
+      }
+
+      try {
+        var cartStore = window.wp.data.dispatch('wc/store/cart');
+
+        if (!cartStore || typeof cartStore.setBillingAddress !== 'function') {
+          return false;
+        }
+
+        nextBillingAddress = Object.assign({}, billingAddress, { company: company });
+        changed = normalizeText(billingAddress.company) !== company;
+
+        if (changed) {
+          cartStore.setBillingAddress(nextBillingAddress);
+        }
+
+        if (persist && typeof cartStore.updateCustomerData === 'function') {
+          cartStore.updateCustomerData({ billing_address: nextBillingAddress }, true, false).catch(function () {});
+        }
+
+        return changed;
+      } catch (error) {
+        return false;
+      }
+    }
+
+    function syncBillingCompanyValue(billingSection, companyField, enabled, inputValue, persist) {
       if (!billingSection) {
         return;
       }
 
       var billingForm = billingSection.querySelector('.wc-block-components-address-form') || billingSection;
       var standardCompany = checkoutAddressInputBySuffix(billingForm, 'company');
-      var value = enabled && companyField && companyField.input ? normalizeText(companyField.input.value) : '';
+      var visibleValue = enabled && companyField && companyField.input ? normalizeText(companyField.input.value) : '';
+      var billingAddress = wooBillingAddress();
+      var stateValue = enabled && billingAddress ? normalizeText(billingAddress.company) : '';
+      var hasUserInput = typeof inputValue === 'string';
+      var value = enabled ? (hasUserInput ? normalizeText(inputValue) : (stateValue || visibleValue)) : '';
 
-      if (standardCompany && standardCompany.value !== value) {
-        setCheckoutFieldValue(standardCompany, value);
+      if (enabled && visibleValue !== value && value !== '' && companyField && companyField.input) {
+        setCheckoutFieldValue(companyField.input, value);
       }
+
+      setWooBillingCompany(value, persist);
 
       var companyWrapper = checkoutAddressFieldWrapper(standardCompany);
       if (companyWrapper) {
@@ -387,15 +445,21 @@
     }
 
     function bindBillingCompanyValueSync(billingSection, companyField) {
-      if (!billingSection || !companyField || !companyField.input || billingSection.dataset.akBillingCompanyNameSyncBound === '1') {
+      if (!billingSection || !companyField || !companyField.input || companyField.input.dataset.akBillingCompanyNameSyncBound === '1') {
         return;
       }
 
-      billingSection.dataset.akBillingCompanyNameSyncBound = '1';
+      companyField.input.dataset.akBillingCompanyNameSyncBound = '1';
 
-      companyField.input.addEventListener('input', function () {
+      companyField.input.addEventListener('input', function (event) {
         if (billingSection.classList.contains('ak-checkout-company-mode')) {
-          syncBillingCompanyValue(billingSection, companyField, true);
+          syncBillingCompanyValue(billingSection, { input: event.currentTarget }, true, event.currentTarget.value);
+        }
+      });
+
+      companyField.input.addEventListener('change', function (event) {
+        if (billingSection.classList.contains('ak-checkout-company-mode')) {
+          syncBillingCompanyValue(billingSection, { input: event.currentTarget }, true, event.currentTarget.value, true);
         }
       });
     }
