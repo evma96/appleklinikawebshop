@@ -374,6 +374,18 @@
       }
     }
 
+    function hideShippingCompanyValue() {
+      var shippingSection = document.querySelector('#shipping-fields');
+      var shippingForm = shippingSection ? (shippingSection.querySelector('.wc-block-components-address-form') || shippingSection) : null;
+      var standardCompany = checkoutAddressInputBySuffix(shippingForm, 'company');
+      var companyWrapper = checkoutAddressFieldWrapper(standardCompany);
+
+      if (companyWrapper) {
+        companyWrapper.classList.add('ak-checkout-shipping-standard-company');
+        companyWrapper.setAttribute('aria-hidden', 'true');
+      }
+    }
+
     function bindBillingCompanyValueSync(billingSection, companyField) {
       if (!billingSection || !companyField || !companyField.input || billingSection.dataset.akBillingCompanyNameSyncBound === '1') {
         return;
@@ -652,6 +664,8 @@
       prepareTaxNumberInput(taxField.input);
 
       var companySlot = moveCompanyFieldsIntoBillingSection(purchaseField, companyField, taxField);
+
+      hideShippingCompanyValue();
 
       if (!companySlot) {
         setCompanyPurchaseState(purchaseField, companyField, taxField, false);
