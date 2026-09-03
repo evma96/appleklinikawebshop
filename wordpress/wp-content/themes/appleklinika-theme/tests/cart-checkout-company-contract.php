@@ -49,19 +49,27 @@ try {
     $test->assert(
         is_string($frontendScript)
         && str_contains($frontendScript, "window.wp.data.select('wc/store/cart').getCustomerData()")
+        && str_contains($frontendScript, "window.wp.data.select('wc/store/checkout')")
+        && str_contains($frontendScript, 'getAdditionalFields')
+        && str_contains($frontendScript, 'function checkoutCompanyPurchaseEnabled(purchaseField, userChanged)')
         && str_contains($frontendScript, "window.wp.data.dispatch('wc/store/cart')")
         && str_contains($frontendScript, 'cartStore.setBillingAddress(nextBillingAddress);')
         && ! str_contains($frontendScript, 'cartStore.updateCustomerData({ billing_address: nextBillingAddress }, true, false)')
         && str_contains($frontendScript, "var value = enabled ? (hasUserInput ? normalizeText(inputValue) : (stateValue || visibleValue)) : '';")
         && str_contains($frontendScript, 'setCheckoutFieldValue(companyField.input, value);')
         && str_contains($frontendScript, 'companyField.input.dataset.akBillingCompanyNameSyncBound')
-        && str_contains($frontendScript, 'syncBillingCompanyValue(billingSection, { input: event.currentTarget }, true, event.currentTarget.value);')
+        && str_contains($frontendScript, 'syncBillingCompanyValue(billingSection, { input: event.currentTarget }, true, event.currentTarget.value, true);')
+        && str_contains($frontendScript, "if (persistCompany) {\n        setWooBillingCompany(value);\n      }")
         && ! str_contains($frontendScript, 'function setWooBillingCompany(value, persist)')
         && str_contains($frontendScript, "document.addEventListener('wc-blocks_render_blocks_frontend', syncCompanyCheckoutFields);")
-        && str_contains($frontendScript, 'window.wp.data.subscribe(syncCompanyCheckoutFields);')
+        && ! str_contains($frontendScript, 'window.wp.data.subscribe(syncCompanyCheckoutFields);')
+        && ! str_contains($frontendScript, 'function moveCompanyFieldsIntoBillingSection')
+        && ! str_contains($frontendScript, 'function insertElementAfter')
+        && ! str_contains($frontendScript, 'ak-checkout-address-details-slot')
         && ! str_contains($frontendScript, "var observer = new MutationObserver(function () {\n      syncCompanyCheckoutFields();")
-        && ! str_contains($frontendScript, 'billingSection.dataset.akBillingCompanyNameSyncBound'),
-        'Guest company synchronization updates only the authoritative Woo Blocks billing state, lets Blocks persist the complete current customer snapshot, follows official Blocks render/store changes without a DOM observer, restores a remounted visible field from that state, and binds the current remounted company input exactly once instead of treating its replaced parent section as already bound.'
+        && ! str_contains($frontendScript, 'billingSection.dataset.akBillingCompanyNameSyncBound')
+        && ! str_contains($frontendScript, 'purchaseField.input.checked = enabled;'),
+        'Guest checkout keeps Woo-owned company and address controls in their React tree, reads the canonical checkout additional-field state after a Blocks render, and writes the billing-company projection only from an actual company-field user edit.'
     );
 
     $guestContactState = [
