@@ -257,11 +257,6 @@
     }
 
     function setCompanyPurchaseState(purchaseField, companyField, taxField, enabled) {
-      if (purchaseField.input.checked !== enabled) {
-        purchaseField.input.checked = enabled;
-        dispatchCheckoutFieldUpdate(purchaseField.input);
-      }
-
       syncRequiredState(companyField, enabled);
       syncRequiredState(taxField, enabled);
 
@@ -368,6 +363,44 @@
       }
     }
 
+    function wooCheckoutAdditionalFields() {
+      if (!window.wp || !window.wp.data) {
+        return null;
+      }
+
+      try {
+        var checkout = window.wp.data.select('wc/store/checkout');
+
+        return checkout && typeof checkout.getAdditionalFields === 'function'
+          ? checkout.getAdditionalFields()
+          : null;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function checkoutCompanyPurchaseEnabled(purchaseField, userChanged) {
+      var additionalFields = wooCheckoutAdditionalFields();
+      var value;
+
+      if (!userChanged
+        && additionalFields
+        && Object.prototype.hasOwnProperty.call(additionalFields, 'appleklinika/company_purchase')) {
+        value = additionalFields['appleklinika/company_purchase'];
+
+        if (value && typeof value === 'object' && Object.prototype.hasOwnProperty.call(value, 'value')) {
+          value = value.value;
+        }
+
+        return value === true
+          || value === 1
+          || String(value).toLowerCase() === '1'
+          || String(value).toLowerCase() === 'true';
+      }
+
+      return Boolean(purchaseField && purchaseField.input.checked);
+    }
+
     function setWooBillingCompany(value) {
       if (!window.wp || !window.wp.data) {
         return false;
@@ -402,7 +435,7 @@
       }
     }
 
-    function syncBillingCompanyValue(billingSection, companyField, enabled, inputValue) {
+    function syncBillingCompanyValue(billingSection, companyField, enabled, inputValue, persistCompany) {
       if (!billingSection) {
         return;
       }
@@ -419,7 +452,9 @@
         setCheckoutFieldValue(companyField.input, value);
       }
 
-      setWooBillingCompany(value);
+      if (persistCompany) {
+        setWooBillingCompany(value);
+      }
 
       var companyWrapper = checkoutAddressFieldWrapper(standardCompany);
       if (companyWrapper) {
@@ -449,13 +484,13 @@
 
       companyField.input.addEventListener('input', function (event) {
         if (billingSection.classList.contains('ak-checkout-company-mode')) {
-          syncBillingCompanyValue(billingSection, { input: event.currentTarget }, true, event.currentTarget.value);
+          syncBillingCompanyValue(billingSection, { input: event.currentTarget }, true, event.currentTarget.value, true);
         }
       });
 
       companyField.input.addEventListener('change', function (event) {
         if (billingSection.classList.contains('ak-checkout-company-mode')) {
-          syncBillingCompanyValue(billingSection, { input: event.currentTarget }, true, event.currentTarget.value);
+          syncBillingCompanyValue(billingSection, { input: event.currentTarget }, true, event.currentTarget.value, true);
         }
       });
     }
@@ -603,105 +638,27 @@
       syncCheckoutAddressGridForSection(billingSection);
     }
 
-    function moveCompanyFieldsIntoBillingSection(purchaseField, companyField, taxField) {
+    function configureCompanyCheckoutFields(purchaseField, companyField, taxField, enabled, persistCompany) {
       var billingSection = document.querySelector('#billing-fields');
       var sourceStep = purchaseField.wrapper ? purchaseField.wrapper.closest('.wc-block-components-checkout-step') : document.querySelector('#order-fields');
 
-      if (sourceStep && sourceStep.id === 'order-fields') {
-        sourceStep.classList.add('ak-checkout-company-source-hidden');
-      }
-
       if (!billingSection) {
-        if (purchaseField.wrapper) {
-          purchaseField.wrapper.classList.add('is-hidden');
-          purchaseField.wrapper.setAttribute('aria-hidden', 'true');
-        }
-
-        return null;
+        return false;
       }
 
-      var billingForm = billingSection.querySelector('.wc-block-components-address-form') || billingSection;
-      var firstNameField = checkoutAddressInputField(billingForm, 'first_name');
-      var lastNameField = checkoutAddressInputField(billingForm, 'last_name');
-      var slot = billingSection.querySelector('.ak-checkout-company-billing-slot');
-
-      if (!slot) {
-        slot = document.createElement('div');
-        slot.className = 'ak-checkout-company-billing-slot';
-
-        var nameAnchor = billingForm.querySelector('.wc-block-components-address-form__last_name, .wc-block-components-address-form__first_name');
-
-        if (nameAnchor && nameAnchor.parentNode === billingForm) {
-          billingForm.insertBefore(slot, nameAnchor);
-        } else {
-          billingForm.appendChild(slot);
-        }
+      if (sourceStep) {
+        sourceStep.classList.add('ak-checkout-company-source');
       }
 
-      var identitySlot = slot.querySelector('.ak-checkout-billing-identity-slot');
-
-      if (!identitySlot) {
-        identitySlot = document.createElement('div');
-        identitySlot.className = 'ak-checkout-billing-identity-slot';
-        slot.appendChild(identitySlot);
-      }
-
-      var personalRow = identitySlot.querySelector('.ak-checkout-billing-personal-row');
-
-      if (!personalRow) {
-        personalRow = document.createElement('div');
-        personalRow.className = 'ak-checkout-billing-personal-row';
-        identitySlot.appendChild(personalRow);
-      }
-
-      var companyRow = identitySlot.querySelector('.ak-checkout-billing-company-row');
-
-      if (!companyRow) {
-        companyRow = document.createElement('div');
-        companyRow.className = 'ak-checkout-billing-company-row';
-        identitySlot.appendChild(companyRow);
-      }
-
-      if (purchaseField.wrapper && purchaseField.wrapper.parentNode !== slot) {
-        slot.insertBefore(purchaseField.wrapper, identitySlot);
-      } else if (purchaseField.wrapper && purchaseField.wrapper.nextElementSibling !== identitySlot) {
-        slot.insertBefore(purchaseField.wrapper, identitySlot);
-      }
-
-      [firstNameField, lastNameField].forEach(function (field) {
-        if (field && field.wrapper && field.wrapper.parentNode !== personalRow) {
-          personalRow.appendChild(field.wrapper);
-        }
-      });
-
-      [companyField.wrapper, taxField.wrapper].forEach(function (wrapper) {
-        if (wrapper && wrapper.parentNode !== companyRow) {
-          companyRow.appendChild(wrapper);
-        }
-      });
-
-      if (purchaseField.wrapper) {
-        purchaseField.wrapper.classList.remove('is-hidden');
-        purchaseField.wrapper.setAttribute('aria-hidden', 'false');
-      }
-
-      var enabled = Boolean(purchaseField.input.checked);
-
-      slot.classList.toggle('is-company-enabled', enabled);
-      identitySlot.classList.toggle('is-company-enabled', enabled);
-      personalRow.classList.toggle('is-hidden', enabled);
-      personalRow.setAttribute('aria-hidden', enabled ? 'true' : 'false');
-      companyRow.classList.toggle('is-hidden', !enabled);
-      companyRow.setAttribute('aria-hidden', enabled ? 'false' : 'true');
       billingSection.classList.toggle('ak-checkout-company-mode', enabled);
       bindBillingCompanyValueSync(billingSection, companyField);
-      syncBillingCompanyValue(billingSection, companyField, enabled);
+      syncBillingCompanyValue(billingSection, companyField, enabled, undefined, persistCompany);
       syncBillingFormLayout(billingSection, companyField);
 
-      return slot;
+      return true;
     }
 
-    function syncCompanyCheckoutFields() {
+    function syncCompanyCheckoutFields(userChanged) {
       syncCompanyCheckoutHeading();
       syncCheckoutProfileSaveField();
       syncCheckoutAddressDetails();
@@ -714,7 +671,7 @@
         return false;
       }
 
-      var enabled = Boolean(purchaseField.input.checked);
+      var enabled = checkoutCompanyPurchaseEnabled(purchaseField, userChanged);
       var hiddenChanged = previousEnabled !== enabled;
 
       if (purchaseField.wrapper) {
@@ -723,25 +680,27 @@
 
       prepareTaxNumberInput(taxField.input);
 
-      var companySlot = moveCompanyFieldsIntoBillingSection(purchaseField, companyField, taxField);
+      // Switching into company mode changes the registered Woo checkout field
+      // itself. Do not also write a transient empty company value into the
+      // cart while the customer is still entering contact details. Switching
+      // back to personal billing is the only mode change that clears the
+      // canonical Woo billing-company value.
+      var shouldClearBillingCompany = Boolean(userChanged) && !enabled;
+      var companyFieldsConfigured = configureCompanyCheckoutFields(purchaseField, companyField, taxField, enabled, shouldClearBillingCompany);
 
       hideShippingCompanyValue();
 
-      if (!companySlot) {
-        setCompanyPurchaseState(purchaseField, companyField, taxField, false);
-        clearCompanyCheckoutValues(companyField, taxField);
-        previousEnabled = false;
+      if (!companyFieldsConfigured) {
         return true;
       }
 
-      enabled = Boolean(purchaseField.input.checked);
       setCompanyPurchaseState(purchaseField, companyField, taxField, enabled);
 
       if (enabled && hiddenChanged) {
         clearBillingPersonalIdentity(document.querySelector('#billing-fields'));
       }
 
-      if (!enabled && hiddenChanged) {
+      if (!enabled && hiddenChanged && userChanged) {
         clearCompanyCheckoutValues(companyField, taxField);
       }
 
@@ -755,7 +714,7 @@
       var purchaseField = checkoutFieldByLabel('Cégként vásárolok');
 
       if (purchaseField && event.target === purchaseField.input) {
-        syncCompanyCheckoutFields();
+        syncCompanyCheckoutFields(true);
       }
     });
 
@@ -764,9 +723,6 @@
 
     document.addEventListener('wc-blocks_render_blocks_frontend', syncCompanyCheckoutFields);
 
-    if (window.wp && window.wp.data && typeof window.wp.data.subscribe === 'function') {
-      window.wp.data.subscribe(syncCompanyCheckoutFields);
-    }
   }
 
   function initCheckoutSummary() {
