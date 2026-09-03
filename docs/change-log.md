@@ -221,6 +221,7 @@
 - Compact-reset the WooCommerce Blocks checkout order summary product rows so they show a 56px image, product title, and final price only, with hidden long metadata/savings badges in the checkout sidebar.
 - Split the checkout sidebar compact overrides into a checkout-only stylesheet and restored the main storefront CSS asset version so the cart page is not forced onto newly refreshed CSS by a checkout-only change.
 - Added a WooCommerce Blocks-compatible `Cégként vásárolok` checkout option with conditional company name and tax number fields, order meta persistence, logged-in user meta reuse, and checkout-only form polish.
+- Delayed the standard Woo billing-company projection until the React-owned company input commits its change, preventing synchronous per-keystroke cart updates from clearing the visible company field while preserving the latest company and contact state through repeated Blocks rebuilds.
 - Added required-state handling, frontend length/pattern hints, sanitization, and server-side Hungarian tax number validation for the WooCommerce Blocks company purchase checkout fields.
 - Removed unsupported lowercase `maxlength` and `placeholder` attributes from the WooCommerce Blocks tax number field registration so checkout no longer triggers a field-registration notice.
 - Added a checkout-only frontend mask for the company tax number field so numeric input is formatted as `12345678-1-23` without adding unsupported WooCommerce Blocks registration attributes.
