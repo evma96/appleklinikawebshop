@@ -291,30 +291,12 @@
       });
     }
 
-    function insertElementAfter(element, reference) {
-      if (!element || !reference || !reference.parentNode) {
-        return;
-      }
-
-      reference.parentNode.insertBefore(element, reference.nextSibling);
-    }
-
     function checkoutAddressFieldWrapper(input) {
       if (!input) {
         return null;
       }
 
       return input.closest('.wc-block-components-text-input, .wc-block-components-form-field, .components-base-control');
-    }
-
-    function checkoutAddressTwoWrapper(input, form) {
-      var wrapper = checkoutAddressFieldWrapper(input);
-
-      if (!wrapper || wrapper === form || wrapper.classList.contains('wc-block-components-address-form')) {
-        return null;
-      }
-
-      return wrapper;
     }
 
     function checkoutAddressInputBySuffix(container, suffix) {
@@ -551,41 +533,21 @@
       var form = section.querySelector('.wc-block-components-address-form') || section;
       form.classList.remove('ak-checkout-address-2-hidden');
       form.removeAttribute('aria-hidden');
-
-      var addressInput = form.querySelector('input[id$="-address_1"], input[name$="address_1"]');
-      var addressWrapper = checkoutAddressFieldWrapper(addressInput);
       var detailFields = addressDetailLabels.map(function (label) {
         return checkoutFieldByLabelInContainer(form, label);
       }).filter(Boolean);
 
-      if (!addressWrapper || detailFields.length === 0) {
+      if (detailFields.length === 0) {
         return false;
       }
 
-      var slot = form.querySelector('.ak-checkout-address-details-slot');
-
-      if (!slot) {
-        slot = document.createElement('div');
-        slot.className = 'ak-checkout-address-details-slot';
-        insertElementAfter(slot, addressWrapper);
-      } else if (slot.previousElementSibling !== addressWrapper) {
-        insertElementAfter(slot, addressWrapper);
-      }
-
       detailFields.forEach(function (field) {
-        if (!field.wrapper) {
-          return;
-        }
-
-        field.wrapper.classList.add('ak-checkout-address-detail-field');
-
-        if (field.wrapper.parentNode !== slot) {
-          slot.appendChild(field.wrapper);
+        if (field.wrapper) {
+          field.wrapper.classList.add('ak-checkout-address-detail-field');
         }
       });
 
-      var addressTwoInput = form.querySelector('input[id$="-address_2"], input[name$="address_2"]');
-      var addressTwoWrapper = checkoutAddressTwoWrapper(addressTwoInput, form);
+      var addressTwoWrapper = checkoutAddressFieldWrapper(form.querySelector('input[id$="-address_2"], input[name$="address_2"]'));
 
       if (addressTwoWrapper) {
         addressTwoWrapper.classList.add('ak-checkout-address-2-hidden');
