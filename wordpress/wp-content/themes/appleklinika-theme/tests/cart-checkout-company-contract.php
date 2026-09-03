@@ -64,10 +64,12 @@ try {
         && str_contains($frontendScript, "document.addEventListener('wc-blocks_render_blocks_frontend', syncCompanyCheckoutFields);")
         && ! str_contains($frontendScript, 'window.wp.data.subscribe(syncCompanyCheckoutFields);')
         && ! str_contains($frontendScript, 'function moveCompanyFieldsIntoBillingSection')
+        && ! str_contains($frontendScript, 'function insertElementAfter')
+        && ! str_contains($frontendScript, 'ak-checkout-address-details-slot')
         && ! str_contains($frontendScript, "var observer = new MutationObserver(function () {\n      syncCompanyCheckoutFields();")
         && ! str_contains($frontendScript, 'billingSection.dataset.akBillingCompanyNameSyncBound')
         && ! str_contains($frontendScript, 'purchaseField.input.checked = enabled;'),
-        'Guest checkout keeps Woo-owned controls in their React tree, reads the canonical checkout additional-field state after a Blocks render, and writes the billing-company projection only from an actual company-field user edit.'
+        'Guest checkout keeps Woo-owned company and address controls in their React tree, reads the canonical checkout additional-field state after a Blocks render, and writes the billing-company projection only from an actual company-field user edit.'
     );
 
     $guestContactState = [
