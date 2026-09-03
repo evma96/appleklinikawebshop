@@ -4674,12 +4674,15 @@ function appleklinika_validate_checkout_address_identity(WP_Error $errors, array
     $firstName = trim(sanitize_text_field((string) ($fields['first_name'] ?? '')));
     $lastName = trim(sanitize_text_field((string) ($fields['last_name'] ?? '')));
     $requiresRecipientName = $group === 'shipping' || ! appleklinika_checkout_company_identity_from_request();
+    $isPartialUpdate = ! empty($GLOBALS['appleklinika_checkout_partial_address_update']);
 
     if (! $requiresRecipientName) {
         return;
     }
 
-    if ($firstName === '') {
+    // PUT/PATCH updates may contain only additional_fields. Omitted address
+    // keys mean unchanged, while explicit blanks and final POST remain invalid.
+    if ($firstName === '' && (! $isPartialUpdate || array_key_exists('first_name', $fields))) {
         $errors->add(
             'appleklinika_' . $group . '_first_name_required',
             $group === 'shipping' ? 'A szállítási címzetthez keresztnév megadása kötelező.' : 'Keresztnév megadása kötelező személyes számlázáshoz.',
@@ -4687,7 +4690,7 @@ function appleklinika_validate_checkout_address_identity(WP_Error $errors, array
         );
     }
 
-    if ($lastName === '') {
+    if ($lastName === '' && (! $isPartialUpdate || array_key_exists('last_name', $fields))) {
         $errors->add(
             'appleklinika_' . $group . '_last_name_required',
             $group === 'shipping' ? 'A szállítási címzetthez vezetéknév megadása kötelező.' : 'Vezetéknév megadása kötelező személyes számlázáshoz.',
@@ -4709,6 +4712,7 @@ function appleklinika_validate_checkout_address_identity(WP_Error $errors, array
 function appleklinika_capture_checkout_company_identity($response, array $handler, WP_REST_Request $request)
 {
     unset($GLOBALS['appleklinika_checkout_company_identity']);
+    unset($GLOBALS['appleklinika_checkout_partial_address_update']);
 
     $route = $request->get_route();
     $isCheckoutAddressUpdate = str_contains($route, '/checkout')
@@ -4717,6 +4721,9 @@ function appleklinika_capture_checkout_company_identity($response, array $handle
     if (! str_starts_with($route, '/wc/store/') || ! $isCheckoutAddressUpdate) {
         return $response;
     }
+
+    $GLOBALS['appleklinika_checkout_partial_address_update'] = str_ends_with($route, '/checkout')
+        && in_array($request->get_method(), ['PUT', 'PATCH'], true);
 
     $additionalFields = (array) $request->get_param('additional_fields');
     $billingAddress = (array) $request->get_param('billing_address');

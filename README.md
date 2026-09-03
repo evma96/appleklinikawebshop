@@ -2,6 +2,9 @@
 
 Production-oriented WooCommerce webshop foundation for selling used Apple devices.
 
+Checkout partial-update validation and its local browser regression are documented in
+[`docs/testing-strategy.md`](docs/testing-strategy.md#checkout-partial-update-runtime-contract).
+
 ## Business Model
 
 - Each used device is a unique WooCommerce product.
