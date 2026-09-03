@@ -59,6 +59,8 @@ try {
         && str_contains($frontendScript, 'setCheckoutFieldValue(companyField.input, value);')
         && str_contains($frontendScript, 'companyField.input.dataset.akBillingCompanyNameSyncBound')
         && str_contains($frontendScript, 'syncBillingCompanyValue(billingSection, { input: event.currentTarget }, true, event.currentTarget.value, true);')
+        && ! str_contains($frontendScript, "companyField.input.addEventListener('input'")
+        && str_contains($frontendScript, "companyField.input.addEventListener('change'")
         && str_contains($frontendScript, "if (persistCompany) {\n        setWooBillingCompany(value);\n      }")
         && ! str_contains($frontendScript, 'function setWooBillingCompany(value, persist)')
         && str_contains($frontendScript, "document.addEventListener('wc-blocks_render_blocks_frontend', syncCompanyCheckoutFields);")
@@ -69,7 +71,7 @@ try {
         && ! str_contains($frontendScript, "var observer = new MutationObserver(function () {\n      syncCompanyCheckoutFields();")
         && ! str_contains($frontendScript, 'billingSection.dataset.akBillingCompanyNameSyncBound')
         && ! str_contains($frontendScript, 'purchaseField.input.checked = enabled;'),
-        'Guest checkout keeps Woo-owned company and address controls in their React tree, reads the canonical checkout additional-field state after a Blocks render, and writes the billing-company projection only from an actual company-field user edit.'
+        'Guest checkout keeps Woo-owned controls in their React tree and projects the billing company only after React has committed the edited company field on change, never synchronously during its input event.'
     );
 
     $guestContactState = [

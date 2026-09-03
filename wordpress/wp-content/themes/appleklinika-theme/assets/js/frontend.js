@@ -464,12 +464,6 @@
 
       companyField.input.dataset.akBillingCompanyNameSyncBound = '1';
 
-      companyField.input.addEventListener('input', function (event) {
-        if (billingSection.classList.contains('ak-checkout-company-mode')) {
-          syncBillingCompanyValue(billingSection, { input: event.currentTarget }, true, event.currentTarget.value, true);
-        }
-      });
-
       companyField.input.addEventListener('change', function (event) {
         if (billingSection.classList.contains('ak-checkout-company-mode')) {
           syncBillingCompanyValue(billingSection, { input: event.currentTarget }, true, event.currentTarget.value, true);
