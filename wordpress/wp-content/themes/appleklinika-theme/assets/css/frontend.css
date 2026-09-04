@@ -1419,7 +1419,7 @@ body.woocommerce-checkout .ak-checkout-header__back:focus-visible {
 
 .ak-footer-shell {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(160px, .8fr) minmax(220px, 1fr);
+  grid-template-columns: minmax(0, 1.2fr) repeat(3, minmax(150px, .8fr));
   gap: var(--ak-space-5);
   max-width: var(--ak-container);
   margin: 0 auto;
