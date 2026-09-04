@@ -147,6 +147,33 @@ try {
     appleklinika_validate_checkout_address_identity($validCompanyErrors, ['first_name' => 'Átvevő', 'last_name' => 'Minta'], 'shipping');
     $test->assert($validCompanyErrors->get_error_codes() === [], 'A current one-off company identity with empty billing personal names and valid saved or one-off shipping recipient fields passes the server validation contract.');
 
+    foreach (['PUT', 'PATCH'] as $partialMethod) {
+        $partialRequest = new WP_REST_Request($partialMethod, '/wc/store/v1/checkout');
+        $partialRequest->set_param('additional_fields', ['appleklinika/company_purchase' => false]);
+        appleklinika_capture_checkout_company_identity(null, [], $partialRequest);
+        foreach (['billing', 'shipping'] as $addressGroup) {
+            $omittedErrors = new WP_Error();
+            appleklinika_validate_checkout_address_identity($omittedErrors, [], $addressGroup);
+            $test->assert(!$omittedErrors->has_errors(), "$partialMethod additional-fields-only update does not interpret omitted $addressGroup names as empty.");
+
+            $emptyErrors = new WP_Error();
+            appleklinika_validate_checkout_address_identity($emptyErrors, ['first_name' => '', 'last_name' => ''], $addressGroup);
+            $test->assert(count($emptyErrors->get_error_codes()) === 2, "$partialMethod explicitly empty $addressGroup recipient names remain invalid.");
+        }
+        $singleFieldErrors = new WP_Error();
+        appleklinika_validate_checkout_address_identity($singleFieldErrors, ['first_name' => 'Átvevő'], 'shipping');
+        $test->assert(!$singleFieldErrors->has_errors(), "$partialMethod validates only supplied name keys and leaves an omitted last name unchanged.");
+    }
+
+    $finalPlacement = new WP_REST_Request('POST', '/wc/store/v1/checkout');
+    $finalPlacement->set_param('additional_fields', ['appleklinika/company_purchase' => false]);
+    appleklinika_capture_checkout_company_identity(null, [], $finalPlacement);
+    foreach (['billing', 'shipping'] as $addressGroup) {
+        $placementErrors = new WP_Error();
+        appleklinika_validate_checkout_address_identity($placementErrors, [], $addressGroup);
+        $test->assert(count($placementErrors->get_error_codes()) === 2, "Final POST placement still rejects omitted $addressGroup names after a preceding partial update.");
+    }
+
     $stepThreeRevalidationRequest = new WP_REST_Request('POST', '/wc/store/v1/cart/update-customer');
     $stepThreeRevalidationRequest->set_param('billing_address', [
         'company' => 'Egyszeri QA Kft.',

@@ -24,6 +24,14 @@ Mocks, stubs, and local fixtures are required.
 
 ## Current Status
 
+### Checkout partial-update runtime contract
+
+`tests/checkout-blocks-state-contract.js` in the theme compares native keyboard input with Playwright fill input on isolated local guest sessions. It checks company, e-mail, both phone values and billing mode in the UI/Woo stores, matches Store API replies to their originating request payloads, and rejects HTTP errors including inner batch failures. Three country-driven React region-control recreations are followed by Step 2 → 3 → 4; country-dependent postcodes are explicitly re-entered after returning to Hungary. This proves updates during region-control recreation, not forced remounting of every contact input or order placement.
+
+The address-identity adapter treats omitted name keys as unchanged only during `/wc/store/*/checkout` PUT/PATCH updates. Explicit blanks remain invalid, and final POST placement still validates all required recipient names. The regression first reproduced `rest_invalid_param` with missing-recipient errors on additional-fields-only PUT requests on `ab27b41e9f38a6a08cf60b2f5893e49b91fb9d5b`; both keyboard and fill paths failed before the production correction. `make test-order-company-contract` also checks omitted versus explicitly empty names and final-POST protection.
+
+Run the browser script with Node and Playwright available (`NODE_PATH` may point to the installed Playwright packages). Its report records the uniquely named test run's exact draft IDs for application-level cleanup and empties each isolated cart before closing it. Never delete drafts by a broad email/name pattern. No real payment or final order is submitted by this regression. Test-server full-order acceptance remains a separate gate.
+
 The test commands exist in the Makefile, but actual test tooling is still deferred.
 
 The focused local order-finalization contract is covered by `make test-order-finalization` and its flow, presentation, e-mail, and lifecycle aliases. It creates isolated logged-in and guest BACS fixtures, renders the production order and e-mail templates without dispatching mail, verifies stock reduction/restoration and immutable HPOS snapshots, and removes every fixture before it completes.
