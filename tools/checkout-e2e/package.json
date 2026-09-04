@@ -1,0 +1,14 @@
+{
+  "name": "appleklinika-checkout-e2e",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Test-only deterministic checkout acceptance runner.",
+  "scripts": {
+    "prepare": "node checkout-e2e.js prepare",
+    "checkout-and-submit": "node checkout-e2e.js checkout-and-submit",
+    "verify-and-cleanup": "node checkout-e2e.js verify-and-cleanup"
+  },
+  "devDependencies": {
+    "playwright": "^1.55.0"
+  }
+}
