@@ -84,6 +84,9 @@ final class PublicBuybackRequestSubmission
         if (($input['privacy_acknowledged'] ?? false) !== true) {
             throw new PublicBuybackSubmissionException('Az adatkezelési tájékoztató tudomásulvétele kötelező.');
         }
+        if (($input['terms_acknowledged'] ?? false) !== true) {
+            throw new PublicBuybackSubmissionException('A felvásárlási feltételek elfogadása kötelező.');
+        }
 
         $modelKey = $this->requiredString($input, 'model_key');
         $storage = (int) ($input['storage_gb'] ?? 0);
@@ -204,6 +207,8 @@ final class PublicBuybackRequestSubmission
                     'manual_review_requested' => $isManualReview,
                     'manual_review_requested_at' => $isManualReview ? $timestamp : null,
                     'privacy' => ['policy_url' => (string) ($input['privacy_url'] ?? ''), 'policy_marker' => (string) ($input['privacy_marker'] ?? ''), 'acknowledged' => true],
+                    'terms' => ['url' => (string) ($input['terms_url'] ?? ''), 'acknowledged' => true],
+                    'marketing_consent' => ($input['marketing_consent'] ?? false) === true,
                 ], $timestamp);
                 return new PublicBuybackSubmissionResult($request->requestNumber()->value(), $device, $mode?->code(), $amount, $isManualReview, false, $manualReasons);
             });
