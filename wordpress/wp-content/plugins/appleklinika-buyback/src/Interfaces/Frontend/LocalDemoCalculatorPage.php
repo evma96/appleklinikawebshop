@@ -128,7 +128,9 @@ final class LocalDemoCalculatorPage
             'email' => strtolower(sanitize_email((string) ($raw['email'] ?? ''))),
             'phone' => trim(preg_replace('/\s+/', ' ', preg_replace('/[^+0-9 ()-]/', '', (string) ($raw['phone'] ?? '')) ?? '') ?? ''),
             'customer_note' => sanitize_textarea_field((string) ($raw['customer_note'] ?? '')),
-            'privacy_acknowledged' => isset($raw['privacy_acknowledged']) && (string) $raw['privacy_acknowledged'] === '1',
+            'privacy_acknowledged' => isset($raw['terms_acknowledged']) && (string) $raw['terms_acknowledged'] === '1',
+            'terms_acknowledged' => isset($raw['terms_acknowledged']) && (string) $raw['terms_acknowledged'] === '1',
+            'marketing_consent' => isset($raw['marketing_consent']) && (string) $raw['marketing_consent'] === '1',
             'model_key' => sanitize_key((string) ($raw['model_key'] ?? '')),
             'storage_gb' => (int) ($raw['storage_gb'] ?? 0),
             'color_key' => sanitize_key((string) ($raw['color_key'] ?? '')),
@@ -139,6 +141,7 @@ final class LocalDemoCalculatorPage
             'questionnaire' => isset($raw['questionnaire']) && is_array($raw['questionnaire']) ? $raw['questionnaire'] : [],
             'privacy_url' => $this->privacyNotice()['url'],
             'privacy_marker' => $this->privacyNotice()['marker'],
+            'terms_url' => $this->buybackTermsNotice()['url'],
         ];
 
         try {
@@ -279,15 +282,21 @@ final class LocalDemoCalculatorPage
     /** @return array{url:string,marker:string,legal_basis:string} */
     private function privacyNotice(): array
     {
-        $url = get_privacy_policy_url();
-        if ($url === '') {
-            $url = home_url('/privacy-policy/');
-        }
+        $document = function_exists('appleklinika_legal_document') ? appleklinika_legal_document('privacy') : null;
+        $url = is_array($document) && ($document['available'] ?? false) ? (string) $document['url'] : get_privacy_policy_url();
         $legalBasis = (string) apply_filters(
             'appleklinika_buyback_privacy_legal_basis',
             'jogos érdek a felvásárlási igény feldolgozásához és a kapcsolatfelvételhez'
         );
         return ['url' => $url, 'marker' => hash('sha256', $url), 'legal_basis' => $legalBasis];
+    }
+
+    /** @return array{url:string,available:bool} */
+    private function buybackTermsNotice(): array
+    {
+        $document = function_exists('appleklinika_legal_document') ? appleklinika_legal_document('buyback_terms') : null;
+
+        return ['url' => is_array($document) ? (string) ($document['url'] ?? '') : '', 'available' => is_array($document) && ($document['available'] ?? false)];
     }
 
     /** @param array<string,mixed> $success */
@@ -811,6 +820,11 @@ final class LocalDemoCalculatorPage
     private function renderSubmissionForm($book, array $state, array $answers, string $modelLabel, string $storageLabel, string $colorLabel, bool $manualReview = false): void
     {
         $privacy = $this->privacyNotice();
+        $terms = $this->buybackTermsNotice();
+        if ($privacy['url'] === '' || ! $terms['available']) {
+            echo '<div class="ak-buyback-demo__demo-notice"><strong>FELVÁSÁRLÁSI FELTÉTELEK ELŐKÉSZÍTÉS ALATT</strong><span>A felvásárlási igény beküldése a szükséges jogi oldalak közzététele után lesz elérhető.</span></div>';
+            return;
+        }
         ?>
         <form class="ak-buyback-demo__submission-form" method="post" data-public-request-form>
             <?php wp_nonce_field(self::SUBMISSION_NONCE_ACTION, self::SUBMISSION_NONCE_NAME); ?>
@@ -840,9 +854,12 @@ final class LocalDemoCalculatorPage
                     <label class="ak-buyback-demo__contact-grid--wide">Megjegyzés (opcionális)<textarea name="customer_note" rows="3" maxlength="1000"></textarea></label>
                 </div>
                 <div class="ak-buyback-demo__privacy-notice">
-                    <h5>Adatkezelési tájékoztató</h5>
-                    <p>Az Apple Klinika a nevedet, e-mail-címedet, telefonszámodat, megjegyzésedet és a készülék megadott adatait a felvásárlási igény kezeléséhez és a kapcsolatfelvételhez kezeli. Az előzetes összeg automatizált számítás, nem végleges elfogadás; a végleges érték fizikai bevizsgálástól függ. Jogi alap: <?php echo esc_html($privacy['legal_basis']); ?>. A megőrzésről, jogaidról, panaszlehetőségről és esetleges adatfeldolgozókról a <a href="<?php echo esc_url($privacy['url']); ?>" target="_blank" rel="noopener">teljes adatkezelési tájékoztatóban</a> olvashatsz.</p>
-                    <label class="ak-buyback-demo__privacy-check"><input type="checkbox" name="privacy_acknowledged" value="1" required> Elolvastam és tudomásul vettem az adatkezelési tájékoztatót.</label>
+                    <h5>Felvásárlási nyilatkozat</h5>
+                    <p><a href="<?php echo esc_url($terms['url']); ?>" target="_blank" rel="noopener">Felvásárlási feltételek</a> · <a href="<?php echo esc_url($privacy['url']); ?>" target="_blank" rel="noopener">Adatkezelési tájékoztató</a></p>
+                    <label class="ak-buyback-demo__privacy-check"><input type="checkbox" name="terms_acknowledged" value="1" required> Elolvastam és elfogadom a felvásárlási feltételeket, valamint tudomásul vettem az adatkezelési tájékoztatót.</label>
+                    <?php if (function_exists('appleklinika_legal_marketing_document_available') && appleklinika_legal_marketing_document_available()) : ?>
+                        <label class="ak-buyback-demo__privacy-check"><input type="checkbox" name="marketing_consent" value="1"> Kérek marketingcélú tájékoztatást a <?php echo wp_kses_post(appleklinika_legal_link('marketing')); ?> szerint.</label>
+                    <?php endif; ?>
                 </div>
                 <p class="ak-buyback-demo__submission-device"><strong>Készülék:</strong> <?php echo esc_html(implode(' · ', array_filter([$modelLabel, $storageLabel, $colorLabel]))); ?></p>
                 <button class="ak-buyback-demo__primary" type="submit" data-public-submit<?php echo $manualReview ? '' : ' disabled'; ?>>Felvásárlási igény elküldése</button>

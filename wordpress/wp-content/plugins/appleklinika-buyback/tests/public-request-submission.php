@@ -75,6 +75,7 @@ $input = [
     'phone' => '+36 11 111 1111',
     'customer_note' => 'isolated test',
     'privacy_acknowledged' => true,
+    'terms_acknowledged' => true,
     'model_key' => $model,
     'storage_gb' => $storage,
     'color_key' => $color,
@@ -89,6 +90,8 @@ $before = [(int) $wpdb->get_var("SELECT COUNT(*) FROM `{$tables[Schema::REQUESTS
 try {
     $invalidPrivacy = $input; $invalidPrivacy['privacy_acknowledged'] = false;
     try { $submission->submit($invalidPrivacy, $catalog); $test->assert(false, 'Privacy acknowledgement is required'); } catch (PublicBuybackSubmissionException) { $test->assert(true, 'Privacy acknowledgement is required'); }
+    $invalidTerms = $input; $invalidTerms['terms_acknowledged'] = false;
+    try { $submission->submit($invalidTerms, $catalog); $test->assert(false, 'Buyback terms acknowledgement is required'); } catch (PublicBuybackSubmissionException) { $test->assert(true, 'Buyback terms acknowledgement is required'); }
     $stale = $input; $stale['price_book_version'] = 0;
     try { $submission->submit($stale, $catalog); $test->assert(false, 'Stale price-book version is rejected'); } catch (PublicBuybackSubmissionException) { $test->assert(true, 'Stale price-book version is rejected'); }
     $created = $submission->submit($input, $catalog);
