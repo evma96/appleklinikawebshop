@@ -41,7 +41,7 @@
 - The Apple category navigation links into category-specific shop views for iPhone, iPad, MacBook, and Apple Watch. Production still needs final taxonomy rules for AirPods and accessories.
 - iPad, MacBook, and Apple Watch local demo products currently reuse existing local demo image assets; production needs real category-specific product photos.
 - Header links for account/cart pages should be aligned with the final WooCommerce page slugs before production.
-- Information pages are created with editable demo content and need final business/legal copy before production.
+- Legal documents require final, approved business/legal copy and explicit selection in **Settings → Jogi dokumentumok** before public links or consent controls become available.
 - Product listing, cart, checkout, and account pages still need the functional UX gate audit.
 - Desktop-width visual QA is still limited by the current narrow in-app browser viewport; the header/grid CSS is implemented, but full desktop screenshots should be checked on a wider browser window.
 - The 4-photo workflow is guidance-only and does not enforce a minimum image count yet.

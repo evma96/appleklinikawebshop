@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once get_template_directory() . '/inc/account-order-display.php';
+require_once get_template_directory() . '/inc/legal-documents.php';
 
 add_action('after_setup_theme', static function (): void {
     add_theme_support('title-tag');
@@ -1412,25 +1413,6 @@ function appleklinika_info_pages(): array
             'legacy_slug' => 'szallitasi-informaciok',
             'content' => '<!-- wp:heading --><h2>Szállítás</h2><!-- /wp:heading --><!-- wp:paragraph --><p>A megrendelt készülékeket a rendelés feldolgozása és ellenőrzése után adjuk át szállításra. Minden csomagot úgy készítünk elő, hogy a készülék biztonságosan érkezzen meg.</p><!-- /wp:paragraph --><!-- wp:list --><ul><li>Várható kézbesítés: 1-3 munkanap</li><li>Személyes átvétel: előzetes egyeztetés alapján</li><li>Csomagátvételkor kérjük, ellenőrizd a külső sértetlenséget.</li><li>A pontos szállítási díjak a végleges futárszolgálati beállítás után frissülnek.</li></ul><!-- /wp:list -->',
         ],
-        'aszf' => [
-            'title' => 'ÁSZF',
-            'legacy_slug' => 'altalanos-szerzodesi-feltetelek',
-            'content' => '<!-- wp:heading --><h2>Általános Szerződési Feltételek</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Ez az oldal a webshop indulásához előkészített, szerkeszthető ÁSZF tartalom. A végleges jogi szöveget indulás előtt szakmai és jogi ellenőrzés után kell rögzíteni.</p><!-- /wp:paragraph --><!-- wp:list --><ul><li>A webshop használt Apple készülékeket értékesít.</li><li>Minden készülék egyedi termék, saját állapot-, tárhely-, szín-, akkumulátor- és garanciaadatokkal.</li><li>A rendelés végleges adatai a kosárban és a pénztár oldalon kerülnek rögzítésre.</li><li>Az árak forintban értendők, a részletes fizetési és szállítási feltételek később pontosíthatók.</li></ul><!-- /wp:list -->',
-        ],
-        'adatvedelem' => [
-            'title' => 'Adatvédelem',
-            'legacy_slug' => 'adatvedelmi-tajekoztato',
-            'content' => '<!-- wp:heading --><h2>Adatvédelem</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Ez egy indulás előtti, szerkeszthető adatvédelmi tájékoztató minta. A végleges dokumentumhoz pontosítani kell az adatkezelőt, a használt szolgáltatókat és az adatkezelési célokat.</p><!-- /wp:paragraph --><!-- wp:list --><ul><li>Kapcsolattartási adatok kezelése</li><li>Megrendelési és számlázási adatok kezelése</li><li>Szállítási adatok továbbítása a kézbesítéshez</li><li>Webshop működéséhez szükséges technikai adatok kezelése</li></ul><!-- /wp:list -->',
-        ],
-        'garancia' => [
-            'title' => 'Garancia',
-            'content' => '<!-- wp:heading --><h2>Garancia</h2><!-- /wp:heading --><!-- wp:paragraph --><p>A garancia időtartama termékenként eltérhet, ezért minden készülék adatlapján külön jelenik meg. A pontos garanciális feltételeket az indulás előtt véglegesíteni kell.</p><!-- /wp:paragraph --><!-- wp:list --><ul><li>A garancia hossza a termékoldalon látható.</li><li>Garanciális ügyintézéshez a rendelési azonosító szükséges.</li><li>A belső azonosító kizárólag admin célra szolgál, nem jelenik meg a vásárlói felületen.</li><li>A garancia nem helyettesíti a készülék állapotának terméklapon szereplő leírását.</li></ul><!-- /wp:list -->',
-        ],
-        'visszakuldes' => [
-            'title' => 'Visszaküldés',
-            'legacy_slug' => 'visszakuldes-es-elallas',
-            'content' => '<!-- wp:heading --><h2>Visszaküldés</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Ez az oldal a visszaküldési és elállási folyamat indulás előtti, szerkeszthető mintája. A végleges határidőket és feltételeket jogi ellenőrzés után kell feltölteni.</p><!-- /wp:paragraph --><!-- wp:list --><ul><li>Visszaküldés előtt kérjük, vedd fel velünk a kapcsolatot.</li><li>A készüléket biztonságosan, lehetőség szerint eredeti vagy megfelelő védőcsomagolásban kell visszaküldeni.</li><li>A visszaküldött termék állapotát beérkezéskor ellenőrizzük.</li><li>A pontos visszatérítési folyamat és határidő később véglegesítendő.</li></ul><!-- /wp:list -->',
-        ],
     ];
 }
 
@@ -1447,14 +1429,7 @@ function appleklinika_info_page_url(string $slug): string
 
 function appleklinika_render_footer(): void
 {
-    $infoLinks = [
-        'ÁSZF' => 'aszf',
-        'Adatvédelem' => 'adatvedelem',
-        'Szállítás' => 'szallitas',
-        'Kapcsolat' => 'kapcsolat',
-        'Garancia' => 'garancia',
-        'Visszaküldés' => 'visszakuldes',
-    ];
+    $legalLinks = appleklinika_legal_public_documents();
     ?>
     <div class="ak-footer-shell">
         <div class="ak-footer-brand">
@@ -1469,10 +1444,16 @@ function appleklinika_render_footer(): void
         </nav>
         <nav class="ak-footer-nav" aria-label="Információk">
             <h3>Információk</h3>
-            <?php foreach ($infoLinks as $label => $slug) : ?>
-                <a href="<?php echo esc_url(appleklinika_info_page_url($slug)); ?>"><?php echo esc_html($label); ?></a>
-            <?php endforeach; ?>
+            <a href="<?php echo esc_url(appleklinika_info_page_url('kapcsolat')); ?>">Kapcsolat</a>
         </nav>
+        <?php if ($legalLinks !== []) : ?>
+            <nav class="ak-footer-nav" aria-label="Jogi információk">
+                <h3>Jogi információk</h3>
+                <?php foreach ($legalLinks as $document) : ?>
+                    <a href="<?php echo esc_url($document['url']); ?>"><?php echo esc_html($document['title']); ?></a>
+                <?php endforeach; ?>
+            </nav>
+        <?php endif; ?>
     </div>
     <?php
 }
@@ -4246,6 +4227,7 @@ function appleklinika_render_warranty_account_endpoint(): void
 function appleklinika_render_returns_account_endpoint(): void
 {
     $records = appleklinika_account_return_records(get_current_user_id());
+    $withdrawal = appleklinika_legal_document('withdrawal');
     ?>
     <section class="ak-account-page ak-account-returns">
         <header class="ak-account-page__header">
@@ -4259,8 +4241,8 @@ function appleklinika_render_returns_account_endpoint(): void
             appleklinika_render_account_empty_state([
                 'title' => 'Nincs aktív visszaküldésed.',
                 'text' => 'Ha visszaküldésre lesz szükség, innen tudsz továbbindulni a feltételekhez és a rendeléseidhez.',
-                'primary_label' => 'Visszaküldési feltételek',
-                'primary_url' => appleklinika_info_page_url('visszakuldes'),
+                'primary_label' => $withdrawal['available'] ? 'Visszaküldési feltételek' : 'Kapcsolat',
+                'primary_url' => $withdrawal['available'] ? $withdrawal['url'] : appleklinika_info_page_url('kapcsolat'),
                 'secondary_label' => 'Vásárlásaim megtekintése',
                 'secondary_url' => wc_get_account_endpoint_url('orders'),
                 'recommendations' => true,
@@ -4393,6 +4375,21 @@ function appleklinika_register_company_checkout_fields(): void
     }
 
     $profileFields = [];
+
+    if (appleklinika_legal_marketing_document_available()) {
+        $marketingDocument = appleklinika_legal_document('marketing');
+        $marketingLabel = sprintf('Kérek marketingcélú tájékoztatást a %s szerint.', $marketingDocument['title']);
+        $profileFields[] = [
+            'id' => 'appleklinika/marketing_consent',
+            'label' => $marketingLabel,
+            'optionalLabel' => $marketingLabel,
+            'location' => 'contact',
+            'type' => 'checkbox',
+            'required' => false,
+            'sanitize_callback' => 'appleklinika_sanitize_checkout_checkbox',
+            'show_in_order_confirmation' => false,
+        ];
+    }
 
     if (is_user_logged_in()) {
         $profileFields[] = [
@@ -4824,6 +4821,14 @@ function appleklinika_persist_company_checkout_fields(WC_Order $order, WP_REST_R
     $companyPurchase = appleklinika_checkout_company_enabled($additionalFields['appleklinika/company_purchase'] ?? false);
     $companyName = sanitize_text_field((string) ($additionalFields['appleklinika/company_name'] ?? ''));
     $taxNumber = appleklinika_sanitize_checkout_tax_number($additionalFields['appleklinika/tax_number'] ?? '');
+
+    if (appleklinika_legal_marketing_document_available()) {
+        if (appleklinika_checkout_company_enabled($additionalFields['appleklinika/marketing_consent'] ?? false)) {
+            $order->update_meta_data('appleklinika_marketing_consent', '1');
+        } else {
+            $order->delete_meta_data('appleklinika_marketing_consent');
+        }
+    }
 
     if (! $companyPurchase) {
         $order->set_billing_company('');
