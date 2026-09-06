@@ -82,6 +82,7 @@
 
 ## Risks
 
+- Storefront header actions now have a scoped responsive layout and LOCAL rendered/browser coverage; deployment and physical-device Safari acceptance remain separate. The legacy standalone header-actions shortcode and checkout header are intentionally unchanged.
 - WordPress image versions must be reviewed before production deployment.
 - Placeholder quality commands do not yet enforce real code quality.
 - Internal IMEI handling must be designed carefully to avoid frontend exposure.

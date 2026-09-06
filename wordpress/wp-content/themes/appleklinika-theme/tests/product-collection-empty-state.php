@@ -87,10 +87,12 @@ try {
         }
     }
 
-    $sellLink = $xpath->query('./a[contains(concat(" ", normalize-space(@class), " "), " ak-category-nav__sell ")]', $navigation)->item(0);
+    $actions = $xpath->query('//div[contains(concat(" ", normalize-space(@class), " "), " ak-header-actions ")]')->item(0);
+    $sellLinks = $xpath->query('//a[contains(concat(" ", normalize-space(@class), " "), " ak-header-sell-link ")]');
+    $sellLink = $sellLinks->item(0);
     $test->assert(
-        $labels === ['iPhone', 'MacBook', 'iPad', 'Apple Watch', 'Eladás'],
-        'The category navigation renders its five required destinations in logical DOM order.'
+        $labels === ['iPhone', 'MacBook', 'iPad', 'Apple Watch'],
+        'The category row contains only the four original product destinations in order.'
     );
     $test->assert(
         $directBreaks !== false && $directBreaks->length === 0,
@@ -98,20 +100,52 @@ try {
     );
     $test->assert(
         $sellLink instanceof DOMElement
-        && str_contains(' ' . $sellLink->getAttribute('class') . ' ', ' ak-category-nav__sell '),
-        'The Eladás link exposes the stable class used for its compact mobile CTA treatment.'
+        && $sellLinks->length === 1
+        && $sellLink->parentNode->isSameNode($actions)
+        && $sellLink->getAttribute('href') === home_url('/eladas/'),
+        'Exactly one Eladás action belongs to the action cluster and keeps its destination.'
+    );
+    $actionLinks = $xpath->query('./a', $actions);
+    $test->assert(
+        $actionLinks->length === 3
+        && $actionLinks->item(0)->getAttribute('href') === appleklinika_account_url()
+        && $actionLinks->item(1)->getAttribute('href') === appleklinika_cart_url(),
+        'Account and cart keep their original destinations and precede Eladás.'
+    );
+    $search = $xpath->query('//form[@role="search"]')->item(0);
+    $test->assert(
+        $search instanceof DOMElement
+        && $search->getAttribute('method') === 'get'
+        && $search->getAttribute('action') === home_url('/')
+        && $xpath->query('.//input[@name="s"]', $search)->length === 1
+        && $xpath->query('.//input[@name="post_type" and @value="product"]', $search)->length === 1,
+        'The single native product search retains its GET parameters and target.'
     );
 } finally {
     $GLOBALS['wp_query'] = $originalQuery;
 }
 
+$originalCart = WC()->cart;
+try {
+    WC()->cart = new class {
+        public function get_cart_contents_count(): int { return 7; }
+    };
+    ob_start();
+    appleklinika_render_cart_link();
+    $cartHtml = (string) ob_get_clean();
+    $test->assert(str_contains($cartHtml, '<span class="ak-cart-count">7</span>'), 'The badge uses the current Woo cart count, not a fixed value.');
+    $fragments = apply_filters('woocommerce_add_to_cart_fragments', []);
+    $test->assert(($fragments['a.ak-cart-link'] ?? '') === $cartHtml, 'The existing dynamic cart fragment keeps the same single-link replacement contract.');
+} finally {
+    WC()->cart = $originalCart;
+}
+
 $stylesheet = (string) file_get_contents(dirname(__DIR__) . '/assets/css/frontend.css');
 $test->assert(
-    str_contains($stylesheet, 'grid-template-columns: repeat(3, minmax(0, 1fr));')
-    && str_contains($stylesheet, '.ak-header-actions br')
-    && str_contains($stylesheet, '.ak-header-top > p:empty')
-    && str_contains($stylesheet, 'grid-column: auto;'),
-    'The mobile header keeps all five category destinations compact without hiding the Eladás CTA.'
+    str_contains($stylesheet, 'grid-template-areas: "logo account cart" "search search sell";')
+    && str_contains($stylesheet, '.ak-header-shell .ak-header-actions { display: contents; }')
+    && str_contains($stylesheet, '.ak-header-shell p:empty'),
+    'Mobile lays out the existing controls without duplicates or formatting-only empty rows.'
 );
 $test->assert(
     str_contains($stylesheet, 'white-space: nowrap;')
