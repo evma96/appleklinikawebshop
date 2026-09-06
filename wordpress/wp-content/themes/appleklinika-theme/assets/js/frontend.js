@@ -646,11 +646,13 @@
 
       hideShippingCompanyValue();
 
+      // Company visibility/required flags also apply when Woo omits the
+      // separate billing form because shipping and billing are the same.
+      setCompanyPurchaseState(purchaseField, companyField, taxField, enabled);
+
       if (!companyFieldsConfigured) {
         return true;
       }
-
-      setCompanyPurchaseState(purchaseField, companyField, taxField, enabled);
 
       if (enabled && hiddenChanged) {
         clearBillingPersonalIdentity(document.querySelector('#billing-fields'));
