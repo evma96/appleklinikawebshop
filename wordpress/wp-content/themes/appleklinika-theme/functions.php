@@ -5,6 +5,12 @@ declare(strict_types=1);
 require_once get_template_directory() . '/inc/account-order-display.php';
 require_once get_template_directory() . '/inc/legal-documents.php';
 
+add_action('wp_head', static function (): void {
+    if (function_exists('is_checkout') && is_checkout() && ! has_site_icon()) {
+        echo '<link rel="icon" type="image/jpeg" href="' . esc_url(plugins_url('appleklinika-inventory/assets/brand/appleklinika-logo.jpg')) . '">';
+    }
+});
+
 add_action('after_setup_theme', static function (): void {
     add_theme_support('title-tag');
     add_theme_support('post-thumbnails');
@@ -38,6 +44,18 @@ add_action('wp_enqueue_scripts', static function (): void {
 
     if (function_exists('is_checkout') && is_checkout()) {
         $frontendScriptDependencies = ['wp-data', 'wc-blocks-data-store'];
+        wp_enqueue_script('wp-i18n');
+        // Translate the React-rendered labels before Blocks renders, including
+        // the accessible fieldset legend and the country selector placeholder.
+        wp_add_inline_script('wp-i18n', <<<'JS'
+wp.hooks.addFilter('i18n.gettext', 'appleklinika/checkout-copy', function (translation, text, domain) {
+    if (domain !== 'woocommerce') { return translation; }
+    if (text === 'Additional order information') { return 'Céges adatok'; }
+    if (text === 'Select a %s') { return 'Válassz: %s'; }
+    return translation;
+});
+JS
+        );
     }
 
     wp_enqueue_script(
