@@ -4965,6 +4965,75 @@ body.woocommerce-checkout .ak-checkout-company-source-hidden {
   display: none !important;
 }
 
+/* Company controls stay in the Woo-owned order fieldset, including on first render. */
+body.woocommerce-checkout #order-fields #order {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 14px;
+  padding: 18px;
+  border: 1px solid var(--ak-line);
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+body.woocommerce-checkout #order-fields #order > * {
+  min-width: 0;
+  margin: 0;
+}
+
+body.woocommerce-checkout #order-fields .wc-block-components-address-form__appleklinika-company_purchase {
+  grid-column: 1 / -1;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+body.woocommerce-checkout #order-fields .wc-block-components-checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  margin: 0;
+  color: var(--ak-ink);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+body.woocommerce-checkout #order-fields input[type="checkbox"] {
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  margin: 0;
+  padding: 0;
+  border-radius: 4px !important;
+  box-shadow: none;
+}
+
+body.woocommerce-checkout #order-fields .wc-block-components-checkbox__mark {
+  top: 50%;
+  left: 0;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  transform: translateY(-50%);
+}
+
+body.woocommerce-checkout #order-fields:not(:has(#order-appleklinika-company_purchase:checked)) :is(.wc-block-components-address-form__appleklinika-company_name, .wc-block-components-address-form__appleklinika-tax_number) {
+  display: none !important;
+}
+
+@media (max-width: 600px) {
+  body.woocommerce-checkout #order-fields #order {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 14px;
+  }
+}
+
 body.woocommerce-checkout #billing-fields .ak-checkout-company-billing-slot {
   --ak-checkout-billing-gap: 34px;
   --ak-checkout-company-toggle-height: 52px;
@@ -5080,6 +5149,7 @@ body.woocommerce-checkout #billing-fields .ak-checkout-billing-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   column-gap: 14px;
+  row-gap: 14px;
   align-items: start;
 }
 
@@ -5087,17 +5157,24 @@ body.woocommerce-checkout #shipping-fields .ak-checkout-address-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   column-gap: 14px;
+  row-gap: 14px;
   align-items: start;
 }
 
 body.woocommerce-checkout #billing-fields .ak-checkout-billing-grid > * {
   min-width: 0;
+  margin: 0;
 }
 
 body.woocommerce-checkout #shipping-fields .ak-checkout-address-grid > * {
   min-width: 0;
+  margin: 0;
 }
 
+body.woocommerce-checkout #billing-fields .wc-block-components-address-form__address_1,
+body.woocommerce-checkout #billing-fields .wc-block-components-address-form__phone,
+body.woocommerce-checkout #shipping-fields .wc-block-components-address-form__address_1,
+body.woocommerce-checkout #shipping-fields .wc-block-components-address-form__phone,
 body.woocommerce-checkout #billing-fields .wc-block-components-address-form__country,
 body.woocommerce-checkout #billing-fields .ak-checkout-billing-address-main-field,
 body.woocommerce-checkout #billing-fields .ak-checkout-address-details-slot,
@@ -5108,16 +5185,19 @@ body.woocommerce-checkout #shipping-fields .ak-checkout-address-phone-field {
   grid-column: 1 / -1;
 }
 
+body.woocommerce-checkout:has(#order-appleklinika-company_purchase:checked) #billing-fields :is(.wc-block-components-address-form__first_name, .wc-block-components-address-form__last_name),
 body.woocommerce-checkout #billing-fields .ak-checkout-billing-person-name.is-company-hidden {
   display: none !important;
 }
 
 /* The visible company field is the registered Apple Klinika field. This
    standard Woo field is kept in sync solely for WooCommerce order semantics. */
+body.woocommerce-checkout #billing-fields .wc-block-components-address-form__company,
 body.woocommerce-checkout #billing-fields .ak-checkout-billing-standard-company {
   display: none !important;
 }
 
+body.woocommerce-checkout #shipping-fields .wc-block-components-address-form__company,
 body.woocommerce-checkout #shipping-fields .ak-checkout-shipping-standard-company {
   display: none !important;
 }
@@ -5127,7 +5207,7 @@ body.woocommerce-checkout #billing-fields .ak-checkout-company-field {
 }
 
 body.woocommerce-checkout #billing-fields .ak-checkout-billing-phone-field {
-  grid-column: 1 / span 1;
+  grid-column: 1 / -1;
 }
 
 body.woocommerce-checkout .ak-checkout-address-details-slot {
