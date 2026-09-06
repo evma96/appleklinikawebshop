@@ -114,7 +114,8 @@ Run against LOCAL WordPress mounting this feature's Inventory plugin:
 docker compose exec -T wordpress php /var/www/html/wp-content/plugins/appleklinika-inventory/tests/product-gallery-render.php
 make test-inventory-product-frontend test-theme-storefront test-theme-catalog-search
 docker compose exec -T wordpress php /var/www/html/wp-content/plugins/appleklinika-inventory/tests/product-gallery-render.php --fixture > /tmp/product-gallery-fixture.html
-GALLERY_FIXTURE_HTML=/tmp/product-gallery-fixture.html node wordpress/wp-content/plugins/appleklinika-inventory/tests/product-gallery-browser.cjs
+docker compose exec -T wordpress php /var/www/html/wp-content/plugins/appleklinika-inventory/tests/product-gallery-render.php --single-fixture > /tmp/product-gallery-single-fixture.html
+GALLERY_FIXTURE_HTML=/tmp/product-gallery-fixture.html GALLERY_SINGLE_FIXTURE_HTML=/tmp/product-gallery-single-fixture.html node wordpress/wp-content/plugins/appleklinika-inventory/tests/product-gallery-browser.cjs
 ```
 
 Use `GALLERY_MEDIA_IDS` for three existing LOCAL attachments when different IDs
@@ -124,3 +125,42 @@ if that LOCAL catalogue changes. `PLAYWRIGHT_MODULE`, `CHROME_EXECUTABLE`,
 `EVIDENCE_DIR` and `BASE_URL` may select an already installed runtime and output
 location; the browser test rejects non-localhost targets. Each context is fresh
 and closed normally; no persistent profile or shared QA account is used.
+
+## Framing correction — September 7, 2026
+
+Baseline: `5fbf493a3f0b7978ef1116b396a9b73785243b5f`, continuing
+`feature/product-page-information-polish`. This supersedes the white viewer
+presentation in the preceding information-polish pass, not the interaction model.
+
+Computed DOM/CSS inspection on real three-photo products #288 and #314 found no
+remaining painted border, shadow, padding, radius or pseudo-element around the
+normal image. The previous pass had removed those styles, not merely recolored
+the original border. However, `div.appleklinika-product-gallery__stage` still
+wrapped a full-size image link. The separate div had no JS ownership and was
+removed; its stable square sizing/grid now belongs directly to the link. This
+retains intrinsic image containment and avoids shifts when switching image shapes.
+Thumbnails are centered with safe overflow alignment; their red selected style
+and 72px/64px target geometry are unchanged.
+
+The viewer's light surround came from the white `dialog.ak-image-viewer` background
+and its white `::backdrop`, not inherited Woo styling or a second modal. The dialog
+is now unpainted and only `::backdrop` paints an opaque dark surface. An initial
+translucent-backdrop trial was rejected visually because the page showed through.
+The existing canvas is necessary for fit/zoom/pan clipping and remains unpainted.
+No gallery JS, zoom/gesture algorithm, product assignment, selector, pricing,
+stock, information layout or cart business logic changed.
+
+Current results: gallery PHP 26, product-information PHP 49, frontend structure 3,
+gallery browser 237 and product-information browser 479 assertions PASS (794 total).
+The single-portrait fixture now explicitly uses the unsaved single-image renderer,
+rather than assuming product #288 still has one photo. Existing attachments
+2255/2256/2257 supply both fixture modes. No fixture/product/media is saved.
+The isolated product-browser add/remove check ended with an empty cart; no order.
+PHP/JS syntax and diff checks pass; the generic make gates remain placeholders.
+No new console errors; the existing LOCAL favicon 404 remains separately recorded.
+
+Evidence is ignored locally under `.local/header-actions-review/gallery-layer-correction/`
+in the original workspace. `before.json` / `after.json` contain computed ancestor
+and pseudo-element styles. Twelve final screenshots (two products, two viewports,
+normal/fit/zoom) were personally opened and reviewed against the before captures.
+No TEST SERVER, production, deployment or main access occurred.

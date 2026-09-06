@@ -26,8 +26,8 @@ $render = static function (array $data) use ($reflection, $display): string {
     $reflection->getMethod('renderProductGallery')->invoke($display, $data);
     return (string) ob_get_clean();
 };
-if (in_array('--fixture', $argv, true)) {
-    echo $render($images);
+if (in_array('--fixture', $argv, true) || in_array('--single-fixture', $argv, true)) {
+    echo $render(in_array('--single-fixture', $argv, true) ? [$images[0]] : $images);
     exit(0);
 }
 $count = 0;
@@ -45,6 +45,12 @@ foreach ($images as $index => $image) {
     $check($image['alt'] !== '', 'Useful alt text fallback.');
 }
 $html = $render($images);
+$dom = new DOMDocument();
+@$dom->loadHTML('<?xml encoding="UTF-8">' . $html);
+$xpath = new DOMXPath($dom);
+$check($xpath->query('//a[@data-gallery-open]/parent::div[@data-gallery-images]')->length === 1, 'Image link is directly inside the gallery owner, with no stage wrapper.');
+$check($xpath->query('//a[@data-gallery-open]/img')->length === 1, 'Photo remains directly inside its functional link.');
+$check($xpath->query('//div[@class="appleklinika-product-gallery__stage"]')->length === 0, 'Redundant stage div is removed, not recolored.');
 $check(substr_count($html, 'data-gallery-index=') === 3, 'One control per distinct image.');
 $check(substr_count($html, 'aria-pressed="true"') === 1, 'One accessible selected thumbnail.');
 $check(!str_contains($html, '<dialog') && !str_contains($html, 'appleklinika-lightbox'), 'No eagerly rendered or wpautop-sensitive modal markup.');

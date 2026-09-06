@@ -555,9 +555,9 @@ final class ProductFrontendDisplay
         $first = $images[0];
         $data = array_map(static fn (array $image): array => array_diff_key($image, ['html' => true]), $images);
         echo '<div class="appleklinika-product-gallery" data-gallery-images="' . esc_attr((string) wp_json_encode($data)) . '">';
-        echo '<div class="appleklinika-product-gallery__stage"><a data-gallery-open href="' . esc_url($first['full']) . '" aria-label="Termékkép megnyitása nagy méretben">';
+        echo '<a class="appleklinika-product-gallery__stage" data-gallery-open href="' . esc_url($first['full']) . '" aria-label="Termékkép megnyitása nagy méretben">';
         echo $this->imageHtml($first, 'data-appleklinika-stage-image');
-        echo '<span class="appleklinika-product-gallery__hint" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4M7.5 10.5h6m-3-3v6"/></svg>Kép nagyítása</span></a></div>';
+        echo '<span class="appleklinika-product-gallery__hint" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4M7.5 10.5h6m-3-3v6"/></svg>Kép nagyítása</span></a>';
         echo '<div class="appleklinika-product-gallery__thumbs" aria-label="Termékképek"' . (count($images) < 2 ? ' hidden' : '') . '>';
         foreach ($images as $index => $image) {
             echo '<button class="appleklinika-product-gallery__thumb" type="button" data-gallery-index="' . $index . '" aria-pressed="' . ($index === 0 ? 'true' : 'false') . '" aria-label="' . esc_attr(sprintf('Termékkép %d', $index + 1)) . '">';
