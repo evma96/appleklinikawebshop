@@ -17,6 +17,19 @@ const norm=text=>text.replace(/\s+/g,' ').trim();
   page.on('console',msg=>{if(msg.type()!=='error')return;const detail=msg.text()+' '+msg.location().url;
    if(msg.location().url===base+'/favicon.ico'&&msg.text().includes('404'))warnings.push(detail);else errors.push(detail);
   });
+  for(const route of ['/?post_type=product&ak_type=iphone','/?product_cat=iphone']){
+   await page.goto(base+route);
+   const media=page.locator('.ak-product-card__image');await media.first().waitFor();
+   check(await media.count()>0,'Real listing cards are present');
+   check(await media.evaluateAll(nodes=>nodes.every(n=>{const s=getComputedStyle(n);return s.backgroundImage==='none' && s.backgroundColor==='rgba(0, 0, 0, 0)' && s.borderTopWidth==='0px' && s.boxShadow==='none' && s.borderRadius==='0px';})),'Listing media has no inner card decoration');
+   check(await media.locator('img').evaluateAll(nodes=>nodes.every(n=>{const s=getComputedStyle(n);return s.objectFit==='contain' && s.mixBlendMode==='normal' && s.padding==='0px';})),'Original photos remain contained without padding or color blending');
+   check(await media.evaluateAll(nodes=>nodes.every(n=>Math.abs(n.getBoundingClientRect().height-220)<1)),'Existing 220px listing media slots remain stable');
+   await media.first().locator('img').evaluate(img=>img.decode());
+   check(await media.first().locator('img').evaluate(img=>img.naturalWidth>0),'Listing image is usable');
+   check(!await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),'Listing has no horizontal overflow');
+   await media.first().click();await page.locator('[data-gallery-images]').waitFor();
+   check(await page.locator('[data-gallery-images]').count()===1,'Card opens the normal product gallery');
+  }
   for(const id of [288,314,366]){
    await page.goto(base+'/?post_type=product&p='+id);
    const stage=page.locator('[data-appleklinika-stage-image]');await stage.evaluate(img=>img.decode());
