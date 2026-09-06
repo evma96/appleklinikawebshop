@@ -152,12 +152,18 @@ $test->assert(
     && str_contains($stylesheet, 'body.tax-product_cat .woocommerce .woocommerce-ordering'),
     'The narrow catalogue toolbar keeps the result count and sort control readable without wrapping them together.'
 );
+preg_match_all('/[^{}]*\.ak-product-card__image(?:\s+img)?\s*\{([^}]+)\}/', $stylesheet, $mediaRules);
+$test->assert(count($mediaRules[1]) >= 4, 'Both base and Woo-list card image rules are inspected.');
+foreach ($mediaRules[1] as $rule) {
+    $test->assert(
+        preg_match('/(?:^|;)\s*(?:background(?:-color|-image)?|border(?:-radius)?|box-shadow|mix-blend-mode|padding)\s*:/', $rule) === 0,
+        'Card media decoration is removed at its source, not countered with another override.'
+    );
+}
 $test->assert(
-    str_contains($stylesheet, 'mix-blend-mode: multiply;')
-    && str_contains($stylesheet, 'linear-gradient(145deg, #fbfcfe 0%, #f2f5f8 100%)')
-    && str_contains($stylesheet, '.ak-shop-filters ~ .ak-shop-filters')
+    str_contains($stylesheet, '.ak-shop-filters ~ .ak-shop-filters')
     && str_contains($stylesheet, 'align-self: start;'),
-    'Product cards render their source images on one consistent neutral media surface.'
+    'Existing filter deduplication and card alignment remain unchanged.'
 );
 
 $test->finish();
