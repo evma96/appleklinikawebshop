@@ -1259,7 +1259,7 @@ function appleklinika_render_info_trust_block(): void
     <?php
 }
 
-function appleklinika_render_header_actions(): void
+function appleklinika_render_header_actions(bool $showSell = false): void
 {
     ?>
     <div class="ak-header-actions">
@@ -1268,6 +1268,9 @@ function appleklinika_render_header_actions(): void
             <span class="ak-header-pill__label">Fiókom</span>
         </a>
         <?php appleklinika_render_cart_link(); ?>
+        <?php if ($showSell) : ?>
+            <a class="ak-header-pill ak-header-sell-link<?php echo is_page('eladas') ? ' is-current' : ''; ?>" href="<?php echo esc_url(home_url('/eladas/')); ?>"<?php echo is_page('eladas') ? ' aria-current="page"' : ''; ?>>Eladás</a>
+        <?php endif; ?>
     </div>
     <?php
 }
@@ -1322,7 +1325,7 @@ function appleklinika_render_header(): void
                 <input type="hidden" name="post_type" value="product">
                 <button type="submit" aria-label="Keresés">⌕</button>
             </form>
-            <?php appleklinika_render_header_actions(); ?>
+            <?php appleklinika_render_header_actions(true); ?>
         </div>
         <?php if (appleklinika_should_show_category_nav()) : ?>
             <nav class="ak-category-nav" aria-label="Apple termékkategóriák">
@@ -1334,8 +1337,6 @@ function appleklinika_render_header(): void
                         <?php echo $isActive ? 'aria-current="page"' : ''; ?>
                     ><?php echo esc_html($categoryLabel); ?></a>
                 <?php endforeach; ?>
-                <span class="ak-category-nav__spacer" aria-hidden="true"></span>
-                <a class="ak-category-nav__sell<?php echo is_page('eladas') ? ' is-active' : ''; ?>" href="<?php echo esc_url(home_url('/eladas/')); ?>"<?php echo is_page('eladas') ? ' aria-current="page"' : ''; ?>>Eladás</a>
             </nav>
         <?php endif; ?>
     </div>

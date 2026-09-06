@@ -69,7 +69,11 @@ Buttons should feel tappable but not oversized.
 - Desktop layouts should use balanced grids, not oversized panels.
 - Mobile layouts should collapse to one clean column.
 - Header, homepage, product page, cart, checkout, account, and footer should all use the same spacing, radius, and typography scale.
-- The storefront header uses a two-row ecommerce structure: logo, centered search, account/cart actions, then Apple-focused category navigation.
+- The storefront header uses logo / flexible search / Account–Cart–Eladás on desktop, then an uninterrupted four-category row. Its action/search controls are 46px high with 12px radii, 10px action gaps and an outlined red secondary Eladás CTA.
+- At 640–1000px, search gets a full-width second row. Below 640px, CSS grid places logo / Account / Cart above search / Eladás; `display: contents` lays out the existing action links without duplicating or relocating DOM nodes. Category links remain at least 44px tall/wide and can scroll on exceptionally narrow viewports.
+- Header-only empty formatting nodes are hidden; the separate checkout header and existing sticky behavior are unchanged. `functions.php` owns header markup, link helpers and the existing Woo cart fragment; `assets/css/frontend.css` owns layout.
+- Run `make test-theme-storefront` for the rendered link/search/cart-fragment contract. The read-only `wordpress/wp-content/themes/appleklinika-theme/tests/header-actions.browser.cjs` needs Playwright (`NODE_PATH` when external), an optional `CHROME_PATH`, and `HEADER_QA_OUTPUT` pointing to an ignored local directory. It captures 320/390/768/1024/1440px, checks targets/overlap/overflow, and uses native search and link clicks. It never adds products or submits forms other than GET search.
+- The browser report keeps the pre-existing LOCAL `/favicon.ico` 404 separate from new console/runtime errors; it does not hide or repair that unrelated missing asset. Before/after images must also be opened for visual review, not approved from dimensions alone.
 - Shop filters should appear as a compact collapsible panel with custom checkbox/range controls, not default browser dropdowns.
 - Product cards should keep title text to two readable lines, meta text compact, and the primary card button aligned at the bottom.
 - Product option cards should reserve top-right space for the selected check icon and keep price differences on a readable single line where possible.

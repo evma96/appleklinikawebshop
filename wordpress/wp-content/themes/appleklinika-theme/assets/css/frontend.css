@@ -8072,6 +8072,162 @@ body.woocommerce-account:not(.logged-in).woocommerce-lost-password .woocommerce-
   }
 }
 
+/* Storefront header actions: one cluster; checkout's separate header is untouched. */
+.ak-header-shell br,
+.ak-header-shell p:empty {
+  display: none;
+}
+
+.ak-header-shell .ak-header-top {
+  box-sizing: border-box;
+  grid-template-columns: 210px minmax(0, 1fr) auto;
+  grid-template-areas: "logo search actions";
+  gap: 24px;
+  min-height: 80px;
+  padding: 12px 0;
+}
+
+.ak-header-shell .ak-header-logo img {
+  width: 210px;
+  max-height: 64px;
+}
+
+.ak-header-shell .ak-header-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  width: auto;
+  min-width: 0;
+  justify-self: end;
+}
+
+.ak-header-shell .ak-header-actions .ak-header-pill {
+  width: auto;
+  min-height: 46px;
+  padding: 0 14px;
+  gap: 8px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: none;
+}
+
+.ak-header-shell .ak-header-actions .ak-header-pill:hover {
+  background: #f7f9fb;
+  box-shadow: none;
+  transform: none;
+}
+
+.ak-header-shell .ak-header-actions .ak-header-pill:focus-visible {
+  outline: 2px solid var(--ak-ink);
+  outline-offset: 3px;
+  box-shadow: none;
+}
+
+.ak-header-shell .ak-header-actions .ak-cart-count {
+  position: static;
+  transform: none;
+  min-width: 20px;
+  height: 20px;
+  line-height: 20px;
+}
+
+.ak-header-shell .ak-header-actions .ak-header-sell-link {
+  border-color: rgba(214, 0, 28, .3);
+  background: #fff8f8;
+  color: #c60019;
+}
+
+.ak-header-shell .ak-header-actions .ak-header-sell-link:hover,
+.ak-header-shell .ak-header-actions .ak-header-sell-link.is-current {
+  border-color: #d6001c;
+  background: #d6001c;
+  color: #fff;
+}
+
+.ak-header-shell .ak-product-search {
+  max-width: none;
+  min-width: 0;
+  border-radius: 12px;
+}
+
+.ak-header-shell .ak-product-search input[type="search"] {
+  min-width: 0;
+  min-height: 44px;
+}
+
+.ak-header-shell .ak-product-search button {
+  flex: 0 0 44px;
+  min-height: 44px;
+  border-radius: 10px;
+}
+
+.ak-header-shell .ak-category-nav {
+  display: flex;
+  gap: 32px;
+  min-height: 46px;
+  padding: 0;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.ak-header-shell .ak-category-nav a {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.ak-header-shell .ak-category-nav a::after {
+  bottom: 0;
+}
+
+@media (max-width: 1000px) {
+  .ak-header-shell .ak-header-top {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "logo actions" "search search";
+    gap: 10px 20px;
+  }
+
+  .ak-header-shell .ak-header-logo img {
+    width: 180px;
+  }
+}
+
+@media (max-width: 639px) {
+  .ak-header-shell .ak-header-top {
+    grid-template-columns: minmax(0, 1fr) 68px 80px;
+    grid-template-areas: "logo account cart" "search search sell";
+    gap: 10px;
+  }
+
+  .ak-header-shell .ak-header-logo img {
+    width: 132px;
+    max-width: 100%;
+    max-height: 54px;
+  }
+
+  .ak-header-shell .ak-header-actions { display: contents; }
+  .ak-header-shell .ak-account-link { grid-area: account; }
+  .ak-header-shell .ak-cart-link { grid-area: cart; }
+  .ak-header-shell .ak-header-sell-link { grid-area: sell; }
+
+  .ak-header-shell .ak-header-actions .ak-header-pill {
+    min-height: 46px;
+    padding: 0 8px;
+    gap: 5px;
+    font-size: 12px;
+  }
+
+  .ak-header-shell .ak-category-nav {
+    gap: 16px;
+    justify-content: space-between;
+    font-size: 13px;
+  }
+}
+
 /* Storefront visual polish: compact navigation, readable catalogue controls. */
 @media (min-width: 901px) and (max-width: 1200px) {
   .woocommerce ul.products,

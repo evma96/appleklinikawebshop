@@ -212,7 +212,7 @@ make test-buyback-pricebook-activation
 ```
 
 Product cards intentionally stay compact: non-iPhone archive cards only show storage, grade, an optional real battery-health chip, and a Cellular chip only when an iPad or Apple Watch product has cellular connectivity.
-- The header uses a simplified two-row storefront layout with logo, centered search, account/cart actions, and Apple-focused category navigation on storefront/shop views.
+- The storefront header groups Account, Cart and Eladás beside a flexible search on desktop, with the four product categories on a separate row. On mobile, Account/Cart sit beside the logo and Eladás beside search; controls remain single instances with live Woo cart fragments. See `docs/design-system.md` for the focused header regression.
 - Color, storage, condition, battery health, and warranty values come from product meta fields when available.
 - SIM configuration comes from product meta and can appear in shop card meta, product info cards, and shop filtering.
 - Color, storage, and condition selector cards are built from matching WooCommerce products with the same Apple model meta when available.
