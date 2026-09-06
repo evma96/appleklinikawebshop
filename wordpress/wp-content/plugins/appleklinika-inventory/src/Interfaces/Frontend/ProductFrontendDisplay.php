@@ -109,35 +109,53 @@ final class ProductFrontendDisplay
             .appleklinika-delivery-note strong{color:#1f2735}
             .appleklinika-delivery-note span{color:#166534;font-weight:850}
             .appleklinika-trust-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-            .appleklinika-trust-card{display:flex;align-items:center;gap:10px;min-height:62px;border:1px solid #eceff3;border-radius:17px;background:#fff;padding:11px 13px;box-shadow:0 9px 22px rgba(15,23,42,.052)}
-            .appleklinika-trust-card__icon{display:flex;flex:0 0 32px;align-items:center;justify-content:center;width:32px;height:32px;border-radius:11px;background:#fef2f2;color:#d6001c;font-weight:950}
+            .appleklinika-trust-card{display:flex;align-items:flex-start;gap:12px;min-height:62px;border:0;border-bottom:1px solid #edf0f4;background:#fff;padding:16px 0}
+            .appleklinika-trust-card:last-child{border-bottom:0;padding-bottom:0}
+            .appleklinika-trust-card__icon{display:flex;flex:0 0 36px;align-items:center;justify-content:center;width:36px;height:36px;margin:0;border-radius:12px;background:#f5f7fa;color:#9f2336}
+            .appleklinika-trust-card__icon svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
             .appleklinika-trust-card strong{display:block;color:#293243;font-size:12.5px;line-height:1.2;font-weight:850}
-            .appleklinika-trust-card span{display:block;margin-top:3px;color:#6d7789;font-size:12px;line-height:1.25;font-weight:650}
+            .appleklinika-trust-card__copy{display:block;margin-top:4px;color:#667085;font-size:13px;line-height:1.5;font-weight:450}
             .appleklinika-product-assurance{padding:0}
             .appleklinika-product-assurance .appleklinika-trust-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
             .appleklinika-buy-panel > p:empty{display:none!important;margin:0!important}
             .appleklinika-product-below-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(280px,.84fr);gap:22px;align-items:start}
-            .appleklinika-below-panel{display:grid;align-content:start;gap:16px;min-width:0;padding:20px;border:1px solid #e6ebf2;border-radius:24px;background:#fff;box-shadow:0 18px 46px rgba(15,23,42,.06)}
+            .appleklinika-below-panel{display:grid;align-content:start;gap:24px;min-width:0;padding:24px;border:1px solid #e6ebf2;border-radius:22px;background:#fff;box-shadow:0 6px 20px rgba(15,23,42,.025)}
             .appleklinika-below-panel__heading{display:grid;gap:5px}
-            .appleklinika-below-panel__heading h2{margin:0;color:#111820;font-size:21px;line-height:1.16;font-weight:850}
-            .appleklinika-below-panel__heading p{margin:0;color:#667085;font-size:13px;line-height:1.45;font-weight:650}
-            .appleklinika-below-panel .appleklinika-section-kicker{font-size:10.5px}
+            .appleklinika-below-panel__heading h2{margin:0;color:#111820;font-size:21px;line-height:1.25;font-weight:750}
+            .appleklinika-below-panel__heading p{margin:0;color:#667085;font-size:13px;line-height:1.5;font-weight:450}
+            .appleklinika-below-panel .appleklinika-section-kicker{font-size:11px}
             .appleklinika-below-panel .appleklinika-config-group{gap:7px}
             .appleklinika-below-panel .appleklinika-config-grid,.appleklinika-below-panel .appleklinika-config-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
             .appleklinika-below-panel .appleklinika-color-swatch-grid{grid-template-columns:repeat(auto-fit,minmax(72px,1fr));max-width:none}
-            .appleklinika-below-panel .appleklinika-config-card{min-height:58px;padding:9px 28px 9px 10px;border-radius:14px}
-            .appleklinika-below-panel .appleklinika-config-card__label{min-height:auto;font-size:12px;line-height:1.18}
-            .appleklinika-below-panel .appleklinika-config-card__meta{font-size:10.5px}
+            .appleklinika-below-panel .appleklinika-config-card{min-height:72px;padding:12px 28px 12px 12px;border-radius:14px;box-shadow:none}
+            .appleklinika-below-panel .appleklinika-config-card__label{display:block;overflow:visible;min-height:auto;font-size:13px;line-height:1.35;font-weight:650;-webkit-line-clamp:unset}
+            .appleklinika-below-panel .appleklinika-config-card__meta{font-size:12px;line-height:1.4}
+            .appleklinika-below-panel .appleklinika-config-card:disabled{opacity:1;color:#7b8491;background:#f7f8fa;border-style:dashed}
+            .appleklinika-below-panel .appleklinika-config-card:disabled .appleklinika-config-card__label{color:#7b8491}
             .appleklinika-below-panel .appleklinika-config-card--color{min-height:76px;padding:9px 7px 8px}
             .appleklinika-below-panel .appleklinika-color-swatch{width:34px;height:34px}
             .appleklinika-below-panel .appleklinika-config-card--color .appleklinika-config-card__label{max-height:none;font-size:11.5px;line-height:1.18;overflow:visible}
             .appleklinika-below-panel .appleklinika-config-card--color.is-selected:after,.appleklinika-below-panel .appleklinika-config-card--color.is-active:after{right:calc(50% - 25px);width:15px;height:15px;font-size:9px}
             .appleklinika-below-panel .appleklinika-config-info{grid-template-columns:1fr;gap:8px}
-            .appleklinika-below-panel--support .appleklinika-trust-grid{grid-template-columns:1fr}
-            .appleklinika-below-panel--support .appleklinika-trust-card{min-height:58px;padding:10px 12px}
-            .appleklinika-below-panel--support .appleklinika-trust-card__icon{width:30px;height:30px;flex-basis:30px}
-            .appleklinika-below-panel--support .appleklinika-trust-card strong{font-size:12.5px}
-            .appleklinika-below-panel--support .appleklinika-trust-card span{font-size:11.5px}
+            .appleklinika-below-panel--support .appleklinika-trust-grid{grid-template-columns:1fr;gap:0}
+            .appleklinika-below-panel--support .appleklinika-trust-card strong{font-size:14px;line-height:1.45;font-weight:650}
+            .appleklinika-quick-facts{display:grid;gap:14px;padding-top:20px;border-top:1px solid #edf0f4}
+            .appleklinika-quick-facts h3{margin:0;font-size:14px;font-weight:700}
+            .appleklinika-quick-facts p{margin:0;font-size:14px;line-height:1.5;color:#313b49}
+            .appleklinika-quick-facts p>span{display:block;color:#667085;font-size:12px;margin-bottom:3px}
+            .appleklinika-quick-facts a{display:inline-flex;align-items:center;gap:8px;min-height:44px;width:fit-content;color:#9f2336;font-size:13px;font-weight:650;text-underline-offset:4px}
+            .appleklinika-product-facts{display:grid;gap:24px}
+            .appleklinika-fact-group h3{margin:0 0 8px;color:#485365;font-size:13px;line-height:1.5;font-weight:650}
+            .appleklinika-fact-group dl{margin:0}
+            .appleklinika-fact-group dl>div{display:grid;grid-template-columns:minmax(120px,.7fr) minmax(0,1.3fr);gap:20px;padding:11px 0;border-top:1px solid #eef1f5;font-size:14px;line-height:1.5}
+            .appleklinika-fact-group dt{color:#667085}
+            .appleklinika-fact-group dd{margin:0;color:#253040;font-weight:550;overflow-wrap:anywhere}
+            .appleklinika-fact-group .appleklinika-sku-row dd{font-size:13px;font-weight:450}
+            #appleklinika-product-specs{scroll-margin-top:160px}
+            .appleklinika-product-shell [hidden]{display:none!important}
+            .appleklinika-spec-disclosure{margin-top:24px;border-top:1px solid #e6ebf2;padding-top:8px}
+            .appleklinika-spec-disclosure summary{padding:14px 0;cursor:pointer;color:#9f2336;font-size:14px;font-weight:650}
+            @media(max-width:640px){.appleklinika-below-panel{padding:20px;gap:22px}.appleklinika-fact-group dl>div{grid-template-columns:105px minmax(0,1fr);gap:14px}.appleklinika-fact-group .appleklinika-sku-row{grid-template-columns:1fr;gap:4px}}
             .appleklinika-compact-spec-table{display:grid;border-top:1px solid #eef1f5}
             .appleklinika-compact-spec-row{display:grid;grid-template-columns:minmax(92px,.45fr) minmax(0,1fr);gap:10px;padding:10px 0;border-bottom:1px solid #eef1f5}
             .appleklinika-compact-spec-row span{color:#667085;font-size:12px;font-weight:750}
@@ -247,27 +265,6 @@ final class ProductFrontendDisplay
                 }
 
                 // Product image interactions are owned by assets/product-gallery.js.
-
-                document.querySelectorAll("[data-appleklinika-spec-toggle]").forEach(function (button) {
-                    const panelId = button.getAttribute("aria-controls") || "";
-                    const panel = panelId ? document.getElementById(panelId) : null;
-                    const label = button.querySelector("[data-appleklinika-spec-toggle-label]");
-
-                    if (!panel) return;
-
-                    button.addEventListener("click", function () {
-                        const isExpanded = button.getAttribute("aria-expanded") === "true";
-                        const nextExpanded = !isExpanded;
-                        button.setAttribute("aria-expanded", nextExpanded ? "true" : "false");
-                        panel.hidden = !nextExpanded;
-
-                        if (label) {
-                            label.textContent = nextExpanded
-                                ? (button.dataset.hideLabel || "Mutass kevesebbet")
-                                : (button.dataset.showLabel || "Mutass többet");
-                        }
-                    });
-                });
 
                 document.querySelectorAll(".appleklinika-cart-area form.cart").forEach(function (form) {
                     form.addEventListener("submit", function (event) {
@@ -410,6 +407,18 @@ final class ProductFrontendDisplay
                     }
                     if (delivery && product.deliveryHtml) delivery.outerHTML = product.deliveryHtml;
                     if (trust && product.trustHtml) trust.outerHTML = product.trustHtml;
+                    // Update presentation fragments alongside the existing selected product.
+                    [
+                        ["[data-appleklinika-product-lead]", "leadHtml"],
+                        [".ak-single-product__description", "descriptionHtml"],
+                        ["[data-appleklinika-quick-facts]", "quickFactsHtml"],
+                        ["[data-appleklinika-product-facts]", "factsHtml"]
+                    ].forEach(function (entry) {
+                        const node = document.querySelector(entry[0]);
+                        if (node && product[entry[1]]) node.outerHTML = product[entry[1]];
+                    });
+                    const batteryMeta = document.querySelector("[data-selector-group=battery] [data-option-value=standard] .appleklinika-config-card__meta");
+                    if (batteryMeta) batteryMeta.textContent = product.batteryHealthLabel;
                     if (form) {
                         form.action = product.url;
                         form.querySelectorAll("[name=\"add-to-cart\"], [name=\"product_id\"]").forEach(function (input) {
@@ -528,7 +537,7 @@ final class ProductFrontendDisplay
         $firstImage = $images[0];
         $relatedProducts = $this->relatedProducts($product);
 
-        echo '<section class="appleklinika-product-shell" data-appleklinika-product-shell aria-label="Product purchase layout">';
+        echo '<section class="appleklinika-product-shell" data-appleklinika-product-shell aria-label="Termék és vásárlási lehetőségek">';
         echo '<div class="appleklinika-product-hero">';
         $this->renderProductGallery($images);
         $this->renderBuyPanel($product, $productId);
@@ -549,7 +558,7 @@ final class ProductFrontendDisplay
         echo '<div class="appleklinika-product-gallery" data-gallery-images="' . esc_attr((string) wp_json_encode($data)) . '">';
         echo '<div class="appleklinika-product-gallery__stage"><a data-gallery-open href="' . esc_url($first['full']) . '" aria-label="Termékkép megnyitása nagy méretben">';
         echo $this->imageHtml($first, 'data-appleklinika-stage-image');
-        echo '<span class="appleklinika-product-gallery__hint" aria-hidden="true">Kép nagyítása ↗</span></a></div>';
+        echo '<span class="appleklinika-product-gallery__hint" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4M7.5 10.5h6m-3-3v6"/></svg>Kép nagyítása</span></a></div>';
         echo '<div class="appleklinika-product-gallery__thumbs" aria-label="Termékképek"' . (count($images) < 2 ? ' hidden' : '') . '>';
         foreach ($images as $index => $image) {
             echo '<button class="appleklinika-product-gallery__thumb" type="button" data-gallery-index="' . $index . '" aria-pressed="' . ($index === 0 ? 'true' : 'false') . '" aria-label="' . esc_attr(sprintf('Termékkép %d', $index + 1)) . '">';
@@ -562,13 +571,8 @@ final class ProductFrontendDisplay
     {
         echo '<aside class="appleklinika-buy-panel ak-single-product__buybox" aria-label="Vásárlási panel">';
         echo '<span class="' . esc_attr($this->stockBadgeClass($product)) . '" data-appleklinika-stock-badge>' . esc_html($this->stockLabel($product)) . '</span>';
-        echo '<h1 data-appleklinika-product-title>' . esc_html($product->get_name()) . '</h1>';
-
-        $lead = trim(wp_strip_all_tags((string) $product->get_short_description()));
-
-        if ($lead !== '') {
-            echo '<p class="appleklinika-product-lead">' . esc_html(wp_trim_words($lead, 24)) . '</p>';
-        }
+        echo '<h1 data-appleklinika-product-title>' . esc_html($this->displayProductTitle($product)) . '</h1>';
+        $this->renderProductLead($product);
 
         $this->renderPrice($product);
         echo '<div class="appleklinika-cart-area">';
@@ -598,17 +602,15 @@ final class ProductFrontendDisplay
 
     private function renderProductDescriptionPanel(\WC_Product $product): void
     {
-        $description = trim((string) $product->get_description());
+        $description = $this->isLocalSelectorDemo($product)
+            ? $this->localDemoDescription($product)
+            : trim((string) $product->get_description());
 
-        if ($description === '') {
+        if ($description === '' && ! $this->isLocalSelectorDemo($product)) {
             $description = trim((string) $product->get_short_description());
         }
 
-        if ($description === '') {
-            return;
-        }
-
-        echo '<section class="ak-single-product__description appleklinika-product-panel" aria-label="Termékleírás">';
+        echo '<section class="ak-single-product__description appleklinika-product-panel" aria-label="Termékleírás"' . ($description === '' ? ' hidden' : '') . '>';
         echo '<h2>Termékleírás</h2>';
         echo wp_kses_post(apply_filters('the_content', $description));
         echo '</section>';
@@ -616,9 +618,7 @@ final class ProductFrontendDisplay
 
     private function renderProductSpecsPanel(\WC_Product $product, int $productId): void
     {
-        $rows = array_values(array_filter($this->productSpecRows($product, $productId), static function (array $row): bool {
-            return $row['label'] !== 'Tartozékok';
-        }));
+        $rows = $this->productSpecRows($product, $productId);
         $officialSpecs = $this->officialSpecsForProduct($product, $productId);
         $officialRows = $officialSpecs['rows'] ?? [];
 
@@ -626,22 +626,16 @@ final class ProductFrontendDisplay
             return;
         }
 
-        echo '<section class="ak-single-product__data appleklinika-product-panel" aria-label="Termékadatok">';
+        echo '<section id="appleklinika-product-specs" class="ak-single-product__data appleklinika-product-panel" aria-label="Termékadatok">';
         echo '<h2>Termékadatok</h2>';
 
         if ($rows !== []) {
-            echo '<div class="appleklinika-spec-table">';
-            $this->renderSpecRows($rows);
-            echo '</div>';
+            $this->renderProductFactGroups($product, $productId);
         }
 
         if ($officialRows !== []) {
-            $officialSpecsId = 'appleklinika-official-specs-' . $productId;
-            echo '<button class="appleklinika-spec-toggle" type="button" aria-expanded="false" aria-controls="' . esc_attr($officialSpecsId) . '" data-appleklinika-spec-toggle data-show-label="Mutass többet" data-hide-label="Mutass kevesebbet">';
-            echo '<span data-appleklinika-spec-toggle-label>Mutass többet</span>';
-            echo '<span class="appleklinika-spec-toggle__icon" aria-hidden="true">⌄</span>';
-            echo '</button>';
-            echo '<div class="appleklinika-spec-official" id="' . esc_attr($officialSpecsId) . '" hidden data-appleklinika-official-specs>';
+            echo '<details class="appleklinika-spec-disclosure"><summary>Gyártói műszaki adatok</summary>';
+            echo '<div class="appleklinika-spec-official">';
             $sourceTitle = trim((string) ($officialSpecs['source_title'] ?? ''));
             $sourceUrl = trim((string) ($officialSpecs['source_url'] ?? ''));
             $fetchedAt = trim((string) ($officialSpecs['fetched_at'] ?? ''));
@@ -651,14 +645,14 @@ final class ProductFrontendDisplay
                 echo 'Hivatalos műszaki adatok';
 
                 if ($sourceUrl !== '') {
-                    $linkText = $sourceTitle !== '' ? $sourceTitle : 'forrás';
+                    $linkText = 'Gyártói forrás';
                     echo ': <a href="' . esc_url($sourceUrl) . '" target="_blank" rel="noopener noreferrer">' . esc_html($linkText) . '</a>';
                 } elseif ($sourceTitle !== '') {
                     echo ': ' . esc_html($sourceTitle);
                 }
 
                 if ($fetchedAt !== '') {
-                    echo ' · Importálva: ' . esc_html($fetchedAt);
+                    echo ' · Adatok dátuma: ' . esc_html($fetchedAt);
                 }
 
                 echo '</p>';
@@ -667,7 +661,7 @@ final class ProductFrontendDisplay
             echo '<div class="appleklinika-spec-table appleklinika-spec-table--official">';
             $this->renderSpecRows($officialRows);
             echo '</div>';
-            echo '</div>';
+            echo '</div></details>';
         }
 
         echo '</section>';
@@ -926,11 +920,10 @@ final class ProductFrontendDisplay
             ['label' => 'Tárhely', 'value' => $this->storageLabel($this->conditionRepository->get($productId, 'storage_capacity'))],
             ['label' => 'Szín', 'value' => $this->colorDisplayLabel($modelKey, $this->conditionRepository->get($productId, 'color'))],
             ['label' => 'Állapot', 'value' => $this->gradeLabel($this->conditionRepository->get($productId, 'overall_grade'))],
-            ['label' => 'Akkumulátor', 'value' => $this->batteryText($productId)],
+            ['label' => 'Akkumulátor állapota', 'value' => ($battery = $this->conditionRepository->get($productId, 'battery_health')) !== '' ? $battery . '%' : ''],
             ['label' => 'Garancia', 'value' => $this->warrantyLabel($this->conditionRepository->get($productId, 'warranty_duration'))],
             ['label' => 'SIM', 'value' => $this->simConfigLabel($this->conditionRepository->get($productId, 'sim_config'))],
             ['label' => 'Tartozékok', 'value' => $this->conditionRepository->get($productId, 'accessories')],
-            ['label' => 'Készlet', 'value' => $this->stockLabel($product)],
         ];
 
         if ($product->get_sku() !== '') {
@@ -997,7 +990,7 @@ final class ProductFrontendDisplay
             echo '<a class="ak-single-product__related-card appleklinika-related-card" href="' . esc_url(get_permalink($relatedProduct->get_id())) . '">';
             echo '<span class="ak-single-product__related-thumb">' . $this->imageHtml($image) . '</span>';
             echo '<span class="ak-single-product__related-body">';
-            echo '<span class="ak-single-product__related-title">' . esc_html($relatedProduct->get_name()) . '</span>';
+            echo '<span class="ak-single-product__related-title">' . esc_html($this->displayProductTitle($relatedProduct)) . '</span>';
             echo '<span class="ak-single-product__related-price">' . wp_kses_post($relatedProduct->get_price_html()) . '</span>';
 
             $saving = $this->savingAmount($relatedProduct);
@@ -1102,9 +1095,6 @@ final class ProductFrontendDisplay
         $storage = $this->storageLabel($this->conditionRepository->get($productId, 'storage_capacity'));
         $condition = $this->gradeLabel($this->conditionRepository->get($productId, 'overall_grade'));
         $battery = $this->conditionRepository->get($productId, 'battery_health');
-        $warranty = $this->warrantyLabel($this->conditionRepository->get($productId, 'warranty_duration'));
-        $accessories = $this->conditionRepository->get($productId, 'accessories');
-        $simConfig = $this->simConfigLabel($this->conditionRepository->get($productId, 'sim_config'));
 
         echo '<section class="ak-single-product__below-hero appleklinika-product-below-hero" aria-label="Készülék opciók és termékinformációk">';
 
@@ -1112,7 +1102,7 @@ final class ProductFrontendDisplay
         echo '<div class="appleklinika-below-panel__heading">';
         echo '<span class="appleklinika-section-kicker">Állapot és megjelenés</span>';
         echo '<h2>Készülék kiválasztása</h2>';
-        echo '<p>Csak az aktuális készletben elérhető, valós termékadatokból választhatsz.</p>';
+        echo '<p>Válassz állapotot, színt és akkumulátort.</p>';
         echo '</div>';
         $this->renderConditionSelector($product, $relatedProducts, $currentPrice, $condition);
         $this->renderColorSelector($product, $relatedProducts, $modelKey, $color, $fallbackImage);
@@ -1121,13 +1111,12 @@ final class ProductFrontendDisplay
 
         echo '<div class="appleklinika-below-panel appleklinika-below-panel--technical">';
         echo '<div class="appleklinika-below-panel__heading">';
-        echo '<span class="appleklinika-section-kicker">Kapacitás és adatok</span>';
-        echo '<h2>Tárhely és műszaki alapok</h2>';
-        echo '<p>A fontos adatok röviden, a részletes termékadatok lentebb maradnak.</p>';
+        echo '<span class="appleklinika-section-kicker">Tárhely és felszereltség</span>';
+        echo '<h2>Mennyi helyre van szükséged?</h2>';
+        echo '<p>Válassz az elérhető tárhelyek közül.</p>';
         echo '</div>';
         $this->renderStorageSelector($product, $relatedProducts, $currentPrice, $storage);
-        $this->renderCompactProductMeta($product, $productId);
-        $this->renderCompactInfoCards($warranty, $accessories, $this->stockLabel($product), $simConfig);
+        $this->renderQuickFacts($productId);
         echo '</div>';
 
         $infoPanel = $this->productInfoPanelContent($productId);
@@ -1144,30 +1133,20 @@ final class ProductFrontendDisplay
         echo '</section>';
     }
 
-    private function renderCompactProductMeta(\WC_Product $product, int $productId): void
+    private function renderQuickFacts(int $productId): void
     {
-        $wantedLabels = ['Modell', 'Cikkszám'];
-        $rows = array_values(array_filter($this->productSpecRows($product, $productId), static function (array $row) use ($wantedLabels): bool {
-            return in_array($row['label'], $wantedLabels, true);
-        }));
-
-        if ($rows === []) {
-            return;
+        $facts = [
+            'SIM' => $this->simConfigLabel($this->conditionRepository->get($productId, 'sim_config')),
+            'Tartozékok' => $this->conditionRepository->get($productId, 'accessories'),
+        ];
+        echo '<section class="appleklinika-quick-facts" data-appleklinika-quick-facts aria-label="A kiválasztott készülék felszereltsége">';
+        echo '<h3>A kiválasztott készülékhez</h3>';
+        foreach ($facts as $label => $value) {
+            if ($value !== '') {
+                echo '<p><span>' . esc_html($label) . '</span>' . esc_html($value) . '</p>';
+            }
         }
-
-        echo '<section class="appleklinika-config-group" aria-label="Rövid termékadatok">';
-        echo '<h2 class="appleklinika-config-group__title">Rövid termékadatok</h2>';
-        echo '<div class="appleklinika-compact-spec-table">';
-
-        foreach ($rows as $row) {
-            echo '<div class="appleklinika-compact-spec-row">';
-            echo '<span>' . esc_html($row['label']) . '</span>';
-            echo '<strong>' . esc_html($row['value']) . '</strong>';
-            echo '</div>';
-        }
-
-        echo '</div>';
-        echo '</section>';
+        echo '<a href="#appleklinika-product-specs">Minden termékadat <span aria-hidden="true">↓</span></a></section>';
     }
 
     /**
@@ -1240,6 +1219,8 @@ final class ProductFrontendDisplay
             $items['current'] = ['value' => 'current', 'label' => $selectedLabel, 'url' => '', 'selected' => true, 'meta' => ''];
         }
 
+        $displayOrder = array_flip(['64_gb', '128_gb', '256_gb', '512_gb', '1_tb', '2_tb']);
+        uksort($items, static fn (string $a, string $b): int => ($displayOrder[$a] ?? 99) <=> ($displayOrder[$b] ?? 99));
         $this->renderSelectorGroup('storage', 'Tárhely', $selectedLabel, $items, 'appleklinika-config-row', false, 'appleklinika-config-card--pill');
     }
 
@@ -1263,11 +1244,12 @@ final class ProductFrontendDisplay
                 'url' => $product->get_id() === $currentProduct->get_id() ? '' : get_permalink($product->get_id()),
                 'selected' => $product->get_id() === $currentProduct->get_id(),
                 'meta' => $this->priceDifferenceLabel($this->numericPrice($product) - $currentPrice),
-                'popular' => $gradeKey === Grade::A,
                 'image' => $this->productImages($product)[0] ?? null,
             ];
         }
 
+        $displayOrder = array_flip(array_keys(Grade::options()));
+        uksort($items, static fn (string $a, string $b): int => ($displayOrder[$a] ?? 99) <=> ($displayOrder[$b] ?? 99));
         $this->renderSelectorGroup('condition', 'Esztétikai állapot', $selectedLabel, $items, 'appleklinika-config-grid', false);
     }
 
@@ -1276,7 +1258,7 @@ final class ProductFrontendDisplay
         $items = [
             'standard' => [
                 'value' => 'standard',
-                'label' => 'Standard',
+                'label' => 'Jelenlegi akkumulátor',
                 'url' => '',
                 'selected' => true,
                 'meta' => $batteryHealth !== '' ? $batteryHealth . '%' : 'Jelenlegi akkumulátor',
@@ -1287,7 +1269,7 @@ final class ProductFrontendDisplay
                 'label' => 'Új utángyártott akkumulátor',
                 'url' => '',
                 'selected' => false,
-                'meta' => '+15.000 Ft',
+                'meta' => '+15 000 Ft',
                 'extra_price' => 15000,
             ],
             'factory_new' => [
@@ -1295,50 +1277,94 @@ final class ProductFrontendDisplay
                 'label' => 'Új gyári akkumulátor',
                 'url' => '',
                 'selected' => false,
-                'meta' => '+30.000 Ft',
+                'meta' => '+30 000 Ft',
                 'extra_price' => 30000,
             ],
         ];
 
-        $this->renderSelectorGroup('battery', 'Akkumulátor extra', 'Standard', $items, 'appleklinika-config-grid', false, 'appleklinika-config-card--wide');
+        $this->renderSelectorGroup('battery', 'Akkumulátor', 'Jelenlegi akkumulátor', $items, 'appleklinika-config-grid', false, 'appleklinika-config-card--wide');
     }
 
-    private function renderCompactInfoCards(string $warranty, string $accessories, string $stock, string $simConfig): void
+    private function renderProductFactGroups(\WC_Product $product, int $productId): void
     {
-        $cards = array_values(array_filter([
-            ['label' => 'Garancia', 'value' => $warranty],
-            ['label' => 'SIM', 'value' => $simConfig],
-            ['label' => 'Tartozékok', 'value' => $accessories],
-            ['label' => 'Készlet', 'value' => $stock],
-        ], static function (array $card): bool {
-            return trim($card['value']) !== '';
-        }));
-
-        if ($cards === []) {
-            return;
+        $groups = ['Készülék' => [], 'Állapot és felszereltség' => [], 'Azonosítás és további adatok' => []];
+        $seen = [];
+        foreach ($this->productSpecRows($product, $productId) as $row) {
+            $key = $row['label'] . ':' . $row['value'];
+            if (isset($seen[$key])) continue;
+            $seen[$key] = true;
+            $group = in_array($row['label'], ['Modell', 'Tárhely', 'Szín', 'SIM'], true) ? 'Készülék'
+                : (in_array($row['label'], ['Állapot', 'Akkumulátor állapota', 'Garancia', 'Tartozékok'], true) ? 'Állapot és felszereltség' : 'Azonosítás és további adatok');
+            $groups[$group][] = $row;
         }
-
-        echo '<section class="appleklinika-config-group" aria-label="Kiegészítő információk">';
-        echo '<div class="appleklinika-config-info">';
-
-        foreach ($cards as $card) {
-            $this->renderInfoCard($card['label'], $card['value']);
+        echo '<div class="appleklinika-product-facts" data-appleklinika-product-facts>';
+        foreach ($groups as $heading => $rows) {
+            if ($rows === []) continue;
+            $reference = $heading === 'Azonosítás és további adatok';
+            echo $reference ? '<details class="appleklinika-fact-group appleklinika-spec-disclosure"><summary>' . esc_html($heading) . '</summary><dl>'
+                : '<section class="appleklinika-fact-group"><h3>' . esc_html($heading) . '</h3><dl>';
+            foreach ($rows as $row) {
+                echo '<div' . ($row['label'] === 'Cikkszám' ? ' class="appleklinika-sku-row"' : '') . '><dt>' . esc_html($row['label']) . '</dt><dd>' . esc_html($row['value']) . '</dd></div>';
+            }
+            echo $reference ? '</dl></details>' : '</dl></section>';
         }
-
         echo '</div>';
-        echo '</section>';
     }
 
-    private function renderInfoCard(string $label, string $value): void
+    private function isLocalSelectorDemo(\WC_Product $product): bool
     {
-        if ($value === '') {
-            return;
-        }
+        return in_array(wp_parse_url(home_url('/'), PHP_URL_HOST), ['localhost', '127.0.0.1'], true)
+            && str_starts_with($product->get_sku(), 'ak-selector-demo-iphone-')
+            && $this->conditionRepository->get($product->get_id(), 'device_type') === 'iphone';
+    }
 
-        echo '<div class="appleklinika-info-card">';
-        echo '<span>' . esc_html($label) . '</span>';
-        echo '<strong>' . esc_html($value) . '</strong>';
-        echo '</div>';
+    private function displayProductTitle(\WC_Product $product): string
+    {
+        if (! $this->isLocalSelectorDemo($product)) return $product->get_name();
+        $id = $product->get_id();
+        $model = $this->conditionRepository->get($id, 'device_model');
+        return implode(' · ', array_filter([
+            $this->modelLabel($model),
+            $this->storageLabel($this->conditionRepository->get($id, 'storage_capacity')),
+            $this->colorDisplayLabel($model, $this->conditionRepository->get($id, 'color')),
+            explode(' – ', $this->gradeLabel($this->conditionRepository->get($id, 'overall_grade')))[0],
+        ])) ?: 'iPhone';
+    }
+
+    private function localDemoDescription(\WC_Product $product): string
+    {
+        $id = $product->get_id();
+        $model = $this->conditionRepository->get($id, 'device_model');
+        $storage = $this->storageLabel($this->conditionRepository->get($id, 'storage_capacity'));
+        $color = $this->colorDisplayLabel($model, $this->conditionRepository->get($id, 'color'));
+        $condition = $this->gradeLabel($this->conditionRepository->get($id, 'overall_grade'));
+        $battery = $this->conditionRepository->get($id, 'battery_health');
+        $sentences = [];
+        if ($model !== '') $sentences[] = $this->modelLabel($model) . ($storage !== '' ? ', ' . $storage . ' tárhellyel' : '') . '.';
+        if ($color !== '') $sentences[] = 'Színe: ' . $color . '.';
+        if ($condition !== '') $sentences[] = 'Esztétikai állapota: ' . $condition . '.';
+        if ($battery !== '') $sentences[] = 'A jelenlegi akkumulátor állapota ' . $battery . '%.';
+        return esc_html(implode(' ', $sentences));
+    }
+
+    private function renderProductLead(\WC_Product $product): void
+    {
+        $id = $product->get_id();
+        $lead = $this->isLocalSelectorDemo($product)
+            ? implode(' · ', array_filter([$this->gradeLabel($this->conditionRepository->get($id, 'overall_grade')), $this->batteryText($id)]))
+            : trim(wp_strip_all_tags((string) $product->get_short_description()));
+        echo '<p class="appleklinika-product-lead" data-appleklinika-product-lead' . ($lead === '' ? ' hidden' : '') . '>' . esc_html(wp_trim_words($lead, 24)) . '</p>';
+    }
+
+    private function trustIcon(string $icon): string
+    {
+        $path = [
+            '1' => 'M12 3 4 6v6c0 4 8 9 8 9s8-5 8-9V6Z M8 12l3 3 5-6',
+            '✓' => 'M9 3h6l2 3h3v14H4V6h3Z M8 12l3 3 5-6',
+            '↺' => 'M4 10a8 8 0 1 1 1 9 M4 4v6h6',
+            '•' => 'M5 3h14v18H5Z M9 8h6 M9 12h6 M9 16h4',
+        ][$icon] ?? '';
+        return $path !== '' ? '<svg viewBox="0 0 24 24" focusable="false"><path d="' . $path . '"/></svg>' : esc_html($icon);
     }
 
     /**
@@ -1351,7 +1377,7 @@ final class ProductFrontendDisplay
         }
 
         echo '<section class="appleklinika-config-group" data-selector-group="' . esc_attr($group) . '" data-appleklinika-config-group="' . esc_attr($group) . '" aria-label="' . esc_attr($title) . '">';
-        echo '<h2 class="appleklinika-config-group__title">' . esc_html($title) . ': <span data-selected-label data-appleklinika-selected-label>' . esc_html($selectedLabel) . '</span></h2>';
+        echo '<h3 class="appleklinika-config-group__title">' . esc_html($title) . ($group === 'battery' ? ' <span class="screen-reader-text"' : ': <span') . ' data-selected-label data-appleklinika-selected-label>' . esc_html($selectedLabel) . '</span></h3>';
         echo '<div class="' . esc_attr($containerClass) . '">';
 
         foreach ($items as $item) {
@@ -1431,7 +1457,12 @@ final class ProductFrontendDisplay
             return [
                 'id' => $productId,
                 'url' => get_permalink($productId),
-                'title' => $product->get_name(),
+                'title' => $this->displayProductTitle($product),
+                'leadHtml' => $this->capture(fn () => $this->renderProductLead($product)),
+                'descriptionHtml' => $this->capture(fn () => $this->renderProductDescriptionPanel($product)),
+                'quickFactsHtml' => $this->capture(fn () => $this->renderQuickFacts($productId)),
+                'factsHtml' => $this->capture(fn () => $this->renderProductFactGroups($product, $productId)),
+                'batteryHealthLabel' => ($battery = $this->conditionRepository->get($productId, 'battery_health')) !== '' ? $battery . '%' : 'Jelenlegi akkumulátor',
                 'salePrice' => $this->numericPrice($product),
                 'regularPrice' => (float) ($product->get_regular_price() !== '' ? $product->get_regular_price() : $this->numericPrice($product)),
                 'priceHtml' => $this->capture(function () use ($product): void {
@@ -1649,8 +1680,8 @@ final class ProductFrontendDisplay
 
         foreach ($this->productInfoPanelContent($productId)['items'] as $block) {
             echo '<div class="appleklinika-trust-card">';
-            echo '<span class="appleklinika-trust-card__icon">' . esc_html($block['icon']) . '</span>';
-            echo '<div><strong>' . esc_html($block['title']) . '</strong><span>' . esc_html($block['text']) . '</span></div>';
+            echo '<span class="appleklinika-trust-card__icon" aria-hidden="true">' . $this->trustIcon($block['icon']) . '</span>';
+            echo '<div><strong>' . esc_html($block['title']) . '</strong><span class="appleklinika-trust-card__copy">' . esc_html($block['text']) . '</span></div>';
             echo '</div>';
         }
 
@@ -1694,7 +1725,7 @@ final class ProductFrontendDisplay
         $content = [
             'kicker' => 'Biztonságos vásárlás',
             'title' => 'Apple Klinika garanciák',
-            'intro' => 'Valós termékadatok, ellenőrzött készülékek és átlátható vásárlási információk.',
+            'intro' => 'Tudnivalók a vásárláshoz.',
             'items' => array_slice($items, 0, 4),
         ];
 
@@ -1879,7 +1910,7 @@ final class ProductFrontendDisplay
             return '(PRODUCT)RED';
         }
 
-        if (preg_match('/\(([^)]+)\)\s*$/u', $rawLabel, $matches) === 1) {
+        if (preg_match('/^(.+?)\s*\([^)]+\)\s*$/u', $rawLabel, $matches) === 1) {
             return trim((string) $matches[1]);
         }
 
@@ -2040,14 +2071,14 @@ final class ProductFrontendDisplay
     private function simConfigLabel(string $simConfig): string
     {
         return [
-            'dual_esim' => 'Dual eSIM',
-            'physical_esim' => 'Fizikai + eSIM',
-            'dual_physical' => 'Dual fizikai',
+            'dual_esim' => 'Két eSIM',
+            'physical_esim' => 'Fizikai SIM + eSIM',
+            'dual_physical' => 'Két fizikai SIM',
         ][$simConfig] ?? '';
     }
 
     private function gradeLabel(string $grade): string
     {
-        return Grade::options()[$grade] ?? $grade;
+        return str_replace([' - ', 'makulatlan'], [' – ', 'makulátlan'], Grade::options()[$grade] ?? $grade);
     }
 }
