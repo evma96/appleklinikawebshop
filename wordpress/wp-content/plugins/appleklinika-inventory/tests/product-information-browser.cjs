@@ -29,6 +29,8 @@ const norm=text=>text.replace(/\s+/g,' ').trim();
    check(await hint.locator('svg').count()===1,'Neutral magnifier icon');
    const imageBox=await stage.boundingBox(),hintBox=await hint.boundingBox();
    check(imageBox.y+imageBox.height<=hintBox.y+1,'Zoom hint does not cover photograph');
+   check(await page.locator('.appleklinika-product-gallery__stage').evaluate(n=>getComputedStyle(n).borderTopWidth==='0px' && getComputedStyle(n).backgroundColor==='rgba(0, 0, 0, 0)'),'No grey gallery container');
+   check(await page.locator('[data-selector-option].is-selected').evaluateAll(nodes=>nodes.every(n=>getComputedStyle(n).borderTopColor==='rgb(214, 0, 28)')),'Intentional red option states preserved');
    for(let n=0;n<3;n++){
     await page.locator('[data-gallery-index="'+n+'"]').click();await stage.evaluate(img=>img.decode());
     check(await page.locator('[data-gallery-index="'+n+'"]').getAttribute('aria-pressed')==='true','Thumbnail switches');
@@ -37,19 +39,33 @@ const norm=text=>text.replace(/\s+/g,' ').trim();
    await modal.waitFor({state:'visible'});await modal.locator('img').evaluate(img=>img.decode());
    await page.waitForFunction(()=>!document.querySelector('dialog.ak-image-viewer img').hidden);
    check(await modal.evaluate(node=>node.matches(':modal')),'Native gallery opens');
+   check(await modal.evaluate(n=>getComputedStyle(n).backgroundColor==='rgb(255, 255, 255)' && getComputedStyle(n).borderRadius==='0px' && getComputedStyle(n).boxShadow==='none'),'Viewport viewer has no framed modal surface');
+   check(await page.evaluate(()=>document.documentElement.classList.contains('ak-image-viewer-lock') && document.body.style.position==='fixed'),'Background scroll stays locked');
+   check(await modal.locator('button:visible').evaluateAll(nodes=>nodes.every(n=>n.getBoundingClientRect().width>=44 && n.getBoundingClientRect().height>=44)),'Viewer touch controls at least 44px');
    await modal.locator('[data-direction="1"]').click();await modal.locator('img').evaluate(img=>img.decode());
    await modal.locator('[data-zoom]').click();
    check(await modal.locator('.ak-image-viewer__canvas').getAttribute('data-zoomed')==='true','Detail zoom works');
    if(id===288) await page.screenshot({path:path.join(out,'after-viewer-'+width+'.png')});
    await modal.locator('[data-close]').click();check(!await modal.isVisible(),'Close works');
+   check(await page.evaluate(()=>!document.documentElement.classList.contains('ak-image-viewer-lock') && document.body.style.position!=='fixed'),'Background scroll restored');
+   await page.locator('[data-gallery-open]').click();await modal.waitFor({state:'visible'});await page.keyboard.press('ArrowRight');
+   check((await modal.locator('.ak-image-viewer__count').innerText()).trim()==='2 / 3','Keyboard image navigation');
+   await page.keyboard.press('Escape');check(!await modal.isVisible(),'ESC closes viewer');
+   check(await page.locator('[data-gallery-open]').evaluate(n=>n===document.activeElement),'Focus returns to opener');
    const reference=page.locator('.appleklinika-product-facts details');
    await reference.locator('summary').click();
    check(await reference.locator('.appleklinika-sku-row dd').isVisible(),'Exact SKU remains accessible');
    check(await reference.locator('dd').evaluateAll(nodes=>nodes.every(n=>n.scrollWidth<=n.clientWidth+1)),'Long identifiers wrap');
    if(id===288) await page.locator('.ak-single-product__data').screenshot({path:path.join(out,'after-expanded-reference-'+width+'.png')});
    await reference.locator('summary').click();
-   const official=page.locator('.ak-single-product__data > .appleklinika-spec-disclosure');
-   if(await official.count()) {await official.locator('summary').click();check(await official.locator('.appleklinika-spec-table').isVisible(),'Native technical disclosure');await official.locator('summary').click();}
+   const official=page.locator('.appleklinika-spec-disclosure--all');
+   if(await official.count()) {
+    check(await page.locator('.appleklinika-spec-highlights .appleklinika-spec-row').count()===4,'Four useful technical highlights');
+    await official.locator('summary').click();check(await official.locator('.appleklinika-spec-table').isVisible(),'Native technical disclosure');
+    check(!/Gyártói forrás|Hivatalos műszaki adatok|Adatok dátuma|2026-06-23/.test(await official.innerText()),'Internal source/date metadata removed from presentation');
+    check(await official.locator('dd').evaluateAll(nodes=>nodes.every(n=>n.scrollWidth<=n.clientWidth+1)),'Long specifications wrap within their columns');
+    await official.locator('summary').click();
+   }
    const related=page.locator('.ak-single-product__related-card').first();const relatedUrl=await related.getAttribute('href');
    await Promise.all([page.waitForURL(relatedUrl),related.click()]);check(await page.locator('[data-appleklinika-product-title]').isVisible(),'Similar product navigation');
   }

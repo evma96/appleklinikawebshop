@@ -83,7 +83,7 @@
 ## Risks
 
 - Storefront header actions now have a scoped responsive layout and LOCAL rendered/browser coverage; deployment and physical-device Safari acceptance remain separate. The legacy standalone header-actions shortcode and checkout header are intentionally unchanged.
-- Product information polish is verified on LOCAL real-photo iPhone pages at 1440px/390px. Data-derived demo copy is deliberately restricted to localhost selector-demo SKUs; it is not a production content migration. Physical-device Safari and deployment remain separate acceptance steps. Canonical SKUs stay available in expandable reference details. See `docs/qa/product-information-presentation.md`.
+- Product information polish is verified on LOCAL real-photo iPhone pages at 1440px/390px, including unframed gallery/viewer surfaces and grouped expandable specifications. Data-derived demo copy is deliberately restricted to localhost selector-demo SKUs; it is not a production content migration. Physical-device Safari and deployment remain separate acceptance steps. Canonical SKUs and manufacturer links stay available as secondary references; import dates are retained in storage, not displayed. See `docs/qa/product-information-presentation.md`.
 - WordPress image versions must be reviewed before production deployment.
 - Placeholder quality commands do not yet enforce real code quality.
 - Internal IMEI handling must be designed carefully to avoid frontend exposure.

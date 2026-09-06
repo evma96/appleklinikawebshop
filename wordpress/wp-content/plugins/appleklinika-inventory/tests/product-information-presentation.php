@@ -57,6 +57,37 @@ try {
     $check($payload['values']===['color'=>'silver','storage'=>'128_gb','condition'=>'b'],'Canonical selector keys unchanged.');
     $check($payload['factsHtml']===$facts && $payload['descriptionHtml']===$description && $payload['quickFactsHtml']===$quick,'Selected product carries the same factual renderers.');
     $check($payload['batteryHealthLabel']==='84%','Battery display follows selected physical phone.');
+    $specs = ['source_url'=>'https://example.invalid/specification','source_title'=>'Internal import provider','fetched_at'=>'2026-06-23','rows'=>[
+        ['label'=>'Modell','value'=>'iPhone 13 Pro'],
+        ['label'=>'Színek','value'=>'Graphite, Gold, Silver, Sierra Blue, Alpine Green'],
+        ['label'=>'Kapacitások','value'=>'128GB, 256GB, 512GB, 1TB'],
+        ['label'=>'Chip','value'=>'A15 Bionic chip, 6 magos CPU'],
+        ['label'=>'Kijelző','value'=>'6,1 hüvelykes OLED kijelző'],
+        ['label'=>'Hátlapi kamera','value'=>'Pro 12 MP kamerarendszer'],
+        ['label'=>'Vezeték nélküli kapcsolat','value'=>'5G, Wi-Fi 6, Bluetooth 5.0'],
+        ['label'=>'SIM','value'=>'Dual SIM: nano-SIM és eSIM; Dual eSIM támogatás'],
+        ['label'=>'Akkumulátor','value'=>'Videólejátszás akár 22 óra'],
+        ['label'=>'Súly','value'=>'204 g'],
+        ['label'=>'Egyedi jellemző','value'=>'An unrecognized specification must remain available.'],
+    ]];
+    $specBaseline = serialize($specs);
+    $technical = $html('renderTechnicalSpecs',$specs,'iphone_13_pro');
+    [$preview,$expanded] = explode('<details',$technical,2);
+    $check(substr_count($preview,'class="appleklinika-spec-row"')===4,'Four factual highlights shown without expanding.');
+    $check(strpos($preview,'Kijelző')<strpos($preview,'Chip'),'Display precedes chip in the overview.');
+    $check(substr_count($expanded,'class="appleklinika-spec-row"')===count($specs['rows']),'Every full specification remains available.');
+    foreach (['A15 Bionic chip, 6 magos CPU','6,1 hüvelykes OLED kijelző','Pro 12 MP kamerarendszer','5G, Wi-Fi 6, Bluetooth 5.0','204 g','Videólejátszás akár 22 óra','An unrecognized specification must remain available.'] as $value) {
+        $check(str_contains($expanded,$value),'Technical values are not invented or truncated: '.$value);
+    }
+    $check(str_contains($expanded,'Grafit, Arany, Ezüst, Hegyi kék, Alpesi zöld'),'Manufacturer color list uses the same catalog display labels.');
+    $check(str_contains($expanded,'128 GB, 256 GB, 512 GB, 1 TB'),'Storage spacing changes presentation only.');
+    $check(str_contains($expanded,'Két SIM: nano-SIM és eSIM; Két eSIM támogatása'),'SIM capability remains semantically intact.');
+    $check(str_contains($expanded,'<dt>Tömeg</dt>'),'Weight has a customer-facing Hungarian label.');
+    $check(!str_contains($technical,'2026-06-23') && !str_contains($technical,'Internal import provider'),'Raw import date/provider is not exposed.');
+    $check(str_contains($expanded,'https://example.invalid/specification') && str_contains($expanded,'A modell gyártói specifikációja'),'Source transparency stays available, subtly.');
+    $check(!str_contains($preview,'Gyártói forrás') && !str_contains($technical,'Hivatalos műszaki adatok'),'No import-oriented headings.');
+    $check(str_contains($facts,'Cikkszám megtekintése') && !str_contains($facts,'Azonosítás és további adatok'),'Identification remains a secondary reference.');
+    $check(serialize($specs)===$specBaseline,'Rendering never mutates source specification data.');
     $check(serialize($p->get_data())===$before,'Rendering did not change product data.');
     $meta['battery_health']=''; $meta['warranty_duration']=''; $meta['accessories']=''; $meta['sim_config']='';
     $check(!str_contains($call('localDemoDescription',$p),'%'),'Unknown battery health omitted.');
