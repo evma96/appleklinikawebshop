@@ -1,41 +1,40 @@
 .appleklinika-product-gallery { min-width: 0; }
 .appleklinika-product-gallery [hidden], .ak-image-viewer [hidden] { display: none !important; }
-.appleklinika-product-gallery__stage { width: min(500px, 100%); aspect-ratio: 1; margin: auto; border: 1px solid #e4e9ef; border-radius: 26px; overflow: hidden; background: #f5f7fa; }
-.appleklinika-product-gallery__stage a { position: relative; display: grid; grid-template-rows: minmax(0, 1fr) 32px; gap: 8px; align-items: center; justify-items: center; width: 100%; height: 100%; padding: 16px; box-sizing: border-box; cursor: zoom-in; }
+.appleklinika-product-gallery__stage { width: min(500px, 100%); aspect-ratio: 1; margin: auto; border: 0; border-radius: 0; overflow: hidden; background: transparent; }
+.appleklinika-product-gallery__stage a { position: relative; display: grid; grid-template-rows: minmax(0, 1fr) 32px; gap: 12px; align-items: center; justify-items: center; width: 100%; height: 100%; padding: 0; box-sizing: border-box; cursor: zoom-in; text-decoration: none; }
 .appleklinika-product-gallery__stage img { display: block; width: 100%; height: 100%; object-fit: contain; max-width: 100%; max-height: 100%; }
-.appleklinika-product-gallery__hint { display: inline-flex; align-items: center; gap: 7px; min-height: 32px; color: #536072; font: 600 12px/1.4 system-ui, sans-serif; }
+.appleklinika-product-gallery__hint { display: inline-flex; align-items: center; gap: 7px; min-height: 32px; color: #536072; font: 500 13px/1.4 system-ui, sans-serif; }
+.appleklinika-product-gallery__stage a:hover .appleklinika-product-gallery__hint { color: #18212d; text-decoration: underline; text-underline-offset: 3px; }
 .appleklinika-product-gallery__hint svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
 .appleklinika-product-gallery__thumbs { display: flex; gap: 10px; max-width: 500px; margin: 14px auto 0; padding: 4px; overflow-x: auto; }
-.appleklinika-product-gallery__thumb { flex: 0 0 72px; width: 72px; height: 72px; padding: 5px; border: 1px solid #dce3eb; border-radius: 14px; background: #f5f7fa; cursor: pointer; }
+.appleklinika-product-gallery__thumb { flex: 0 0 72px; width: 72px; height: 72px; padding: 3px; border: 1px solid transparent; border-radius: 8px; background: transparent; cursor: pointer; }
 .appleklinika-product-gallery__thumb[aria-pressed="true"] { border-color: #d6001c; box-shadow: 0 0 0 2px #d6001c1a; }
 .appleklinika-product-gallery__thumb img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .appleklinika-product-gallery a:focus-visible, .appleklinika-product-gallery button:focus-visible { outline: 3px solid #d6001c; outline-offset: -4px; }
 html.ak-image-viewer-lock { overflow: hidden; }
-.ak-image-viewer { box-sizing: border-box; position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; color: #fff; background: #171a20; overflow: hidden; overscroll-behavior: contain; }
-.ak-image-viewer::backdrop { background: #171a20; }
+.ak-image-viewer { box-sizing: border-box; position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; border-radius: 0; box-shadow: none; color: #18212d; background: #fff; overflow: hidden; overscroll-behavior: contain; }
+.ak-image-viewer::backdrop { background: #fff; }
 .ak-image-viewer[open] { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; }
 .ak-image-viewer__bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: max(16px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) 12px max(24px, env(safe-area-inset-left)); }
 .ak-image-viewer__title { margin: 0; font: 600 15px/1.4 system-ui, sans-serif; }
 .ak-image-viewer__tools, .ak-image-viewer__bottom { display: flex; align-items: center; justify-content: center; gap: 8px; }
-.ak-image-viewer button { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; min-width: 44px; height: 44px; padding: 0 14px; border: 1px solid #ffffff38; border-radius: 24px; background: #ffffff0d; color: #fff; font: 600 14px/1 system-ui, sans-serif; cursor: pointer; }
-.ak-image-viewer button:hover { background: #ffffff20; }
-.ak-image-viewer button:focus-visible, .ak-image-viewer__canvas:focus-visible { outline: 2px solid #fff; outline-offset: -4px; }
-.ak-image-viewer__canvas { position: relative; min-width: 0; min-height: 0; margin: 0 64px; overflow: hidden; touch-action: none; outline: none; user-select: none; }
-.ak-image-viewer__image { position: absolute; left: 50%; top: 50%; display: block; max-width: none !important; max-height: none !important; margin: 0 !important; object-fit: contain; transform-origin: center; cursor: zoom-in; user-select: none; -webkit-user-drag: none; }
+.ak-image-viewer button { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; min-width: 44px; height: 44px; padding: 0 14px; border: 0; border-radius: 24px; background: #f4f5f7; color: #18212d; font: 600 14px/1 system-ui, sans-serif; cursor: pointer; }
+.ak-image-viewer button:hover { background: #e8ebef; }
+.ak-image-viewer button:focus-visible, .ak-image-viewer__canvas:focus-visible { outline: 2px solid #18212d; outline-offset: -4px; }
+.ak-image-viewer__canvas { position: relative; min-width: 0; min-height: 0; margin: 0 24px; border: 0; border-radius: 0; background: transparent; overflow: hidden; touch-action: none; outline: none; user-select: none; }
+.ak-image-viewer__image { position: absolute; left: 50%; top: 50%; display: block; max-width: none !important; max-height: none !important; margin: 0 !important; border: 0; border-radius: 0; box-shadow: none; background: transparent; object-fit: contain; transform-origin: center; cursor: zoom-in; user-select: none; -webkit-user-drag: none; }
 .ak-image-viewer__canvas[data-zoomed="true"] .ak-image-viewer__image { cursor: grab; }
 .ak-image-viewer__canvas.is-dragging .ak-image-viewer__image { cursor: grabbing; }
-.ak-image-viewer__message { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); color: #fff; font: 14px/1.5 system-ui, sans-serif; }
+.ak-image-viewer__message { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); color: #18212d; font: 14px/1.5 system-ui, sans-serif; }
 .ak-image-viewer__bottom { padding: 12px 20px max(20px, env(safe-area-inset-bottom)); flex-wrap: wrap; }
 .ak-image-viewer__count { min-width: 60px; text-align: center; font: 14px/1.4 system-ui, sans-serif; }
-.ak-image-viewer__help { width: 100%; margin: 2px 0 0; text-align: center; color: #b9c1ce; font: 12px/1.4 system-ui, sans-serif; }
+.ak-image-viewer__help { width: 100%; margin: 2px 0 0; text-align: center; color: #667085; font: 12px/1.4 system-ui, sans-serif; }
 @media (max-width: 600px) {
-    .appleklinika-product-gallery__stage { border-radius: 22px; }
-    .appleklinika-product-gallery__stage a { padding: 12px; }
     .appleklinika-product-gallery__thumbs { gap: 8px; }
     .appleklinika-product-gallery__thumb { flex-basis: 64px; width: 64px; height: 64px; }
     .ak-image-viewer__bar { padding: max(12px, env(safe-area-inset-top)) 12px 8px; gap: 8px; }
     .ak-image-viewer__title { font-size: 13px; }
-    .ak-image-viewer__canvas { margin: 0 8px; }
+    .ak-image-viewer__canvas { margin: 0; }
     .ak-image-viewer__tools { gap: 6px; }
     .ak-image-viewer button { padding: 0 12px; }
     .ak-image-viewer__help { max-width: 300px; }
