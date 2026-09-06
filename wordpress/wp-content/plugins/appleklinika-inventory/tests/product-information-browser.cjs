@@ -39,7 +39,7 @@ const norm=text=>text.replace(/\s+/g,' ').trim();
    await modal.waitFor({state:'visible'});await modal.locator('img').evaluate(img=>img.decode());
    await page.waitForFunction(()=>!document.querySelector('dialog.ak-image-viewer img').hidden);
    check(await modal.evaluate(node=>node.matches(':modal')),'Native gallery opens');
-   check(await modal.evaluate(n=>getComputedStyle(n).backgroundColor==='rgb(255, 255, 255)' && getComputedStyle(n).borderRadius==='0px' && getComputedStyle(n).boxShadow==='none'),'Viewport viewer has no framed modal surface');
+   check(await modal.evaluate(n=>getComputedStyle(n).backgroundColor==='rgba(0, 0, 0, 0)' && getComputedStyle(n).borderRadius==='0px' && getComputedStyle(n).boxShadow==='none' && getComputedStyle(n,'::backdrop').backgroundColor==='rgb(11, 13, 16)'),'Neutral viewer floats over the sole dark backdrop');
    check(await page.evaluate(()=>document.documentElement.classList.contains('ak-image-viewer-lock') && document.body.style.position==='fixed'),'Background scroll stays locked');
    check(await modal.locator('button:visible').evaluateAll(nodes=>nodes.every(n=>n.getBoundingClientRect().width>=44 && n.getBoundingClientRect().height>=44)),'Viewer touch controls at least 44px');
    await modal.locator('[data-direction="1"]').click();await modal.locator('img').evaluate(img=>img.decode());

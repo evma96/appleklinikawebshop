@@ -10,7 +10,9 @@ const evidence = process.env.EVIDENCE_DIR || fs.mkdtempSync('/tmp/product-galler
 fs.mkdirSync(evidence, {recursive: true});
 const fixture = process.env.GALLERY_FIXTURE_HTML;
 assert(fixture, 'Provide the unsaved multi-image PHP renderer fixture.');
-const scenarios = [{name: 'single-square', id: 476}, {name: 'single-portrait', id: 288}, {name: 'multi', id: 288, fixture: true}];
+const singleFixture = process.env.GALLERY_SINGLE_FIXTURE_HTML;
+assert(singleFixture, 'Provide the unsaved single-image PHP renderer fixture.');
+const scenarios = [{name: 'single-square', id: 476}, {name: 'single-portrait', id: 288, fixture: singleFixture}, {name: 'multi', id: 288, fixture}];
 let checks = 0;
 const check = (condition, message) => {checks++; assert(condition, message);};
 (async () => {
@@ -32,7 +34,7 @@ const check = (condition, message) => {checks++; assert(condition, message);};
    const response = await route.fetch(), html = await response.text();
    const boundary = /<div class="appleklinika-product-gallery[\s\S]*?(?=<aside class="appleklinika-buy-panel)/;
    assert(boundary.test(html), 'Known rendered gallery boundary required.');
-   await route.fulfill({response, body: html.replace(boundary, fs.readFileSync(fixture, 'utf8'))});
+   await route.fulfill({response, body: html.replace(boundary, fs.readFileSync(scenario.fixture, 'utf8'))});
   });
   const shot = async state => page.screenshot({path: path.join(evidence, `${scenario.name}-${width}-${state}.png`)});
   await page.goto(base + '/?post_type=product&p=' + scenario.id);
@@ -40,14 +42,17 @@ const check = (condition, message) => {checks++; assert(condition, message);};
   await gallery.waitFor(); await gallery.scrollIntoViewIfNeeded();
   await page.locator('[data-appleklinika-stage-image]').evaluate(img => img.decode());
   const images = await gallery.evaluate(g => JSON.parse(g.dataset.galleryImages));
-  check(images.length === (scenario.fixture ? 3 : 1), 'Expected real image count.');
-  check(await gallery.locator('.appleklinika-product-gallery__thumbs').isVisible() === !!scenario.fixture, 'No single-image thumbnail/navigation noise.');
+  const multi = scenario.name === 'multi';
+  check(images.length === (multi ? 3 : 1), 'Expected real image count.');
+  check(await gallery.locator('.appleklinika-product-gallery__thumbs').isVisible() === multi, 'No single-image thumbnail/navigation noise.');
+  check(await opener.evaluate(el=>el.parentElement.matches('[data-gallery-images]')), 'No redundant wrapper between gallery owner and image link.');
+  check(await opener.evaluate(el=>{const s=getComputedStyle(el);return s.borderTopWidth==='0px' && s.backgroundColor==='rgba(0, 0, 0, 0)' && s.boxShadow==='none' && s.padding==='0px';}), 'No painted frame/padding on the image link.');
   const initialBox = await gallery.locator('.appleklinika-product-gallery__stage').boundingBox();
   check(Math.abs(initialBox.width - initialBox.height) < 1, 'Stable square stage.');
   check(await page.locator('[data-appleklinika-stage-image]').getAttribute('srcset'), 'WP responsive sources retained.');
   check(!images.some(image => requests.includes(image.full)), 'No full-resolution gallery originals fetched before opening.');
   await shot('normal');
-  if (scenario.fixture) {
+  if (multi) {
    await gallery.locator('[data-gallery-index="1"]').click();
    check(await gallery.locator('[data-gallery-index="1"]').getAttribute('aria-pressed') === 'true', 'Selected thumbnail exposed.');
    check(Math.abs((await gallery.locator('.appleklinika-product-gallery__stage').boundingBox()).height - initialBox.height) < 1, 'Thumbnail switch has no gallery layout shift.');
@@ -60,13 +65,16 @@ const check = (condition, message) => {checks++; assert(condition, message);};
   check(await modal.evaluate(d => d.matches(':modal')), 'Native modal is in the top layer.');
   const bounds = await modal.boundingBox();
   check(bounds.x === 0 && bounds.y === 0 && bounds.width === width && bounds.height === 1000, 'Overlay covers full viewport.');
-  check(await modal.locator('[data-direction="1"]').isVisible() === !!scenario.fixture, 'Viewer navigation only when useful.');
-  check(await modal.locator('img').getAttribute('src') === images[scenario.fixture ? 1 : 0].full, 'Selected original loads only in opened viewer.');
+  check(await modal.locator('[data-direction="1"]').isVisible() === multi, 'Viewer navigation only when useful.');
+  check(await modal.locator('img').getAttribute('src') === images[multi ? 1 : 0].full, 'Selected original loads only in opened viewer.');
+  check(await modal.evaluate(d=>getComputedStyle(d,'::backdrop').backgroundColor==='rgb(11, 13, 16)'), 'One dark backdrop, not a light modal surface.');
+  check(await modal.locator('.ak-image-viewer__canvas, .ak-image-viewer__image').evaluateAll(nodes=>nodes.every(n=>{const s=getComputedStyle(n);return s.backgroundColor==='rgba(0, 0, 0, 0)' && s.borderTopWidth==='0px' && s.boxShadow==='none' && s.borderRadius==='0px';})), 'Zoom container and photo have no visual frame.');
+  check(await modal.evaluate(d=>getComputedStyle(d).backgroundColor==='rgba(0, 0, 0, 0)' && d.children.length===3), 'Native dialog is unpainted and has only controls/canvas/controls.');
   check(await modal.locator('img').evaluate(img => Math.abs(parseFloat(img.style.width) / parseFloat(img.style.height) - img.naturalWidth / img.naturalHeight) < .001), 'Decoded aspect ratio wins over stale attachment metadata.');
   check(await modal.locator('[data-close]').evaluate(el => el.getBoundingClientRect().width >= 44 && el.getBoundingClientRect().height >= 44), 'Mobile-sized close target.');
   check(await modal.locator('[data-close]').evaluate(el => el === document.activeElement), 'Close receives focus.');
   await shot('open');
-  if (scenario.fixture) {
+  if (multi) {
    await modal.locator('[data-direction="1"]').click();
    check(await modal.locator('.ak-image-viewer__count').innerText() === '3 / 3', 'Next navigation.');
    await page.keyboard.press('ArrowLeft');
@@ -116,7 +124,7 @@ const check = (condition, message) => {checks++; assert(condition, message);};
   for (let i = 0; i < 3; i++) {await opener.click(); await modal.locator('[data-close]').click();}
   check(await page.locator('dialog.ak-image-viewer').count() === 1, 'Repeated open/close reuses one dialog.');
   await opener.click();
-  check(await img.getAttribute('src') === images[scenario.fixture ? 1 : 0].full, 'Reopen preserves selected image.');
+  check(await img.getAttribute('src') === images[multi ? 1 : 0].full, 'Reopen preserves selected image.');
   await modal.locator('.ak-image-viewer__canvas').click({position: {x: 1, y: 1}});
   check(!await modal.isVisible(), 'Click/tap outside image closes fit view.');
   check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'No page overflow.');

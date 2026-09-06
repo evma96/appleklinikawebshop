@@ -40,3 +40,5 @@ Device and equipment facts now use unboxed label/value groups. The exact SKU sit
 The LOCAL demo description now reads as compact prose; non-demo descriptions are untouched. Similar products retain the same query/URLs/prices and use full, unboxed portrait thumbnails with quieter row separators. The approved header, upper-card red option states and configured guarantee promises remain unchanged.
 
 Correction evidence: `.local/header-actions-review/product-information-completion/` in the original workspace. Products #288/#314/#366 were captured at 1440px/390px, including full page, gallery/thumbs, fit/zoom viewer, cards, description, facts, expanded specifications and related products. The final screenshots were personally opened and reviewed. The correction's isolated cart round-trip ended empty; no order or saved fixture was created.
+
+The subsequent focused [gallery framing correction](product-gallery-ux.md#framing-correction--september-7-2026) removes the redundant stage div and replaces the painted white viewer with an unpainted dialog over a single dark backdrop. Product information presentation above remains unchanged.
