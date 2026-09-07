@@ -265,43 +265,45 @@ final class ProductFrontendDisplay
 
                 // Product image interactions are owned by assets/product-gallery.js.
 
-                document.querySelectorAll(".appleklinika-cart-area form.cart").forEach(function (form) {
-                    form.addEventListener("submit", function (event) {
-                        const button = form.querySelector(".single_add_to_cart_button");
-                        const productId = button ? button.value : "";
-                        const ajaxUrl = "' . esc_js($this->addToCartUrl()) . '";
-                        if (!productId || !ajaxUrl) return;
-                        event.preventDefault();
-                        const quantity = form.querySelector("input.qty")?.value || "1";
-                        const data = new FormData(form);
-                        data.append("product_id", productId);
-                        data.set("quantity", quantity);
-                        button.classList.add("loading");
-                        fetch(ajaxUrl, {
-                            method: "POST",
-                            body: data,
-                            credentials: "same-origin"
-                        }).then(function (response) {
-                            return response.json();
-                        }).then(function (response) {
-                            if (response.error && response.product_url) {
-                                window.location = response.product_url;
-                                return;
-                            }
-                            if (response.fragments) {
-                                Object.keys(response.fragments).forEach(function (selector) {
-                                    document.querySelectorAll(selector).forEach(function (node) {
-                                        node.outerHTML = response.fragments[selector];
-                                    });
+                // The purchase area is replaced on product selection; its stable owner
+                // handles both the initial Woo form and later server-rendered forms.
+                document.querySelector(".appleklinika-product-shell")?.addEventListener("submit", function (event) {
+                    const form = event.target.closest(".appleklinika-cart-area form.cart");
+                    if (!form) return;
+                    const button = form.querySelector(".single_add_to_cart_button");
+                    const productId = button ? button.value : "";
+                    const ajaxUrl = "' . esc_js($this->addToCartUrl()) . '";
+                    if (!productId || !ajaxUrl) return;
+                    event.preventDefault();
+                    const quantity = form.querySelector("input.qty")?.value || "1";
+                    const data = new FormData(form);
+                    data.append("product_id", productId);
+                    data.set("quantity", quantity);
+                    button.classList.add("loading");
+                    fetch(ajaxUrl, {
+                        method: "POST",
+                        body: data,
+                        credentials: "same-origin"
+                    }).then(function (response) {
+                        return response.json();
+                    }).then(function (response) {
+                        if (response.error && response.product_url) {
+                            window.location = response.product_url;
+                            return;
+                        }
+                        if (response.fragments) {
+                            Object.keys(response.fragments).forEach(function (selector) {
+                                document.querySelectorAll(selector).forEach(function (node) {
+                                    node.outerHTML = response.fragments[selector];
                                 });
-                            }
-                            document.body.dispatchEvent(new CustomEvent("added_to_cart", { detail: response }));
-                            showAddFeedback();
-                        }).catch(function () {
-                            form.submit();
-                        }).finally(function () {
-                            button.classList.remove("loading");
-                        });
+                            });
+                        }
+                        document.body.dispatchEvent(new CustomEvent("added_to_cart", { detail: response }));
+                        showAddFeedback();
+                    }).catch(function () {
+                        form.submit();
+                    }).finally(function () {
+                        button.classList.remove("loading");
                     });
                 });
 
@@ -396,7 +398,6 @@ final class ProductFrontendDisplay
                     const stock = document.querySelector("[data-appleklinika-stock-badge]");
                     const delivery = document.querySelector("[data-appleklinika-delivery]");
                     const trust = document.querySelector("[data-appleklinika-trust]");
-                    const form = document.querySelector(".appleklinika-cart-area form.cart");
 
                     if (title) title.textContent = product.title;
                     if (price && product.priceHtml) price.outerHTML = product.priceHtml;
@@ -411,23 +412,14 @@ final class ProductFrontendDisplay
                         ["[data-appleklinika-product-lead]", "leadHtml"],
                         [".ak-single-product__description", "descriptionHtml"],
                         ["[data-appleklinika-quick-facts]", "quickFactsHtml"],
-                        ["[data-appleklinika-product-facts]", "factsHtml"]
+                        ["[data-appleklinika-product-facts]", "factsHtml"],
+                        [".appleklinika-cart-area", "purchaseHtml"]
                     ].forEach(function (entry) {
                         const node = document.querySelector(entry[0]);
                         if (node && product[entry[1]]) node.outerHTML = product[entry[1]];
                     });
                     const batteryMeta = document.querySelector("[data-selector-group=battery] [data-option-value=standard] .appleklinika-config-card__meta");
                     if (batteryMeta) batteryMeta.textContent = product.batteryHealthLabel;
-                    if (form) {
-                        form.action = product.url;
-                        form.querySelectorAll("[name=\"add-to-cart\"], [name=\"product_id\"]").forEach(function (input) {
-                            input.value = String(product.id);
-                        });
-                        const button = form.querySelector(".single_add_to_cart_button");
-                        if (button) {
-                            button.value = String(product.id);
-                        }
-                    }
                     renderProductGallery(product.images);
                     updateBatteryExtra();
                     if (window.history && product.url) {
@@ -574,12 +566,25 @@ final class ProductFrontendDisplay
         $this->renderProductLead($product);
 
         $this->renderPrice($product);
-        echo '<div class="appleklinika-cart-area">';
-        woocommerce_template_single_add_to_cart();
-        echo '<div class="appleklinika-add-feedback" data-appleklinika-add-feedback>Kosárba téve. A kosár frissült.</div>';
-        echo '</div>';
+        $this->renderPurchaseArea($product);
         $this->renderDelivery($product);
         echo '</aside>';
+    }
+
+    private function renderPurchaseArea(\WC_Product $selectedProduct): void
+    {
+        // Woo's canonical type-specific template owns purchasability and quantity limits.
+        // It reads the global product; restore that context after rendering each fragment.
+        $previousProduct = $GLOBALS['product'] ?? null;
+        echo '<div class="appleklinika-cart-area">';
+        try {
+            $GLOBALS['product'] = $selectedProduct;
+            woocommerce_template_single_add_to_cart();
+        } finally {
+            $GLOBALS['product'] = $previousProduct;
+        }
+        echo '<div class="appleklinika-add-feedback" data-appleklinika-add-feedback>Kosárba téve. A kosár frissült.</div>';
+        echo '</div>';
     }
 
     /**
@@ -1512,6 +1517,7 @@ final class ProductFrontendDisplay
                 }),
                 'stockLabel' => $this->stockLabel($product),
                 'stockClass' => $this->stockBadgeClass($product),
+                'purchaseHtml' => $this->capture(fn () => $this->renderPurchaseArea($product)),
                 'deliveryHtml' => $this->capture(function () use ($product): void {
                     $this->renderDelivery($product);
                 }),
