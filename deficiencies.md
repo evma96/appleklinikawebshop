@@ -12,6 +12,12 @@
 
 ## Known Limitations
 
+- The LOCAL visible-polish pass cleans QA product copy in local data only; this is
+  not a data migration. Existing Hungarian Woo language packs provide the verified
+  checkout labels. No remote translations or media were changed. The pre-existing
+  LOCAL `/favicon.ico` 404 remains separate from presentation/runtime errors.
+  See `docs/qa/prelaunch-visible-polish.md` for scope, backup and acceptance evidence.
+
 - LOCAL and TEST SERVER now expose all eight clearly marked legal demo documents and
   consent surfaces. They are not launch-approved legal wording. Replace the dummy
   content and remove the demo checkout notice before production; never copy these

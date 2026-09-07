@@ -1312,7 +1312,7 @@ function appleklinika_render_header(): void
         'ipad' => 'iPad',
         'apple_watch' => 'Apple Watch',
     ];
-    $activeCategory = appleklinika_current_shop_device_type();
+    $activeCategory = appleklinika_header_device_type();
     ?>
     <div class="ak-header-shell">
         <div class="ak-header-top">
@@ -1330,7 +1330,7 @@ function appleklinika_render_header(): void
         <?php if (appleklinika_should_show_category_nav()) : ?>
             <nav class="ak-category-nav" aria-label="Apple termékkategóriák">
                 <?php foreach ($categoryLinks as $categoryType => $categoryLabel) : ?>
-                    <?php $isActive = appleklinika_is_shop_archive_context() && $activeCategory === $categoryType; ?>
+                    <?php $isActive = $activeCategory === $categoryType; ?>
                     <a
                         class="<?php echo $isActive ? 'is-active' : ''; ?>"
                         href="<?php echo esc_url(appleklinika_shop_type_url($categoryType)); ?>"
@@ -1341,6 +1341,21 @@ function appleklinika_render_header(): void
         <?php endif; ?>
     </div>
     <?php
+}
+
+/** The current product is authoritative on PDPs, never an archive's iPhone default. */
+function appleklinika_header_device_type(): ?string
+{
+    if (is_singular('product')) {
+        $product = wc_get_product(get_queried_object_id());
+        $type = $product instanceof WC_Product ? $product->get_meta('_appleklinika_device_type') : '';
+
+        return in_array($type, ['iphone', 'macbook', 'mac', 'ipad', 'apple_watch', 'watch'], true)
+            ? appleklinika_normalize_shop_device_type($type)
+            : null;
+    }
+
+    return appleklinika_is_shop_archive_context() ? appleklinika_current_shop_device_type() : null;
 }
 
 function appleklinika_render_checkout_site_title_logo(string $blockContent, array $block): string
@@ -1568,7 +1583,7 @@ function appleklinika_homepage_trust_tiles(): array
         [
             'icon' => '◎',
             'title' => 'Átlátható állapot',
-            'text' => 'Grade, akkumulátoradat és készülékleírás egy helyen.',
+            'text' => 'Állapotbesorolás, akkumulátoradat és készülékleírás egy helyen.',
         ],
         [
             'icon' => '⌂',
@@ -1803,10 +1818,12 @@ function appleklinika_render_shop_filters(): void
     $maxPrice = appleklinika_query_value('ak_max_price') ?: (string) $priceRange['max'];
     $filters = appleklinika_shop_filter_definitions($deviceType);
     $renderedModelFilter = false;
+    $filterId = wp_unique_id('ak-shop-filters-');
     ?>
-    <form class="ak-shop-filters" method="get" action="<?php echo esc_url($action); ?>" aria-label="Termékszűrők">
+    <form id="<?php echo esc_attr($filterId); ?>" class="ak-shop-filters" method="get" action="<?php echo esc_url($action); ?>" aria-label="Termékszűrők">
         <div class="ak-filter-heading">
             <strong>Szűrők</strong>
+            <button class="ak-filter-toggle" type="button" aria-expanded="false" aria-controls="<?php echo esc_attr($filterId); ?>">Szűrők <span aria-hidden="true">⌄</span></button>
             <a class="ak-shop-filters__reset" href="<?php echo esc_url($isNativeDeviceCategory ? $action : appleklinika_shop_url()); ?>">Szűrők törlése</a>
         </div>
         <?php if (isset($filters['ak_model'])) : ?>
@@ -3164,7 +3181,7 @@ function appleklinika_product_card_meta_chips(int $productId): array
 
     $grade = appleklinika_grade_label((string) get_post_meta($productId, '_appleklinika_overall_grade', true));
     if ($grade !== '') {
-        $chips[] = ['type' => 'grade', 'label' => 'Grade ' . $grade];
+        $chips[] = ['type' => 'grade', 'label' => 'Állapot ' . $grade];
     }
 
     $batteryOption = appleklinika_product_card_battery_option_label((string) get_post_meta($productId, '_appleklinika_battery_option', true));
@@ -3211,7 +3228,7 @@ function appleklinika_ipad_product_card_meta_chips(int $productId): array
 {
     $chips = [];
     appleklinika_add_product_card_chip($chips, 'storage', appleklinika_storage_label((string) get_post_meta($productId, '_appleklinika_storage_capacity', true)));
-    appleklinika_add_product_card_chip($chips, 'grade', appleklinika_grade_label((string) get_post_meta($productId, '_appleklinika_overall_grade', true)), 'Grade ');
+    appleklinika_add_product_card_chip($chips, 'grade', appleklinika_grade_label((string) get_post_meta($productId, '_appleklinika_overall_grade', true)), 'Állapot ');
     if ((string) get_post_meta($productId, '_appleklinika_connectivity', true) === 'wifi_cellular') {
         appleklinika_add_product_card_chip($chips, 'connectivity', 'Cellular');
     }
@@ -3227,7 +3244,7 @@ function appleklinika_macbook_product_card_meta_chips(int $productId): array
 {
     $chips = [];
     appleklinika_add_product_card_chip($chips, 'storage', appleklinika_storage_label((string) get_post_meta($productId, '_appleklinika_storage_capacity', true)));
-    appleklinika_add_product_card_chip($chips, 'grade', appleklinika_grade_label((string) get_post_meta($productId, '_appleklinika_overall_grade', true)), 'Grade ');
+    appleklinika_add_product_card_chip($chips, 'grade', appleklinika_grade_label((string) get_post_meta($productId, '_appleklinika_overall_grade', true)), 'Állapot ');
     appleklinika_add_product_card_chip($chips, 'battery', appleklinika_battery_label((string) get_post_meta($productId, '_appleklinika_battery_health', true)));
 
     return $chips;
@@ -3240,7 +3257,7 @@ function appleklinika_watch_product_card_meta_chips(int $productId): array
 {
     $chips = [];
     appleklinika_add_product_card_chip($chips, 'storage', appleklinika_storage_label((string) get_post_meta($productId, '_appleklinika_storage_capacity', true)));
-    appleklinika_add_product_card_chip($chips, 'grade', appleklinika_grade_label((string) get_post_meta($productId, '_appleklinika_overall_grade', true)), 'Grade ');
+    appleklinika_add_product_card_chip($chips, 'grade', appleklinika_grade_label((string) get_post_meta($productId, '_appleklinika_overall_grade', true)), 'Állapot ');
     if ((string) get_post_meta($productId, '_appleklinika_connectivity', true) === 'gps_cellular') {
         appleklinika_add_product_card_chip($chips, 'connectivity', 'Cellular');
     }
@@ -4074,7 +4091,7 @@ function appleklinika_account_trust_items(): array
     return [
         ['title' => 'Ellenőrzött készülékek', 'text' => 'Minden terméknél látható állapotadatok.'],
         ['title' => 'Garancia', 'text' => 'A garanciaadat termékszinten jelenik meg.'],
-        ['title' => 'Átlátható állapot', 'text' => 'Grade, tárhely, szín és akkumulátor egy helyen.'],
+        ['title' => 'Átlátható állapot', 'text' => 'Állapotbesorolás, tárhely, szín és akkumulátor egy helyen.'],
         ['title' => 'Szegedi háttér', 'text' => 'Személyes szakértelem és tiszta kommunikáció.'],
     ];
 }

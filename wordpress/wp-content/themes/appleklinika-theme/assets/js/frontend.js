@@ -1916,6 +1916,16 @@
     maxLabel.textContent = formatPrice(max);
   }
 
+  document.querySelectorAll('.ak-shop-filters').forEach(function (form) {
+    var toggle = form.querySelector('.ak-filter-toggle');
+    if (!toggle) return;
+    form.classList.add('is-collapsible');
+    toggle.addEventListener('click', function () {
+      var expanded = form.classList.toggle('is-expanded');
+      toggle.setAttribute('aria-expanded', String(expanded));
+    });
+  });
+
   document.querySelectorAll('[data-price-filter]').forEach(function (filter) {
     updatePriceFilter(filter);
     filter.addEventListener('input', function () {
