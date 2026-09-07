@@ -2,6 +2,10 @@
 
 Production-oriented WooCommerce webshop foundation for selling used Apple devices.
 
+The focused LOCAL pre-launch presentation acceptance (category navigation, compact
+mobile filters, existing Hungarian Woo translations and real-photo gallery) is
+documented in [`docs/qa/prelaunch-visible-polish.md`](docs/qa/prelaunch-visible-polish.md).
+
 Checkout partial-update validation and its local browser regression are documented in
 [`docs/testing-strategy.md`](docs/testing-strategy.md#checkout-partial-update-runtime-contract).
 

@@ -1940,6 +1940,22 @@ body.tax-product_cat .woocommerce-breadcrumb,
   font-weight: 950;
 }
 
+.ak-filter-heading .ak-filter-toggle {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--ak-ink);
+  font-size: 16px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
 .ak-filter-group {
   margin: 0;
   padding: 20px 22px;
@@ -7454,6 +7470,24 @@ body.woocommerce-cart .wc-block-components-totals-coupon__button {
   .ak-shop-filters {
     display: grid;
     grid-template-columns: 1fr;
+  }
+
+  .ak-shop-filters.is-collapsible .ak-filter-heading {
+    padding: 8px 18px;
+  }
+
+  .ak-shop-filters.is-collapsible .ak-filter-heading strong,
+  .ak-shop-filters.is-collapsible:not(.is-expanded) > .ak-filter-group,
+  .ak-shop-filters.is-collapsible:not(.is-expanded) > .ak-filter-actions {
+    display: none;
+  }
+
+  .ak-shop-filters.is-collapsible .ak-filter-toggle {
+    display: inline-flex;
+  }
+
+  .ak-filter-toggle[aria-expanded="true"] span {
+    transform: rotate(180deg);
   }
 
   .ak-filter-actions,
