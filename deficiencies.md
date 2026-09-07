@@ -12,6 +12,13 @@
 
 ## Known Limitations
 
+- LOCAL and TEST SERVER now expose all eight clearly marked legal demo documents and
+  consent surfaces. They are not launch-approved legal wording. Replace the dummy
+  content and remove the demo checkout notice before production; never copy these
+  demo settings/content automatically. See `docs/qa/legal-demo-ready-state.md`.
+  Existing TEST SERVER WooCommerce core English labels remain a separate localization
+  concern; this demo provisioning does not install translations or alter checkout logic.
+
 - Checkout company presentation is verified locally at 1440px and 390px; release deployment
   is still separate. See `docs/qa/checkout-company-ui-polish.md`. Woo/React field ownership
   and the previously approved checkout state contract are unchanged.

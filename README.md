@@ -9,6 +9,12 @@ Checkout company controls are styled in their native Woo order fieldset. The des
 presentation and conditional required-state checks are recorded in
 [`docs/qa/checkout-company-ui-polish.md`](docs/qa/checkout-company-ui-polish.md).
 
+LOCAL and TEST SERVER can explicitly provision a clearly marked legal demo using
+[`tools/dev/provision-legal-demo.php`](tools/dev/provision-legal-demo.php).
+It is never loaded automatically and refuses production targets. Page mappings,
+acceptance evidence and the final-content replacement checklist are documented in
+[`docs/qa/legal-demo-ready-state.md`](docs/qa/legal-demo-ready-state.md).
+
 ## Business Model
 
 - Each used device is a unique WooCommerce product.
