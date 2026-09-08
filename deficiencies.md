@@ -12,6 +12,11 @@
 
 ## Known Limitations
 
+- Final checkout UX is a LOCAL presentation acceptance, not a new payment/order
+  acceptance. Barion/GLS controls are exercised without submission. The definitive
+  Barion + GLS + Számlázz.hu E2E remains deliberately deferred until visual approval.
+  TEST configuration/data are untouched. See `docs/qa/checkout-final-ux.md`.
+
 - The LOCAL visible-polish pass cleans QA product copy in local data only; this is
   not a data migration. Existing Hungarian Woo language packs provide the verified
   checkout labels. No remote translations or media were changed. The pre-existing

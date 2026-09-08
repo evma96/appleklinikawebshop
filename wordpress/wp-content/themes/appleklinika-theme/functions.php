@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 require_once get_template_directory() . '/inc/account-order-display.php';
 require_once get_template_directory() . '/inc/legal-documents.php';
+require_once get_template_directory() . '/inc/checkout-presentation.php';
+
+add_filter('render_block_data', 'appleklinika_checkout_billing_block_order');
 
 add_action('wp_head', static function (): void {
     if (function_exists('is_checkout') && is_checkout() && ! has_site_icon()) {
@@ -50,7 +53,7 @@ add_action('wp_enqueue_scripts', static function (): void {
         wp_add_inline_script('wp-i18n', <<<'JS'
 wp.hooks.addFilter('i18n.gettext', 'appleklinika/checkout-copy', function (translation, text, domain) {
     if (domain !== 'woocommerce') { return translation; }
-    if (text === 'Additional order information') { return 'Céges adatok'; }
+    if (text === 'Additional order information') { return 'Számlázási adatok'; }
     if (text === 'Select a %s') { return 'Válassz: %s'; }
     return translation;
 });
@@ -626,7 +629,7 @@ function appleklinika_checkout_text_translations(string $translation, string $te
     }
 
     if ($domain === 'woocommerce' && $text === 'Additional order information') {
-        return 'Céges adatok';
+        return 'Számlázási adatok';
     }
 
     if ($domain === 'woocommerce') {
