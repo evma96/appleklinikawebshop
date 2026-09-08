@@ -5,9 +5,19 @@ body.woocommerce-checkout .wc-block-components-sidebar.ak-checkout-default-summa
 }
 
 body.woocommerce-checkout .ak-checkout-summary-slot {
+  box-sizing: border-box;
   width: 100%;
   min-width: 0;
   align-self: start;
+}
+
+/* Inside the final mobile review, reuse the totals without a second card. */
+body.woocommerce-checkout .ak-checkout-summary-slot--final-review .ak-checkout-summary {
+  padding-inline: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 body.woocommerce-checkout .ak-checkout-summary {

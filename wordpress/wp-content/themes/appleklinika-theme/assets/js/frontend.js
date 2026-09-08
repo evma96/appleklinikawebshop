@@ -214,14 +214,6 @@
       field.input.setAttribute('aria-required', required ? 'true' : 'false');
     }
 
-    function syncCompanyCheckoutHeading() {
-      Array.prototype.slice.call(document.querySelectorAll('body.woocommerce-checkout h2, body.woocommerce-checkout [role="group"] > div')).forEach(function (element) {
-        if (normalizeText(element.textContent) === 'Additional order information') {
-          element.textContent = 'Céges adatok';
-        }
-      });
-    }
-
     function syncCheckoutProfileSaveField() {
       var input = document.getElementById('contact-appleklinika-save_to_profile');
 
@@ -615,7 +607,6 @@
     }
 
     function syncCompanyCheckoutFields(userChanged) {
-      syncCompanyCheckoutHeading();
       syncCheckoutProfileSaveField();
       syncCheckoutAddressDetails();
 
@@ -830,9 +821,10 @@
       var activePayment = blocksSelector(paymentStore, 'getActivePaymentMethod', '');
       var selectedInput = document.querySelector('.wc-block-components-radio-control__input[name*="payment"]:checked, input[id*="payment-method-options"]:checked');
       var paymentLabelElement = selectedInput && selectedInput.id
-        ? document.querySelector('label[for="' + selectedInput.id + '"] .wc-block-components-payment-method-label')
+        ? document.querySelector('label[for="' + selectedInput.id + '"] .wc-block-components-radio-control__label')
         : null;
-      var paymentLabel = paymentLabelElement ? paymentLabelElement.textContent.trim() : '';
+      var paymentImage = paymentLabelElement && paymentLabelElement.querySelector('img[alt]');
+      var paymentLabel = paymentLabelElement ? (paymentLabelElement.textContent.trim() || (paymentImage && paymentImage.alt)) : '';
 
       if (paymentLabel) {
         return paymentLabel;
@@ -980,7 +972,7 @@
     var summaryHome = null;
     var stepLabels = {
       1: 'Kosár',
-      2: 'Szállítás és számlázás',
+      2: 'Kapcsolat és címek',
       3: 'Szállítási mód és fizetés',
       4: 'Összegzés'
     };
@@ -1048,11 +1040,12 @@
     function currentPaymentReview() {
       var selected = document.querySelector('.wc-block-components-radio-control__input[name*="payment"]:checked, input[id*="payment-method-options"]:checked');
       var label = selected && selected.id
-        ? document.querySelector('label[for="' + selected.id + '"] .wc-block-components-payment-method-label')
+        ? document.querySelector('label[for="' + selected.id + '"] .wc-block-components-radio-control__label')
         : null;
+      var image = label && label.querySelector('img[alt]');
 
-      return label && label.textContent.trim()
-        ? label.textContent.trim()
+      return label && (label.textContent.trim() || (image && image.alt))
+        ? (label.textContent.trim() || image.alt)
         : (selected ? selected.value : 'Még nincs kiválasztva');
     }
 
@@ -1110,6 +1103,10 @@
       var contact = [checkoutFieldValue('email'), checkoutFieldValue('billing-phone') || checkoutFieldValue('shipping-phone')].filter(Boolean);
       var billing = addressReview('billing');
       var shipping = addressReview('shipping');
+      var shippingPhone = checkoutFieldValue('shipping-phone');
+      if (shippingPhone) {
+        shipping.push('Telefon: ' + shippingPhone);
+      }
       var shippingMethod = currentShippingReview();
       var fulfilment = shippingReviewLines(shippingMethod);
       var payment = [currentPaymentReview()];
@@ -1200,8 +1197,7 @@
     }
 
     function checkoutStepTargets() {
-      var companyToggle = document.querySelector('.ak-checkout-company-toggle');
-      var companyStep = companyToggle ? companyToggle.closest('.wc-block-components-checkout-step') : null;
+      var companyStep = closestCheckoutStep('#order-fields');
       var orderSummary = document.querySelector('.wc-block-components-sidebar');
 
       return {
@@ -1218,6 +1214,7 @@
         ]),
         4: uniqueElements([
           document.querySelector('.ak-checkout-final-review-slot'),
+          document.getElementById('contact-appleklinika-marketing_consent') ? closestCheckoutStep('#contact-fields') : null,
           document.querySelector('.wc-block-checkout__terms'),
           document.querySelector('.wc-block-components-checkout-place-order-button')
         ]),
@@ -1225,6 +1222,31 @@
           orderSummary
         ])
       };
+    }
+
+    function syncCheckoutDeclarations() {
+      var billingHeading = document.querySelector('#order-fields .wc-block-components-checkout-step__heading-container');
+      if (billingHeading && !billingHeading.querySelector('.ak-checkout-billing-help')) {
+        var help = document.createElement('p');
+        help.className = 'ak-checkout-billing-help';
+        help.textContent = 'Alapértelmezetten magánszemély nevére állítjuk ki a számlát. Céges számlához add meg a cég adatait.';
+        billingHeading.appendChild(help);
+      }
+      var contact = document.getElementById('contact-fields');
+      var marketing = document.getElementById('contact-appleklinika-marketing_consent');
+      if (contact && marketing && !contact.querySelector('.ak-checkout-marketing-intro')) {
+        var intro = document.createElement('div');
+        intro.className = 'ak-checkout-marketing-intro';
+        intro.innerHTML = '<h2>Kapcsolattartási beállítások <small>Nem kötelező</small></h2><p>A vásárláshoz nem szükséges marketing-hozzájárulás.</p>';
+        contact.insertBefore(intro, contact.firstChild);
+      }
+      var terms = document.querySelector('.wc-block-checkout__terms');
+      if (terms && !terms.querySelector('.ak-checkout-legal-title')) {
+        var title = document.createElement('h2');
+        title.className = 'ak-checkout-legal-title';
+        title.textContent = 'Nyilatkozatok · kötelező';
+        terms.insertBefore(title, terms.firstChild);
+      }
     }
 
     function setActiveStep(step) {
@@ -1740,6 +1762,7 @@
       }
 
       var stepper = createStepper(checkoutBlock);
+      syncCheckoutDeclarations();
       syncCheckoutFinalReview();
       var targets = checkoutStepTargets();
       var allTargets = uniqueElements(targets[2].concat(targets[3]).concat(targets[4]));

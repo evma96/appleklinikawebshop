@@ -2,6 +2,11 @@
 
 Production-oriented WooCommerce webshop foundation for selling used Apple devices.
 
+The final four-step checkout UX (one billing/company decision, shipping/payment,
+then review and native declarations) is documented in
+[`docs/qa/checkout-final-ux.md`](docs/qa/checkout-final-ux.md).
+It preserves Woo-owned controls and does not submit a payment/order during visual QA.
+
 The focused LOCAL pre-launch presentation acceptance (category navigation, compact
 mobile filters, existing Hungarian Woo translations and real-photo gallery) is
 documented in [`docs/qa/prelaunch-visible-polish.md`](docs/qa/prelaunch-visible-polish.md).
