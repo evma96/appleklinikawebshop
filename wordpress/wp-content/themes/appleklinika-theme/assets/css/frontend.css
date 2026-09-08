@@ -5044,6 +5044,7 @@ body.woocommerce-checkout #order-fields:not(:has(#order-appleklinika-company_pur
 }
 
 body.woocommerce-checkout .ak-checkout-billing-help,
+body.woocommerce-checkout .ak-checkout-same-address-help,
 body.woocommerce-checkout .ak-checkout-marketing-intro p {
   margin: 8px 0 16px;
   color: var(--ak-muted);

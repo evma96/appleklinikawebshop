@@ -35,6 +35,30 @@
     font-size: .875rem;
 }
 
+.ak-checkout-address-selector__saved-help {
+    margin: .2rem 0;
+    color: #667085;
+    font-size: .8125rem;
+    line-height: 1.6;
+}
+
+.ak-checkout-address-selector.is-one-off .ak-checkout-address-selector__saved-help {
+    display: none;
+}
+
+/* Manual entry must stay editable even when Woo has a legacy profile address.
+   Reveal its existing form in place; do not move or duplicate React controls. */
+:is(#shipping-fields, #billing-fields):has(> .ak-checkout-address-selector.is-one-off) .wc-block-components-address-form-wrapper {
+    height: auto;
+    opacity: 1;
+    visibility: visible;
+    overflow: visible;
+}
+
+:is(#shipping-fields, #billing-fields):has(> .ak-checkout-address-selector.is-one-off) .wc-block-components-address-card-wrapper {
+    display: none;
+}
+
 .ak-checkout-address-selector__save {
     display: grid;
     gap: .5rem;

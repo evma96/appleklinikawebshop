@@ -88,6 +88,82 @@ stock stays at its baseline. Test cookies are never logged or persisted as evide
 The existing clearly marked legal demo notice and Barion TEST help remain visible
 by design. Final legal wording and the TEST/production rollout are not part of this task.
 
+## Address and summary refinement
+
+Follow-up on the same feature branch from `ea9a7e8b5fb3ac271fc7a522faa8d76b1c515233`:
+
+- The existing summary renderer marks its two method rows. Existing step classes
+  show neutral "Kiválasztás a 3. lépésben" until Step 4; final review still shows
+  selected GLS/Barion. Woo selections and calculated totals are never cleared or
+  substituted. Returning to Step 2 also returns to the neutral presentation.
+- Saved options precede the final "Másik cím használata" option. Its internal
+  `__one_off__` value, selection request queue, save intent and server handlers
+  are unchanged. Empty lists have no select; the existing manual-field reader
+  now also accepts the absence of that select.
+- Saved state has explicit explanatory copy and a WordPress-generated link to
+  the existing Címeim editor; saving is shown only for manual entry. Native Woo
+  inputs remain in their original tree. Manual mode exposes the existing form
+  in place even if Woo collapsed a legacy profile address; no cloned form,
+  synthetic editing state or new persistence is added.
+- The single native same-address control already unmounts redundant billing UI.
+  Existing declaration synchronization now explains that shipping is used for
+  billing. Company identity remains in the same original billing fieldset.
+  Both existing summary renderers use a shared, read-only field-prefix resolver
+  in this mode: physical billing address comes from shipping, while company/tax
+  still comes from billing identity. The final screenshot review exposed that
+  company/tax previously made a partial review count as nonempty, omitting the
+  shared billing street. A scoped runtime assertion failed before this correction
+  (`shared-billing-before/`) and now verifies the billing section itself.
+- CSS is limited to the existing summary/address owners and the new help text.
+  No new observer, timer, DOM relocation, store action or Store API contract.
+
+### LOCAL-only configuration
+
+Through the existing shipping settings API, GLS global `shipping_price` is now
+1990 for home delivery and 1490 for both parcel shop and locker. Weight-based
+rates remain empty and free thresholds remain zero. Zone 1 has local pickup
+instance 2 at 0 HUF (saved through the Woo instance settings handler).
+Preexisting free-shipping instance 1 is preserved. No payment/plugin internals,
+TEST configuration, orders, inventory rules or Buyback data are modified.
+
+The local configuration evidence is outside the webroot at
+`/private/tmp/checkout-address-ux-X1tmjg/local-shipping-before.json` and
+`/private/tmp/checkout-address-ux-X1tmjg/local-shipping-after.json`.
+These settings are not a migration and **will not be deployed with Git**.
+
+### Focused acceptance
+
+- Before: `/private/tmp/checkout-address-ux-X1tmjg/before-guest/` and `before-saved/`.
+- Guest final: `/private/tmp/checkout-address-ux-X1tmjg/accepted-guest/`.
+- Saved/manual final: `/private/tmp/checkout-address-ux-X1tmjg/accepted-saved/`.
+- No saved entries, including retained profile values:
+  `/private/tmp/checkout-address-ux-X1tmjg/accepted-empty/`.
+- Run the address test normally and again with `AK_UX_NO_SAVED=1`.
+- Native PERSONAL/COMPANY, 1440/390, same-address ON/OFF and three completed Woo
+  recalculations are checked. Step 2 → 3 → 4 preserves latest identity, contact
+  and addresses. No duplicate live selectors, stale validation, console errors,
+  or order submission. Exact QA users, addresses, carts and sessions are removed.
+- Both same-address ON and OFF complete the entire customer journey through
+  final review. Native counts: guest 380, saved/manual 165, no saved entries 144.
+  PHP counts: checkout 56, company 40, finalization 40, legal 9, address-book 96,
+  final-UX 23. Total: 953 assertions. Screenshots are personally opened/reviewed;
+  the original header remains fixed, so field-only screenshots can include its
+  overlay at the crop edge; full-page views are the visual layout reference.
+- Each shipping choice is checked through the native radio: for the 314,490 HUF
+  QA product, locker/shop total 315,980 HUF; home total 316,480 HUF; pickup total
+  314,490 HUF. Step 4 retains the chosen 1,990 HUF home rate.
+- An intermediate test assertion incorrectly assumed two currency decimals;
+  LOCAL HUF uses zero. The assertion now uses Woo's `currency_minor_unit`.
+  A legacy-address edit test also now targets Woo's stable edit control rather
+  than its translated visible text (its accessible name can be English).
+  Neither test correction required a checkout state change.
+- One intermediate browser run encountered an externally loaded GLS map module
+  network suspension. The focused runners now stub only that external map host;
+  opening a locator explicitly throws instead of pretending to test it. Real
+  local Woo/GLS radios, shipping calculation, Store API and Barion presentation
+  remain exercised. No external parcel lookup, payment or shipping submission is
+  performed; integrated GLS locator/payment acceptance remains separate.
+
 ## Changed files
 
 All theme-relative paths below are under `wordpress/wp-content/themes/appleklinika-theme/`.

@@ -38,4 +38,8 @@ $assert(str_contains($css, 'ak-checkout-step-2 #contact .wc-block-components-add
 $assert(str_contains($js, "image.alt") && str_contains($js, "paymentImage.alt"), 'Image-only gateway labels remain readable in both summaries.');
 $assert(str_contains($js, "shipping.push('Telefon: ' + shippingPhone)"), 'Review includes the actual delivery phone.');
 $assert(str_contains($js, "var companyStep = closestCheckoutStep('#order-fields');"), 'Step visibility uses the stable Woo fieldset, not an ephemeral custom field class.');
+$summaryCss = file_get_contents(dirname(__DIR__) . '/assets/css/checkout-sidebar.css');
+$assert(str_contains($js, 'Kiválasztás a 3. lépésben') && str_contains($summaryCss, ':not(.ak-checkout-step-4) .ak-checkout-summary__method-chosen'), 'Existing step classes defer default-method presentation until final review, without altering Woo state.');
+$assert(str_contains($js, 'Számlázási címként a szállítási címet használjuk.') && str_contains($js, 'sameAddressHelp.hidden = !sameAddress || !sameAddress.checked;'), 'Same-address copy follows the single native checkbox.');
+$assert(substr_count($js, 'var addressPrefix = checkoutAddressFieldPrefix(prefix);') === 2, 'Sidebar and final review read the shared shipping address for billing without dropping company identity.');
 echo "Checkout final UX: {$checks} assertions passed.\n";

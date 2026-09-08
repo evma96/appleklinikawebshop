@@ -91,7 +91,7 @@
         var select = section ? section.querySelector('select') : null;
         var fields = {};
 
-        if (!section || !select || select.value !== '__one_off__') {
+        if (!section || (select && select.value !== '__one_off__')) {
             return null;
         }
 
@@ -352,7 +352,6 @@
         var section = document.createElement('section');
         section.className = 'ak-checkout-address-selector';
         section.setAttribute('data-ak-address-purpose', purpose);
-        var title = purpose === 'billing' ? 'Számlázási cím' : 'Szállítási cím';
         var selectorCaption = purpose === 'billing'
             ? 'Válassz mentett számlázási címet'
             : 'Válassz mentett szállítási címet';
@@ -360,19 +359,25 @@
         select.id = 'ak-checkout-address-selector-' + purpose;
         var oneOff = document.createElement('option');
         oneOff.value = '__one_off__';
-        oneOff.textContent = 'Új vagy egyszeri cím';
-        select.appendChild(oneOff);
+        oneOff.textContent = 'Másik cím használata';
+        var hasSelectedSavedAddress = false;
         options.forEach(function (option) {
             var item = document.createElement('option');
             item.value = option.key + '|' + option.version;
             item.textContent = option.label + ' — ' + option.name + ', ' + option.preview + (option.is_default ? ' (alapértelmezett)' : '');
             if (current && current.mode === 'saved' && current.key === option.key && Number(current.version) === Number(option.version)) {
                 item.selected = true;
+                hasSelectedSavedAddress = true;
             } else if (!current && option.is_default) {
                 item.selected = true;
+                hasSelectedSavedAddress = true;
             }
             select.appendChild(item);
         });
+        select.appendChild(oneOff);
+        if (!hasSelectedSavedAddress) {
+            select.value = '__one_off__';
+        }
         var caption = document.createElement('label');
         caption.className = 'ak-checkout-address-selector__caption';
         caption.htmlFor = select.id;
@@ -380,8 +385,21 @@
         var notice = document.createElement('p');
         notice.className = 'ak-checkout-address-selector__notice';
         notice.setAttribute('data-ak-address-notice', '');
-        section.appendChild(caption);
-        section.appendChild(select);
+        if (options.length > 0) {
+            section.appendChild(caption);
+            section.appendChild(select);
+            var savedHelp = document.createElement('p');
+            savedHelp.className = 'ak-checkout-address-selector__saved-help';
+            savedHelp.textContent = 'A kiválasztott mentett címet használjuk. Más cím megadásához válaszd a „Másik cím használata” lehetőséget. ';
+            var accountUrl = window.appleklinikaAddressBookPresentation && window.appleklinikaAddressBookPresentation.accountUrl;
+            if (accountUrl) {
+                var editLink = document.createElement('a');
+                editLink.href = accountUrl;
+                editLink.textContent = 'Mentett címek szerkesztése a Címeim között';
+                savedHelp.appendChild(editLink);
+            }
+            section.appendChild(savedHelp);
+        }
         section.appendChild(notice);
 
         var savePanel = document.createElement('div');
