@@ -674,6 +674,11 @@
 
   }
 
+  function checkoutAddressFieldPrefix(prefix) {
+    var sameAddress = document.querySelector('.wc-block-checkout__use-address-for-billing input[type="checkbox"]');
+    return prefix === 'billing' && sameAddress && sameAddress.checked ? 'shipping' : prefix;
+  }
+
   function initCheckoutSummary() {
     if (!document.body.classList.contains('woocommerce-checkout')) {
       return;
@@ -756,8 +761,9 @@
     }
 
     function checkoutFormAddress(prefix) {
+      var addressPrefix = checkoutAddressFieldPrefix(prefix);
       var field = function (name) {
-        var input = document.getElementById(prefix + '-' + name);
+        var input = document.getElementById(addressPrefix + '-' + name);
         return input ? input.value.trim() : '';
       };
       var company = field('company');
@@ -879,10 +885,12 @@
       var detailRows = [
         ['Számlázási cím', addressSummary(effectiveBilling)],
         ['Szállítási cím', addressSummary(shipping)],
-        ['Szállítási mód', selectedShippingMethod(cart)],
-        ['Fizetési mód', selectedPaymentMethod()]
+        ['Szállítási mód', selectedShippingMethod(cart), true],
+        ['Fizetési mód', selectedPaymentMethod(), true]
       ].map(function (row) {
-        return '<div class="ak-checkout-summary__detail"><span>' + escapeHtml(row[0]) + '</span><strong>' + escapeHtml(row[1]) + '</strong></div>';
+        return '<div class="ak-checkout-summary__detail"><span>' + escapeHtml(row[0]) + '</span>'
+          + (row[2] ? '<strong class="ak-checkout-summary__method-pending">Kiválasztás a 3. lépésben</strong>' : '')
+          + '<strong' + (row[2] ? ' class="ak-checkout-summary__method-chosen"' : '') + '>' + escapeHtml(row[1]) + '</strong></div>';
       }).join('');
 
       return '<aside class="ak-checkout-summary" aria-label="Rendelés összesítő">'
@@ -1005,15 +1013,16 @@
     }
 
     function addressReview(prefix) {
+      var addressPrefix = checkoutAddressFieldPrefix(prefix);
       var companyPurchase = prefix === 'billing'
         && document.getElementById('order-appleklinika-company_purchase')
         && document.getElementById('order-appleklinika-company_purchase').checked;
       var companyName = companyPurchase ? checkoutFieldValue('order-appleklinika-company_name') : '';
-      var recipient = companyName || [checkoutFieldValue(prefix + '-last_name'), checkoutFieldValue(prefix + '-first_name')].filter(Boolean).join(' ');
-      var locality = [checkoutFieldValue(prefix + '-postcode'), checkoutFieldValue(prefix + '-city')].filter(Boolean).join(' ');
-      var street = [checkoutFieldValue(prefix + '-address_1'), checkoutFieldValue(prefix + '-appleklinika-house_number')].filter(Boolean).join(' ');
+      var recipient = companyName || [checkoutFieldValue(addressPrefix + '-last_name'), checkoutFieldValue(addressPrefix + '-first_name')].filter(Boolean).join(' ');
+      var locality = [checkoutFieldValue(addressPrefix + '-postcode'), checkoutFieldValue(addressPrefix + '-city')].filter(Boolean).join(' ');
+      var street = [checkoutFieldValue(addressPrefix + '-address_1'), checkoutFieldValue(addressPrefix + '-appleklinika-house_number')].filter(Boolean).join(' ');
       var location = [locality, street].filter(Boolean).join(', ');
-      var lines = [recipient, location, checkoutFieldValue(prefix + '-address_2')].filter(Boolean);
+      var lines = [recipient, location, checkoutFieldValue(addressPrefix + '-address_2')].filter(Boolean);
 
       if (companyName) {
         var taxNumber = checkoutFieldValue('order-appleklinika-tax_number');
@@ -1231,6 +1240,17 @@
         help.className = 'ak-checkout-billing-help';
         help.textContent = 'Alapértelmezetten magánszemély nevére állítjuk ki a számlát. Céges számlához add meg a cég adatait.';
         billingHeading.appendChild(help);
+      }
+      if (billingHeading) {
+        var sameAddressHelp = billingHeading.querySelector('.ak-checkout-same-address-help');
+        if (!sameAddressHelp) {
+          sameAddressHelp = document.createElement('p');
+          sameAddressHelp.className = 'ak-checkout-same-address-help';
+          sameAddressHelp.textContent = 'Számlázási címként a szállítási címet használjuk.';
+          billingHeading.appendChild(sameAddressHelp);
+        }
+        var sameAddress = document.querySelector('.wc-block-checkout__use-address-for-billing input[type="checkbox"]');
+        sameAddressHelp.hidden = !sameAddress || !sameAddress.checked;
       }
       var contact = document.getElementById('contact-fields');
       var marketing = document.getElementById('contact-appleklinika-marketing_consent');

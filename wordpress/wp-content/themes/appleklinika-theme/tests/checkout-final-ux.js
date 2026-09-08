@@ -93,6 +93,10 @@ async function verifyState(page, expected, label) {
       page.on('console', m => { if (m.type() === 'error') report.errors.push(m.text()); });
       await context.route('**/*', route => {
         const r = route.request();
+        // Pricing/radio UX only: never exercise the external pickup locator.
+        if (new URL(r.url()).hostname === 'map.gls-croatia.com') {
+          return route.fulfill({ contentType: 'application/javascript', body: "customElements.define('gls-dpm-dialog',class extends HTMLElement{showModal(){throw new Error('Live GLS locator is outside this presentation test');}});" });
+        }
         if (r.method() === 'POST' && decodeURIComponent(r.url()).includes('/wc/store/v1/checkout') && !r.url().includes('__experimental_calc_totals=true')) {
           report.submissions++; return route.abort();
         }
@@ -153,10 +157,23 @@ async function verifyState(page, expected, label) {
             await verifyState(page, { ...expected, postcode }, mode + ' native Woo rerender');
           }
           report[mode] = { state: await state(page) };
+          check(await page.locator('.ak-checkout-summary__method-pending:visible').count() === 2, 'Step 2 has neutral shipping/payment placeholders');
+          check(await page.locator('.ak-checkout-summary__method-chosen:visible').count() === 0, 'No default GLS/Barion presented as a completed Step 2 choice');
+          check(await page.locator('[id^="ak-checkout-address-selector-"]').count() === 0, 'Guest without saved addresses has no empty selector');
           await screenshot(page, width + '-' + mode + '-step2');
           await page.getByRole('button', { name: 'Tovább a szállítás és fizetéshez', exact: true }).click();
           await page.waitForFunction(() => document.body.dataset.akCheckoutStep === '3');
           const gls = page.getByRole('radio', { name: /Kézbesítés címre/ });
+          const pickupRate = await page.locator('#shipping-option input[value^="local_pickup:"]').getAttribute('value');
+          for (const [rateId, cost] of [['gls_shipping_method_parcel_locker',1490],['gls_shipping_method_parcel_shop',1490],[pickupRate,0],['gls_shipping_method',1990]]) {
+            await page.locator('#shipping-option input[value="' + rateId + '"]').check();
+            await shippingSettled(page, '6726', rateId);
+            const rateTotals = await page.evaluate(() => wp.data.select('wc/store/cart').getCartData().totals);
+            const factor = 10 ** rateTotals.currency_minor_unit;
+            check(Number(rateTotals.total_shipping) / factor === cost, rateId + ': requested LOCAL cost');
+            check(Number(rateTotals.total_price) === Number(rateTotals.total_items) + Number(rateTotals.total_shipping) + Number(rateTotals.total_tax) - Number(rateTotals.total_discount), rateId + ': grand total updates');
+            report[mode][rateId] = rateTotals;
+          }
           await gls.check();
           await shippingSettled(page, '6726', 'gls_shipping_method');
           report[mode].shippingStep3 = await shippingSnapshot(page);
@@ -169,6 +186,9 @@ async function verifyState(page, expected, label) {
           await page.waitForFunction(() => document.body.dataset.akCheckoutStep === '4');
           await shippingSettled(page, '6726', 'gls_shipping_method');
           report[mode].shippingStep4 = await shippingSnapshot(page);
+          check(await page.locator('.ak-checkout-summary__method-pending:visible').count() === 0, 'Step 4 has no pending choices');
+          const reviewTotals = await page.evaluate(() => wp.data.select('wc/store/cart').getCartData().totals);
+          check(Number(reviewTotals.total_shipping) / (10 ** reviewTotals.currency_minor_unit) === 1990, 'Step 4 retains selected home-delivery cost');
           await verifyState(page, { ...expected, postcode: '6726' }, mode + ' final state');
           const finalText = await page.locator('.ak-checkout-final-review').innerText();
           for (const value of [report.email, expected.billingPhone, expected.shippingPhone, 'Fő fasor 12', 'Barion', 'Kézbesítés címre']) check(finalText.includes(value), 'Final review includes ' + value);
@@ -191,6 +211,7 @@ async function verifyState(page, expected, label) {
         report.pass = true;
       } catch (error) {
         report.failure = error.message;
+        report.shippingFailure = await shippingSnapshot(page).catch(() => null);
         report.validation = await page.evaluate(() => ({ errors: wp.data.select('wc/store/validation').getValidationErrors(), checkout: wp.data.select('wc/store/checkout').getCheckoutStatus(), payment: wp.data.select('wc/store/payment').getActivePaymentMethod(), invalid: [...document.querySelectorAll('input,select,textarea')].filter(x => x.getClientRects().length && x.willValidate && !x.validity.valid).map(x => ({id:x.id,type:x.type,validation:x.validationMessage})), step: document.body.dataset.akCheckoutStep, buttons: [...document.querySelectorAll('[data-checkout-step-controls]')].map(x=>({step:x.dataset.checkoutStepControls,connected:x.isConnected,text:x.textContent})) })).catch(() => null);
         await page.screenshot({ path: path.join(output, width + '-failure.png'), fullPage: true }).catch(() => {});
         throw error;

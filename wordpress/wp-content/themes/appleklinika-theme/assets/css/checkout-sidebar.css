@@ -252,6 +252,12 @@ body.woocommerce-checkout .ak-checkout-summary__detail strong {
   font-weight: 680;
 }
 
+/* Woo's internal defaults are not a customer decision before final review. */
+body.woocommerce-checkout:not(.ak-checkout-step-4) .ak-checkout-summary__method-chosen,
+body.woocommerce-checkout.ak-checkout-step-4 .ak-checkout-summary__method-pending {
+  display: none;
+}
+
 @media (min-width: 1024px) {
   body.woocommerce-checkout .ak-checkout-summary-slot {
     grid-column: 2 !important;

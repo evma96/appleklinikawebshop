@@ -14,16 +14,57 @@ function woo(code) {
 }
 const report = { assertions: 0, errors: [], lifecycle: [], submissions: 0 };
 function check(value, message) { report.assertions++; assert(value, message); }
+async function fill(page, id, value) {
+  await page.locator('#' + id).fill(value);
+  await page.locator('#' + id).press('Tab');
+}
+async function editable(page, purpose) {
+  const edit = page.locator('#' + purpose + '-fields .wc-block-components-address-card__edit');
+  if (await edit.isVisible()) await edit.click();
+}
+async function address(page, purpose, phone) {
+  await editable(page, purpose);
+  await page.locator('#' + purpose + '-country').selectOption('HU');
+  const data = { postcode: '6726', city: 'Szeged', address_1: 'Fő fasor', 'appleklinika-house_number': '12', phone };
+  for (const [key,value] of Object.entries(data)) await fill(page, purpose + '-' + key, value);
+  if (await page.locator('#' + purpose + '-first_name').isVisible()) {
+    await fill(page,purpose+'-first_name','Elek'); await fill(page,purpose+'-last_name','Teszt');
+  }
+}
+async function settled(page, postcode, rate = null) {
+  await page.waitForFunction(({postcode,rate}) => {
+    const c=wp.data.select('wc/store/cart'), p=c.getCartData().shippingRates || [];
+    return !c.isCustomerDataUpdating() && !c.isAddressFieldsForShippingRatesUpdating() && !c.isShippingRateBeingSelected()
+      && p.length && p.every(x=>x.destination.postcode===postcode && (!rate || x.shipping_rates.some(r=>r.rate_id===rate&&r.selected)));
+  },{postcode,rate});
+}
+async function shot(page, name) {
+  await page.evaluate(()=>window.scrollTo(0,0));
+  await page.getByRole('link',{name:'Vissza a kosárhoz',exact:true}).first().focus();
+  await page.screenshot({path:output+'/'+name+'.png',fullPage:true});
+  if(name.endsWith('step2')||name.endsWith('same-address')) {
+    await page.locator('#shipping-fields').screenshot({path:output+'/'+name+'-shipping-detail.png'});
+    await page.locator('#order-fields').screenshot({path:output+'/'+name+'-identity-detail.png'});
+  }
+}
 (async () => {
   const marker = 'qa-final-ux-address-' + Date.now();
   const fixture = woo(`$id=wp_insert_user(['user_login'=>'${marker}','user_email'=>'${marker}@example.test','user_pass'=>wp_generate_password(32),'role'=>'customer']);if(is_wp_error($id))throw new Exception($id->get_error_message());try{$data=['label'=>'QA shipping','capabilities'=>2,'first_name'=>'Elek','last_name'=>'Teszt','country'=>'HU','postcode'=>'6726','city'=>'Szeged','address_1'=>'Fő fasor','house_number'=>'12','phone'=>'+36301234567','email'=>'${marker}@example.test','status'=>'active','source'=>'account'];$shipping=$service->create($id,$data,false,true);$data=array_merge($data,['label'=>'QA company billing','capabilities'=>1,'company_name'=>'QA Mentett Cím Kft.','tax_number'=>'12345678-1-23','address_1'=>'Számlázási utca','house_number'=>'24']);$billing=$service->create($id,$data,true,false);echo json_encode(['id'=>$id,'billing'=>$billing->key().'|'.$billing->version(),'cookieName'=>LOGGED_IN_COOKIE,'cookie'=>wp_generate_auth_cookie($id,time()+3600,'logged_in'),'stock'=>wc_get_product(334)->get_stock_quantity(),'drafts'=>wc_get_orders(['status'=>'checkout-draft','limit'=>-1,'return'=>'ids'])]);}catch(Throwable $e){$service->eraseForCustomer($id);require_once ABSPATH.'wp-admin/includes/user.php';wp_delete_user($id);throw $e;}`);
   report.customerId = fixture.id;
+  if (process.env.AK_UX_NO_SAVED === '1') {
+    woo(`$service->eraseForCustomer(${fixture.id});echo json_encode(true);`);
+    fixture.billing = null;
+  }
   let browser, context, page;
   try {
     browser = await chromium.launch({ headless: true, executablePath: process.env.AK_CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' });
     context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
     await context.addCookies([{ name: fixture.cookieName, value: fixture.cookie, url: base, httpOnly: true, sameSite: 'Lax' }]);
     await context.route('**/*', route => {
+      // Prices/method controls are real; the external pickup map is out of scope.
+      if (new URL(route.request().url()).hostname === 'map.gls-croatia.com') {
+        return route.fulfill({contentType:'application/javascript',body:"customElements.define('gls-dpm-dialog',class extends HTMLElement{showModal(){throw new Error('Live GLS locator is outside this presentation test');}});"});
+      }
       if (route.request().method() === 'POST' && decodeURIComponent(route.request().url()).includes('/wc/store/v1/checkout') && !route.request().url().includes('__experimental_calc_totals=true')) {
         report.submissions++; return route.abort();
       }
@@ -36,15 +77,34 @@ function check(value, message) { report.assertions++; assert(value, message); }
     await page.locator('.single_add_to_cart_button').click();
     await page.waitForFunction(() => document.querySelector('.ak-cart-count')?.textContent.trim() === '1');
     await page.goto(base + '/?page_id=9', { waitUntil: 'networkidle' });
-    fs.writeFileSync(output + '/checkout-header.html', await page.locator('.wp-site-blocks > header').evaluate(x => x.outerHTML));
+    await fill(page,'email',marker+'@example.test');
     const same = page.locator('#shipping-fields .wc-block-checkout__use-address-for-billing input');
     const selector = page.locator('#ak-checkout-address-selector-billing');
+    await editable(page,'shipping');
+    if (fixture.billing) {
+      const shippingSelector=page.locator('#ak-checkout-address-selector-shipping');
+      const savedValue=await shippingSelector.locator('option').first().getAttribute('value');
+      await shippingSelector.selectOption('__one_off__');
+      check(await page.locator('[data-ak-address-purpose="shipping"] [data-ak-address-save]').isVisible(),'Manual shipping exposes save preference');
+      await shippingSelector.selectOption(savedValue);
+      await page.waitForFunction(()=>document.querySelector('#shipping-postcode')?.value==='6726');
+      check(!await page.locator('[data-ak-address-purpose="shipping"] [data-ak-address-save]').isVisible(),'Saved shipping hides save preference');
+      check(await shippingSelector.locator('option').last().innerText()==='Másik cím használata','Manual option is last');
+      check(await page.locator('[data-ak-address-purpose="shipping"] .ak-checkout-address-selector__saved-help').isVisible(),'Saved shipping clearly identified');
+    } else {
+      check(await page.locator('[id^="ak-checkout-address-selector-"]').count()===0,'No saved addresses: no pointless selector');
+      check(await page.locator('#shipping-country').isVisible(),'No saved addresses: normal editable form directly, even with legacy profile values');
+      await address(page,'shipping','+36301234567');
+    }
     for (const on of [false, true, false, true, false]) {
       await same.setChecked(on);
-      await page.waitForFunction(on => document.querySelectorAll('#ak-checkout-address-selector-billing').length === (on ? 0 : 1), on);
+      await page.waitForFunction(on => Boolean(document.getElementById('billing-fields')) === !on, on);
+      await page.waitForFunction(on => document.querySelector('.ak-checkout-same-address-help')?.hidden === !on,on);
       const count = await selector.count(); report.lifecycle.push(count);
-      check(count === (on ? 0 : 1), 'One selector in every separate-billing state');
-      if (!on) {
+      check(count === (on || !fixture.billing ? 0 : 1), 'Exactly the selector required for the live billing state');
+      check(await page.locator('.ak-checkout-same-address-help').isVisible()===on,'Same-address explanation follows native control');
+      if (!on && fixture.billing) {
+        await editable(page,'billing');
         await selector.selectOption('__one_off__');
         await selector.selectOption(fixture.billing);
         await page.waitForFunction(() => wp.data.select('wc/store/cart').getCustomerData().billingAddress.company === 'QA Mentett Cím Kft.');
@@ -58,17 +118,89 @@ function check(value, message) { report.assertions++; assert(value, message); }
     }
     for (const width of [1440, 390]) {
       await page.setViewportSize({ width, height: 1000 });
-      await page.locator('#order-fields').scrollIntoViewIfNeeded();
-      await page.screenshot({ path: output + '/' + width + '-saved-company.png', fullPage: true });
-      await page.locator('#order-fields').screenshot({ path: output + '/' + width + '-company-detail.png' });
-      check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'No saved-address overflow');
-      check(!await page.locator('#billing-first_name').isVisible(), 'Hidden technical personal names for saved company');
+      for (const mode of ['personal','company']) {
+        await page.locator('[data-checkout-step-trigger="2"]').click();
+        await address(page,'shipping','+36301234567');
+        await page.locator('#order-appleklinika-company_purchase').setChecked(mode==='company');
+        if(mode==='company'){
+          await fill(page,'order-appleklinika-company_name','QA Egyező Cím Kft.');
+          await fill(page,'order-appleklinika-tax_number','12345678-1-23');
+        }
+        await same.check();
+        await page.waitForFunction(()=>!document.getElementById('billing-fields')&&!document.querySelector('.ak-checkout-same-address-help')?.hidden);
+        check(await selector.count()===0,'Same-address ON has no redundant billing selector');
+        check(await page.locator('#order-appleklinika-company_purchase').count()===1,'Same-address ON keeps one billing identity decision');
+        if(mode==='company')check(await page.locator('#order-appleklinika-company_name').inputValue()==='QA Egyező Cím Kft.'&&await page.locator('#order-appleklinika-tax_number').inputValue()==='12345678-1-23','Same-address ON preserves company identity');
+        await settled(page,'6726');
+        await shot(page,width+'-'+mode+'-same-address');
+        await page.getByRole('button',{name:'Tovább a szállítás és fizetéshez',exact:true}).click();
+        await page.waitForFunction(()=>document.body.dataset.akCheckoutStep==='3');
+        await page.locator('#shipping-option input[value="gls_shipping_method"]').check();await settled(page,'6726','gls_shipping_method');
+        await page.locator('input[value="barion"]').check();
+        await page.getByRole('button',{name:'Tovább az összegzéshez',exact:true}).click();
+        await page.waitForFunction(()=>document.body.dataset.akCheckoutStep==='4');
+        const sharedReview=await page.locator('.ak-checkout-final-review').innerText();
+        check(sharedReview.includes('Fő fasor 12')&&sharedReview.includes('Barion')&&sharedReview.includes('+36301234567'),'Same-address ON completes Step 2/3/4 with shipping/contact/payment');
+        if(mode==='company')check(sharedReview.includes('QA Egyező Cím Kft.')&&sharedReview.includes('12345678-1-23'),'Same-address ON final review retains company/tax');
+        const sharedBilling=await page.locator('.ak-checkout-final-review__timeline-item').filter({has:page.getByRole('heading',{name:'Számlázási adatok',exact:true})}).innerText();
+        check(sharedBilling.includes('Fő fasor 12')&&sharedBilling.includes('6726 Szeged'),'Same-address ON billing review explicitly contains the effective shipping address, including COMPANY');
+        check(await page.evaluate(()=>Object.keys(wp.data.select('wc/store/validation').getValidationErrors()).every(k=>/terms/i.test(k))),'Same-address ON has no stale validation');
+        await shot(page,width+'-'+mode+'-same-address-step4');
+        await page.locator('[data-checkout-step-trigger="2"]').click();
+        await same.uncheck();
+        await editable(page,'billing');
+        if (fixture.billing) {
+          const shippingSelector=page.locator('#ak-checkout-address-selector-shipping');
+          await shippingSelector.selectOption('__one_off__');
+          if(mode==='company')await shippingSelector.selectOption(await shippingSelector.locator('option').first().getAttribute('value'));
+          check(await page.locator('[data-ak-address-purpose="shipping"] [data-ak-address-save]').isVisible()===(mode==='personal'),'Shipping manual/saved states expose only the correct save control');
+          await selector.selectOption('__one_off__');
+          if(mode==='company')await selector.selectOption(fixture.billing);
+        }
+        await page.locator('#order-appleklinika-company_purchase').setChecked(mode==='company');
+        await address(page,'shipping','+36301234567');
+        if(mode==='personal'||!fixture.billing)await address(page,'billing','+36307654321');
+        else await fill(page,'billing-phone','+36307654321');
+        if(mode==='company') {
+          await fill(page,'order-appleklinika-company_name',fixture.billing?'QA Mentett Cím Kft.':'QA Kézi Cím Kft.');
+          await fill(page,'order-appleklinika-tax_number','12345678-1-23');
+        }
+        for(const postcode of ['6724','6725','6726']) {
+          await fill(page,'shipping-postcode',postcode); await settled(page,postcode);
+          check(await page.locator('#email').inputValue()===marker+'@example.test','Latest email survives rerender');
+          check(await page.locator('#billing-phone').inputValue()==='+36307654321'&&await page.locator('#shipping-phone').inputValue()==='+36301234567','Both phones survive rerender');
+          check(await page.locator('#order-appleklinika-company_purchase').isChecked()===(mode==='company'),'Billing mode survives rerender');
+          if(mode==='company')check(await page.locator('#order-appleklinika-tax_number').inputValue()==='12345678-1-23','Tax survives rerender');
+          check(await page.evaluate(()=>['billing','shipping'].every(p=>{
+            const el=document.getElementById(p+'-fields');
+            return el&&el.isConnected&&el.querySelectorAll('[data-ak-address-purpose]').length===1&&el.closest('.wc-block-checkout__form');
+          })),'Three rerenders retain single connected hosts and their original React-owned inputs');
+        }
+        check(await page.locator('[data-ak-address-purpose="billing"] [data-ak-address-save]').isVisible()===(mode==='personal'||!fixture.billing),'Save control only in manual billing state');
+        await shot(page,width+'-'+mode+'-step2');
+        check(await page.locator('.ak-checkout-summary__method-chosen:visible').count()===0,'Step 2 has no premature selected methods');
+        await page.getByRole('button',{name:'Tovább a szállítás és fizetéshez',exact:true}).click();
+        await page.waitForFunction(()=>document.body.dataset.akCheckoutStep==='3');
+        await page.locator('#shipping-option input[value="gls_shipping_method"]').check(); await settled(page,'6726','gls_shipping_method');
+        await page.locator('input[value="barion"]').check();
+        await shot(page,width+'-'+mode+'-step3');
+        await page.getByRole('button',{name:'Tovább az összegzéshez',exact:true}).click();
+        await page.waitForFunction(()=>document.body.dataset.akCheckoutStep==='4');
+        const review=await page.locator('.ak-checkout-final-review').innerText();
+        for(const value of [marker+'@example.test','+36301234567','+36307654321','Fő fasor','Barion','Kézbesítés címre'])check(review.includes(value),'Final review contains '+value);
+        if(mode==='company')check(review.includes('12345678-1-23'),'Final company tax');
+        check(await page.evaluate(()=>Object.keys(wp.data.select('wc/store/validation').getValidationErrors()).every(k=>/terms/i.test(k))),'Only unaccepted legal gate remains');
+        await shot(page,width+'-'+mode+'-step4');
+        check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'No horizontal overflow');
+        check(await page.locator('#order-appleklinika-company_purchase').count()===1,'One company control');
+      }
     }
     check(report.errors.length === 0, 'No console/runtime errors');
     check(report.submissions === 0, 'No submission');
     report.pass = true;
   } catch (error) {
     report.failure = error.message;
+    if(page){await page.screenshot({path:output+'/failure.png',fullPage:true});fs.writeFileSync(output+'/failure-dom.html',await page.locator('.wc-block-checkout__form').evaluate(x=>x.outerHTML));report.validation=await page.evaluate(()=>({step:document.body.dataset.akCheckoutStep,errors:wp.data.select('wc/store/validation').getValidationErrors(),cart:wp.data.select('wc/store/cart').getCustomerData()}));}
     throw error;
   } finally {
     if (page) await page.goto(base + '/?page_id=8', { waitUntil: 'networkidle' }).then(async () => {

@@ -6,6 +6,9 @@ The final four-step checkout UX (one billing/company decision, shipping/payment,
 then review and native declarations) is documented in
 [`docs/qa/checkout-final-ux.md`](docs/qa/checkout-final-ux.md).
 It preserves Woo-owned controls and does not submit a payment/order during visual QA.
+The address/summary refinement defers method names until final review, omits empty
+saved-address selectors and explains shared billing/shipping. LOCAL GLS test prices
+are configuration-only and do not travel with Git; see the same acceptance note.
 
 The focused LOCAL pre-launch presentation acceptance (category navigation, compact
 mobile filters, existing Hungarian Woo translations and real-photo gallery) is

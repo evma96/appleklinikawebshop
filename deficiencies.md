@@ -16,6 +16,10 @@
   acceptance. Barion/GLS controls are exercised without submission. The definitive
   Barion + GLS + Számlázz.hu E2E remains deliberately deferred until visual approval.
   TEST configuration/data are untouched. See `docs/qa/checkout-final-ux.md`.
+  The subsequent address/summary refinement also remains LOCAL-only. GLS locker/shop
+  1,490 HUF, home delivery 1,990 HUF and pickup 0 HUF are local Woo settings, not
+  deployable source pricing rules. Existing local free-shipping configuration is
+  preserved; no equivalent TEST/production changes are implied by this feature.
 
 - The LOCAL visible-polish pass cleans QA product copy in local data only; this is
   not a data migration. Existing Hungarian Woo language packs provide the verified
