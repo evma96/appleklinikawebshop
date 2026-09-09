@@ -178,6 +178,11 @@ async function shot(page, name) {
         }
         check(await page.locator('[data-ak-address-purpose="billing"] [data-ak-address-save]').isVisible()===(mode==='personal'||!fixture.billing),'Save control only in manual billing state');
         await shot(page,width+'-'+mode+'-step2');
+        check(await page.evaluate(()=>['shipping','billing'].every(p=>{
+          const host=document.getElementById(p+'-fields'), heading=host.querySelector('.wc-block-components-checkout-step__heading'), section=host.querySelector('[data-ak-address-purpose]');
+          return heading && (heading.compareDocumentPosition(section)&Node.DOCUMENT_POSITION_FOLLOWING) && section.parentElement===host;
+        })),'Address choices follow their own headings, with no reparented native input');
+        check(await page.locator('.ak-checkout-address-selector__manual-help:visible').count()===(mode==='personal'||!fixture.billing?2:0),'Only manual entry displays the manual-address explanation');
         check(await page.locator('.ak-checkout-summary__method-chosen:visible').count()===0,'Step 2 has no premature selected methods');
         await page.getByRole('button',{name:'Tovább a szállítás és fizetéshez',exact:true}).click();
         await page.waitForFunction(()=>document.body.dataset.akCheckoutStep==='3');

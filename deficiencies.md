@@ -132,6 +132,22 @@
 - The local image normalization pipeline has only been approved for the first iPhone phone-portrait output. MacBook, iPad, and Apple Watch profiles exist in the script but must not be batch-run until each family has a reviewed source/preview pass.
 - Only the tested iPhone 13 Pro product currently uses `_ak_single_product_gallery_image_id`; future products need an admin workflow or import step so portrait/detail images are assigned separately from archive featured images.
 
+## Checkout address initialization acceptance
+
+- LOCAL source tracing found no cross-customer address initialization leak. Woo
+  profile metadata, current-session restoration and the custom address book are
+  separate valid sources. Fresh guests and empty profiles have empty personal
+  addresses; store country/region defaults are not stale customer data.
+- The actual defect was a sidebar-only fallback: an empty independent billing
+  address appeared as shipping. The fallback is removed, without clearing inputs,
+  changing API/state logic or replacing native controls. Address choices now follow
+  their native headings; empty lists explain manual entry and mobile short fields
+  keep the existing two-column grid. See `docs/qa/checkout-final-ux.md`.
+- Integrated payment/parcel/invoice acceptance is still deferred. These LOCAL
+  tests block order submission and stub the external GLS locator only; they do not
+  prove real payment or parcel-service calls, browser password-manager autofill,
+  or a TEST SERVER rollout of this follow-up.
+
 ## Next Iteration Questions
 
 - Which fields should be visible on the frontend product page?

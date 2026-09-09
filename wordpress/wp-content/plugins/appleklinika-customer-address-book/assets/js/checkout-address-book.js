@@ -390,23 +390,30 @@
             section.appendChild(select);
             var savedHelp = document.createElement('p');
             savedHelp.className = 'ak-checkout-address-selector__saved-help';
-            savedHelp.textContent = 'A kiválasztott mentett címet használjuk. Más cím megadásához válaszd a „Másik cím használata” lehetőséget. ';
+            savedHelp.textContent = 'A kiválasztott mentett címet használjuk. ';
             var accountUrl = window.appleklinikaAddressBookPresentation && window.appleklinikaAddressBookPresentation.accountUrl;
             if (accountUrl) {
                 var editLink = document.createElement('a');
                 editLink.href = accountUrl;
-                editLink.textContent = 'Mentett címek szerkesztése a Címeim között';
+                editLink.textContent = 'Címeim szerkesztése';
                 savedHelp.appendChild(editLink);
             }
             section.appendChild(savedHelp);
         }
         section.appendChild(notice);
+        var manualHelp = document.createElement('p');
+        manualHelp.className = 'ak-checkout-address-selector__manual-help';
+        manualHelp.textContent = (options.length ? '' : 'Nincs külön mentett címed. ')
+            + 'Ellenőrizd vagy add meg az ehhez a rendeléshez használt címet.';
+        section.appendChild(manualHelp);
 
         var savePanel = document.createElement('div');
         savePanel.className = 'ak-checkout-address-selector__save';
         savePanel.innerHTML = '<label><input type="checkbox" data-ak-address-save> Mentés a Címeim közé</label><div data-ak-address-save-details hidden><label class="ak-checkout-address-selector__label">Cím elnevezése<input type="text" data-ak-address-label maxlength="80"></label><label><input type="checkbox" data-ak-address-default disabled> Legyen alapértelmezett ' + (purpose === 'billing' ? 'számlázási' : 'szállítási') + ' cím</label></div>';
         section.appendChild(savePanel);
-        host.insertBefore(section, host.firstChild);
+        // Insert only our own presentation section after the native heading.
+        // Woo's form and all React-owned controls remain where Woo mounted them.
+        host.insertBefore(section, host.querySelector('.wc-block-components-checkout-step__content'));
 
         var matchingOption = function () {
             return options.find(function (option) { return select.value === option.key + '|' + option.version; });

@@ -164,6 +164,109 @@ These settings are not a migration and **will not be deployed with Git**.
   remain exercised. No external parcel lookup, payment or shipping submission is
   performed; integrated GLS locator/payment acceptance remains separate.
 
+## Initial address provenance and Step 2 polish
+
+Follow-up from `0ec144778cb30366f5afa9a2a4b3a4a9e7ae80b7`, LOCAL only.
+The initial address-state suspicion was **not** a data leak. The baseline native
+gate passed 1300 source/state assertions before any production modification.
+
+### Authoritative sources
+
+1. **Fresh guest:** new non-persistent Chromium context, no initial cookies,
+   localStorage or sessionStorage; no browser autofill database. Autofill features
+   are disabled and no `:-webkit-autofill` input is present. Names, streets, cities,
+   postcodes and phones start empty. HU/CS defaults come from Woo's store location,
+   not a previous customer. Woo creates its own cart cache keys after startup;
+   their existence is not evidence of inherited QA state.
+2. **Returning guest:** native edits travel through `/cart/update-customer` (which
+   legitimately supports partial billing or shipping updates), Store API response,
+   Woo's `customer` session entry and the recreated React fields on reload. Distinct
+   billing/shipping addresses and phones persist in the same session.
+3. **Logged-in / no custom entries / empty profile:** address fields remain empty;
+   account email is a legitimate WP user default. No custom selector is rendered.
+4. **Logged-in / no custom entries / existing Woo profile:** exact controlled
+   `WC_Customer` billing/shipping values match the initial API/store/visible fields.
+   `WC_Customer::__construct()` reads profile metadata first, then the matching
+   current-customer session. `WC_Customer_Data_Store_Session::read()` checks customer
+   identity and profile modification date; `set_defaults()` supplies location/email
+   defaults. Zero Apple Klinika entries does not imply zero Woo profile metadata.
+5. **Custom address book:** `CheckoutAddressSelection::options()` supplies only the
+   authenticated customer's entries/defaults. Existing `renderPurpose()` and
+   `setCustomFields()` apply the explicit saved selection. Both saved/manual states,
+   COMPANY identity and repeated billing-host remounts remain covered.
+6. **Drafts / stale QA / browser autofill:** source-traced initial fixtures have no
+   existing checkout draft and no inherited session/storage. The recorded guest
+   session before reload contains its own native input values, not an order-derived
+   address. No old QA/profile/session is read or cleared to obtain a pass. Real
+   user password-manager/autofill behavior is outside this controlled browser gate.
+
+Woo's `CartSchema::get_item_response()` serializes `wc()->customer` into billing and
+shipping addresses. Each trace records the live input, customer store, hydrated
+cart, actual request/response address payloads, profile baseline and session snapshot.
+Auth cookies and nonce values are never written into evidence.
+
+### Reproduced defect and minimal correction
+
+With same-address OFF and shipping filled but billing blank, all authoritative
+billing values remained blank, yet the sidebar displayed the shipping address as
+billing. The old unconditional `billing.address_1 ? billing : shipping` fallback was
+the owner. The final baseline regression fails specifically on this presentation
+contract in `before-proven/`; no source change was present during reproduction.
+
+Only that fallback is removed. Shared-address mode still reads Woo's effective
+billing data and the already-existing shared field-prefix resolver. No field clear,
+new store, persistence, request, observer, timeout or native-input reparenting.
+
+Own address selector/help nodes now appear **after** their native heading and before
+the native content. Manual help distinguishes current order fields from separately
+saved entries; saved help links to the existing Címeim editor. Guests never load
+the authenticated save UI. The existing save separator is removed, billing helper
+copy is shorter, and removing two mobile single-column overrides retains the existing
+two-column short-field grid. Full-width street/phone/country fields stay full width.
+There is no new wrapper/card or CSS override layer.
+
+### Reproduction and evidence
+
+```sh
+node wordpress/wp-content/themes/appleklinika-theme/tests/checkout-address-initialization.js
+node wordpress/wp-content/themes/appleklinika-theme/tests/checkout-final-ux.js
+node wordpress/wp-content/themes/appleklinika-theme/tests/checkout-final-ux-addresses.js
+AK_UX_NO_SAVED=1 node wordpress/wp-content/themes/appleklinika-theme/tests/checkout-final-ux-addresses.js
+```
+
+`AK_UX_OUTPUT` selects the evidence directory. Optional diagnostic filters for the
+initialization gate: `AK_UX_WIDTHS=1440` and `AK_UX_CASES=guest`; omit them for full
+1440/390 and guest/empty-profile/woo-profile coverage. Each case has a new context,
+exact marked user/session ownership, supported Woo cleanup and unchanged stock.
+
+Evidence root: `/private/tmp/checkout-initial-address-gvcDD0/`.
+
+- Before: `before-settled/` (six initial-source cases), `before-saved/`, and the
+  failing sidebar reproduction `before-proven/`.
+- After: `after-origin/` (same regression plus all source cases), `after-guest/`,
+  `final-saved/`, `final-empty/`. Both widths and PERSONAL/COMPANY screenshots are
+  personally opened; shared/independent billing and final review are also inspected.
+- Runtime gates exercise three completed Woo shipping recalculations, reload,
+  Step 2 → 3 → 4, original field ownership, save visibility, legal/marketing gates,
+  GLS/Barion presentation, local shipping totals, no duplicate controls or console
+  errors. No Place order click is allowed.
+- Test timing waits for the returned shipping-package postcode, not just optimistic
+  `getCartData()`: reloading before the debounce request completes is not session
+  restoration. Intermediate timing/partial-request test corrections are retained
+  in the evidence and did not cause application-state modifications.
+- Final counts: initialization/source trace 1467, guest UX 380, saved/manual 173,
+  zero-entry PERSONAL/COMPANY 152; PHP address-book 99, cart/checkout 56, company
+  40, finalization 40, legal 9, final-UX 24. Total: **2440 assertions**.
+  PHP/JS syntax and diff whitespace checks pass. The repository `make test` and
+  `make quality` targets are also run but are still placeholders, not additional
+  coverage. One old static cart test required the exact buggy fallback text; it
+  now checks the native same-address guard, while runtime proves both cases.
+- Final read-only cleanup audit: 12 exact QA users, 21 captured sessions and 18
+  exact QA emails checked across this task's runs; zero remaining users/sessions/
+  orders, including drafts. Product 334 stock remains 1. See `cleanup-verified.json`.
+  No local business customer/profile, existing draft, shipping configuration,
+  TEST SERVER or Buyback data was changed by this follow-up.
+
 ## Changed files
 
 All theme-relative paths below are under `wordpress/wp-content/themes/appleklinika-theme/`.

@@ -9,6 +9,11 @@ It preserves Woo-owned controls and does not submit a payment/order during visua
 The address/summary refinement defers method names until final review, omits empty
 saved-address selectors and explains shared billing/shipping. LOCAL GLS test prices
 are configuration-only and do not travel with Git; see the same acceptance note.
+The address-initialization gate separately traces fresh guests, returning sessions,
+empty accounts and Woo profiles without custom addresses. Legitimate Woo data is
+preserved; the sidebar no longer substitutes shipping for an empty independent
+billing address. Run `tests/checkout-address-initialization.js` under the theme for
+the LOCAL native-input/API/reload regression (details in the acceptance note).
 
 The focused LOCAL pre-launch presentation acceptance (category navigation, compact
 mobile filters, existing Hungarian Woo translations and real-photo gallery) is

@@ -35,14 +35,16 @@
     font-size: .875rem;
 }
 
-.ak-checkout-address-selector__saved-help {
+.ak-checkout-address-selector__saved-help,
+.ak-checkout-address-selector__manual-help {
     margin: .2rem 0;
     color: #667085;
     font-size: .8125rem;
     line-height: 1.6;
 }
 
-.ak-checkout-address-selector.is-one-off .ak-checkout-address-selector__saved-help {
+.ak-checkout-address-selector.is-one-off .ak-checkout-address-selector__saved-help,
+.ak-checkout-address-selector.has-saved-address .ak-checkout-address-selector__manual-help {
     display: none;
 }
 
@@ -62,8 +64,7 @@
 .ak-checkout-address-selector__save {
     display: grid;
     gap: .5rem;
-    padding: .6rem 0 0;
-    border-top: 1px solid rgba(227, 232, 239, .9);
+    padding: 0;
 }
 
 .ak-checkout-address-selector__save [data-ak-address-save-details] {
