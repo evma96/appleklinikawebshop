@@ -316,6 +316,9 @@ final class CheckoutAddressController
             md5_file($scriptPath) ?: APPLEKLINIKA_ADDRESS_BOOK_VERSION,
             true
         );
+        wp_localize_script('appleklinika-customer-address-book-checkout', 'appleklinikaAddressBookPresentation', [
+            'accountUrl' => wc_get_account_endpoint_url('cimeim'),
+        ]);
     }
 
     /** @param array<string, mixed> $candidate @return array<string, mixed> */

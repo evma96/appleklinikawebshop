@@ -63,25 +63,11 @@ function ak_legal_demo_terms_checkbox(array &$blocks): int
     return $count;
 }
 
-/** Demo-only visual correction kept in WordPress Additional CSS, not theme code. */
+/** Buyback demo styling only; checkout controls belong to the theme's shared CSS. */
 function ak_legal_demo_css(): string
 {
     return <<<'CSS'
 /* ak-legal-demo:start */
-body.woocommerce-checkout #contact-fields input[id$="-appleklinika-marketing_consent"] {
-    width: 20px !important;
-    height: 20px !important;
-    min-width: 20px !important;
-    min-height: 20px !important;
-    padding: 0 !important;
-    margin: 2px 10px 0 0;
-    border-radius: 4px;
-    flex: 0 0 20px;
-}
-body.woocommerce-checkout #contact-fields label:has(input[id$="-appleklinika-marketing_consent"]) {
-    align-items: flex-start;
-    min-height: 44px;
-}
 .ak-buyback-demo__privacy-check:has(input[name="marketing_consent"]) {
     display: block;
     position: relative;

@@ -91,7 +91,7 @@
         var select = section ? section.querySelector('select') : null;
         var fields = {};
 
-        if (!section || !select || select.value !== '__one_off__') {
+        if (!section || (select && select.value !== '__one_off__')) {
             return null;
         }
 
@@ -217,6 +217,13 @@
                 button.disabled = false;
                 button.removeAttribute('data-ak-address-flushing');
                 if (synchronized !== false) {
+                    root.querySelectorAll('.ak-checkout-address-selector__editor').forEach(function (editor) {
+                        var host = editor.closest('[id$="-fields"]');
+                        var invalid = Array.from(host.querySelectorAll('input, select, textarea')).some(function (field) {
+                            return field.willValidate && !field.validity.valid;
+                        });
+                        if (invalid) { editor.open = true; }
+                    });
                     button.setAttribute('data-ak-address-flushed', '1');
                     button.click();
                 }
@@ -321,6 +328,8 @@
         var isOneOff = !select || select.value === '__one_off__';
         section.classList.toggle('is-one-off', isOneOff);
         section.classList.toggle('has-saved-address', !isOneOff);
+        var editor = section.querySelector('.ak-checkout-address-selector__editor');
+        if (editor) { editor.open = false; }
 
         if (!isOneOff) {
             var save = section.querySelector('[data-ak-address-save]');
@@ -352,7 +361,6 @@
         var section = document.createElement('section');
         section.className = 'ak-checkout-address-selector';
         section.setAttribute('data-ak-address-purpose', purpose);
-        var title = purpose === 'billing' ? 'Számlázási cím' : 'Szállítási cím';
         var selectorCaption = purpose === 'billing'
             ? 'Válassz mentett számlázási címet'
             : 'Válassz mentett szállítási címet';
@@ -360,19 +368,25 @@
         select.id = 'ak-checkout-address-selector-' + purpose;
         var oneOff = document.createElement('option');
         oneOff.value = '__one_off__';
-        oneOff.textContent = 'Új vagy egyszeri cím';
-        select.appendChild(oneOff);
+        oneOff.textContent = 'Másik cím használata';
+        var hasSelectedSavedAddress = false;
         options.forEach(function (option) {
             var item = document.createElement('option');
             item.value = option.key + '|' + option.version;
-            item.textContent = option.label + ' — ' + option.name + ', ' + option.preview + (option.is_default ? ' (alapértelmezett)' : '');
+            item.textContent = option.label + ' — ' + option.name + ', ' + option.preview;
             if (current && current.mode === 'saved' && current.key === option.key && Number(current.version) === Number(option.version)) {
                 item.selected = true;
+                hasSelectedSavedAddress = true;
             } else if (!current && option.is_default) {
                 item.selected = true;
+                hasSelectedSavedAddress = true;
             }
             select.appendChild(item);
         });
+        select.appendChild(oneOff);
+        if (!hasSelectedSavedAddress) {
+            select.value = '__one_off__';
+        }
         var caption = document.createElement('label');
         caption.className = 'ak-checkout-address-selector__caption';
         caption.htmlFor = select.id;
@@ -380,15 +394,38 @@
         var notice = document.createElement('p');
         notice.className = 'ak-checkout-address-selector__notice';
         notice.setAttribute('data-ak-address-notice', '');
-        section.appendChild(caption);
-        section.appendChild(select);
+        if (options.length > 0) {
+            section.appendChild(caption);
+            section.appendChild(select);
+            var savedEditor = document.createElement('details');
+            savedEditor.className = 'ak-checkout-address-selector__editor';
+            savedEditor.innerHTML = '<summary>Címadatok ellenőrzése / módosítása</summary>';
+            savedEditor.querySelector('summary').setAttribute('aria-controls', purpose);
+            var savedHelp = document.createElement('p');
+            savedHelp.className = 'ak-checkout-address-selector__saved-help';
+            var accountUrl = window.appleklinikaAddressBookPresentation && window.appleklinikaAddressBookPresentation.accountUrl;
+            if (accountUrl) {
+                var editLink = document.createElement('a');
+                editLink.href = accountUrl;
+                editLink.textContent = 'Címeim szerkesztése';
+                savedHelp.appendChild(editLink);
+            }
+            savedEditor.appendChild(savedHelp);
+            section.appendChild(savedEditor);
+        }
         section.appendChild(notice);
+        var manualHelp = document.createElement('p');
+        manualHelp.className = 'ak-checkout-address-selector__manual-help';
+        manualHelp.textContent = 'Cím megadása ehhez a rendeléshez';
+        section.appendChild(manualHelp);
 
-        var savePanel = document.createElement('div');
+        var savePanel = document.createElement('details');
         savePanel.className = 'ak-checkout-address-selector__save';
-        savePanel.innerHTML = '<label><input type="checkbox" data-ak-address-save> Mentés a Címeim közé</label><div data-ak-address-save-details hidden><label class="ak-checkout-address-selector__label">Cím elnevezése<input type="text" data-ak-address-label maxlength="80"></label><label><input type="checkbox" data-ak-address-default disabled> Legyen alapértelmezett ' + (purpose === 'billing' ? 'számlázási' : 'szállítási') + ' cím</label></div>';
+        savePanel.innerHTML = '<summary>Cím megjegyzése későbbre</summary><label><input type="checkbox" data-ak-address-save> Mentés a Címeim közé</label><div data-ak-address-save-details hidden><label class="ak-checkout-address-selector__label">Cím elnevezése<input type="text" data-ak-address-label maxlength="80"></label><label><input type="checkbox" data-ak-address-default disabled> Legyen alapértelmezett ' + (purpose === 'billing' ? 'számlázási' : 'szállítási') + ' cím</label></div>';
         section.appendChild(savePanel);
-        host.insertBefore(section, host.firstChild);
+        // Insert only our own presentation section after the native heading.
+        // Woo's form and all React-owned controls remain where Woo mounted them.
+        host.insertBefore(section, host.querySelector('.wc-block-components-checkout-step__content'));
 
         var matchingOption = function () {
             return options.find(function (option) { return select.value === option.key + '|' + option.version; });
@@ -430,6 +467,10 @@
         if (data.needs_shipping) {
             changed = renderPurpose(checkout, 'shipping', data.shipping || [], data.selection ? data.selection.shipping : null) || changed;
         }
+        // Presentation only: validation must never target a collapsed editor.
+        checkout.querySelectorAll('.ak-checkout-address-selector__editor').forEach(function (editor) {
+            if (editor.closest('[id$="-fields"]').querySelector('.has-error')) { editor.open = true; }
+        });
         installProgressFlush(checkout);
     }
 

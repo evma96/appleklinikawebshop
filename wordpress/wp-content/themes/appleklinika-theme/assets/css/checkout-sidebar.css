@@ -5,9 +5,19 @@ body.woocommerce-checkout .wc-block-components-sidebar.ak-checkout-default-summa
 }
 
 body.woocommerce-checkout .ak-checkout-summary-slot {
+  box-sizing: border-box;
   width: 100%;
   min-width: 0;
   align-self: start;
+}
+
+/* Inside the final mobile review, reuse the totals without a second card. */
+body.woocommerce-checkout .ak-checkout-summary-slot--final-review .ak-checkout-summary {
+  padding-inline: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 body.woocommerce-checkout .ak-checkout-summary {
@@ -240,6 +250,12 @@ body.woocommerce-checkout .ak-checkout-summary__detail strong {
   font-size: 13.5px;
   line-height: 1.45;
   font-weight: 680;
+}
+
+/* Woo's internal defaults are not a customer decision before final review. */
+body.woocommerce-checkout:not(.ak-checkout-step-4) .ak-checkout-summary__method-chosen,
+body.woocommerce-checkout.ak-checkout-step-4 .ak-checkout-summary__method-pending {
+  display: none;
 }
 
 @media (min-width: 1024px) {

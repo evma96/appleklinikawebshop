@@ -2,6 +2,27 @@
 
 Production-oriented WooCommerce webshop foundation for selling used Apple devices.
 
+The final four-step checkout UX (one billing/company decision, shipping/payment,
+then review and native declarations) is documented in
+[`docs/qa/checkout-final-ux.md`](docs/qa/checkout-final-ux.md).
+It preserves Woo-owned controls and does not submit a payment/order during visual QA.
+The address/summary refinement defers method names until final review, omits empty
+saved-address selectors and explains shared billing/shipping. LOCAL GLS test prices
+are configuration-only and do not travel with Git; see the same acceptance note.
+The address-initialization gate separately traces fresh guests, returning sessions,
+empty accounts and Woo profiles without custom addresses. Legitimate Woo data is
+preserved; the sidebar no longer substitutes shipping for an empty independent
+billing address. Run `tests/checkout-address-initialization.js` under the theme for
+the LOCAL native-input/API/reload regression (details in the acceptance note).
+Step 2 now groups contact, delivery and billing visually. Saved addresses use a
+compact selection with a native disclosure for the original Woo form; manual
+entry remains direct and optional saving is progressively disclosed. The billing
+switches remain the original Woo inputs, not a second identity/state system.
+The LOCAL session/control gate also covers native guest → account A → logout →
+account B transitions. Phone hints never become values; native checkbox marks
+share their input's grid cell. See the acceptance note for the backed-up removal
+of two obsolete LOCAL Additional CSS rules (a data-only cleanup, not deployment).
+
 The focused LOCAL pre-launch presentation acceptance (category navigation, compact
 mobile filters, existing Hungarian Woo translations and real-photo gallery) is
 documented in [`docs/qa/prelaunch-visible-polish.md`](docs/qa/prelaunch-visible-polish.md).

@@ -60,6 +60,10 @@ try {
     $test->assert(! array_key_exists('customer_id', $options['billing'][0]), 'customer id not exposed');
     $test->assert(! array_key_exists('created_at', $options['billing'][0]) && ! array_key_exists('source', $options['billing'][0]), 'non-checkout audit data not exposed');
     $checkoutScript = file_get_contents(dirname(__DIR__) . '/assets/js/checkout-address-book.js');
+    $test->assert(str_contains($checkoutScript, "oneOff.textContent = 'Másik cím használata'") && strpos($checkoutScript, 'select.appendChild(oneOff);') > strpos($checkoutScript, 'select.appendChild(item);'), 'manual-address choice follows the existing saved addresses');
+    $test->assert(str_contains($checkoutScript, 'if (options.length > 0)') && str_contains($checkoutScript, "if (!section || (select && select.value !== '__one_off__'))"), 'no saved addresses means no empty selector, while the existing manual-address flush still receives native field values');
+    $test->assert(str_contains($checkoutScript, 'Cím megadása ehhez a rendeléshez') && str_contains($checkoutScript, "document.createElement('details')") && str_contains($checkoutScript, '<summary>Cím megjegyzése későbbre</summary>'), 'manual entry has a concise identity and optional save preferences use a native disclosure');
+    $test->assert(str_contains($checkoutScript, "host.insertBefore(section, host.querySelector('.wc-block-components-checkout-step__content'))"), 'only custom selection presentation is inserted below its native heading, without moving Woo controls');
     $test->assert(is_string($checkoutScript) && str_contains($checkoutScript, "purpose + '-appleklinika-' + name"), 'checkout custom address fields use their Blocks ids');
     $test->assert(str_contains((string) $checkoutScript, "order-appleklinika-company_purchase") && str_contains($checkoutScript, "order-appleklinika-company_name") && str_contains((string) $checkoutScript, "order-appleklinika-tax_number"), 'checkout company controls use their registered Blocks ids');
     $test->assert(str_contains((string) $checkoutScript, 'setCheckoutControlChecked(companyPurchaseInput, option.fields') && str_contains((string) $checkoutScript, 'control.click()') && str_contains($checkoutScript, 'HTMLInputElement.prototype') && str_contains($checkoutScript, 'HTMLSelectElement.prototype') && str_contains($checkoutScript, 'setCheckoutControlValue'), 'checkout address fields update through the controlled Blocks input path');
@@ -96,6 +100,7 @@ try {
     $test->assert(is_string($checkoutCss) && str_contains($checkoutCss, '.ak-checkout-address-selector') && str_contains($checkoutCss, 'background: transparent;') && str_contains($checkoutCss, 'border: 0;'), 'saved-address selection remains an integrated checkout control rather than a nested card');
     $checkoutController = file_get_contents(dirname(__DIR__) . '/src/Interfaces/Checkout/CheckoutAddressController.php');
     $test->assert(is_string($checkoutController) && str_contains($checkoutController, "'wc-blocks-data-store'"), 'checkout script declares the Woo Blocks data-store dependency');
+    $test->assert(str_contains($checkoutController, '! is_checkout() || ! is_user_logged_in()'), 'guests are never offered the authenticated address-save presentation');
     $themeFunctions = file_get_contents(dirname(__DIR__, 3) . '/themes/appleklinika-theme/functions.php');
     $test->assert(is_string($themeFunctions) && str_contains($themeFunctions, "'/cart/update-customer'") && str_contains($themeFunctions, 'appleklinika_capture_checkout_company_identity'), 'company identity is available during both Store API checkout and cart customer-address validation');
     $test->assert($selector->options(0, true)['enabled'] === false, 'unauthenticated customer receives no selector');
