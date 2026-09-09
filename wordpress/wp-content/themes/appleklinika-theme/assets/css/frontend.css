@@ -5257,8 +5257,6 @@ body.woocommerce-checkout .ak-checkout-company-field.is-hidden {
 
 @media (max-width: 700px) {
   body.woocommerce-checkout .ak-checkout-address-details-slot,
-  body.woocommerce-checkout #shipping-fields #shipping,
-  body.woocommerce-checkout #billing-fields #billing,
   body.woocommerce-checkout #billing-fields .ak-checkout-company-billing-slot.is-company-enabled {
     grid-template-columns: minmax(0, 1fr);
   }

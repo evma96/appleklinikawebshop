@@ -881,9 +881,8 @@
       if (!shipping || !shipping.address_1) {
         shipping = checkoutFormAddress('shipping');
       }
-      var effectiveBilling = billing && billing.address_1 ? billing : shipping;
       var detailRows = [
-        ['Számlázási cím', addressSummary(effectiveBilling)],
+        ['Számlázási cím', addressSummary(billing)],
         ['Szállítási cím', addressSummary(shipping)],
         ['Szállítási mód', selectedShippingMethod(cart), true],
         ['Fizetési mód', selectedPaymentMethod(), true]
@@ -1238,7 +1237,7 @@
       if (billingHeading && !billingHeading.querySelector('.ak-checkout-billing-help')) {
         var help = document.createElement('p');
         help.className = 'ak-checkout-billing-help';
-        help.textContent = 'Alapértelmezetten magánszemély nevére állítjuk ki a számlát. Céges számlához add meg a cég adatait.';
+        help.textContent = 'A számlát magánszemély vagy cég nevére kérheted.';
         billingHeading.appendChild(help);
       }
       if (billingHeading) {

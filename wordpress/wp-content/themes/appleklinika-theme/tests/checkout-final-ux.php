@@ -42,4 +42,5 @@ $summaryCss = file_get_contents(dirname(__DIR__) . '/assets/css/checkout-sidebar
 $assert(str_contains($js, 'Kiválasztás a 3. lépésben') && str_contains($summaryCss, ':not(.ak-checkout-step-4) .ak-checkout-summary__method-chosen'), 'Existing step classes defer default-method presentation until final review, without altering Woo state.');
 $assert(str_contains($js, 'Számlázási címként a szállítási címet használjuk.') && str_contains($js, 'sameAddressHelp.hidden = !sameAddress || !sameAddress.checked;'), 'Same-address copy follows the single native checkbox.');
 $assert(substr_count($js, 'var addressPrefix = checkoutAddressFieldPrefix(prefix);') === 2, 'Sidebar and final review read the shared shipping address for billing without dropping company identity.');
+$assert(str_contains($js, "['Számlázási cím', addressSummary(billing)]") && ! str_contains($js, 'var effectiveBilling = billing && billing.address_1 ? billing : shipping;'), 'An empty independent billing address is not replaced with shipping in the sidebar.');
 echo "Checkout final UX: {$checks} assertions passed.\n";
