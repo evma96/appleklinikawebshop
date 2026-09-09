@@ -34,4 +34,6 @@ $check($blocks[0]['attrs'] === ['unchanged' => true], 'Parent architecture uncha
 $first = $blocks;
 ak_legal_demo_terms_checkbox($blocks);
 $check($blocks === $first, 'Checkbox provisioning idempotent.');
+$check(! str_contains(ak_legal_demo_css(), 'body.woocommerce-checkout'), 'Demo configuration cannot reintroduce competing checkout checkbox styles.');
+$check(str_contains(ak_legal_demo_css(), '.ak-buyback-demo__privacy-check'), 'Existing Buyback demo presentation is preserved.');
 echo "Legal demo provisioning tests passed: {$count} assertions.\n";

@@ -8,6 +8,20 @@ Status values:
 - `FAIL`: verified in browser and broken.
 - `NOT TESTED`: not verified in browser during this round.
 
+## Final checkout UX — 2026-09-08
+
+This focused LOCAL acceptance supersedes older checkout presentation notes below;
+it does not renew unrelated storefront checks. See `qa/checkout-final-ux.md` for
+the executable gates and the no-submission boundary.
+
+- One native company decision before billing address: PERSONAL and COMPANY.
+- Hidden company/tax are not required in PERSONAL; invalid COMPANY fields still block.
+- Step 3 has shipping/payment only; Step 4 has review, optional marketing and required terms.
+- Desktop 1440px and mobile 390px: screenshots opened, no duplicated controls/overflow.
+- Three completed Woo shipping recalculations preserve the latest identity/contact/address values.
+- Saved billing selector: 1 → 0 → 1 → 0 → 1 with coherent company/tax/address restoration.
+- Barion/GLS method selection and totals checked; no payment/order/parcel/invoice created.
+
 Last run: 2026-07-01
 Scope: My Account V1 functional structure.
 
