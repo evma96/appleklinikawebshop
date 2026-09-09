@@ -83,6 +83,10 @@ test-customer-address-book-checkout:
 test-customer-address-book-order-snapshot:
 	$(COMPOSE) exec -T wordpress php /var/www/html/wp-content/plugins/appleklinika-customer-address-book/tests/order-snapshot.php
 
+.PHONY: test-order-provider-mapping
+test-order-provider-mapping:
+	$(COMPOSE) exec -T wordpress php /var/www/html/wp-content/plugins/appleklinika-customer-address-book/tests/provider-export.php
+
 test-customer-address-book-privacy:
 	$(COMPOSE) exec -T wordpress php /var/www/html/wp-content/plugins/appleklinika-customer-address-book/tests/privacy.php
 

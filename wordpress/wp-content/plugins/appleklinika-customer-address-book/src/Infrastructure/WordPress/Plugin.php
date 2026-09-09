@@ -65,6 +65,7 @@ final class Plugin
         $this->account->register();
         $this->checkout->register();
         $this->privacy->register();
+        (new \AppleKlinika\CustomerAddressBook\Infrastructure\WooCommerce\OrderProviderMapping())->register();
         if (defined('WP_CLI') && WP_CLI && class_exists('WP_CLI')) {
             \WP_CLI::add_command('ak address-book migrate', new MigrateLegacyAddressesCommand($this->importer));
         }
