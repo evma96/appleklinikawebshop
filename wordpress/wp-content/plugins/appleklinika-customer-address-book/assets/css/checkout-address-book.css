@@ -8,10 +8,11 @@
 }
 
 .ak-checkout-address-selector__caption {
-    margin: 0;
-    color: #475467;
-    font-size: .8125rem;
-    font-weight: 700;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
 }
 
 .ak-checkout-address-selector select,
@@ -35,15 +36,19 @@
     font-size: .875rem;
 }
 
+.ak-checkout-address-selector__notice:empty {
+    display: none;
+}
+
 .ak-checkout-address-selector__saved-help,
 .ak-checkout-address-selector__manual-help {
-    margin: .2rem 0;
+    margin: 0;
     color: #667085;
     font-size: .8125rem;
     line-height: 1.6;
 }
 
-.ak-checkout-address-selector.is-one-off .ak-checkout-address-selector__saved-help,
+.ak-checkout-address-selector.is-one-off .ak-checkout-address-selector__editor,
 .ak-checkout-address-selector.has-saved-address .ak-checkout-address-selector__manual-help {
     display: none;
 }
@@ -57,14 +62,44 @@
     overflow: visible;
 }
 
+/* A selected address is one compact choice. Expand the original Woo form in
+   place; the disclosure contains no duplicate inputs or address state. */
+:is(#shipping-fields, #billing-fields):has(> .ak-checkout-address-selector.has-saved-address) .wc-block-components-address-card-wrapper {
+    display: none;
+}
+
+:is(#shipping-fields, #billing-fields):has(> .ak-checkout-address-selector.has-saved-address) .wc-block-components-address-form-wrapper {
+    display: none;
+}
+
+:is(#shipping-fields, #billing-fields):has(> .ak-checkout-address-selector .ak-checkout-address-selector__editor[open]) .wc-block-components-address-form-wrapper {
+    display: block;
+    height: auto;
+    opacity: 1;
+    visibility: visible;
+    overflow: visible;
+}
+
 :is(#shipping-fields, #billing-fields):has(> .ak-checkout-address-selector.is-one-off) .wc-block-components-address-card-wrapper {
     display: none;
 }
 
 .ak-checkout-address-selector__save {
-    display: grid;
-    gap: .5rem;
     padding: 0;
+}
+
+.ak-checkout-address-selector summary {
+    display: list-item;
+    width: fit-content;
+    padding: .6rem 0;
+    color: #667085;
+    font-size: .8125rem;
+    cursor: pointer;
+}
+
+.ak-checkout-address-selector summary:focus-visible {
+    outline: 2px solid #d6001c;
+    outline-offset: 2px;
 }
 
 .ak-checkout-address-selector__save [data-ak-address-save-details] {

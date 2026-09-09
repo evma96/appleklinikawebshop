@@ -15,10 +15,17 @@ function woo(code) {
 const report = { assertions: 0, errors: [], lifecycle: [], submissions: 0 };
 function check(value, message) { report.assertions++; assert(value, message); }
 async function fill(page, id, value) {
+  const purpose = id.startsWith('shipping-') ? 'shipping' : (id.startsWith('billing-') ? 'billing' : null);
+  if (purpose && !await page.locator('#' + id).isVisible()) await editable(page, purpose);
   await page.locator('#' + id).fill(value);
   await page.locator('#' + id).press('Tab');
 }
 async function editable(page, purpose) {
+  const disclosure = page.locator('[data-ak-address-purpose="' + purpose + '"] .ak-checkout-address-selector__editor');
+  if (await disclosure.isVisible()) {
+    if (!await disclosure.evaluate(x=>x.open)) await disclosure.locator('summary').click();
+    return;
+  }
   const edit = page.locator('#' + purpose + '-fields .wc-block-components-address-card__edit');
   if (await edit.isVisible()) await edit.click();
 }
@@ -42,6 +49,7 @@ async function shot(page, name) {
   await page.evaluate(()=>window.scrollTo(0,0));
   await page.getByRole('link',{name:'Vissza a kosárhoz',exact:true}).first().focus();
   await page.screenshot({path:output+'/'+name+'.png',fullPage:true});
+  if (process.env.AK_UX_CAPTURE_DOM === '1') fs.writeFileSync(output+'/'+name+'.html', await page.locator('.wc-block-checkout__form').evaluate(x=>x.outerHTML));
   if(name.endsWith('step2')||name.endsWith('same-address')) {
     await page.locator('#shipping-fields').screenshot({path:output+'/'+name+'-shipping-detail.png'});
     await page.locator('#order-fields').screenshot({path:output+'/'+name+'-identity-detail.png'});
@@ -80,17 +88,23 @@ async function shot(page, name) {
     await fill(page,'email',marker+'@example.test');
     const same = page.locator('#shipping-fields .wc-block-checkout__use-address-for-billing input');
     const selector = page.locator('#ak-checkout-address-selector-billing');
+    await shot(page, '1440-initial-saved-step2');
     await editable(page,'shipping');
     if (fixture.billing) {
       const shippingSelector=page.locator('#ak-checkout-address-selector-shipping');
       const savedValue=await shippingSelector.locator('option').first().getAttribute('value');
       await shippingSelector.selectOption('__one_off__');
-      check(await page.locator('[data-ak-address-purpose="shipping"] [data-ak-address-save]').isVisible(),'Manual shipping exposes save preference');
+      check(await page.locator('[data-ak-address-purpose="shipping"] .ak-checkout-address-selector__save summary').isVisible(),'Manual shipping exposes the optional save disclosure');
+      check(!await page.locator('[data-ak-address-purpose="shipping"] [data-ak-address-save]').isVisible(),'Optional save checkbox is collapsed by default');
+      await page.locator('[data-ak-address-purpose="shipping"] .ak-checkout-address-selector__save summary').click();
+      check(await page.locator('[data-ak-address-purpose="shipping"] [data-ak-address-save]').isVisible(),'Native disclosure reveals existing save preference');
+      await page.locator('[data-ak-address-purpose="shipping"] .ak-checkout-address-selector__save summary').click();
       await shippingSelector.selectOption(savedValue);
       await page.waitForFunction(()=>document.querySelector('#shipping-postcode')?.value==='6726');
       check(!await page.locator('[data-ak-address-purpose="shipping"] [data-ak-address-save]').isVisible(),'Saved shipping hides save preference');
       check(await shippingSelector.locator('option').last().innerText()==='Másik cím használata','Manual option is last');
-      check(await page.locator('[data-ak-address-purpose="shipping"] .ak-checkout-address-selector__saved-help').isVisible(),'Saved shipping clearly identified');
+      check(await page.locator('[data-ak-address-purpose="shipping"] .ak-checkout-address-selector__editor summary').isVisible(),'Saved shipping has one compact edit disclosure');
+      check(!await page.locator('#shipping-country').isVisible(),'Saved choice is compact without redundant form');
     } else {
       check(await page.locator('[id^="ak-checkout-address-selector-"]').count()===0,'No saved addresses: no pointless selector');
       check(await page.locator('#shipping-country').isVisible(),'No saved addresses: normal editable form directly, even with legacy profile values');
@@ -153,7 +167,7 @@ async function shot(page, name) {
           const shippingSelector=page.locator('#ak-checkout-address-selector-shipping');
           await shippingSelector.selectOption('__one_off__');
           if(mode==='company')await shippingSelector.selectOption(await shippingSelector.locator('option').first().getAttribute('value'));
-          check(await page.locator('[data-ak-address-purpose="shipping"] [data-ak-address-save]').isVisible()===(mode==='personal'),'Shipping manual/saved states expose only the correct save control');
+          check(await page.locator('[data-ak-address-purpose="shipping"] .ak-checkout-address-selector__save summary').isVisible()===(mode==='personal'),'Shipping manual/saved states expose only the correct save disclosure');
           await selector.selectOption('__one_off__');
           if(mode==='company')await selector.selectOption(fixture.billing);
         }
@@ -176,8 +190,17 @@ async function shot(page, name) {
             return el&&el.isConnected&&el.querySelectorAll('[data-ak-address-purpose]').length===1&&el.closest('.wc-block-checkout__form');
           })),'Three rerenders retain single connected hosts and their original React-owned inputs');
         }
-        check(await page.locator('[data-ak-address-purpose="billing"] [data-ak-address-save]').isVisible()===(mode==='personal'||!fixture.billing),'Save control only in manual billing state');
+        check(await page.locator('[data-ak-address-purpose="billing"] .ak-checkout-address-selector__save summary').isVisible()===(mode==='personal'||!fixture.billing),'Save disclosure only in manual billing state');
+        check(await page.locator('.ak-checkout-billing-title:visible').count()===1,'One visible billing heading joins same-address and company identity');
+        check(await page.locator('.ak-checkout-decision input').count()===2,'Exactly two original billing decision inputs');
+        check(await page.locator('.ak-checkout-decision input').evaluateAll(xs=>xs.every(x=>x.getBoundingClientRect().width===42&&x.getBoundingClientRect().height===26)),'Billing switches have consistent dimensions');
+        check(await page.locator('.ak-checkout-profile-save__helper').isVisible()===false,'Unchecked profile preference has no long helper paragraph');
         await shot(page,width+'-'+mode+'-step2');
+        if(mode==='company'&&fixture.billing) {
+          for(const purpose of ['shipping','billing']) await page.locator('[data-ak-address-purpose="'+purpose+'"] .ak-checkout-address-selector__editor[open] > summary').click();
+          check(!await page.locator('#shipping-country').isVisible()&&!await page.locator('#billing-country').isVisible(),'Both saved addresses collapse without removing native fields');
+          await shot(page,width+'-'+mode+'-saved-compact-step2');
+        }
         check(await page.evaluate(()=>['shipping','billing'].every(p=>{
           const host=document.getElementById(p+'-fields'), heading=host.querySelector('.wc-block-components-checkout-step__heading'), section=host.querySelector('[data-ak-address-purpose]');
           return heading && (heading.compareDocumentPosition(section)&Node.DOCUMENT_POSITION_FOLLOWING) && section.parentElement===host;
@@ -199,6 +222,21 @@ async function shot(page, name) {
         check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'No horizontal overflow');
         check(await page.locator('#order-appleklinika-company_purchase').count()===1,'One company control');
       }
+    }
+    if (fixture.billing) {
+      await page.locator('[data-checkout-step-trigger="2"]').click();
+      await editable(page,'billing');
+      await fill(page,'billing-postcode','');
+      const editor=page.locator('[data-ak-address-purpose="billing"] .ak-checkout-address-selector__editor');
+      if (await editor.evaluate(x=>x.open)) await editor.locator('summary').click();
+      await page.getByRole('button',{name:'Tovább a szállítás és fizetéshez',exact:true}).click();
+      await page.waitForFunction(()=>document.querySelector('[data-ak-address-purpose="billing"] .ak-checkout-address-selector__editor')?.open);
+      check(await page.locator('body').getAttribute('data-ak-checkout-step')==='2','Invalid saved editor still blocks progression');
+      check(await page.locator('#billing-postcode').isVisible(),'Validation reveals the original invalid field, not a duplicate');
+      await fill(page,'billing-postcode','6726');
+      await page.getByRole('button',{name:'Tovább a szállítás és fizetéshez',exact:true}).click();
+      await page.waitForFunction(()=>document.body.dataset.akCheckoutStep==='3');
+      check(true,'Corrected saved address progresses normally');
     }
     check(report.errors.length === 0, 'No console/runtime errors');
     check(report.submissions === 0, 'No submission');

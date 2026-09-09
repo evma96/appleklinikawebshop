@@ -14,6 +14,10 @@ empty accounts and Woo profiles without custom addresses. Legitimate Woo data is
 preserved; the sidebar no longer substitutes shipping for an empty independent
 billing address. Run `tests/checkout-address-initialization.js` under the theme for
 the LOCAL native-input/API/reload regression (details in the acceptance note).
+Step 2 now groups contact, delivery and billing visually. Saved addresses use a
+compact selection with a native disclosure for the original Woo form; manual
+entry remains direct and optional saving is progressively disclosed. The billing
+switches remain the original Woo inputs, not a second identity/state system.
 
 The focused LOCAL pre-launch presentation acceptance (category navigation, compact
 mobile filters, existing Hungarian Woo translations and real-photo gallery) is

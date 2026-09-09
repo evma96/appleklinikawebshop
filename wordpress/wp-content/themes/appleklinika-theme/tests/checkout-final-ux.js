@@ -203,6 +203,17 @@ async function verifyState(page, expected, label) {
           check(!await page.evaluate(() => Object.keys(wp.data.select('wc/store/validation').getValidationErrors()).some(key => /company|tax|billing_first_name|billing_last_name/i.test(key))), 'No stale company/tax/personal validation');
           await marketing.check(); await marketing.uncheck();
           check(JSON.stringify(totals) === JSON.stringify(await page.evaluate(() => wp.data.select('wc/store/cart').getCartData().totals)), 'Review/consent does not alter totals');
+          // Cart-store updates precede the theme's scheduled presentation frame.
+          // Require the visible amounts too, not only the authoritative totals.
+          await page.waitForFunction(() => {
+            const totals=wp.data.select('wc/store/cart').getCartData().totals;
+            const shown=document.querySelector('.ak-checkout-summary__row--total strong');
+            const rows=[...document.querySelectorAll('.ak-checkout-summary__row')];
+            const shipping=rows.find(x=>x.querySelector('span')?.textContent==='Szállítás')?.querySelector('strong');
+            const amount=x=>Number((x?.textContent||'').replace(/[^0-9]/g,''));
+            return shown&&shipping&&amount(shown)===Number(totals.total_price)&&amount(shipping)===Number(totals.total_shipping);
+          });
+          check(true,'Visible Step 4 shipping and grand total match the authoritative Woo totals');
           await screenshot(page, width + '-' + mode + '-step4');
           await terms.uncheck();
         }

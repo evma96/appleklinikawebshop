@@ -1,5 +1,60 @@
 # Final checkout UX
 
+## Step 2 presentation follow-up — 2026-09-09
+
+Base: `feat/checkout-final-ux` at `64f6277b925420a3e3cab726dcfdcab39f060280`.
+LOCAL only. No order submission, merge, deploy, remote data or payment call.
+
+- The contact, delivery and billing sections now have distinct visual hierarchy.
+  A heading-only seam before the original same-address checkbox joins it visually
+  to the original company checkbox and optional billing fieldset. Native inputs
+  stay in their React tree. Billing switches have one dedicated CSS owner;
+  generic checkbox styling excludes them, rather than overriding them afterward.
+- Saved selection is compact: the original selector, a concise option and a
+  native `details` disclosure. The disclosure controls visibility of the original
+  Woo form in place (`aria-controls` identifies it). No second form, copied
+  address card, profile projection or persistence store is introduced. Account
+  editing remains available inside the disclosure.
+- Manual entry remains directly editable. Saving for future use is an optional
+  native disclosure; the existing save/default controls and persistence behavior
+  are unchanged. Empty address books still have no pointless selector.
+- Invalid saved editors open before the existing progression gate; visible Woo
+  errors also reveal them. This is presentation only: validity is read, never
+  overridden. Native browser coverage clears a required postcode, closes the
+  editor, confirms progression is blocked and the original field is revealed,
+  then corrects it and progresses normally.
+- Profile-save explanation appears only when opted in. Long repeated address
+  explanations and an obsolete unmatched separator rule were removed. Address
+  supplements share one desktop row and two mobile rows; no native field moves.
+
+Evidence: `/private/tmp/checkout-billing-presentation-kr9KvB/`.
+Before: `before-saved/`. Final: `final-saved/`, `final-empty/`, `final-origin/`,
+`final-visible-totals/` (supersedes `final-guest/` for final-review screenshots).
+1440px and 390px screenshots were personally opened and reviewed, covering
+PERSONAL/COMPANY, shared/separate billing, saved/expanded/manual addresses,
+guest/profile cases and Steps 2/3/4. The compact saved-company desktop view is
+`final-saved/1440-company-saved-compact-step2.png`; mobile uses the same name
+prefixed `390-`. No overlap, horizontal overflow, duplicate controls or new
+console errors were observed.
+
+An early guest screenshot caught the sidebar before its scheduled render frame:
+the authoritative totals were already correct. The guest regression now waits
+for and asserts the **visible shipping and grand total** too. The final mobile
+review shows 314,490 + 1,990 = 316,480 HUF. No totals/state implementation changed.
+
+Final gates: initialization/source/session 1467, guest UX 384, saved/manual 197,
+zero-entry profile 168; PHP address-book 99, cart/checkout 56, company 40,
+finalization 40, legal 9, final-UX 28: **2488 assertions**. PHP/JS syntax and
+`git diff --check` pass. `make test` / `make quality` also pass but remain
+placeholder targets, not extra test coverage. One obsolete CSS-string assertion
+was updated to check the new disjoint switch/preference presentation.
+
+`cleanup-verified.json` rechecks 11 exact QA user IDs, 17 captured session keys
+and 10 exact QA emails across baseline/iterations/final gates: zero remaining
+users, sessions or orders/drafts. Product 334 stock remains 1. No business
+customer, existing order, shipping configuration, TEST SERVER or Buyback data
+was modified. Integrated payment/order E2E remains deferred to visual approval.
+
 ## Scope and ownership
 
 LOCAL presentation work from `c084d7ed3a0cfabfc34ec40029e329d530181678` on

@@ -20,6 +20,9 @@
   1,490 HUF, home delivery 1,990 HUF and pickup 0 HUF are local Woo settings, not
   deployable source pricing rules. Existing local free-shipping configuration is
   preserved; no equivalent TEST/production changes are implied by this feature.
+  The follow-up Step 2 presentation keeps the proven address lifecycle intact.
+  Saved editors expand for corrections and before an invalid-field progression
+  attempt. Browser checks cover collapsed/expanded states; no order is submitted.
 
 - The LOCAL visible-polish pass cleans QA product copy in local data only; this is
   not a data migration. Existing Hungarian Woo language packs provide the verified
