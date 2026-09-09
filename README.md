@@ -2,6 +2,9 @@
 
 Production-oriented WooCommerce webshop foundation for selling used Apple devices.
 
+The read-only Számlázz.hu/GLS order-field adapters and their isolated preview
+regression are documented in [`docs/order-provider-mapping.md`](docs/order-provider-mapping.md).
+
 The final four-step checkout UX (one billing/company decision, shipping/payment,
 then review and native declarations) is documented in
 [`docs/qa/checkout-final-ux.md`](docs/qa/checkout-final-ux.md).
