@@ -46,6 +46,10 @@ $assert(str_contains($js, "['Számlázási cím', addressSummary(billing)]") && 
 $assert(str_contains($js, 'sameWrapper.insertBefore(billingTitle, sameWrapper.firstChild)') && ! str_contains($js, 'ak-checkout-billing-help'), 'A heading-only seam integrates billing decisions without the previous explanatory paragraph.');
 $assert(str_contains($css, '.ak-checkout-decision input[type="checkbox"]') && str_contains($css, '.wc-block-components-checkbox:not(.ak-checkout-decision)'), 'Original billing switches and other checkboxes have disjoint styling owners.');
 $assert(str_contains($css, '.ak-checkout-profile-save:not(:has(input:checked))'), 'Optional profile-save explanation is only shown when opted in.');
+$assert(str_contains($js, "input.setAttribute('placeholder', '+36 30 123 4567')") && str_contains($js, "checkoutBlock.querySelectorAll('#shipping-phone, #billing-phone')"), 'Phone example is a placeholder on the live original fields, not a customer value.');
+$assert(str_contains($css, '.wc-block-components-checkbox:not(.ak-checkout-decision) .wc-block-components-checkbox__mark {') && str_contains($css, 'position: static;'), 'Shared native checkbox mark uses the same grid cell as its input.');
+$assert(str_contains($css, '.ak-cart-item__price > span {') && ! str_contains($css, '.ak-cart-item__price span {'), 'Savings typography cannot shrink the current Woo price amount.');
+$assert(str_contains($css, 'input[type="tel"]:not(:focus)::placeholder'), 'Phone hint cannot overlap the empty Woo floating label.');
 $addressJs = file_get_contents(dirname(__DIR__, 3) . '/plugins/appleklinika-customer-address-book/assets/js/checkout-address-book.js');
 $assert(str_contains($addressJs, "savedEditor.querySelector('summary').setAttribute('aria-controls', purpose)") && str_contains($addressJs, 'field.willValidate && !field.validity.valid'), 'Saved-address disclosure points at the original Woo form and exposes invalid fields before the existing progression gate.');
 echo "Checkout final UX: {$checks} assertions passed.\n";

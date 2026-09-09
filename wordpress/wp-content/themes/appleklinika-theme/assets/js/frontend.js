@@ -1786,6 +1786,12 @@
         return false;
       }
 
+      // Use the current React fields after a same-address remount as well.
+      // A placeholder is presentation only, never a Woo customer value.
+      checkoutBlock.querySelectorAll('#shipping-phone, #billing-phone').forEach(function (input) {
+        input.setAttribute('placeholder', '+36 30 123 4567');
+      });
+
       var stepper = createStepper(checkoutBlock);
       syncCheckoutDeclarations();
       syncCheckoutFinalReview();
