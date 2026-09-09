@@ -217,6 +217,13 @@
                 button.disabled = false;
                 button.removeAttribute('data-ak-address-flushing');
                 if (synchronized !== false) {
+                    root.querySelectorAll('.ak-checkout-address-selector__editor').forEach(function (editor) {
+                        var host = editor.closest('[id$="-fields"]');
+                        var invalid = Array.from(host.querySelectorAll('input, select, textarea')).some(function (field) {
+                            return field.willValidate && !field.validity.valid;
+                        });
+                        if (invalid) { editor.open = true; }
+                    });
                     button.setAttribute('data-ak-address-flushed', '1');
                     button.click();
                 }
@@ -321,6 +328,8 @@
         var isOneOff = !select || select.value === '__one_off__';
         section.classList.toggle('is-one-off', isOneOff);
         section.classList.toggle('has-saved-address', !isOneOff);
+        var editor = section.querySelector('.ak-checkout-address-selector__editor');
+        if (editor) { editor.open = false; }
 
         if (!isOneOff) {
             var save = section.querySelector('[data-ak-address-save]');
@@ -364,7 +373,7 @@
         options.forEach(function (option) {
             var item = document.createElement('option');
             item.value = option.key + '|' + option.version;
-            item.textContent = option.label + ' — ' + option.name + ', ' + option.preview + (option.is_default ? ' (alapértelmezett)' : '');
+            item.textContent = option.label + ' — ' + option.name + ', ' + option.preview;
             if (current && current.mode === 'saved' && current.key === option.key && Number(current.version) === Number(option.version)) {
                 item.selected = true;
                 hasSelectedSavedAddress = true;
@@ -388,9 +397,12 @@
         if (options.length > 0) {
             section.appendChild(caption);
             section.appendChild(select);
+            var savedEditor = document.createElement('details');
+            savedEditor.className = 'ak-checkout-address-selector__editor';
+            savedEditor.innerHTML = '<summary>Címadatok ellenőrzése / módosítása</summary>';
+            savedEditor.querySelector('summary').setAttribute('aria-controls', purpose);
             var savedHelp = document.createElement('p');
             savedHelp.className = 'ak-checkout-address-selector__saved-help';
-            savedHelp.textContent = 'A kiválasztott mentett címet használjuk. ';
             var accountUrl = window.appleklinikaAddressBookPresentation && window.appleklinikaAddressBookPresentation.accountUrl;
             if (accountUrl) {
                 var editLink = document.createElement('a');
@@ -398,18 +410,18 @@
                 editLink.textContent = 'Címeim szerkesztése';
                 savedHelp.appendChild(editLink);
             }
-            section.appendChild(savedHelp);
+            savedEditor.appendChild(savedHelp);
+            section.appendChild(savedEditor);
         }
         section.appendChild(notice);
         var manualHelp = document.createElement('p');
         manualHelp.className = 'ak-checkout-address-selector__manual-help';
-        manualHelp.textContent = (options.length ? '' : 'Nincs külön mentett címed. ')
-            + 'Ellenőrizd vagy add meg az ehhez a rendeléshez használt címet.';
+        manualHelp.textContent = 'Cím megadása ehhez a rendeléshez';
         section.appendChild(manualHelp);
 
-        var savePanel = document.createElement('div');
+        var savePanel = document.createElement('details');
         savePanel.className = 'ak-checkout-address-selector__save';
-        savePanel.innerHTML = '<label><input type="checkbox" data-ak-address-save> Mentés a Címeim közé</label><div data-ak-address-save-details hidden><label class="ak-checkout-address-selector__label">Cím elnevezése<input type="text" data-ak-address-label maxlength="80"></label><label><input type="checkbox" data-ak-address-default disabled> Legyen alapértelmezett ' + (purpose === 'billing' ? 'számlázási' : 'szállítási') + ' cím</label></div>';
+        savePanel.innerHTML = '<summary>Cím megjegyzése későbbre</summary><label><input type="checkbox" data-ak-address-save> Mentés a Címeim közé</label><div data-ak-address-save-details hidden><label class="ak-checkout-address-selector__label">Cím elnevezése<input type="text" data-ak-address-label maxlength="80"></label><label><input type="checkbox" data-ak-address-default disabled> Legyen alapértelmezett ' + (purpose === 'billing' ? 'számlázási' : 'szállítási') + ' cím</label></div>';
         section.appendChild(savePanel);
         // Insert only our own presentation section after the native heading.
         // Woo's form and all React-owned controls remain where Woo mounted them.
@@ -455,6 +467,10 @@
         if (data.needs_shipping) {
             changed = renderPurpose(checkout, 'shipping', data.shipping || [], data.selection ? data.selection.shipping : null) || changed;
         }
+        // Presentation only: validation must never target a collapsed editor.
+        checkout.querySelectorAll('.ak-checkout-address-selector__editor').forEach(function (editor) {
+            if (editor.closest('[id$="-fields"]').querySelector('.has-error')) { editor.open = true; }
+        });
         installProgressFlush(checkout);
     }
 

@@ -43,4 +43,9 @@ $assert(str_contains($js, 'Kiválasztás a 3. lépésben') && str_contains($summ
 $assert(str_contains($js, 'Számlázási címként a szállítási címet használjuk.') && str_contains($js, 'sameAddressHelp.hidden = !sameAddress || !sameAddress.checked;'), 'Same-address copy follows the single native checkbox.');
 $assert(substr_count($js, 'var addressPrefix = checkoutAddressFieldPrefix(prefix);') === 2, 'Sidebar and final review read the shared shipping address for billing without dropping company identity.');
 $assert(str_contains($js, "['Számlázási cím', addressSummary(billing)]") && ! str_contains($js, 'var effectiveBilling = billing && billing.address_1 ? billing : shipping;'), 'An empty independent billing address is not replaced with shipping in the sidebar.');
+$assert(str_contains($js, 'sameWrapper.insertBefore(billingTitle, sameWrapper.firstChild)') && ! str_contains($js, 'ak-checkout-billing-help'), 'A heading-only seam integrates billing decisions without the previous explanatory paragraph.');
+$assert(str_contains($css, '.ak-checkout-decision input[type="checkbox"]') && str_contains($css, '.wc-block-components-checkbox:not(.ak-checkout-decision)'), 'Original billing switches and other checkboxes have disjoint styling owners.');
+$assert(str_contains($css, '.ak-checkout-profile-save:not(:has(input:checked))'), 'Optional profile-save explanation is only shown when opted in.');
+$addressJs = file_get_contents(dirname(__DIR__, 3) . '/plugins/appleklinika-customer-address-book/assets/js/checkout-address-book.js');
+$assert(str_contains($addressJs, "savedEditor.querySelector('summary').setAttribute('aria-controls', purpose)") && str_contains($addressJs, 'field.willValidate && !field.validity.valid'), 'Saved-address disclosure points at the original Woo form and exposes invalid fields before the existing progression gate.');
 echo "Checkout final UX: {$checks} assertions passed.\n";

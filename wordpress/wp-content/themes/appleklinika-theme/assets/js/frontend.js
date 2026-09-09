@@ -243,7 +243,7 @@
       if (!helper) {
         helper = document.createElement('p');
         helper.className = 'ak-checkout-profile-save__helper';
-        helper.textContent = 'Bekapcsolva a céges vásárlás, az adószám, valamint a házszám, emelet, lépcsőház és ajtó adatai is elmentésre kerülnek a következő vásárláshoz.';
+        helper.textContent = 'A számlázási módot, adószámot és címkiegészítéseket is megjegyezzük.';
         wrapper.appendChild(helper);
       }
     }
@@ -1234,12 +1234,19 @@
 
     function syncCheckoutDeclarations() {
       var billingHeading = document.querySelector('#order-fields .wc-block-components-checkout-step__heading-container');
-      if (billingHeading && !billingHeading.querySelector('.ak-checkout-billing-help')) {
-        var help = document.createElement('p');
-        help.className = 'ak-checkout-billing-help';
-        help.textContent = 'A számlát magánszemély vagy cég nevére kérheted.';
-        billingHeading.appendChild(help);
+      var sameAddress = document.querySelector('.wc-block-checkout__use-address-for-billing input[type="checkbox"]');
+      var sameWrapper = sameAddress && sameAddress.closest('.wc-block-components-checkbox');
+      if (sameWrapper && !sameWrapper.querySelector('.ak-checkout-billing-title')) {
+        // Add only a heading. The native checkbox and every Woo field stay in
+        // their original React tree; this seam joins the billing decisions visually.
+        var billingTitle = document.createElement('h2');
+        billingTitle.className = 'ak-checkout-billing-title';
+        billingTitle.textContent = 'Számlázás';
+        sameWrapper.insertBefore(billingTitle, sameWrapper.firstChild);
       }
+      [sameWrapper, document.querySelector('#order-fields .wc-block-components-address-form__appleklinika-company_purchase')].forEach(function (wrapper) {
+        if (wrapper) { wrapper.classList.add('ak-checkout-decision'); }
+      });
       if (billingHeading) {
         var sameAddressHelp = billingHeading.querySelector('.ak-checkout-same-address-help');
         if (!sameAddressHelp) {
@@ -1248,7 +1255,6 @@
           sameAddressHelp.textContent = 'Számlázási címként a szállítási címet használjuk.';
           billingHeading.appendChild(sameAddressHelp);
         }
-        var sameAddress = document.querySelector('.wc-block-checkout__use-address-for-billing input[type="checkbox"]');
         sameAddressHelp.hidden = !sameAddress || !sameAddress.checked;
       }
       var contact = document.getElementById('contact-fields');
