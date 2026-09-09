@@ -66,6 +66,12 @@ async function screenshot(page, name) {
   await page.screenshot({ path: path.join(output, name + '.png'), fullPage: true });
   if (name.endsWith('step2')) await page.locator('#order-fields').screenshot({ path: path.join(output, name + '-company-detail.png') });
   check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), name + ': no horizontal overflow');
+  const controls=await page.evaluate(()=>[...document.querySelectorAll('.wc-block-components-checkbox input[type="checkbox"]')].filter(x=>x.getClientRects().length).map(x=>{
+    const label=x.closest('label'),mark=label.querySelector('svg'),a=x.getBoundingClientRect(),b=mark?.getClientRects().length?mark.getBoundingClientRect():null;
+    return {id:x.id,height:label.getBoundingClientRect().height,html:label.outerHTML,display:getComputedStyle(label).display,input:{x:a.x,y:a.y,w:a.width,h:a.height},mark:b?{x:b.x,y:b.y,w:b.width,h:b.height}:null,centered:!b||(Math.abs(a.x+a.width/2-b.x-b.width/2)<1.5&&Math.abs(a.y+a.height/2-b.y-b.height/2)<1.5)};
+  }));
+  fs.writeFileSync(path.join(output,name+'-controls.json'),JSON.stringify(controls,null,2));
+  for(const control of controls){check(control.height>=44,name+': '+control.id+' touch target');check(control.centered,name+': '+control.id+' mark centered');}
 }
 async function verifyState(page, expected, label) {
   const current = await state(page);
@@ -77,6 +83,7 @@ async function verifyState(page, expected, label) {
     const input = document.getElementById(id);
     return input && input.isConnected && input.closest('.wc-block-components-checkout-step') && document.querySelectorAll('[id="' + id + '"]').length === 1;
   })), label + ': live original Woo-owned fields, no duplicate IDs');
+  check(await page.evaluate(()=>['shipping-phone','billing-phone'].every(id=>document.getElementById(id)?.getAttribute('placeholder')==='+36 30 123 4567')),label+': phone hints survive live remounts without changing values');
 }
 
 (async () => {
@@ -201,7 +208,9 @@ async function verifyState(page, expected, label) {
           await page.waitForFunction(() => !document.querySelector('.wc-block-components-checkout-place-order-button')?.disabled);
           check(await page.locator('.wc-block-components-checkout-place-order-button').isEnabled(), 'Required terms accepted; declined marketing does not block');
           check(!await page.evaluate(() => Object.keys(wp.data.select('wc/store/validation').getValidationErrors()).some(key => /company|tax|billing_first_name|billing_last_name/i.test(key))), 'No stale company/tax/personal validation');
-          await marketing.check(); await marketing.uncheck();
+          await marketing.check();
+          await screenshot(page, width + '-' + mode + '-consents-checked');
+          await marketing.uncheck();
           check(JSON.stringify(totals) === JSON.stringify(await page.evaluate(() => wp.data.select('wc/store/cart').getCartData().totals)), 'Review/consent does not alter totals');
           // Cart-store updates precede the theme's scheduled presentation frame.
           // Require the visible amounts too, not only the authoritative totals.

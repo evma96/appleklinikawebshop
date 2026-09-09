@@ -18,6 +18,10 @@ Step 2 now groups contact, delivery and billing visually. Saved addresses use a
 compact selection with a native disclosure for the original Woo form; manual
 entry remains direct and optional saving is progressively disclosed. The billing
 switches remain the original Woo inputs, not a second identity/state system.
+The LOCAL session/control gate also covers native guest → account A → logout →
+account B transitions. Phone hints never become values; native checkbox marks
+share their input's grid cell. See the acceptance note for the backed-up removal
+of two obsolete LOCAL Additional CSS rules (a data-only cleanup, not deployment).
 
 The focused LOCAL pre-launch presentation acceptance (category navigation, compact
 mobile filters, existing Hungarian Woo translations and real-photo gallery) is

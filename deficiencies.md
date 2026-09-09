@@ -23,6 +23,12 @@
   The follow-up Step 2 presentation keeps the proven address lifecycle intact.
   Saved editors expand for corrections and before an invalid-field progression
   attempt. Browser checks cover collapsed/expanded states; no order is submitted.
+  The control-polish gate found no cross-account leak. Two obsolete checkout
+  marketing rules in LOCAL WordPress Additional CSS were backed up and removed;
+  the demo provisioner no longer generates them. A future TEST deployment must
+  separately inspect/back up/remove those exact legacy rules if present: Git
+  deployment alone does not update Additional CSS. Do not rerun full demo content
+  provisioning merely to clean CSS. Buyback rules and legal content remain intact.
 
 - The LOCAL visible-polish pass cleans QA product copy in local data only; this is
   not a data migration. Existing Hungarian Woo language packs provide the verified

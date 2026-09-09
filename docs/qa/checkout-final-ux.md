@@ -1,5 +1,84 @@
 # Final checkout UX
 
+## Session and control polish — 2026-09-09
+
+Base: `feat/checkout-final-ux` at `e4ca0743063877030de05c14902881a910f624ec`.
+LOCAL only; no order submission, payment/parcel/invoice call, merge or deploy.
+
+### Evidence and diagnosis
+
+- Native fresh guest, own-session reload, guest → account A, A → logout → guest,
+  login B and B → logout were exercised at 1440px and 390px. Separate QA profiles
+  have distinct names, email, phones and streets. The final gate additionally
+  enters A's company/tax and checks neither it nor company mode leaks after logout.
+  DOM, Woo customer/cart, additional fields and exact server-session customer data
+  are recorded. No cross-account/session ownership bug was found or patched.
+  Legitimate guest restoration is preserved, not cleared to produce an empty form.
+- Before screenshots prove the order-note mark sat above its input. The shared
+  native checkbox rule now places input and SVG in one grid cell; multiline
+  labels keep a 44px target. Profile/note layout duplicates were removed, not
+  overridden. Existing company/same-address switches have a separate unchanged owner.
+- A second source of drift was real LOCAL Additional CSS: the demo-generated
+  checkout marketing input/label rules forced top alignment and margins. Exactly
+  those two rules were removed via `wp_update_custom_css_post`, preserving the
+  Buyback CSS byte-for-byte. The provisioner no longer emits checkout rules.
+  No legal text, mapping, required flag or consent persistence changed.
+- Woo Blocks' locale normalization ignores `placeholder`; the unsuccessful PHP
+  attempt was removed. The existing stepper presentation sync sets only the
+  native `placeholder` attribute on current billing/shipping phone inputs, including
+  remounts. No new listener, observer, timer, input-value write or store was added.
+  Blank phones remain empty in DOM/Woo and fail native required validation until
+  typed. The placeholder uses subdued styling, appears on focus (so it cannot
+  overlap Woo's empty floating label), and never seeds a customer value.
+- The cart savings rule matched every nested `span`, including Woo's current
+  amount, reducing it to 12px. It now targets only the direct savings child.
+  Current price is 23px, crossed-out price is muted, savings weight is quieter.
+  Cart layout, totals, quantity and removal behavior are unchanged.
+- Order-note expansion and textarea are preserved; the corrected shared control
+  fixes its visual defect without a new note component or wrapper.
+
+### LOCAL data-only cleanup and future deployment caveat
+
+Evidence root: `/private/tmp/checkout-control-audit-5MxDQq/`.
+`custom-css-before.json` is the exact recoverable LOCAL Additional CSS baseline;
+`custom-css-after.json` proves only the two known checkout rules were removed.
+The complete Buyback section and all other CSS content remain unchanged.
+This data edit does **not** travel with Git. Before future TEST visual acceptance,
+inspect its Additional CSS, back it up, and remove only the identical obsolete
+checkout rules if present and explicitly authorized. Never overwrite unrelated CSS
+or run full legal provisioning to perform this cleanup. No TEST access occurred here.
+
+### Acceptance
+
+Before evidence: `before-complete/` (72 native baseline checks, original source).
+Final: `accepted-controls/`, `accepted-journey/`, `accepted-saved/`,
+`accepted-empty/`, `accepted-origin/`. Earlier iterations are retained separately;
+the focused hint capture scrolls the field below the sticky desktop header,
+not application behavior. Final screenshots were personally opened and reviewed.
+
+Native checks: session/control 146; PERSONAL/COMPANY journey 460; saved addresses
+197; empty address book 168; initialization/profile/session 1467. PHP: address book
+99; cart/checkout 56; company 40; finalization 40; legal 9; final UX 32; demo
+provisioning 40. Total: **2754 assertions**, excluding baseline/iterations.
+Three Woo rerenders, latest contacts/addresses/company/tax, Step 2 → 3 → 4,
+GLS/Barion visibility, legal required acceptance, optional unchecked marketing,
+totals and no duplicates remain green. No new console errors or order submissions.
+PHP/JS syntax and `git diff --check` pass. `make test` and `make quality` pass but
+are placeholder targets; the concrete suites above provide the actual coverage.
+
+Final `cleanup-verified.json` rechecks all 20 reports, including interrupted
+iterations: 59 exact QA emails, 32 recorded QA user IDs and 75 captured session
+keys. Zero QA users, orders/drafts or sessions remain; product 334 stock is still 1.
+The two container-only PHP test copies were removed after verification. Evidence
+and the recoverable Additional CSS backup remain local, outside Git.
+
+Run the new gate with the existing local runtime:
+`node wordpress/wp-content/themes/appleklinika-theme/tests/checkout-session-control-polish.js`.
+It creates only isolated QA accounts/carts, captures their exact IDs/session keys,
+and cleans them with supported WordPress/Woo/address-book APIs. Passwords stay
+in process memory and are never written to reports. Use `AK_UX_OUTPUT` for evidence;
+`AK_UX_AUDIT_ONLY=1` records a pre-change baseline without new presentation assertions.
+
 ## Step 2 presentation follow-up — 2026-09-09
 
 Base: `feat/checkout-final-ux` at `64f6277b925420a3e3cab726dcfdcab39f060280`.

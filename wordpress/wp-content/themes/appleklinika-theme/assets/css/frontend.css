@@ -4957,6 +4957,16 @@ body.woocommerce-checkout .wc-block-components-textarea:disabled {
   cursor: not-allowed;
 }
 
+body.woocommerce-checkout .wc-block-components-text-input input[type="tel"]::placeholder {
+  color: var(--ak-muted);
+  font-weight: 400;
+}
+
+/* Woo's empty, unfocused floating label occupies the placeholder's line. */
+body.woocommerce-checkout .wc-block-components-text-input input[type="tel"]:not(:focus)::placeholder {
+  opacity: 0;
+}
+
 body.woocommerce-checkout .ak-checkout-company-toggle {
   margin: 4px 0 14px;
   padding: 12px;
@@ -5566,8 +5576,9 @@ body.woocommerce-checkout .wc-block-components-checkbox:not(.ak-checkout-decisio
 }
 
 body.woocommerce-checkout .wc-block-components-checkbox:not(.ak-checkout-decision) label {
-  display: flex;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: center;
   gap: 10px;
   min-height: 44px;
   color: #344054;
@@ -5577,12 +5588,13 @@ body.woocommerce-checkout .wc-block-components-checkbox:not(.ak-checkout-decisio
 }
 
 body.woocommerce-checkout .wc-block-components-checkbox:not(.ak-checkout-decision) .wc-block-components-checkbox__input {
-  flex: 0 0 20px;
+  grid-column: 1;
+  grid-row: 1;
   width: 20px;
   min-width: 20px;
   height: 20px;
   min-height: 20px;
-  margin: 1px 0 0;
+  margin: 0;
   border-radius: 4px;
   box-shadow: none;
 }
@@ -5592,9 +5604,18 @@ body.woocommerce-checkout .wc-block-components-checkbox .wc-block-components-che
   overflow-wrap: anywhere;
 }
 
-body.woocommerce-checkout .wc-block-components-checkbox .wc-block-components-checkbox__mark {
-  top: 1px;
-  left: 0;
+body.woocommerce-checkout .wc-block-components-checkbox:not(.ak-checkout-decision) .wc-block-components-checkbox__label {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+/* Input and its native Woo mark share one cell, including multiline labels. */
+body.woocommerce-checkout .wc-block-components-checkbox:not(.ak-checkout-decision) .wc-block-components-checkbox__mark {
+  position: static;
+  grid-column: 1;
+  grid-row: 1;
+  align-self: center;
+  justify-self: center;
   width: 20px;
   height: 20px;
   margin: 0;
@@ -5658,24 +5679,11 @@ body.woocommerce-checkout #contact-fields .ak-checkout-profile-save {
 }
 
 body.woocommerce-checkout #contact-fields .ak-checkout-profile-save label {
-  display: grid;
-  grid-template-columns: 20px minmax(0, 1fr);
-  align-items: center;
-  min-height: 44px;
-  gap: 10px;
   padding: 0;
   color: var(--ak-muted);
   font-size: 12px;
   font-weight: 500;
   line-height: 1.4;
-}
-
-body.woocommerce-checkout #contact-fields .ak-checkout-profile-save input[type="checkbox"] {
-  width: 20px;
-  min-width: 20px;
-  min-height: 20px;
-  height: 20px;
-  margin: 1px 0 0;
 }
 
 body.woocommerce-checkout #contact-fields .ak-checkout-profile-save__helper {
@@ -5739,9 +5747,6 @@ body.woocommerce-checkout #order-notes .wc-block-checkout__add-note {
 }
 
 body.woocommerce-checkout #order-notes .wc-block-components-checkbox label {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
   color: var(--ak-ink);
   font-size: 13px;
   font-weight: 700;
@@ -6631,9 +6636,9 @@ body.woocommerce-cart .ak-cart-item__price {
 }
 
 body.woocommerce-cart .ak-cart-item__price del {
-  color: #111;
+  color: var(--ak-muted);
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 650;
   line-height: 1.15;
   text-decoration-thickness: 2px;
 }
@@ -6641,12 +6646,12 @@ body.woocommerce-cart .ak-cart-item__price del {
 body.woocommerce-cart .ak-cart-item__price del .amount,
 body.woocommerce-cart .ak-cart-item__price del bdi,
 body.woocommerce-cart .ak-cart-item__price del .woocommerce-Price-currencySymbol {
-  color: #111;
+  color: inherit;
 }
 
 body.woocommerce-cart .ak-cart-item__price strong {
   color: #111;
-  font-size: 21px;
+  font-size: 23px;
   font-weight: 950;
   line-height: 1.1;
   white-space: nowrap;
@@ -6658,10 +6663,10 @@ body.woocommerce-cart .ak-cart-item__price strong .woocommerce-Price-currencySym
   color: #111;
 }
 
-body.woocommerce-cart .ak-cart-item__price span {
+body.woocommerce-cart .ak-cart-item__price > span {
   color: #d6001c;
   font-size: 12px;
-  font-weight: 850;
+  font-weight: 650;
   line-height: 1.15;
   white-space: nowrap;
 }
