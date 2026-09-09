@@ -12,6 +12,12 @@
 
 ## Known Limitations
 
+- GLS 1.4.1 needs the repository's one-line recipient-address filter extension.
+  Preserve `gls_shipping_for_woocommerce_api_get_delivery_address` when updating
+  that vendor plugin, and rerun `make test-order-provider-mapping`. The custom
+  mapping lives in the address-book plugin, not in GLS business logic. See
+  `docs/order-provider-mapping.md`; successful previews are not provider issuance.
+
 - Final checkout UX is a LOCAL presentation acceptance, not a new payment/order
   acceptance. Barion/GLS controls are exercised without submission. The definitive
   Barion + GLS + Számlázz.hu E2E remains deliberately deferred until visual approval.
