@@ -422,7 +422,7 @@ class GLS_Shipping_API_Data
             'ContactEmail' => $order->get_billing_email()
         ];
 
-        return $delivery_address;
+        return apply_filters('gls_shipping_for_woocommerce_api_get_delivery_address', $delivery_address, $order);
     }
 
     /**
