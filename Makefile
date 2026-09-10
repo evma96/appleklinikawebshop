@@ -31,6 +31,10 @@ test-inventory-product-frontend:
 test-theme-storefront:
 	$(COMPOSE) exec -T wordpress php /var/www/html/wp-content/themes/appleklinika-theme/tests/product-collection-empty-state.php
 
+.PHONY: test-homepage
+test-homepage:
+	$(COMPOSE) exec -T wordpress php /var/www/html/wp-content/themes/appleklinika-theme/tests/homepage-presentation.php
+
 test-theme-catalog-search:
 	$(COMPOSE) exec -T wordpress php /var/www/html/wp-content/themes/appleklinika-theme/tests/catalog-search-discoverability.php
 
