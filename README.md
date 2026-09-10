@@ -267,6 +267,13 @@ Product cards intentionally stay compact: non-iPhone archive cards only show sto
 - Local product image normalization now starts with `tools/ak-normalize-product-images.py`, which creates category/profile-based display PNGs from local sources without external API calls. The first approved run is iPhone-only and writes reviewed assets to `wordpress/wp-content/uploads/ak-normalized-output/iphone/`.
 - Single product pages can use a dedicated `_ak_single_product_gallery_image_id` attachment for the main gallery image, so archive/shop product cards keep using the normal WooCommerce featured image while the product detail view can use a portrait-optimized display asset.
 
+The homepage body uses a dedicated, responsive presentation stylesheet and a native
+WordPress editor under **Settings → Apple Klinika homepage**. Hero slides, media,
+links, category tiles, trust items and process steps are editable without code.
+The header and shared catalogue cards retain their existing renderers and styling;
+featured products still come from live WooCommerce data. See
+[Homepage editing](docs/homepage-editing.md) for media selection and maintenance.
+
 Internal identifier / IMEI remains admin-only and is not rendered on the frontend.
 
 ## Local Selector Demo Products
