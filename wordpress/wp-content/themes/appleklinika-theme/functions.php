@@ -5,6 +5,8 @@ declare(strict_types=1);
 require_once get_template_directory() . '/inc/account-order-display.php';
 require_once get_template_directory() . '/inc/legal-documents.php';
 require_once get_template_directory() . '/inc/checkout-presentation.php';
+require_once get_template_directory() . '/inc/homepage-settings.php';
+require_once get_template_directory() . '/inc/homepage-presentation.php';
 
 add_filter('render_block_data', 'appleklinika_checkout_billing_block_order');
 
@@ -352,83 +354,6 @@ function appleklinika_render_search_empty_state(): void
     ]);
 }
 
-function appleklinika_register_homepage_settings_page(): void
-{
-    add_options_page(
-        'Apple Klinika homepage',
-        'Apple Klinika homepage',
-        'manage_options',
-        'appleklinika-homepage',
-        'appleklinika_render_homepage_settings_page'
-    );
-}
-
-function appleklinika_register_homepage_settings(): void
-{
-    register_setting('appleklinika_homepage_settings', 'appleklinika_home_featured_product_ids', [
-        'sanitize_callback' => 'appleklinika_sanitize_home_featured_product_ids',
-        'default' => [],
-    ]);
-
-    register_setting('appleklinika_homepage_settings', 'appleklinika_home_featured_product_limit', [
-        'sanitize_callback' => 'appleklinika_sanitize_home_featured_product_limit',
-        'default' => 6,
-    ]);
-}
-
-function appleklinika_render_homepage_settings_page(): void
-{
-    if (! current_user_can('manage_options')) {
-        return;
-    }
-
-    $selectedIds = appleklinika_home_featured_product_ids();
-    $limit = appleklinika_home_featured_product_limit();
-    ?>
-    <div class="wrap">
-        <h1>Apple Klinika homepage</h1>
-        <form method="post" action="options.php">
-            <?php settings_fields('appleklinika_homepage_settings'); ?>
-            <table class="form-table" role="presentation">
-                <tr>
-                    <th scope="row">
-                        <label for="appleklinika_home_featured_product_ids">Kiemelt Apple ajánlatok termékek</label>
-                    </th>
-                    <td>
-                        <input
-                            type="text"
-                            class="regular-text"
-                            id="appleklinika_home_featured_product_ids"
-                            name="appleklinika_home_featured_product_ids"
-                            value="<?php echo esc_attr(implode(', ', $selectedIds)); ?>"
-                            placeholder="Pl. 123, 456, 789"
-                        >
-                        <p class="description">WooCommerce termék ID-k vesszővel elválasztva. A sorrend megmarad, és csak publikus termékek jelennek meg.</p>
-                    </td>
-                </tr>
-                <tr>
-                    <th scope="row">
-                        <label for="appleklinika_home_featured_product_limit">Megjelenített termékek száma</label>
-                    </th>
-                    <td>
-                        <input
-                            type="number"
-                            id="appleklinika_home_featured_product_limit"
-                            name="appleklinika_home_featured_product_limit"
-                            value="<?php echo esc_attr((string) $limit); ?>"
-                            min="1"
-                            max="12"
-                            step="1"
-                        >
-                        <p class="description">Engedélyezett tartomány: 1-12. Alapértelmezett: 6.</p>
-                    </td>
-                </tr>
-            </table>
-            <?php submit_button('Beállítások mentése'); ?>
-        </form>
-    </div>
-    <?php
-}
 
 /**
  * @return array<int, int>
@@ -1507,94 +1432,6 @@ function appleklinika_render_cart_link(): void
     <?php
 }
 
-function appleklinika_render_homepage(): void
-{
-    $trustTiles = appleklinika_homepage_trust_tiles();
-    ?>
-    <main class="ak-home" id="wp--skip-link--target">
-        <section class="ak-hero" aria-label="Appleklinika webshop">
-            <div class="ak-hero__content">
-                <span class="ak-kicker">Ellenőrzött használt Apple készülékek</span>
-                <h1>Ellenőrzött használt Apple készülékek, garanciával.</h1>
-                <p>Átlátható állapot, valós termékadatok és szegedi háttér. Válogass iPhone, MacBook, iPad és Apple Watch készülékeink között.</p>
-                <div class="ak-hero__actions">
-                    <a class="ak-button ak-button--primary" href="<?php echo esc_url(appleklinika_shop_url()); ?>">Termékek megtekintése <span aria-hidden="true">→</span></a>
-                    <a class="ak-button ak-button--secondary" href="<?php echo esc_url(appleklinika_info_page_url('kapcsolat')); ?>">Kapcsolat <span aria-hidden="true">→</span></a>
-                </div>
-            </div>
-            <div class="ak-hero__tiles" aria-label="Vásárlási előnyök">
-                <?php foreach ($trustTiles as $tile) : ?>
-                    <article class="ak-home-trust-tile">
-                        <span class="ak-home-trust-tile__icon" aria-hidden="true"><?php echo esc_html($tile['icon']); ?></span>
-                        <h2><?php echo esc_html($tile['title']); ?></h2>
-                        <p><?php echo esc_html($tile['text']); ?></p>
-                    </article>
-                <?php endforeach; ?>
-            </div>
-        </section>
-
-        <section class="ak-home-showcase" aria-labelledby="ak-home-showcase-title">
-            <div class="ak-home-section-head">
-                <span class="ak-kicker">Akciós és friss készülékek</span>
-                <div>
-                    <h2 id="ak-home-showcase-title">Kiemelt Apple ajánlatok</h2>
-                    <p>Válogatott ajánlatok élő WooCommerce termékekből: először az akciós készülékek, ha pedig nincs elég, a legfrissebb termékek jelennek meg.</p>
-                </div>
-                <a href="<?php echo esc_url(appleklinika_shop_url()); ?>">Összes termék</a>
-            </div>
-            <?php appleklinika_render_homepage_product_section('home_featured', appleklinika_home_featured_product_limit(), 'ak-home-products--showcase'); ?>
-        </section>
-
-        <section class="ak-home-trust" aria-labelledby="ak-home-trust-title">
-            <div class="ak-home-section-head">
-                <span class="ak-kicker">Miért Apple Klinika?</span>
-                <div>
-                    <h2 id="ak-home-trust-title">Használt Apple készülék, felesleges bizonytalanság nélkül.</h2>
-                    <p>A vásárlás alapja nálunk a látható állapot, a valós termékadat és az egyértelmű garancia.</p>
-                </div>
-            </div>
-            <div class="ak-home-trust-list">
-                <?php foreach ($trustTiles as $tile) : ?>
-                    <article class="ak-home-trust-item">
-                        <span aria-hidden="true"><?php echo esc_html($tile['icon']); ?></span>
-                        <strong><?php echo esc_html($tile['title']); ?></strong>
-                        <p><?php echo esc_html($tile['text']); ?></p>
-                    </article>
-                <?php endforeach; ?>
-            </div>
-        </section>
-    </main>
-    <?php
-}
-
-/**
- * @return array<int, array{icon: string, title: string, text: string}>
- */
-function appleklinika_homepage_trust_tiles(): array
-{
-    return [
-        [
-            'icon' => '✓',
-            'title' => 'Ellenőrzött adatok',
-            'text' => 'Állapot, tárhely, szín és garancia termékszinten kezelve.',
-        ],
-        [
-            'icon' => '◆',
-            'title' => 'Garancia',
-            'text' => 'A garanciaidő nem eldugott apróbetű, hanem látható termékadat.',
-        ],
-        [
-            'icon' => '◎',
-            'title' => 'Átlátható állapot',
-            'text' => 'Állapotbesorolás, akkumulátoradat és készülékleírás egy helyen.',
-        ],
-        [
-            'icon' => '⌂',
-            'title' => 'Szegedi háttér',
-            'text' => 'Lokális szaküzlet logika, nem névtelen piactér hangulat.',
-        ],
-    ];
-}
 
 function appleklinika_render_featured_products(): void
 {

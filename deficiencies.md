@@ -12,6 +12,13 @@
 
 ## Known Limitations
 
+- Homepage campaign media and copy are editable WordPress settings, not Git data.
+  Until dedicated campaign/category images are selected, the homepage uses existing
+  catalogue images. Martin's supplied service photograph is bundled unchanged and
+  cropped in its presentation area to exclude embedded advertising; a chosen Media
+  Library replacement is displayed normally. Hero rotation is manual (no autoplay).
+  Recommended image sizes and editing instructions are in `docs/homepage-editing.md`.
+
 - GLS 1.4.1 needs the repository's one-line recipient-address filter extension.
   Preserve `gls_shipping_for_woocommerce_api_get_delivery_address` when updating
   that vendor plugin, and rerun `make test-order-provider-mapping`. The custom
