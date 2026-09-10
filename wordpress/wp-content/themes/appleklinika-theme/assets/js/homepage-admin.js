@@ -6,6 +6,9 @@
   if (!form) return;
   const status = form.querySelector('[data-home-status]');
   const announce = message => { status.textContent = message; };
+  const layoutField = form.querySelector('[data-home-field="hero_layout"]');
+  const syncLayout = () => { form.dataset.homeHeroLayout = layoutField?.value === 'artwork' ? 'artwork' : 'split'; };
+  syncLayout();
 
   function reindex(list) {
     const rows = [...list.querySelector('[data-home-rows]').children];
@@ -19,7 +22,8 @@
         label.htmlFor = id;
       });
       const title = row.querySelector('[data-home-field="title"]').value.trim().replace(/\s+/g, ' ');
-      const label = `${index + 1}. ${title || 'Új elem'}`;
+      const enabled = row.querySelector('[data-home-field="enabled"]');
+      const label = `${index + 1}. ${title || 'Új elem'}${enabled?.value === '0' ? ' — kikapcsolva' : ''}`;
       row.querySelector('[data-home-row-title]').textContent = label;
       ['up', 'down', 'remove'].forEach(action => {
         const button = row.querySelector(`[data-home-action="${action}"]`);
@@ -34,6 +38,14 @@
   form.addEventListener('submit', () => form.querySelectorAll('[data-home-list]').forEach(reindex));
   form.addEventListener('input', event => {
     if (event.target.matches('[data-home-field="title"]')) reindex(event.target.closest('[data-home-list]'));
+  });
+  form.addEventListener('change', event => {
+    if (event.target === layoutField) {
+      syncLayout();
+      announce('A megjelenési mód megváltozott. A korábbi mezők tartalma megmarad; a változás mentés után jelenik meg.');
+    } else if (event.target.matches('[data-home-field="enabled"]')) {
+      reindex(event.target.closest('[data-home-list]'));
+    }
   });
 
   function setImage(media, attachment) {

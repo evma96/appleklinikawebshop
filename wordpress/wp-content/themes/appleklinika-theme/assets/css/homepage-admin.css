@@ -77,3 +77,8 @@
 .ak-home-editor [hidden] {
   display: none !important;
 }
+
+.ak-home-editor [data-home-hero-layout="artwork"] [data-home-only-layout="split"],
+.ak-home-editor [data-home-hero-layout="split"] [data-home-only-layout="artwork"] {
+  display: none;
+}
