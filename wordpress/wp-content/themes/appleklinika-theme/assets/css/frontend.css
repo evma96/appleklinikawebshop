@@ -7356,14 +7356,6 @@ body.woocommerce-cart .wc-block-components-totals-coupon__button {
   }
 }
 
-/* Homepage desktop density tuning. */
-
-.ak-home .ak-home-products-shell.woocommerce .ak-home-products.wc-block-product-template li.wc-block-product {
-  height: auto;
-  min-height: 0;
-  align-self: start;
-}
-
 body.woocommerce-account:not(.logged-in) .entry-content {
   width: min(100% - 40px, 1120px);
   margin: 0 auto;

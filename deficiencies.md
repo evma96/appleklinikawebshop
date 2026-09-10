@@ -13,10 +13,22 @@
 ## Known Limitations
 
 - Homepage campaign media and copy are editable WordPress settings, not Git data.
-  Until dedicated campaign/category images are selected, the homepage uses existing
-  catalogue images. Martin's supplied service photograph is bundled unchanged and
+  Split-layout hero/category tiles can use existing catalogue images until dedicated
+  media are selected. Artwork slides require their own image and destination;
+  disabled or incomplete rows are omitted instead of displaying fallback campaigns.
+  The artwork carousel and denser homepage grid are currently LOCAL-only; TEST and
+  production deployment and environment-specific media/settings migration are not
+  part of this refinement. Martin's supplied service photograph is bundled unchanged and
   cropped in its presentation area to exclude embedded advertising; a chosen Media
-  Library replacement is displayed normally. Hero rotation is manual (no autoplay).
+  Library replacement is displayed normally. Multi-slide rotation now includes
+  5.5-second autoplay, manual dots, swipe, pause and reduced-motion support.
+  Only bottom dots remain permanently visible; there are no previous/next arrows
+  or separate toolbar. Hover and dot focus do not pause rotation; selecting a dot
+  resets its interval. Pause remains keyboard/assistive-technology accessible.
+  Card row alignment is homepage-only; the current six-product LOCAL selection has
+  been checked at 1440, 900 and 390 px without changing media sizes or fixing outer
+  card height. Equal grid rows prevent small height differences in the mobile stack.
+  Other product selections still need visual verification before deployment.
   Recommended image sizes and editing instructions are in `docs/homepage-editing.md`.
 
 - GLS 1.4.1 needs the repository's one-line recipient-address filter extension.
@@ -80,7 +92,7 @@
 - Battery replacement extra prices are development defaults until final business pricing rules exist.
 - Selector demo products are local development fixtures and must not be treated as production inventory.
 - The local selector demo matrix is intentionally broad and can create many WooCommerce products for one model; production inventory needs stricter grouping and stock ownership rules.
-- The custom theme homepage now has a premium shell with centralized trust tile copy in theme render functions, admin-configurable featured product IDs/count, a dynamic homepage block that avoids shortcode paragraph wrapping, and homepage product sections reuse the approved shared shop product-card renderer; production may still need an admin-editable content control for the non-product homepage text blocks.
+- The custom theme homepage has admin-editable non-product content and featured product IDs/count, a dynamic homepage block that avoids shortcode paragraph wrapping, and the approved shared shop product-card renderer. The optional artwork-carousel refinement remains LOCAL-only; production copy, images and destinations still need explicit review before a separate deployment.
 - Category, cart, checkout, and account pages have shared compact styling, and the checkout company tax number field now masks numeric input as `12345678-1-23` while still relying on server-side validation.
 - The WooCommerce My Account page now uses a custom Apple Klinika shell with Rejoy-style sidebar rhythm, final account navigation, real WooCommerce order-card rendering, CTA-only buyback, warranty/return empty states backed by real order/refund data when available, grouped account settings, saved shipping/billing address user meta, and company billing meta reuse from checkout; browser QA confirmed the logged-in shell and endpoints, while actual account-detail save submission, checkout save-to-profile behavior, and real-order/warranty visuals still need production-like data checks.
 - The shop listing has a Rejoy-style filter panel, and SIM filtering now uses product meta; production products still need consistent SIM values during admin upload.

@@ -273,6 +273,20 @@ links, category tiles, trust items and process steps are editable without code.
 The header and shared catalogue cards retain their existing renderers and styling;
 featured products still come from live WooCommerce data. See
 [Homepage editing](docs/homepage-editing.md) for media selection and maintenance.
+The subsequent LOCAL-only carousel refinement adds an optional image-only artwork
+layout with per-slide enablement, destination and alternative text. Existing saved
+split-layout copy remains compatible. Valid artwork rotates every 5.5 seconds with
+manual dots, swipe and pause/reduced-motion behaviour. Only the homepage
+product grid becomes denser (six desktop columns, then three, two and one at narrower widths).
+Bottom-positioned dots are the only permanently visible carousel controls: no
+previous/next arrows or separate control bar. Hover and dot focus do not pause the
+loop; a dot selection restarts its 5.5-second interval. The accessible pause control
+reveals on keyboard focus.
+Homepage-only row alignment preserves existing media/control sizes without a fixed
+outer card height; the current six-card LOCAL selection is verified at 1440, 900
+and 390 px, including equal-height stacked rows on mobile.
+This refinement and its environment-specific media/settings have not been deployed
+to TEST or production.
 
 Internal identifier / IMEI remains admin-only and is not rendered on the frontend.
 
