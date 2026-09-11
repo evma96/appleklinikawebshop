@@ -13,7 +13,7 @@
 .ak-home-cta--primary { color: #fff; background: #d6001c; border-color: #d6001c; }
 .ak-home-cta:hover { background: #e9eaec; }
 .ak-home-cta--primary:hover { background: #b80018; }
-.ak-home-cta:focus-visible, .ak-home-category:focus-visible, .ak-home-heading > a:focus-visible, .ak-home-hero__navigation button:focus-visible { outline: 3px solid #b80b24; outline-offset: 4px; }
+.ak-home-cta:focus-visible, .ak-home-category:focus-visible, .ak-home-heading > a:focus-visible, .ak-home-hero__navigation button:focus-visible { outline: 3px solid #b80b24; outline-offset: 3px; }
 .ak-home-hero__media { margin: 0; height: 360px; min-width: 0; }
 .ak-home-hero__media img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .ak-home-hero__benefits { display: flex; flex-wrap: wrap; gap: 26px; margin: 0; padding: 0 44px 28px; list-style: none; }
@@ -23,8 +23,22 @@
 .ak-home-benefit p { margin: 0; color: #676c73; font-size: 11px; line-height: 1.6; }
 .ak-home-hero__benefits .ak-home-benefit { display: flex; gap: 9px; align-items: center; max-width: 270px; }
 .ak-home-hero__benefits h3 { margin-bottom: 2px; }
-.ak-home-hero__navigation { display: flex; justify-content: flex-end; align-items: center; gap: 12px; padding: 0 44px 18px; font-size: 12px; }
-.ak-home-hero__navigation button { width: 44px; height: 44px; border: 1px solid #ccd0d5; border-radius: 50%; background: #fff; color: #242930; cursor: pointer; }
+.ak-home-hero__navigation { position: absolute; inset: 0; pointer-events: none; }
+.ak-home-hero__navigation button { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; background: rgb(255 255 255 / 80%); color: #242930; cursor: pointer; pointer-events: auto; }
+.ak-home-hero__navigation button:hover { background: #fff; color: #c8001c; }
+.ak-home-hero__dots { position: absolute; left: 50%; bottom: 5px; transform: translateX(-50%); display: flex; align-items: center; border-radius: 999px; background: rgb(255 255 255 / 65%); padding: 0 3px; }
+.ak-home-hero__dots button { flex: 0 0 28px; width: 28px; height: 28px; background: none; }
+.ak-home-hero__dots span { width: 6px; height: 6px; border-radius: 12px; background: #8e939a; transition: background .2s; }
+.ak-home-hero__dots [aria-current="true"] span { background: #d6001c; }
+/* Rotation control stays keyboard/screen-reader accessible without permanent chrome. */
+.ak-home-hero__navigation [data-home-toggle] { position: absolute; right: 12px; bottom: 8px; width: 32px; height: 32px; font-size: 14px; opacity: 0; pointer-events: none; }
+.ak-home-hero__navigation [data-home-toggle]:focus-visible { opacity: 1; pointer-events: auto; }
+.ak-home-hero--artwork { background: transparent; touch-action: pan-y pinch-zoom; }
+.ak-home-hero--artwork .ak-home-hero__slide { display: block; padding: 0; }
+.ak-home-hero--artwork .ak-home-hero__slide[hidden] { display: none; }
+.ak-home-hero__artwork { display: block; border-radius: 20px; overflow: hidden; }
+.ak-home-hero__artwork:focus-visible { outline: 3px solid #b80b24; outline-offset: -3px; }
+.ak-home-hero__artwork img { display: block; width: 100%; height: auto; aspect-ratio: 1916 / 821; object-fit: contain; }
 .ak-home-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin-bottom: 20px; }
 .ak-home-heading h2, .ak-home-intro h2 { margin: 0; font-size: 24px; font-weight: 750; letter-spacing: -.035em; line-height: 1.22; }
 .ak-home-heading p { margin: 7px 0 0; font-size: 13px; color: #676c73; line-height: 1.6; }
@@ -38,7 +52,12 @@
 .ak-home-category:hover .ak-home-category__arrow { transform: translateX(3px); }
 .ak-home-category > img { display: block; width: 100%; height: 170px; object-fit: contain; }
 .ak-home .ak-home-products-shell { min-width: 0; }
-.ak-home .ak-home-products { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 24px; margin: 0; padding: 0; list-style: none; }
+.ak-home .ak-home-products { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); grid-auto-rows: 1fr; gap: 16px; margin: 0; padding: 0; list-style: none; }
+/* Restore the shared card's fill chain in this compact homepage grid only.
+   Keep its existing media/title/price/CTA sizes; spare space belongs to metadata. */
+.ak-home .ak-home-products-shell.woocommerce .ak-home-products.wc-block-product-template li.wc-block-product { display: flex; flex-direction: column; height: auto; min-height: 0; align-self: stretch; }
+.ak-home .ak-home-products-shell.woocommerce .ak-home-products.wc-block-product-template li.wc-block-product > .ak-product-card__inner { flex: 1; }
+.ak-home .ak-home-products-shell.woocommerce .ak-home-products.wc-block-product-template .ak-product-card__content { grid-template-rows: 42px 1fr 42px 0 40px; }
 .ak-home-trust { display: grid; grid-template-columns: minmax(230px,.95fr) 3fr; gap: 36px; padding: 32px; border-radius: 16px; background: #f5f6f7; }
 .ak-home-intro p { margin: 12px 0 0; color: #666c74; font-size: 12px; line-height: 1.7; }
 .ak-home-trust__items { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 18px; margin: 0; padding: 0; }
@@ -51,7 +70,7 @@
 .ak-home-process__steps .ak-home-benefit:not(:last-child)::after { content: ''; position: absolute; left: 43px; right: -10px; top: 18px; border-top: 1px solid #d7dadd; }
 .ak-home-process__steps .ak-home-benefit__icon { margin-bottom: 14px; }
 .ak-home-benefit__number { color: #90959a; font-variant-numeric: tabular-nums; }
-.ak-home-process__media { overflow: hidden; margin: 0; min-height: 300px; }
+.ak-home-process__media { overflow: hidden; margin: 0; min-height: 300px; mask-image: linear-gradient(to right, transparent, #000 35%); }
 .ak-home-process__media img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .ak-home-process__media.is-source-crop img { transform: scale(2); transform-origin: 80% 45%; }
 @media (max-width:1100px) {
@@ -61,6 +80,7 @@
   .ak-home-hero__benefits { gap: 18px; padding: 0 28px 28px; }
   .ak-home-hero__benefits .ak-home-benefit { flex: 1; }
   .ak-home-categories__grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .ak-home .ak-home-products { grid-template-columns: repeat(3,minmax(0,1fr)); }
   .ak-home-trust { grid-template-columns: 1fr; gap: 24px; }
   .ak-home-trust .ak-home-intro { max-width: 500px; }
   .ak-home-process { grid-template-columns: 1fr 240px; }
@@ -71,6 +91,7 @@
   .ak-home { padding: 18px 18px 40px; }
   .ak-home > section + section { margin-top: 30px; }
   .ak-home-hero { border-radius: 18px; }
+  .ak-home-hero__dots { bottom: 0; }
   .ak-home-hero__slide { grid-template-columns: 1fr; gap: 22px; padding: 28px 24px 20px; }
   .ak-home-eyebrow { max-width: 100%; font-size: 9px; margin-bottom: 18px; }
   .ak-home-hero h1, .ak-home-hero__title { font-size: clamp(36px,10.5vw,48px); }
@@ -89,7 +110,7 @@
   .ak-home-category h3 { font-size: 16px; }
   .ak-home-category__arrow { width: 24px; height: 24px; margin-top: 10px; }
   .ak-home-category > img { height: 115px; margin-top: auto; }
-  .ak-home .ak-home-products { grid-template-columns: 1fr; gap: 20px; }
+  .ak-home .ak-home-products { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; }
   .ak-home-trust { padding: 26px 22px; gap: 25px; }
   .ak-home-trust__items { grid-template-columns: 1fr; gap: 20px; }
   .ak-home-trust__items .ak-home-benefit { display: flex; align-items: start; gap: 14px; }
@@ -99,6 +120,7 @@
   .ak-home-process__content { padding: 26px 22px; }
   .ak-home-process__steps { grid-template-columns: 1fr; gap: 22px; }
   .ak-home-process__steps .ak-home-benefit { display: flex; align-items: start; gap: 14px; }
-  .ak-home-process__media { min-height: 0; height: 235px; }
+  .ak-home-process__media { min-height: 0; height: 235px; mask-image: linear-gradient(to bottom, transparent, #000 35%); }
 }
-@media (prefers-reduced-motion: reduce) { .ak-home-cta, .ak-home-category__arrow { transition: none; } }
+@media (max-width:520px) { .ak-home .ak-home-products { grid-template-columns: 1fr; gap: 20px; } }
+@media (prefers-reduced-motion: reduce) { .ak-home-cta, .ak-home-category__arrow, .ak-home-hero__dots span { transition: none; } }

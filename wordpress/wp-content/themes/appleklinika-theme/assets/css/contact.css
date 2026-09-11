@@ -1,0 +1,77 @@
+/* Contact-page presentation only; shared header, cards and checkout stay untouched. */
+body.ak-contact-page main.ak-contact { max-width: 1248px; margin: 0 auto; padding: 56px 32px 72px; color: #171c23; }
+.ak-contact, .ak-contact * { box-sizing: border-box; }
+.ak-contact p, .ak-contact h1, .ak-contact h2, .ak-contact h3 { margin: 0; }
+.ak-contact .ak-contact__eyebrow { margin: 0 0 14px; color: #a41b2a; font-size: 11px; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
+.ak-contact__intro { max-width: 700px; margin-bottom: 32px; }
+body.ak-contact-page .ak-contact__intro h1 { margin: 0 0 16px; font-size: clamp(34px, 4vw, 48px); font-weight: 750; line-height: 1.1; letter-spacing: -.035em; }
+.ak-contact__intro > p:last-child { color: #616770; font-size: 16px; line-height: 1.7; }
+.ak-contact__store { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); overflow: hidden; border: 1px solid #e5e8eb; border-radius: 20px; background: #fff; }
+.ak-contact__details { padding: 38px; }
+.ak-contact__pin { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; margin-bottom: 28px; border-radius: 14px; color: #bb192b; background: #fcf0f1; }
+.ak-contact h2 { margin-bottom: 16px; font-size: 28px; font-weight: 750; line-height: 1.2; letter-spacing: -.025em; }
+.ak-contact address { font-style: normal; font-size: 20px; line-height: 1.55; }
+.ak-contact__channels { display: grid; gap: 18px; margin: 26px 0 0; }
+.ak-contact__channels dt { margin-bottom: 4px; color: #707680; font-size: 12px; }
+.ak-contact__channels dd { margin: 0; font-size: 15px; line-height: 1.6; overflow-wrap: anywhere; }
+.ak-contact__channels a { color: #171c23; text-decoration: none; }
+.ak-contact__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 18px 24px; margin-top: 30px; }
+.ak-contact__directions { display: none; position: relative; }
+.ak-contact__directions summary { list-style: none; }
+.ak-contact__directions summary::-webkit-details-marker { display: none; }
+.ak-contact__directions-options { position: absolute; z-index: 2; top: calc(100% + 8px); left: 0; width: min(270px, calc(100vw - 86px)); padding: 8px; border: 1px solid #e0e5e8; border-radius: 12px; background: #fff; box-shadow: 0 8px 24px #17202a1a; }
+.ak-contact .ak-contact__directions-options p { padding: 8px 12px; color: #6b727b; font-size: 11px; }
+.ak-contact__directions-options a { display: flex; align-items: center; justify-content: space-between; min-height: 44px; padding: 10px 12px; border-radius: 7px; color: #20262d; font-size: 14px; font-weight: 650; text-decoration: none; }
+.ak-contact .ak-contact__directions-options a:hover { background: #fcf0f1; color: #a41b2a; text-decoration: none; }
+.ak-contact__button { display: inline-flex; align-items: center; justify-content: center; gap: 18px; min-height: 46px; max-width: 100%; padding: 12px 20px; border: 1px solid #c9152d; border-radius: 9px; background: #c9152d; color: #fff; font: inherit; font-size: 14px; font-weight: 700; line-height: 1.4; text-align: center; text-decoration: none; cursor: pointer; }
+.ak-contact__button:hover { background: #ae1428; border-color: #ae1428; color: #fff; }
+.ak-contact__text-link { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; color: #20262d; font-size: 13px; font-weight: 700; text-decoration: none; }
+.ak-contact a:hover { text-decoration: underline; text-underline-offset: 4px; }
+.ak-contact a.ak-contact__button:hover { text-decoration: none; }
+.ak-contact a:focus-visible, .ak-contact button:focus-visible, .ak-contact summary:focus-visible { outline: 3px solid #b80b24; outline-offset: 4px; }
+.ak-contact__map { position: relative; min-width: 0; min-height: 416px; background: #f3f5f4; }
+.ak-contact__map-canvas { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 416px; font-family: inherit; }
+.ak-contact__map-canvas iframe { display: block; width: 100%; height: 100%; border: 0; }
+.ak-contact__message { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: 56px; margin-top: 60px; }
+.ak-contact__message-intro { max-width: 360px; padding-top: 4px; }
+.ak-contact__message-intro > p:not(.ak-contact__eyebrow) { color: #646b73; font-size: 15px; line-height: 1.75; }
+.ak-contact__hint { margin-top: 30px; padding-top: 24px; border-top: 1px solid #e2e6ea; }
+.ak-contact__hint h3 { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+.ak-contact__hint p { color: #646b73; font-size: 13px; line-height: 1.7; }
+.ak-contact__hint a { margin-top: 8px; }
+.ak-contact__form { position: relative; min-width: 0; scroll-margin-top: 32px; }
+.ak-contact .ak-contact__required { margin-bottom: 18px; color: #6b727b; font-size: 12px; line-height: 1.6; }
+.ak-contact__fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.ak-contact__fields label { display: flex; flex-wrap: wrap; align-content: start; gap: 8px 5px; color: #323a44; font-size: 13px; font-weight: 650; }
+.ak-contact__fields label > span { font-weight: 400; color: #6b727b; }
+.ak-contact__wide { grid-column: 1 / -1; }
+.ak-contact__fields input, .ak-contact__fields textarea { display: block; width: 100%; min-width: 0; min-height: 46px; padding: 12px; border: 1px solid #d9dfe5; border-radius: 8px; background: #fff; color: #20262d; font: inherit; font-size: 16px; font-weight: 400; }
+.ak-contact__fields textarea { resize: vertical; min-height: 136px; }
+.ak-contact__fields input:focus, .ak-contact__fields textarea:focus { outline: 2px solid #c9152d33; outline-offset: 1px; border-color: #b51c2c; }
+.ak-contact .ak-contact__privacy { margin: 16px 0 20px; color: #6b727b; font-size: 12px; line-height: 1.7; }
+.ak-contact__privacy a { color: inherit; text-underline-offset: 3px; }
+.ak-contact__form > .ak-contact__button { margin-top: 20px; }
+.ak-contact__privacy + .ak-contact__button { margin-top: 0; }
+.ak-contact__honeypot { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.ak-contact .ak-contact__notice { margin-bottom: 20px; padding: 14px 16px; border-radius: 8px; background: #edf7ef; color: #28573a; font-size: 14px; line-height: 1.6; }
+.ak-contact .ak-contact__notice--error { background: #fff0f0; color: #95232b; }
+@media (max-width: 800px) {
+  .ak-contact__directions { display: block; }
+  .ak-contact__actions .ak-contact__directions-desktop { display: none; }
+  body.ak-contact-page main.ak-contact { padding: 36px 24px 48px; }
+  .ak-contact__store, .ak-contact__message { grid-template-columns: 1fr; }
+  .ak-contact__details { padding: 28px; }
+  .ak-contact__pin { margin-bottom: 22px; }
+  .ak-contact__message { gap: 28px; margin-top: 40px; }
+  .ak-contact__message-intro { max-width: 100%; }
+  .ak-contact__hint { margin-top: 20px; padding-top: 18px; }
+  .ak-contact__map, .ak-contact__map-canvas { min-height: 360px; }
+}
+@media (max-width: 480px) {
+  body.ak-contact-page main.ak-contact { padding: 30px 18px 44px; }
+  .ak-contact__intro { margin-bottom: 24px; }
+  .ak-contact__intro > p:last-child { font-size: 15px; }
+  .ak-contact__details { padding: 24px; }
+  .ak-contact__fields { grid-template-columns: 1fr; gap: 18px; }
+  .ak-contact__form > .ak-contact__button { width: 100%; }
+}

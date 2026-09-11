@@ -6,11 +6,15 @@ declare(strict_types=1);
 function appleklinika_home_content_defaults(): array
 {
     return [
+        'hero_layout' => 'split',
         'hero_items' => [[
+            'enabled' => true,
             'eyebrow' => 'Ellenőrzött használt Apple készülékek',
             'title' => "Valós állapot.\nValós adatok.\nGaranciával.",
             'text' => 'Ellenőrzött használt Apple készülékek, átlátható termékadatokkal és személyes segítséggel. Találd meg a hozzád illő készüléket.',
             'image_id' => 0,
+            'url' => '',
+            'alt' => '',
             'primary_label' => 'Kiemelt ajánlatok',
             'primary_url' => '#ak-home-offers',
             'secondary_label' => 'Így dolgozunk',
@@ -59,7 +63,7 @@ function appleklinika_home_content_list_schema(): array
     $infoFields = ['icon' => 'icon', 'title' => 'text', 'text' => 'textarea'];
 
     return [
-        'hero_items' => ['min' => 1, 'max' => 6, 'fields' => ['eyebrow' => 'text', 'title' => 'textarea', 'text' => 'textarea', 'image_id' => 'image', 'primary_label' => 'text', 'primary_url' => 'url', 'secondary_label' => 'text', 'secondary_url' => 'url']],
+        'hero_items' => ['min' => 1, 'max' => 8, 'fields' => ['enabled' => 'boolean', 'eyebrow' => 'text', 'title' => 'textarea', 'text' => 'textarea', 'image_id' => 'image', 'url' => 'url', 'alt' => 'text', 'primary_label' => 'text', 'primary_url' => 'url', 'secondary_label' => 'text', 'secondary_url' => 'url']],
         'hero_benefits' => ['min' => 0, 'max' => 8, 'fields' => $infoFields],
         'categories' => ['min' => 0, 'max' => 12, 'fields' => ['title' => 'text', 'text' => 'textarea', 'image_id' => 'image', 'url' => 'url']],
         'trust_items' => ['min' => 0, 'max' => 12, 'fields' => $infoFields],
@@ -77,6 +81,14 @@ function appleklinika_home_content_sanitize_field($value, string $type)
 {
     if (! is_scalar($value)) {
         $value = '';
+    }
+
+    if ($type === 'layout') {
+        return in_array($value, ['split', 'artwork'], true) ? $value : 'split';
+    }
+
+    if ($type === 'boolean') {
+        return in_array($value, [true, 1, '1'], true);
     }
 
     if ($type === 'image') {
@@ -107,6 +119,9 @@ function appleklinika_sanitize_home_content($value): array
     foreach ($defaults as $key => $default) {
         if (! isset($schema[$key])) {
             $type = $key === 'process_image_id' ? 'image' : (substr($key, -5) === '_text' ? 'textarea' : 'text');
+            if ($key === 'hero_layout') {
+                $type = 'layout';
+            }
             $content[$key] = appleklinika_home_content_sanitize_field(array_key_exists($key, $input) ? $input[$key] : $default, $type);
             continue;
         }
@@ -123,7 +138,7 @@ function appleklinika_sanitize_home_content($value): array
         foreach ($rows as $index => $row) {
             $clean = [];
             foreach ($schema[$key]['fields'] as $field => $type) {
-                $fallback = $default[$index][$field] ?? ($type === 'image' ? 0 : ($type === 'icon' ? 'check' : ''));
+                $fallback = $default[$index][$field] ?? ($type === 'boolean' ? true : ($type === 'image' ? 0 : ($type === 'icon' ? 'check' : '')));
                 $clean[$field] = appleklinika_home_content_sanitize_field(array_key_exists($field, $row) ? $row[$field] : $fallback, $type);
             }
             $content[$key][] = $clean;
@@ -169,15 +184,34 @@ function appleklinika_homepage_admin_field(string $key, string $type, string $la
 {
     $name = 'appleklinika_home_content' . ($list !== '' ? '[' . $list . '][' . $index . ']' : '') . '[' . $key . ']';
     $id = 'ak-home-' . ($list !== '' ? $list . '-' . $index . '-' : '') . $key;
+    $onlyLayout = '';
+    if ($list === 'hero_items') {
+        if (in_array($key, ['eyebrow', 'text', 'primary_label', 'primary_url', 'secondary_label', 'secondary_url'], true)) {
+            $onlyLayout = 'split';
+        } elseif (in_array($key, ['url', 'alt'], true)) {
+            $onlyLayout = 'artwork';
+        }
+    }
     ?>
-    <div class="ak-home-editor__field">
-        <label for="<?php echo esc_attr($id); ?>"><?php echo esc_html($label); ?></label>
+    <div class="ak-home-editor__field" <?php echo $onlyLayout !== '' ? 'data-home-only-layout="' . esc_attr($onlyLayout) . '"' : ''; ?>>
+        <label for="<?php echo esc_attr($id); ?>">
+            <?php if ($list === 'hero_items' && $key === 'title') : ?>
+                <span data-home-only-layout="split">Cím</span>
+                <span data-home-only-layout="artwork">Dia neve (belső cím)</span>
+            <?php else : ?>
+                <?php echo esc_html($label); ?>
+            <?php endif; ?>
+        </label>
         <?php if ($type === 'textarea') : ?>
             <textarea id="<?php echo esc_attr($id); ?>" name="<?php echo esc_attr($name); ?>" data-home-field="<?php echo esc_attr($key); ?>" rows="3"><?php echo esc_textarea((string) $value); ?></textarea>
-        <?php elseif ($type === 'icon') : ?>
+        <?php elseif (in_array($type, ['icon', 'layout', 'boolean'], true)) : ?>
+            <?php
+            $choices = $type === 'icon' ? appleklinika_home_content_icons() : ($type === 'layout' ? ['split' => 'Külön szöveg és kép', 'artwork' => 'Kész képes banner'] : ['1' => 'Bekapcsolva', '0' => 'Kikapcsolva']);
+            $selectedValue = $type === 'boolean' ? ($value ? '1' : '0') : (string) $value;
+            ?>
             <select id="<?php echo esc_attr($id); ?>" name="<?php echo esc_attr($name); ?>" data-home-field="<?php echo esc_attr($key); ?>">
-                <?php foreach (appleklinika_home_content_icons() as $icon => $iconLabel) : ?>
-                    <option value="<?php echo esc_attr($icon); ?>" <?php selected($value, $icon); ?>><?php echo esc_html($iconLabel); ?></option>
+                <?php foreach ($choices as $choice => $choiceLabel) : ?>
+                    <option value="<?php echo esc_attr((string) $choice); ?>" <?php selected($selectedValue, (string) $choice); ?>><?php echo esc_html($choiceLabel); ?></option>
                 <?php endforeach; ?>
             </select>
         <?php elseif ($type === 'image') : ?>
@@ -185,7 +219,14 @@ function appleklinika_homepage_admin_field(string $key, string $type, string $la
             <div class="ak-home-editor__media" data-home-media>
                 <input type="hidden" id="<?php echo esc_attr($id); ?>" name="<?php echo esc_attr($name); ?>" data-home-field="<?php echo esc_attr($key); ?>" value="<?php echo esc_attr((string) $value); ?>">
                 <img data-home-preview alt="Kiválasztott kép előnézete" <?php echo $preview ? 'src="' . esc_url($preview) . '"' : 'hidden'; ?>>
-                <p data-home-image-empty <?php echo $preview ? 'hidden' : ''; ?>>Nincs egyedi kép. A főoldal az alapértelmezett illusztrációt használja.</p>
+                <p data-home-image-empty <?php echo $preview ? 'hidden' : ''; ?>>
+                    <?php if ($list === 'hero_items') : ?>
+                        <span data-home-only-layout="split">Nincs egyedi kép. A főoldal az alapértelmezett illusztrációt használja.</span>
+                        <span data-home-only-layout="artwork">Nincs kép kiválasztva. Képes banner módban a dia csak képpel és hivatkozással jelenik meg.</span>
+                    <?php else : ?>
+                        Nincs egyedi kép. A főoldal az alapértelmezett illusztrációt használja.
+                    <?php endif; ?>
+                </p>
                 <div class="ak-home-editor__media-actions">
                     <button type="button" class="button" data-home-action="image-select"><?php echo $preview ? 'Kép cseréje' : 'Kép választása'; ?></button>
                     <button type="button" class="button" data-home-action="image-remove" <?php disabled(! $preview); ?>>Kép eltávolítása</button>
@@ -194,13 +235,18 @@ function appleklinika_homepage_admin_field(string $key, string $type, string $la
         <?php else : ?>
             <input type="text" id="<?php echo esc_attr($id); ?>" name="<?php echo esc_attr($name); ?>" data-home-field="<?php echo esc_attr($key); ?>" value="<?php echo esc_attr((string) $value); ?>" <?php echo $type === 'url' ? 'inputmode="url"' : ''; ?>>
         <?php endif; ?>
+        <?php if ($list === 'hero_items' && $key === 'url') : ?>
+            <p class="description">A teljes banner erre a címre vezet. Üres hivatkozás vagy hiányzó kép esetén a dia kimarad a főoldalról.</p>
+        <?php elseif ($list === 'hero_items' && $key === 'alt') : ?>
+            <p class="description">Foglald össze a képen szereplő üzenetet és a hivatkozás célját azoknak is, akik nem látják a képet.</p>
+        <?php endif; ?>
     </div>
     <?php
 }
 
 function appleklinika_homepage_admin_row(string $list, string $index, array $row, array $fields): void
 {
-    $labels = ['eyebrow' => 'Felső címke', 'title' => 'Cím', 'text' => 'Leírás', 'image_id' => 'Kép', 'primary_label' => 'Első gomb felirata', 'primary_url' => 'Első gomb hivatkozása', 'secondary_label' => 'Második gomb felirata', 'secondary_url' => 'Második gomb hivatkozása', 'url' => 'Hivatkozás', 'icon' => 'Ikon'];
+    $labels = ['enabled' => 'Megjelenítés', 'eyebrow' => 'Felső címke', 'title' => 'Cím', 'text' => 'Leírás', 'image_id' => 'Kép', 'alt' => 'Alternatív szöveg', 'primary_label' => 'Első gomb felirata', 'primary_url' => 'Első gomb hivatkozása', 'secondary_label' => 'Második gomb felirata', 'secondary_url' => 'Második gomb hivatkozása', 'url' => 'Hivatkozás', 'icon' => 'Ikon'];
     ?>
     <details class="ak-home-editor__row" data-home-row>
         <summary><span data-home-row-title><?php echo esc_html(((int) $index + 1) . '. ' . ($row['title'] ?? 'Új elem')); ?></span></summary>
@@ -211,7 +257,7 @@ function appleklinika_homepage_admin_row(string $list, string $index, array $row
                 <button type="button" class="button" data-home-action="remove">Elem eltávolítása</button>
             </div>
             <?php foreach ($fields as $key => $type) : ?>
-                <?php appleklinika_homepage_admin_field($key, $type, $labels[$key], $row[$key] ?? ($type === 'image' ? 0 : ''), $list, $index); ?>
+                <?php appleklinika_homepage_admin_field($key, $type, $labels[$key], $row[$key] ?? ($type === 'boolean' ? true : ($type === 'image' ? 0 : '')), $list, $index); ?>
             <?php endforeach; ?>
         </div>
     </details>
@@ -250,13 +296,16 @@ function appleklinika_render_homepage_settings_page(): void
         <p>A főoldal tartalmait itt szerkesztheted. A fejléc és a termékkártyák változatlanok maradnak; a termékadatokat továbbra is a WooCommerce adja.</p>
         <p>A hivatkozás lehet teljes webcím, belső útvonal vagy oldalon belüli horgony (például <code>#ak-home-offers</code>). Üres gombfelirat esetén a gomb nem jelenik meg.</p>
         <?php settings_errors(); ?>
-        <form method="post" action="options.php" data-home-editor>
+        <form method="post" action="options.php" data-home-editor data-home-hero-layout="<?php echo esc_attr($content['hero_layout']); ?>">
             <?php settings_fields('appleklinika_homepage_settings'); ?>
             <p class="screen-reader-text" role="status" aria-live="polite" aria-atomic="true" data-home-status></p>
             <details class="ak-home-editor__section" open>
                 <summary>1. Nyitó szakasz</summary>
                 <div class="ak-home-editor__section-body">
-                    <p>A nyitó szakasz legalább egy, legfeljebb hat diából állhat. Egy dia esetén nincs lapozás. A cím sortörései a főoldalon is megmaradnak.</p>
+                    <p>A nyitó szakasz legalább egy, legfeljebb nyolc tárolt diából állhat. A kikapcsolt diák nem jelennek meg. Egy megjeleníthető dia esetén nincs lapozás.</p>
+                    <?php appleklinika_homepage_admin_field('hero_layout', 'layout', 'Nyitó szakasz megjelenése', $content['hero_layout']); ?>
+                    <p data-home-only-layout="split">A cím, a leírás és a gombok a kép mellett jelennek meg. A cím sortörései a főoldalon is megmaradnak.</p>
+                    <p data-home-only-layout="artwork">A szöveg és a gomb kinézete már a képfájl része. A teljes kép kattintható: add meg a célhivatkozását és az alternatív szöveget. A dia neve belső cím marad. A korábbi külön szöveg- és gombmezőket megőrizzük, de ebben a módban nem kerülnek a képre.</p>
                     <?php appleklinika_homepage_admin_list('hero_items', 'Nyitó diák', $content['hero_items']); ?>
                     <?php appleklinika_homepage_admin_list('hero_benefits', 'Rövid előnyök', $content['hero_benefits']); ?>
                 </div>

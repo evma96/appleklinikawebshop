@@ -256,7 +256,7 @@ Product cards intentionally stay compact: non-iPhone archive cards only show sto
 - Editable WordPress footer information pages are automatically prepared for ÁSZF, Adatvédelem, Szállítás, Kapcsolat, Garancia, and Visszaküldés.
 - Footer information links point to those real WordPress pages instead of dead static URLs.
 - Footer information pages use a shared `ak-info-page` layout with centered readable content, intro styling, clean list blocks, and a compact trust block.
-- The Contact page adds a dedicated contact panel with phone, email, address, a simple WordPress-handled form, and a map placeholder.
+- The Contact page has a dedicated responsive store/contact template, verified store address and phone, an optional public email/opening-hours display, and the existing WordPress-handled form. A directly rendered Google Maps share/embed iframe loads immediately with the Contact page and shows the store without an API key or custom map library. Desktop directions use Google Maps; mobile offers a compact Google Maps / Apple Maps / Waze chooser with destination-bearing HTTPS app/web links. No consent framework or independent consent storage is added. Edit public content, postcode and the precise navigation pin in **Settings → Apple Klinika kapcsolat**; see [Contact editing](docs/contact-editing.md).
 - Custom single product information panels render real WooCommerce descriptions, product attributes/meta, reviews, and related products while default WooCommerce tabs/related output are removed to avoid duplicate product content.
 - A `Termékek` navigation item is injected into the active WordPress navigation block and links to the WooCommerce shop page.
 - Color/storage/grade selection is modeled as separate unique WooCommerce products instead of WooCommerce variations.
@@ -273,6 +273,36 @@ links, category tiles, trust items and process steps are editable without code.
 The header and shared catalogue cards retain their existing renderers and styling;
 featured products still come from live WooCommerce data. See
 [Homepage editing](docs/homepage-editing.md) for media selection and maintenance.
+The subsequent LOCAL-only carousel refinement adds an optional image-only artwork
+layout with per-slide enablement, destination and alternative text. Existing saved
+split-layout copy remains compatible. Valid artwork rotates every 5.5 seconds with
+manual dots, swipe and pause/reduced-motion behaviour. Only the homepage
+product grid becomes denser (six desktop columns, then three, two and one at narrower widths).
+Bottom-positioned dots are the only permanently visible carousel controls: no
+previous/next arrows or separate control bar. Hover and dot focus do not pause the
+loop; a dot selection restarts its 5.5-second interval. The accessible pause control
+reveals on keyboard focus.
+Homepage-only row alignment preserves existing media/control sizes without a fixed
+outer card height; the current six-card LOCAL selection is verified at 1440, 900
+and 390 px, including equal-height stacked rows on mobile.
+The LOCAL visual-content review appends four owner-supplied campaign banners after
+the four existing slides (eight editable slides total). The MacBook, iPad and
+Apple Watch category tiles use the supplied real product photos; the iPhone image
+and all category destinations remain unchanged. The carousel editor supports eight
+slides so this complete set survives editing and saving.
+This refinement and its environment-specific media/settings have not been deployed
+to TEST or production.
+Martin approved the current LOCAL homepage, carousel, category photos and Contact
+on 2026-09-11. Their code and public content/media recovery snapshot are preserved
+in the feature-branch checkpoint; see [Approved LOCAL storefront](docs/checkpoints/approved-storefront-2026-09-11/README.md).
+
+The subsequent [small LOCAL polish pass](docs/local-storefront-polish.md) changes
+only the shop page's Hungarian title and legal-page heading alignment. Martin
+approved these follow-up changes for feature-branch commit and TEST acceptance.
+
+The [publication safety repair](docs/publication-safety-review.md) removes private
+photo metadata from its first appearance in the unpublished history. The approved
+image pixels and rendering metadata are preserved; published history is immutable.
 
 Internal identifier / IMEI remains admin-only and is not rendered on the frontend.
 
