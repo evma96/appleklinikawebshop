@@ -1218,6 +1218,11 @@ body.page h1,
   box-shadow: 0 2px 7px rgba(17, 24, 32, .035);
 }
 
+body.ak-legal-page .ak-page > .wp-block-post-title {
+  max-width: 760px;
+  margin-inline: auto;
+}
+
 body.ak-info-page .ak-page {
   max-width: 900px;
   padding-top: var(--ak-space-6);

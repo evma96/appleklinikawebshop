@@ -12,6 +12,17 @@
 
 ## Known Limitations
 
+- The publication-safety repair sanitizes 40 images from their first unpublished
+  appearance, preserving pixels, orientation, ICC and HDR data. Three local-only
+  commits are rebuilt; published history and the protected prelaunch tag are kept.
+  See `docs/publication-safety-review.md` for the boundary and verification.
+
+- Martin approved the small LOCAL storefront polish following checkpoint
+  `e51f111` for TEST acceptance. Legal pages still explicitly contain test/sample copy,
+  and the LOCAL catalogue still includes demo photos/data (including an iPhone
+  gallery/color mismatch). These were intentionally preserved; replacing them is
+  content preparation outside this small visual pass. See `docs/local-storefront-polish.md`.
+
 - Homepage campaign media and copy are editable WordPress settings, not Git data.
   Split-layout hero/category tiles can use existing catalogue images until dedicated
   media are selected. Artwork slides require their own image and destination;
