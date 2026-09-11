@@ -41,6 +41,8 @@ register_deactivation_hook(__FILE__, static function (): void {
 });
 
 add_action('plugins_loaded', static function (): void {
+    Appleklinika\BackOffice\Infrastructure\DedicatedHostUrls::register();
+
     if (! class_exists('WooCommerce')) {
         return;
     }
