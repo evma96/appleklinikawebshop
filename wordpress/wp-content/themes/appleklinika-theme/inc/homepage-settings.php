@@ -63,7 +63,7 @@ function appleklinika_home_content_list_schema(): array
     $infoFields = ['icon' => 'icon', 'title' => 'text', 'text' => 'textarea'];
 
     return [
-        'hero_items' => ['min' => 1, 'max' => 6, 'fields' => ['enabled' => 'boolean', 'eyebrow' => 'text', 'title' => 'textarea', 'text' => 'textarea', 'image_id' => 'image', 'url' => 'url', 'alt' => 'text', 'primary_label' => 'text', 'primary_url' => 'url', 'secondary_label' => 'text', 'secondary_url' => 'url']],
+        'hero_items' => ['min' => 1, 'max' => 8, 'fields' => ['enabled' => 'boolean', 'eyebrow' => 'text', 'title' => 'textarea', 'text' => 'textarea', 'image_id' => 'image', 'url' => 'url', 'alt' => 'text', 'primary_label' => 'text', 'primary_url' => 'url', 'secondary_label' => 'text', 'secondary_url' => 'url']],
         'hero_benefits' => ['min' => 0, 'max' => 8, 'fields' => $infoFields],
         'categories' => ['min' => 0, 'max' => 12, 'fields' => ['title' => 'text', 'text' => 'textarea', 'image_id' => 'image', 'url' => 'url']],
         'trust_items' => ['min' => 0, 'max' => 12, 'fields' => $infoFields],
@@ -302,7 +302,7 @@ function appleklinika_render_homepage_settings_page(): void
             <details class="ak-home-editor__section" open>
                 <summary>1. Nyitó szakasz</summary>
                 <div class="ak-home-editor__section-body">
-                    <p>A nyitó szakasz legalább egy, legfeljebb hat tárolt diából állhat. A kikapcsolt diák nem jelennek meg. Egy megjeleníthető dia esetén nincs lapozás.</p>
+                    <p>A nyitó szakasz legalább egy, legfeljebb nyolc tárolt diából állhat. A kikapcsolt diák nem jelennek meg. Egy megjeleníthető dia esetén nincs lapozás.</p>
                     <?php appleklinika_homepage_admin_field('hero_layout', 'layout', 'Nyitó szakasz megjelenése', $content['hero_layout']); ?>
                     <p data-home-only-layout="split">A cím, a leírás és a gombok a kép mellett jelennek meg. A cím sortörései a főoldalon is megmaradnak.</p>
                     <p data-home-only-layout="artwork">A szöveg és a gomb kinézete már a képfájl része. A teljes kép kattintható: add meg a célhivatkozását és az alternatív szöveget. A dia neve belső cím marad. A korábbi külön szöveg- és gombmezőket megőrizzük, de ebben a módban nem kerülnek a képre.</p>

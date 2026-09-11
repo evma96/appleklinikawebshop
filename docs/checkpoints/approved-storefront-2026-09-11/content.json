@@ -1,0 +1,1304 @@
+{
+    "approved_on": "2026-09-11",
+    "local_url": "http://localhost:8082",
+    "options": {
+        "appleklinika_home_content": {
+            "hero_layout": "artwork",
+            "hero_items": [
+                {
+                    "enabled": true,
+                    "eyebrow": "Ellenőrzött használt Apple készülékek",
+                    "title": "Valódi bolt. Valódi segítség.",
+                    "text": "Ellenőrzött használt Apple készülékek, átlátható termékadatokkal és személyes segítséggel. Találd meg a hozzád illő készüléket.",
+                    "image_id": 2444,
+                    "url": "/?pagename=kapcsolat",
+                    "alt": "Valódi bolt. Valódi segítség. Szegeden személyesen is várunk használt Apple készülékekkel és szakértő tanácsadással. Szegedi üzlet: Jósika utca 2–4.",
+                    "primary_label": "Kiemelt ajánlatok",
+                    "primary_url": "#ak-home-offers",
+                    "secondary_label": "Így dolgozunk",
+                    "secondary_url": "#ak-home-process"
+                },
+                {
+                    "enabled": true,
+                    "eyebrow": "",
+                    "title": "iPhone, MacBook, iPad.",
+                    "text": "",
+                    "image_id": 2445,
+                    "url": "#ak-home-offers",
+                    "alt": "iPhone, MacBook, iPad. Valós fotókkal, részletes adatokkal és átlátható állapotleírással. Nézd meg a kínálatot.",
+                    "primary_label": "",
+                    "primary_url": "",
+                    "secondary_label": "",
+                    "secondary_url": ""
+                },
+                {
+                    "enabled": true,
+                    "eyebrow": "",
+                    "title": "Gyors Apple szerviz.",
+                    "text": "",
+                    "image_id": 2446,
+                    "url": "#ak-home-process",
+                    "alt": "Gyors Apple szerviz. Segítünk javításban, bevizsgálásban és a megfelelő készülék kiválasztásában is. Apple Szerviz.",
+                    "primary_label": "",
+                    "primary_url": "",
+                    "secondary_label": "",
+                    "secondary_url": ""
+                },
+                {
+                    "enabled": true,
+                    "eyebrow": "",
+                    "title": "Személyes átvétel, gyors kiszolgálás.",
+                    "text": "",
+                    "image_id": 2447,
+                    "url": "/?pagename=kapcsolat",
+                    "alt": "Személyes átvétel, gyors kiszolgálás. Online rendelés mellé üzletben is segítünk — kérdéssel, készülékkel vagy cserével. Átvétel és segítség a szegedi üzletben.",
+                    "primary_label": "",
+                    "primary_url": "",
+                    "secondary_label": "",
+                    "secondary_url": ""
+                },
+                {
+                    "enabled": true,
+                    "eyebrow": "",
+                    "title": "Hozd a régit, vidd az újat! – sötét",
+                    "text": "",
+                    "image_id": 2448,
+                    "url": "/eladas/",
+                    "alt": "Hozd a régit, vidd az újat! Készülékbeszámítással vagy készpénzes felvásárlással. Apple Klinika – készülékeladás.",
+                    "primary_label": "",
+                    "primary_url": "",
+                    "secondary_label": "",
+                    "secondary_url": ""
+                },
+                {
+                    "enabled": true,
+                    "eyebrow": "",
+                    "title": "Gyors és profi Apple szerviz",
+                    "text": "",
+                    "image_id": 2449,
+                    "url": "/?pagename=kapcsolat",
+                    "alt": "Gyors és profi Apple szerviz. Akkumulátor csere akár 1 órán belül. Apple Klinika – kapcsolat és szervizérdeklődés.",
+                    "primary_label": "",
+                    "primary_url": "",
+                    "secondary_label": "",
+                    "secondary_url": ""
+                },
+                {
+                    "enabled": true,
+                    "eyebrow": "",
+                    "title": "Hozd a régit, vidd az újat! – fehér",
+                    "text": "",
+                    "image_id": 2450,
+                    "url": "/eladas/",
+                    "alt": "Hozd a régit, vidd az újat! Készülékbeszámítással vagy készpénzes felvásárlással. Apple Klinika – készülékeladás.",
+                    "primary_label": "",
+                    "primary_url": "",
+                    "secondary_label": "",
+                    "secondary_url": ""
+                },
+                {
+                    "enabled": true,
+                    "eyebrow": "",
+                    "title": "Prémium Apple készülékek",
+                    "text": "",
+                    "image_id": 2451,
+                    "url": "#ak-home-offers",
+                    "alt": "Prémium Apple készülékek. Óriási választék, megbízható forrásból. Apple Klinika – kiemelt ajánlatok.",
+                    "primary_label": "",
+                    "primary_url": "",
+                    "secondary_label": "",
+                    "secondary_url": ""
+                }
+            ],
+            "hero_benefits": [
+                {
+                    "icon": "check",
+                    "title": "Ellenőrzött készülékek",
+                    "text": "Állapot és készülékadatok termékenként."
+                },
+                {
+                    "icon": "shield",
+                    "title": "Garanciával",
+                    "text": "A részleteket a termékoldalon találod."
+                },
+                {
+                    "icon": "tools",
+                    "title": "Szegedi háttér",
+                    "text": "Személyes segítség a választáshoz."
+                }
+            ],
+            "category_title": "Mit keresel?",
+            "category_link_label": "Összes termék",
+            "categories": [
+                {
+                    "title": "iPhone",
+                    "text": "A mindennapjaidhoz illő iPhone.",
+                    "image_id": 0,
+                    "url": "http://localhost:8082/?post_type=product&ak_type=iphone"
+                },
+                {
+                    "title": "MacBook",
+                    "text": "Munkához, tanuláshoz, alkotáshoz.",
+                    "image_id": 2452,
+                    "url": "http://localhost:8082/?post_type=product&ak_type=macbook"
+                },
+                {
+                    "title": "iPad",
+                    "text": "Sokoldalú társ, bármerre jársz.",
+                    "image_id": 2453,
+                    "url": "http://localhost:8082/?post_type=product&ak_type=ipad"
+                },
+                {
+                    "title": "Apple Watch",
+                    "text": "A napodhoz igazodó Apple Watch.",
+                    "image_id": 2454,
+                    "url": "http://localhost:8082/?post_type=product&ak_type=apple_watch"
+                }
+            ],
+            "featured_title": "Kiemelt ajánlatok",
+            "featured_text": "Nézd meg a jelenleg elérhető készülékeket, és hasonlítsd össze a részleteiket.",
+            "featured_link_label": "Összes termék",
+            "trust_title": "Átláthatóság, ami számít",
+            "trust_text": "A jó döntéshez egyértelmű információ kell. A fontos részleteket a készülék mellett találod.",
+            "trust_items": [
+                {
+                    "icon": "check",
+                    "title": "Ellenőrzött állapot",
+                    "text": "Az állapotbesorolás segít összehasonlítani a készülékeket."
+                },
+                {
+                    "icon": "battery",
+                    "title": "Akkumulátoradatok",
+                    "text": "Az elérhető akkumulátoradatokat a termékoldalon mutatjuk."
+                },
+                {
+                    "icon": "shield",
+                    "title": "Látható garancia",
+                    "text": "A készülékhez tartozó garanciaidőt a termékadatok között találod."
+                },
+                {
+                    "icon": "document",
+                    "title": "Átlátható részletek",
+                    "text": "Tárhely, szín és készülékleírás egy helyen."
+                },
+                {
+                    "icon": "tools",
+                    "title": "Szaküzleti háttér",
+                    "text": "Ha kérdésed van, segítünk eligazodni a készülékek között."
+                }
+            ],
+            "process_title": "Miért más az Apple Klinika?",
+            "process_text": "Az átvizsgálástól a termékadatokig a készülék valódi állapotára figyelünk.",
+            "process_items": [
+                {
+                    "icon": "tools",
+                    "title": "Bevizsgálás",
+                    "text": "Állapotellenőrzés."
+                },
+                {
+                    "icon": "document",
+                    "title": "Adatlap készítés",
+                    "text": "Valós adatok, látható állapot."
+                },
+                {
+                    "icon": "phone",
+                    "title": "Tisztítás és felkészítés",
+                    "text": "Gondos előkészítés."
+                },
+                {
+                    "icon": "check",
+                    "title": "Minőségellenőrzés",
+                    "text": "Utolsó ellenőrzés átadás előtt."
+                },
+                {
+                    "icon": "truck",
+                    "title": "Biztonságos szállítás",
+                    "text": "Gondos csomagolás."
+                }
+            ],
+            "process_image_id": 0
+        },
+        "appleklinika_home_featured_product_ids": [
+            383,
+            387,
+            386,
+            385,
+            384,
+            288
+        ],
+        "appleklinika_home_featured_product_limit": "6",
+        "appleklinika_contact_content": {
+            "title": "Keress minket",
+            "intro": "Kérdésed van egy készülékről, rendelésről vagy javításról? Írj nekünk, vagy keress fel személyesen Szegeden.",
+            "store_name": "Apple Klinika",
+            "city": "Szeged",
+            "postcode": "6720",
+            "address": "Jósika utca 2–4.",
+            "navigation_coordinates": "46.2544892,20.1426876",
+            "phone": "+36 30 970 6700",
+            "email": "",
+            "hours": "",
+            "map_embed": "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2758.7856352844606!2d20.140112676103616!3d46.25448917109782!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x474489111d25d185%3A0xf8dc8aa6ed1595e7!2sApple%20Klinika%20Szeged%20-%20iPhone%20Szerviz%20%C3%A9s%20Keresked%C3%A9s!5e0!3m2!1shu!2shu!4v1789048358880!5m2!1shu!2shu"
+        }
+    },
+    "resolved_iphone_category_image_id": 2255,
+    "media": [
+        {
+            "id": 2444,
+            "title": "Valódi bolt. Valódi segítség.",
+            "mime_type": "image/png",
+            "alt": "Valódi bolt. Valódi segítség. Szegeden személyesen is várunk használt Apple készülékekkel és szakértő tanácsadással. Szegedi üzlet: Jósika utca 2–4.",
+            "metadata": {
+                "width": 1916,
+                "height": 821,
+                "file": "2026/09/apple-klinika-home-slide-1.png",
+                "filesize": 1828089,
+                "sizes": {
+                    "medium": {
+                        "file": "apple-klinika-home-slide-1-300x129.png",
+                        "width": 300,
+                        "height": 129,
+                        "mime-type": "image/png",
+                        "filesize": 56598
+                    },
+                    "large": {
+                        "file": "apple-klinika-home-slide-1-1024x439.png",
+                        "width": 1024,
+                        "height": 439,
+                        "mime-type": "image/png",
+                        "filesize": 502248
+                    },
+                    "thumbnail": {
+                        "file": "apple-klinika-home-slide-1-150x150.png",
+                        "width": 150,
+                        "height": 150,
+                        "mime-type": "image/png",
+                        "filesize": 33551
+                    },
+                    "medium_large": {
+                        "file": "apple-klinika-home-slide-1-768x329.png",
+                        "width": 768,
+                        "height": 329,
+                        "mime-type": "image/png",
+                        "filesize": 303327
+                    },
+                    "1536x1536": {
+                        "file": "apple-klinika-home-slide-1-1536x658.png",
+                        "width": 1536,
+                        "height": 658,
+                        "mime-type": "image/png",
+                        "filesize": 1025173
+                    },
+                    "woocommerce_thumbnail": {
+                        "file": "apple-klinika-home-slide-1-300x300.png",
+                        "width": 300,
+                        "height": 300,
+                        "mime-type": "image/png",
+                        "filesize": 121581,
+                        "uncropped": false
+                    },
+                    "woocommerce_single": {
+                        "file": "apple-klinika-home-slide-1-600x257.png",
+                        "width": 600,
+                        "height": 257,
+                        "mime-type": "image/png",
+                        "filesize": 196462
+                    },
+                    "woocommerce_gallery_thumbnail": {
+                        "file": "apple-klinika-home-slide-1-100x100.png",
+                        "width": 100,
+                        "height": 100,
+                        "mime-type": "image/png",
+                        "filesize": 15830
+                    }
+                },
+                "image_meta": {
+                    "aperture": "0",
+                    "credit": "",
+                    "camera": "",
+                    "caption": "",
+                    "created_timestamp": "0",
+                    "copyright": "",
+                    "focal_length": "0",
+                    "iso": "0",
+                    "shutter_speed": "0",
+                    "title": "",
+                    "orientation": "0",
+                    "keywords": [],
+                    "alt": ""
+                }
+            }
+        },
+        {
+            "id": 2445,
+            "title": "iPhone, MacBook, iPad.",
+            "mime_type": "image/png",
+            "alt": "iPhone, MacBook, iPad. Valós fotókkal, részletes adatokkal és átlátható állapotleírással. Nézd meg a kínálatot.",
+            "metadata": {
+                "width": 1916,
+                "height": 821,
+                "file": "2026/09/apple-klinika-home-slide-2.png",
+                "filesize": 1692665,
+                "sizes": {
+                    "medium": {
+                        "file": "apple-klinika-home-slide-2-300x129.png",
+                        "width": 300,
+                        "height": 129,
+                        "mime-type": "image/png",
+                        "filesize": 54838
+                    },
+                    "large": {
+                        "file": "apple-klinika-home-slide-2-1024x439.png",
+                        "width": 1024,
+                        "height": 439,
+                        "mime-type": "image/png",
+                        "filesize": 466295
+                    },
+                    "thumbnail": {
+                        "file": "apple-klinika-home-slide-2-150x150.png",
+                        "width": 150,
+                        "height": 150,
+                        "mime-type": "image/png",
+                        "filesize": 31013
+                    },
+                    "medium_large": {
+                        "file": "apple-klinika-home-slide-2-768x329.png",
+                        "width": 768,
+                        "height": 329,
+                        "mime-type": "image/png",
+                        "filesize": 284997
+                    },
+                    "1536x1536": {
+                        "file": "apple-klinika-home-slide-2-1536x658.png",
+                        "width": 1536,
+                        "height": 658,
+                        "mime-type": "image/png",
+                        "filesize": 940068
+                    },
+                    "woocommerce_thumbnail": {
+                        "file": "apple-klinika-home-slide-2-300x300.png",
+                        "width": 300,
+                        "height": 300,
+                        "mime-type": "image/png",
+                        "filesize": 102477,
+                        "uncropped": false
+                    },
+                    "woocommerce_single": {
+                        "file": "apple-klinika-home-slide-2-600x257.png",
+                        "width": 600,
+                        "height": 257,
+                        "mime-type": "image/png",
+                        "filesize": 186480
+                    },
+                    "woocommerce_gallery_thumbnail": {
+                        "file": "apple-klinika-home-slide-2-100x100.png",
+                        "width": 100,
+                        "height": 100,
+                        "mime-type": "image/png",
+                        "filesize": 15437
+                    }
+                },
+                "image_meta": {
+                    "aperture": "0",
+                    "credit": "",
+                    "camera": "",
+                    "caption": "",
+                    "created_timestamp": "0",
+                    "copyright": "",
+                    "focal_length": "0",
+                    "iso": "0",
+                    "shutter_speed": "0",
+                    "title": "",
+                    "orientation": "0",
+                    "keywords": [],
+                    "alt": ""
+                }
+            }
+        },
+        {
+            "id": 2446,
+            "title": "Gyors Apple szerviz.",
+            "mime_type": "image/png",
+            "alt": "Gyors Apple szerviz. Segítünk javításban, bevizsgálásban és a megfelelő készülék kiválasztásában is. Apple Szerviz.",
+            "metadata": {
+                "width": 1916,
+                "height": 821,
+                "file": "2026/09/apple-klinika-home-slide-3.png",
+                "filesize": 1813486,
+                "sizes": {
+                    "medium": {
+                        "file": "apple-klinika-home-slide-3-300x129.png",
+                        "width": 300,
+                        "height": 129,
+                        "mime-type": "image/png",
+                        "filesize": 56210
+                    },
+                    "large": {
+                        "file": "apple-klinika-home-slide-3-1024x439.png",
+                        "width": 1024,
+                        "height": 439,
+                        "mime-type": "image/png",
+                        "filesize": 485612
+                    },
+                    "thumbnail": {
+                        "file": "apple-klinika-home-slide-3-150x150.png",
+                        "width": 150,
+                        "height": 150,
+                        "mime-type": "image/png",
+                        "filesize": 27807
+                    },
+                    "medium_large": {
+                        "file": "apple-klinika-home-slide-3-768x329.png",
+                        "width": 768,
+                        "height": 329,
+                        "mime-type": "image/png",
+                        "filesize": 293594
+                    },
+                    "1536x1536": {
+                        "file": "apple-klinika-home-slide-3-1536x658.png",
+                        "width": 1536,
+                        "height": 658,
+                        "mime-type": "image/png",
+                        "filesize": 1000988
+                    },
+                    "woocommerce_thumbnail": {
+                        "file": "apple-klinika-home-slide-3-300x300.png",
+                        "width": 300,
+                        "height": 300,
+                        "mime-type": "image/png",
+                        "filesize": 93256,
+                        "uncropped": false
+                    },
+                    "woocommerce_single": {
+                        "file": "apple-klinika-home-slide-3-600x257.png",
+                        "width": 600,
+                        "height": 257,
+                        "mime-type": "image/png",
+                        "filesize": 191492
+                    },
+                    "woocommerce_gallery_thumbnail": {
+                        "file": "apple-klinika-home-slide-3-100x100.png",
+                        "width": 100,
+                        "height": 100,
+                        "mime-type": "image/png",
+                        "filesize": 13664
+                    }
+                },
+                "image_meta": {
+                    "aperture": "0",
+                    "credit": "",
+                    "camera": "",
+                    "caption": "",
+                    "created_timestamp": "0",
+                    "copyright": "",
+                    "focal_length": "0",
+                    "iso": "0",
+                    "shutter_speed": "0",
+                    "title": "",
+                    "orientation": "0",
+                    "keywords": [],
+                    "alt": ""
+                }
+            }
+        },
+        {
+            "id": 2447,
+            "title": "Személyes átvétel, gyors kiszolgálás.",
+            "mime_type": "image/png",
+            "alt": "Személyes átvétel, gyors kiszolgálás. Online rendelés mellé üzletben is segítünk — kérdéssel, készülékkel vagy cserével. Átvétel és segítség a szegedi üzletben.",
+            "metadata": {
+                "width": 1916,
+                "height": 821,
+                "file": "2026/09/apple-klinika-home-slide-4.png",
+                "filesize": 1794534,
+                "sizes": {
+                    "medium": {
+                        "file": "apple-klinika-home-slide-4-300x129.png",
+                        "width": 300,
+                        "height": 129,
+                        "mime-type": "image/png",
+                        "filesize": 54732
+                    },
+                    "large": {
+                        "file": "apple-klinika-home-slide-4-1024x439.png",
+                        "width": 1024,
+                        "height": 439,
+                        "mime-type": "image/png",
+                        "filesize": 486702
+                    },
+                    "thumbnail": {
+                        "file": "apple-klinika-home-slide-4-150x150.png",
+                        "width": 150,
+                        "height": 150,
+                        "mime-type": "image/png",
+                        "filesize": 33959
+                    },
+                    "medium_large": {
+                        "file": "apple-klinika-home-slide-4-768x329.png",
+                        "width": 768,
+                        "height": 329,
+                        "mime-type": "image/png",
+                        "filesize": 293006
+                    },
+                    "1536x1536": {
+                        "file": "apple-klinika-home-slide-4-1536x658.png",
+                        "width": 1536,
+                        "height": 658,
+                        "mime-type": "image/png",
+                        "filesize": 1005528
+                    },
+                    "woocommerce_thumbnail": {
+                        "file": "apple-klinika-home-slide-4-300x300.png",
+                        "width": 300,
+                        "height": 300,
+                        "mime-type": "image/png",
+                        "filesize": 120862,
+                        "uncropped": false
+                    },
+                    "woocommerce_single": {
+                        "file": "apple-klinika-home-slide-4-600x257.png",
+                        "width": 600,
+                        "height": 257,
+                        "mime-type": "image/png",
+                        "filesize": 189591
+                    },
+                    "woocommerce_gallery_thumbnail": {
+                        "file": "apple-klinika-home-slide-4-100x100.png",
+                        "width": 100,
+                        "height": 100,
+                        "mime-type": "image/png",
+                        "filesize": 16178
+                    }
+                },
+                "image_meta": {
+                    "aperture": "0",
+                    "credit": "",
+                    "camera": "",
+                    "caption": "",
+                    "created_timestamp": "0",
+                    "copyright": "",
+                    "focal_length": "0",
+                    "iso": "0",
+                    "shutter_speed": "0",
+                    "title": "",
+                    "orientation": "0",
+                    "keywords": [],
+                    "alt": ""
+                }
+            }
+        },
+        {
+            "id": 2448,
+            "title": "Hozd a régit, vidd az újat! – sötét",
+            "mime_type": "image/jpeg",
+            "alt": "Hozd a régit, vidd az újat! Készülékbeszámítással vagy készpénzes felvásárlással. Apple Klinika – készülékeladás.",
+            "metadata": {
+                "width": 2048,
+                "height": 819,
+                "file": "2026/09/ak-visual-review/hero-trade-in-dark.jpg",
+                "filesize": 119360,
+                "sizes": {
+                    "medium": {
+                        "file": "hero-trade-in-dark-300x120.jpg",
+                        "width": 300,
+                        "height": 120,
+                        "mime-type": "image/jpeg",
+                        "filesize": 8255
+                    },
+                    "large": {
+                        "file": "hero-trade-in-dark-1024x410.jpg",
+                        "width": 1024,
+                        "height": 410,
+                        "mime-type": "image/jpeg",
+                        "filesize": 47550
+                    },
+                    "thumbnail": {
+                        "file": "hero-trade-in-dark-150x150.jpg",
+                        "width": 150,
+                        "height": 150,
+                        "mime-type": "image/jpeg",
+                        "filesize": 4634
+                    },
+                    "medium_large": {
+                        "file": "hero-trade-in-dark-768x307.jpg",
+                        "width": 768,
+                        "height": 307,
+                        "mime-type": "image/jpeg",
+                        "filesize": 32208
+                    },
+                    "1536x1536": {
+                        "file": "hero-trade-in-dark-1536x614.jpg",
+                        "width": 1536,
+                        "height": 614,
+                        "mime-type": "image/jpeg",
+                        "filesize": 82966
+                    },
+                    "woocommerce_thumbnail": {
+                        "file": "hero-trade-in-dark-300x300.jpg",
+                        "width": 300,
+                        "height": 300,
+                        "mime-type": "image/jpeg",
+                        "filesize": 11808
+                    },
+                    "woocommerce_single": {
+                        "file": "hero-trade-in-dark-600x240.jpg",
+                        "width": 600,
+                        "height": 240,
+                        "mime-type": "image/jpeg",
+                        "filesize": 22581
+                    },
+                    "woocommerce_gallery_thumbnail": {
+                        "file": "hero-trade-in-dark-100x100.jpg",
+                        "width": 100,
+                        "height": 100,
+                        "mime-type": "image/jpeg",
+                        "filesize": 2577
+                    }
+                },
+                "image_meta": {
+                    "aperture": "0",
+                    "credit": "",
+                    "camera": "",
+                    "caption": "",
+                    "created_timestamp": "0",
+                    "copyright": "",
+                    "focal_length": "0",
+                    "iso": "0",
+                    "shutter_speed": "0",
+                    "title": "",
+                    "orientation": "0",
+                    "keywords": [],
+                    "alt": ""
+                }
+            }
+        },
+        {
+            "id": 2449,
+            "title": "Gyors és profi Apple szerviz",
+            "mime_type": "image/jpeg",
+            "alt": "Gyors és profi Apple szerviz. Akkumulátor csere akár 1 órán belül. Apple Klinika – kapcsolat és szervizérdeklődés.",
+            "metadata": {
+                "width": 2048,
+                "height": 819,
+                "file": "2026/09/ak-visual-review/hero-apple-service.jpg",
+                "filesize": 122848,
+                "sizes": {
+                    "medium": {
+                        "file": "hero-apple-service-300x120.jpg",
+                        "width": 300,
+                        "height": 120,
+                        "mime-type": "image/jpeg",
+                        "filesize": 8615
+                    },
+                    "large": {
+                        "file": "hero-apple-service-1024x410.jpg",
+                        "width": 1024,
+                        "height": 410,
+                        "mime-type": "image/jpeg",
+                        "filesize": 48665
+                    },
+                    "thumbnail": {
+                        "file": "hero-apple-service-150x150.jpg",
+                        "width": 150,
+                        "height": 150,
+                        "mime-type": "image/jpeg",
+                        "filesize": 5462
+                    },
+                    "medium_large": {
+                        "file": "hero-apple-service-768x307.jpg",
+                        "width": 768,
+                        "height": 307,
+                        "mime-type": "image/jpeg",
+                        "filesize": 32979
+                    },
+                    "1536x1536": {
+                        "file": "hero-apple-service-1536x614.jpg",
+                        "width": 1536,
+                        "height": 614,
+                        "mime-type": "image/jpeg",
+                        "filesize": 83889
+                    },
+                    "woocommerce_thumbnail": {
+                        "file": "hero-apple-service-300x300.jpg",
+                        "width": 300,
+                        "height": 300,
+                        "mime-type": "image/jpeg",
+                        "filesize": 14371
+                    },
+                    "woocommerce_single": {
+                        "file": "hero-apple-service-600x240.jpg",
+                        "width": 600,
+                        "height": 240,
+                        "mime-type": "image/jpeg",
+                        "filesize": 23124
+                    },
+                    "woocommerce_gallery_thumbnail": {
+                        "file": "hero-apple-service-100x100.jpg",
+                        "width": 100,
+                        "height": 100,
+                        "mime-type": "image/jpeg",
+                        "filesize": 3268
+                    }
+                },
+                "image_meta": {
+                    "aperture": "0",
+                    "credit": "",
+                    "camera": "",
+                    "caption": "",
+                    "created_timestamp": "0",
+                    "copyright": "",
+                    "focal_length": "0",
+                    "iso": "0",
+                    "shutter_speed": "0",
+                    "title": "",
+                    "orientation": "0",
+                    "keywords": [],
+                    "alt": ""
+                }
+            }
+        },
+        {
+            "id": 2450,
+            "title": "Hozd a régit, vidd az újat! – fehér",
+            "mime_type": "image/jpeg",
+            "alt": "Hozd a régit, vidd az újat! Készülékbeszámítással vagy készpénzes felvásárlással. Apple Klinika – készülékeladás.",
+            "metadata": {
+                "width": 2048,
+                "height": 819,
+                "file": "2026/09/ak-visual-review/hero-trade-in-white.jpg",
+                "filesize": 117120,
+                "sizes": {
+                    "medium": {
+                        "file": "hero-trade-in-white-300x120.jpg",
+                        "width": 300,
+                        "height": 120,
+                        "mime-type": "image/jpeg",
+                        "filesize": 8311
+                    },
+                    "large": {
+                        "file": "hero-trade-in-white-1024x410.jpg",
+                        "width": 1024,
+                        "height": 410,
+                        "mime-type": "image/jpeg",
+                        "filesize": 46327
+                    },
+                    "thumbnail": {
+                        "file": "hero-trade-in-white-150x150.jpg",
+                        "width": 150,
+                        "height": 150,
+                        "mime-type": "image/jpeg",
+                        "filesize": 4845
+                    },
+                    "medium_large": {
+                        "file": "hero-trade-in-white-768x307.jpg",
+                        "width": 768,
+                        "height": 307,
+                        "mime-type": "image/jpeg",
+                        "filesize": 31853
+                    },
+                    "1536x1536": {
+                        "file": "hero-trade-in-white-1536x614.jpg",
+                        "width": 1536,
+                        "height": 614,
+                        "mime-type": "image/jpeg",
+                        "filesize": 81011
+                    },
+                    "woocommerce_thumbnail": {
+                        "file": "hero-trade-in-white-300x300.jpg",
+                        "width": 300,
+                        "height": 300,
+                        "mime-type": "image/jpeg",
+                        "filesize": 12000
+                    },
+                    "woocommerce_single": {
+                        "file": "hero-trade-in-white-600x240.jpg",
+                        "width": 600,
+                        "height": 240,
+                        "mime-type": "image/jpeg",
+                        "filesize": 21888
+                    },
+                    "woocommerce_gallery_thumbnail": {
+                        "file": "hero-trade-in-white-100x100.jpg",
+                        "width": 100,
+                        "height": 100,
+                        "mime-type": "image/jpeg",
+                        "filesize": 2710
+                    }
+                },
+                "image_meta": {
+                    "aperture": "0",
+                    "credit": "",
+                    "camera": "",
+                    "caption": "",
+                    "created_timestamp": "0",
+                    "copyright": "",
+                    "focal_length": "0",
+                    "iso": "0",
+                    "shutter_speed": "0",
+                    "title": "",
+                    "orientation": "0",
+                    "keywords": [],
+                    "alt": ""
+                }
+            }
+        },
+        {
+            "id": 2451,
+            "title": "Prémium Apple készülékek",
+            "mime_type": "image/jpeg",
+            "alt": "Prémium Apple készülékek. Óriási választék, megbízható forrásból. Apple Klinika – kiemelt ajánlatok.",
+            "metadata": {
+                "width": 2048,
+                "height": 819,
+                "file": "2026/09/ak-visual-review/hero-premium-devices.jpg",
+                "filesize": 92544,
+                "sizes": {
+                    "medium": {
+                        "file": "hero-premium-devices-300x120.jpg",
+                        "width": 300,
+                        "height": 120,
+                        "mime-type": "image/jpeg",
+                        "filesize": 7553
+                    },
+                    "large": {
+                        "file": "hero-premium-devices-1024x410.jpg",
+                        "width": 1024,
+                        "height": 410,
+                        "mime-type": "image/jpeg",
+                        "filesize": 38663
+                    },
+                    "thumbnail": {
+                        "file": "hero-premium-devices-150x150.jpg",
+                        "width": 150,
+                        "height": 150,
+                        "mime-type": "image/jpeg",
+                        "filesize": 4190
+                    },
+                    "medium_large": {
+                        "file": "hero-premium-devices-768x307.jpg",
+                        "width": 768,
+                        "height": 307,
+                        "mime-type": "image/jpeg",
+                        "filesize": 27777
+                    },
+                    "1536x1536": {
+                        "file": "hero-premium-devices-1536x614.jpg",
+                        "width": 1536,
+                        "height": 614,
+                        "mime-type": "image/jpeg",
+                        "filesize": 66556
+                    },
+                    "woocommerce_thumbnail": {
+                        "file": "hero-premium-devices-300x300.jpg",
+                        "width": 300,
+                        "height": 300,
+                        "mime-type": "image/jpeg",
+                        "filesize": 9913
+                    },
+                    "woocommerce_single": {
+                        "file": "hero-premium-devices-600x240.jpg",
+                        "width": 600,
+                        "height": 240,
+                        "mime-type": "image/jpeg",
+                        "filesize": 19764
+                    },
+                    "woocommerce_gallery_thumbnail": {
+                        "file": "hero-premium-devices-100x100.jpg",
+                        "width": 100,
+                        "height": 100,
+                        "mime-type": "image/jpeg",
+                        "filesize": 2443
+                    }
+                },
+                "image_meta": {
+                    "aperture": "0",
+                    "credit": "",
+                    "camera": "",
+                    "caption": "",
+                    "created_timestamp": "0",
+                    "copyright": "",
+                    "focal_length": "0",
+                    "iso": "0",
+                    "shutter_speed": "0",
+                    "title": "",
+                    "orientation": "0",
+                    "keywords": [],
+                    "alt": ""
+                }
+            }
+        },
+        {
+            "id": 2452,
+            "title": "MacBook – valódi üzleti fotó",
+            "mime_type": "image/jpeg",
+            "alt": "MacBook az Apple Klinika üzletében.",
+            "metadata": {
+                "width": 1920,
+                "height": 2560,
+                "file": "2026/09/ak-visual-review/category-macbook-scaled.jpg",
+                "filesize": 315105,
+                "sizes": {
+                    "medium": {
+                        "file": "category-macbook-225x300.jpg",
+                        "width": 225,
+                        "height": 300,
+                        "mime-type": "image/jpeg",
+                        "filesize": 10669
+                    },
+                    "large": {
+                        "file": "category-macbook-768x1024.jpg",
+                        "width": 768,
+                        "height": 1024,
+                        "mime-type": "image/jpeg",
+                        "filesize": 41367
+                    },
+                    "thumbnail": {
+                        "file": "category-macbook-150x150.jpg",
+                        "width": 150,
+                        "height": 150,
+                        "mime-type": "image/jpeg",
+                        "filesize": 8626
+                    },
+                    "medium_large": {
+                        "file": "category-macbook-768x1024.jpg",
+                        "width": 768,
+                        "height": 1024,
+                        "mime-type": "image/jpeg",
+                        "filesize": 41367
+                    },
+                    "1536x1536": {
+                        "file": "category-macbook-1152x1536.jpg",
+                        "width": 1152,
+                        "height": 1536,
+                        "mime-type": "image/jpeg",
+                        "filesize": 96395
+                    },
+                    "2048x2048": {
+                        "file": "category-macbook-1536x2048.jpg",
+                        "width": 1536,
+                        "height": 2048,
+                        "mime-type": "image/jpeg",
+                        "filesize": 188158
+                    },
+                    "woocommerce_thumbnail": {
+                        "file": "category-macbook-300x300.jpg",
+                        "width": 300,
+                        "height": 300,
+                        "mime-type": "image/jpeg",
+                        "filesize": 12188
+                    },
+                    "woocommerce_single": {
+                        "file": "category-macbook-600x800.jpg",
+                        "width": 600,
+                        "height": 800,
+                        "mime-type": "image/jpeg",
+                        "filesize": 27493
+                    },
+                    "woocommerce_gallery_thumbnail": {
+                        "file": "category-macbook-100x100.jpg",
+                        "width": 100,
+                        "height": 100,
+                        "mime-type": "image/jpeg",
+                        "filesize": 7775
+                    }
+                },
+                "image_meta": {
+                    "aperture": "1.78",
+                    "credit": "",
+                    "camera": "",
+                    "caption": "",
+                    "created_timestamp": "0",
+                    "copyright": "",
+                    "focal_length": "6.7649998656528",
+                    "iso": "64",
+                    "shutter_speed": "0.0043668122270742",
+                    "title": "",
+                    "orientation": 1,
+                    "keywords": [],
+                    "alt": ""
+                },
+                "original_image": "category-macbook.jpg"
+            }
+        },
+        {
+            "id": 2453,
+            "title": "iPad – valódi üzleti fotó",
+            "mime_type": "image/jpeg",
+            "alt": "iPad az Apple Klinika üzletében.",
+            "metadata": {
+                "width": 1920,
+                "height": 2560,
+                "file": "2026/09/ak-visual-review/category-ipad-scaled.jpg",
+                "filesize": 318183,
+                "sizes": {
+                    "medium": {
+                        "file": "category-ipad-225x300.jpg",
+                        "width": 225,
+                        "height": 300,
+                        "mime-type": "image/jpeg",
+                        "filesize": 11907
+                    },
+                    "large": {
+                        "file": "category-ipad-768x1024.jpg",
+                        "width": 768,
+                        "height": 1024,
+                        "mime-type": "image/jpeg",
+                        "filesize": 48065
+                    },
+                    "thumbnail": {
+                        "file": "category-ipad-150x150.jpg",
+                        "width": 150,
+                        "height": 150,
+                        "mime-type": "image/jpeg",
+                        "filesize": 9388
+                    },
+                    "medium_large": {
+                        "file": "category-ipad-768x1024.jpg",
+                        "width": 768,
+                        "height": 1024,
+                        "mime-type": "image/jpeg",
+                        "filesize": 48065
+                    },
+                    "1536x1536": {
+                        "file": "category-ipad-1152x1536.jpg",
+                        "width": 1152,
+                        "height": 1536,
+                        "mime-type": "image/jpeg",
+                        "filesize": 103424
+                    },
+                    "2048x2048": {
+                        "file": "category-ipad-1536x2048.jpg",
+                        "width": 1536,
+                        "height": 2048,
+                        "mime-type": "image/jpeg",
+                        "filesize": 190226
+                    },
+                    "woocommerce_thumbnail": {
+                        "file": "category-ipad-300x300.jpg",
+                        "width": 300,
+                        "height": 300,
+                        "mime-type": "image/jpeg",
+                        "filesize": 13934
+                    },
+                    "woocommerce_single": {
+                        "file": "category-ipad-600x800.jpg",
+                        "width": 600,
+                        "height": 800,
+                        "mime-type": "image/jpeg",
+                        "filesize": 32256
+                    },
+                    "woocommerce_gallery_thumbnail": {
+                        "file": "category-ipad-100x100.jpg",
+                        "width": 100,
+                        "height": 100,
+                        "mime-type": "image/jpeg",
+                        "filesize": 8187
+                    }
+                },
+                "image_meta": {
+                    "aperture": "1.78",
+                    "credit": "",
+                    "camera": "",
+                    "caption": "",
+                    "created_timestamp": "0",
+                    "copyright": "",
+                    "focal_length": "6.7649998656528",
+                    "iso": "64",
+                    "shutter_speed": "0.0082644628099174",
+                    "title": "",
+                    "orientation": 1,
+                    "keywords": [],
+                    "alt": ""
+                },
+                "original_image": "category-ipad.jpg"
+            }
+        },
+        {
+            "id": 2454,
+            "title": "Apple Watch – valódi üzleti fotó",
+            "mime_type": "image/jpeg",
+            "alt": "Apple Watch az Apple Klinika üzletében.",
+            "metadata": {
+                "width": 1920,
+                "height": 2560,
+                "file": "2026/09/ak-visual-review/category-apple-watch-scaled.jpg",
+                "filesize": 441138,
+                "sizes": {
+                    "medium": {
+                        "file": "category-apple-watch-225x300.jpg",
+                        "width": 225,
+                        "height": 300,
+                        "mime-type": "image/jpeg",
+                        "filesize": 15374
+                    },
+                    "large": {
+                        "file": "category-apple-watch-768x1024.jpg",
+                        "width": 768,
+                        "height": 1024,
+                        "mime-type": "image/jpeg",
+                        "filesize": 79015
+                    },
+                    "thumbnail": {
+                        "file": "category-apple-watch-150x150.jpg",
+                        "width": 150,
+                        "height": 150,
+                        "mime-type": "image/jpeg",
+                        "filesize": 10357
+                    },
+                    "medium_large": {
+                        "file": "category-apple-watch-768x1024.jpg",
+                        "width": 768,
+                        "height": 1024,
+                        "mime-type": "image/jpeg",
+                        "filesize": 79015
+                    },
+                    "1536x1536": {
+                        "file": "category-apple-watch-1152x1536.jpg",
+                        "width": 1152,
+                        "height": 1536,
+                        "mime-type": "image/jpeg",
+                        "filesize": 163141
+                    },
+                    "2048x2048": {
+                        "file": "category-apple-watch-1536x2048.jpg",
+                        "width": 1536,
+                        "height": 2048,
+                        "mime-type": "image/jpeg",
+                        "filesize": 283726
+                    },
+                    "woocommerce_thumbnail": {
+                        "file": "category-apple-watch-300x300.jpg",
+                        "width": 300,
+                        "height": 300,
+                        "mime-type": "image/jpeg",
+                        "filesize": 18769
+                    },
+                    "woocommerce_single": {
+                        "file": "category-apple-watch-600x800.jpg",
+                        "width": 600,
+                        "height": 800,
+                        "mime-type": "image/jpeg",
+                        "filesize": 53454
+                    },
+                    "woocommerce_gallery_thumbnail": {
+                        "file": "category-apple-watch-100x100.jpg",
+                        "width": 100,
+                        "height": 100,
+                        "mime-type": "image/jpeg",
+                        "filesize": 8516
+                    }
+                },
+                "image_meta": {
+                    "aperture": "1.78",
+                    "credit": "",
+                    "camera": "",
+                    "caption": "",
+                    "created_timestamp": "0",
+                    "copyright": "",
+                    "focal_length": "6.7649998656528",
+                    "iso": "50",
+                    "shutter_speed": "0.01",
+                    "title": "",
+                    "orientation": 1,
+                    "keywords": [],
+                    "alt": ""
+                },
+                "original_image": "category-apple-watch.jpg"
+            }
+        },
+        {
+            "id": 2255,
+            "title": "LOCAL gallery visual QA iphone-set-01 IMG_0833.JPEG",
+            "mime_type": "image/jpeg",
+            "alt": "",
+            "metadata": {
+                "width": 1920,
+                "height": 2560,
+                "file": "2026/04/local-gallery-iphone-set-01-img_0833-scaled.jpeg",
+                "filesize": 241086,
+                "sizes": {
+                    "medium": {
+                        "file": "local-gallery-iphone-set-01-img_0833-225x300.jpeg",
+                        "width": 225,
+                        "height": 300,
+                        "mime-type": "image/jpeg",
+                        "filesize": 16761
+                    },
+                    "large": {
+                        "file": "local-gallery-iphone-set-01-img_0833-768x1024.jpeg",
+                        "width": 768,
+                        "height": 1024,
+                        "mime-type": "image/jpeg",
+                        "filesize": 59785
+                    },
+                    "thumbnail": {
+                        "file": "local-gallery-iphone-set-01-img_0833-150x150.jpeg",
+                        "width": 150,
+                        "height": 150,
+                        "mime-type": "image/jpeg",
+                        "filesize": 11382
+                    },
+                    "medium_large": {
+                        "file": "local-gallery-iphone-set-01-img_0833-768x1024.jpeg",
+                        "width": 768,
+                        "height": 1024,
+                        "mime-type": "image/jpeg",
+                        "filesize": 59785
+                    },
+                    "1536x1536": {
+                        "file": "local-gallery-iphone-set-01-img_0833-1152x1536.jpeg",
+                        "width": 1152,
+                        "height": 1536,
+                        "mime-type": "image/jpeg",
+                        "filesize": 104900
+                    },
+                    "2048x2048": {
+                        "file": "local-gallery-iphone-set-01-img_0833-1536x2048.jpeg",
+                        "width": 1536,
+                        "height": 2048,
+                        "mime-type": "image/jpeg",
+                        "filesize": 164972
+                    },
+                    "woocommerce_thumbnail": {
+                        "file": "local-gallery-iphone-set-01-img_0833-300x300.jpeg",
+                        "width": 300,
+                        "height": 300,
+                        "mime-type": "image/jpeg",
+                        "filesize": 17772,
+                        "uncropped": false
+                    },
+                    "woocommerce_single": {
+                        "file": "local-gallery-iphone-set-01-img_0833-600x800.jpeg",
+                        "width": 600,
+                        "height": 800,
+                        "mime-type": "image/jpeg",
+                        "filesize": 43889
+                    },
+                    "woocommerce_gallery_thumbnail": {
+                        "file": "local-gallery-iphone-set-01-img_0833-100x100.jpeg",
+                        "width": 100,
+                        "height": 100,
+                        "mime-type": "image/jpeg",
+                        "filesize": 9722
+                    }
+                },
+                "image_meta": {
+                    "aperture": "1.78",
+                    "credit": "",
+                    "camera": "",
+                    "caption": "",
+                    "created_timestamp": "0",
+                    "copyright": "",
+                    "focal_length": "6.7649998656528",
+                    "iso": "125",
+                    "shutter_speed": "0.02",
+                    "title": "",
+                    "orientation": "1",
+                    "keywords": [],
+                    "alt": ""
+                },
+                "original_image": "local-gallery-iphone-set-01-img_0833.jpeg"
+            }
+        }
+    ]
+}
