@@ -179,7 +179,7 @@ try {
     $reordered = appleklinika_sanitize_home_content($reordered);
     $test->assert(array_column($reordered['hero_items'], 'title') === ['First configured slide', 'Second configured slide'] && array_keys($reordered['hero_items']) === [0, 1], 'Sparse hero indexes are normalized without changing the configured slide order.');
 
-    $caps = ['hero_items' => 6, 'hero_benefits' => 8, 'categories' => 12, 'trust_items' => 12, 'process_items' => 10];
+    $caps = ['hero_items' => 8, 'hero_benefits' => 8, 'categories' => 12, 'trust_items' => 12, 'process_items' => 10];
     foreach ($caps as $key => $cap) {
         $overfull = $defaults;
         $overfull[$key] = array_fill(0, $cap + 3, $defaults[$key][0]);
