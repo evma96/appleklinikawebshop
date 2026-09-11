@@ -52,11 +52,20 @@ function appleklinika_home_benefits(array $items, bool $numbered = false): void
 function appleklinika_render_homepage(): void
 {
     $content = appleklinika_home_content();
+    $artwork = $content['hero_layout'] === 'artwork';
+    $slides = array_values(array_filter($content['hero_items'], static fn (array $item): bool => $item['enabled'] && (! $artwork || ($item['image_id'] > 0 && $item['url'] !== ''))));
     ?>
     <main class="ak-home" id="wp--skip-link--target">
-        <section class="ak-home-hero" aria-label="Apple Klinika ajánlatai" data-home-hero>
-            <?php foreach ($content['hero_items'] as $index => $item) : $imageId = $item['image_id'] ?: appleklinika_home_catalog_image('iphone'); ?>
-                <div class="ak-home-hero__slide" id="ak-home-slide-<?php echo esc_attr((string) $index); ?>" data-home-slide <?php if ($index > 0) { echo 'hidden'; } ?>>
+        <?php if ($artwork || $slides === []) : ?><h1 class="screen-reader-text">Apple Klinika – ellenőrzött Apple készülékek</h1><?php endif; ?>
+        <?php if ($slides !== []) : ?>
+        <section class="ak-home-hero<?php echo $artwork ? ' ak-home-hero--artwork' : ''; ?>" aria-label="Apple Klinika ajánlatai" aria-roledescription="képkörhinta" data-home-hero data-home-interval="5500">
+            <?php foreach ($slides as $index => $item) : $imageId = $item['image_id'] ?: appleklinika_home_catalog_image('iphone'); ?>
+                <div class="ak-home-hero__slide" id="ak-home-slide-<?php echo esc_attr((string) $index); ?>" role="group" aria-roledescription="dia" aria-label="<?php echo esc_attr(($index + 1) . ' / ' . count($slides)); ?>" data-home-slide <?php if ($index > 0) { echo 'hidden'; } ?>>
+                    <?php if ($artwork) : ?>
+                        <a class="ak-home-hero__artwork" href="<?php echo esc_url($item['url']); ?>">
+                            <?php echo wp_get_attachment_image($imageId, 'full', false, ['alt' => $item['alt'] !== '' ? $item['alt'] : $item['title'], 'loading' => $index === 0 ? 'eager' : 'lazy', 'fetchpriority' => $index === 0 ? 'high' : 'auto', 'sizes' => '(max-width: 700px) calc(100vw - 36px), (max-width: 1100px) calc(100vw - 56px), (max-width: 1440px) calc(100vw - 96px), 1344px', 'draggable' => 'false']); ?>
+                        </a>
+                    <?php else : ?>
                     <div class="ak-home-hero__copy">
                         <?php if ($item['eyebrow'] !== '') : ?><p class="ak-home-eyebrow"><?php echo esc_html($item['eyebrow']); ?></p><?php endif; ?>
                         <?php if ($index === 0) : ?><h1><?php echo nl2br(esc_html($item['title'])); ?></h1><?php else : ?><h2 class="ak-home-hero__title"><?php echo nl2br(esc_html($item['title'])); ?></h2><?php endif; ?>
@@ -68,15 +77,21 @@ function appleklinika_render_homepage(): void
                         </div>
                     </div>
                     <?php if ($imageId) : ?><figure class="ak-home-hero__media"><?php echo wp_get_attachment_image($imageId, 'large', false, ['loading' => $index === 0 ? 'eager' : 'lazy', 'fetchpriority' => $index === 0 ? 'high' : 'auto', 'sizes' => '(max-width: 700px) 90vw, 48vw']); ?></figure><?php endif; ?>
+                    <?php endif; ?>
                 </div>
             <?php endforeach; ?>
-            <?php if (count($content['hero_items']) > 1) : ?>
+            <?php if (count($slides) > 1) : ?>
                 <nav class="ak-home-hero__navigation" aria-label="Nyitó ajánlatok lapozása" data-home-navigation hidden>
-                    <button type="button" data-home-direction="-1" aria-label="Előző ajánlat">←</button><span data-home-status aria-live="polite">1 / <?php echo count($content['hero_items']); ?></span><button type="button" data-home-direction="1" aria-label="Következő ajánlat">→</button>
+                    <div class="ak-home-hero__dots">
+                        <?php foreach ($slides as $index => $item) : ?><button type="button" data-home-dot="<?php echo esc_attr((string) $index); ?>" aria-label="<?php echo esc_attr(($index + 1) . '. ajánlat: ' . $item['title']); ?>" aria-controls="ak-home-slide-<?php echo esc_attr((string) $index); ?>" aria-current="<?php echo $index === 0 ? 'true' : 'false'; ?>"><span></span></button><?php endforeach; ?>
+                    </div>
+                    <button type="button" data-home-toggle aria-label="Automatikus lapozás szüneteltetése"><span aria-hidden="true">Ⅱ</span></button>
+                    <span class="screen-reader-text" data-home-status aria-live="off" aria-atomic="true">1 / <?php echo count($slides); ?></span>
                 </nav>
             <?php endif; ?>
-            <?php if ($content['hero_benefits'] !== []) : ?><ul class="ak-home-hero__benefits"><?php appleklinika_home_benefits($content['hero_benefits']); ?></ul><?php endif; ?>
+            <?php if (! $artwork && $content['hero_benefits'] !== []) : ?><ul class="ak-home-hero__benefits"><?php appleklinika_home_benefits($content['hero_benefits']); ?></ul><?php endif; ?>
         </section>
+        <?php endif; ?>
 
         <section class="ak-home-categories" aria-labelledby="ak-home-categories-title">
             <div class="ak-home-heading"><h2 id="ak-home-categories-title"><?php echo esc_html($content['category_title']); ?></h2><a href="<?php echo esc_url(appleklinika_shop_url()); ?>"><?php echo esc_html($content['category_link_label']); ?> <span aria-hidden="true">→</span></a></div>

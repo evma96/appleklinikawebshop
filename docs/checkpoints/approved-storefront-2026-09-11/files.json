@@ -1,0 +1,450 @@
+{
+  "2026/04/local-gallery-iphone-set-01-img_0833-100x100.jpeg": {
+    "sha256": "6e4dd5ef26a8e99c244ae82593cb622011f3af2ad99710cf2ab15a6f37c0b7fe",
+    "bytes": 9722
+  },
+  "2026/04/local-gallery-iphone-set-01-img_0833-1152x1536.jpeg": {
+    "sha256": "54ac72fe39fe347de5e4482fbc1997af8aab5de02ec337c72f939464a51fe5c8",
+    "bytes": 104900
+  },
+  "2026/04/local-gallery-iphone-set-01-img_0833-150x150.jpeg": {
+    "sha256": "530dfe7155eeac3f759666ec57ea70796ae6b97bc04d0a177ace515ee4e815d9",
+    "bytes": 11382
+  },
+  "2026/04/local-gallery-iphone-set-01-img_0833-1536x2048.jpeg": {
+    "sha256": "08a90719e243472ed2be2bb98b3935f8bbdbe2aed7ba788f79f172d7a7e2aa78",
+    "bytes": 164972
+  },
+  "2026/04/local-gallery-iphone-set-01-img_0833-225x300.jpeg": {
+    "sha256": "a8eaeb7b1f7274d1708f4304d37b7a4ef3f4e5d5724bd5fe6b7c363527131d82",
+    "bytes": 16761
+  },
+  "2026/04/local-gallery-iphone-set-01-img_0833-300x300.jpeg": {
+    "sha256": "4701d5e0994104b8e3849199921274d0906f4806112b706d858cff81927ea0f1",
+    "bytes": 17772
+  },
+  "2026/04/local-gallery-iphone-set-01-img_0833-600x800.jpeg": {
+    "sha256": "46bbad0e510c74e3f57c5458aa98d80214d96dfe790d0e480dbe7b994d9a0ee9",
+    "bytes": 43889
+  },
+  "2026/04/local-gallery-iphone-set-01-img_0833-768x1024.jpeg": {
+    "sha256": "9b68b5545786ce7f6011179efacf26b762f57c31695b7be081e47b645538f6ca",
+    "bytes": 59785
+  },
+  "2026/04/local-gallery-iphone-set-01-img_0833-scaled.jpeg": {
+    "sha256": "04e458fae8ca1c12a86e57408274f34f1bf8d3c671913397182cfc4dbd9ee8d5",
+    "bytes": 241086
+  },
+  "2026/04/local-gallery-iphone-set-01-img_0833.jpeg": {
+    "sha256": "30f138d32a83632511e8131d9286bf8a66503d93a8d74a686cb763fe08f47611",
+    "bytes": 1493961
+  },
+  "2026/09/ak-visual-review/category-apple-watch-100x100.jpg": {
+    "sha256": "15f20b5e3e11fa6ea5a80151567316debed5b5b96762ee5f5f5fba6dbb3d8199",
+    "bytes": 8516
+  },
+  "2026/09/ak-visual-review/category-apple-watch-1152x1536.jpg": {
+    "sha256": "3be76946ca49ef5b73ad6eaef7b12cdbf85c1805e8039749a80be5e0fa1004fc",
+    "bytes": 163141
+  },
+  "2026/09/ak-visual-review/category-apple-watch-150x150.jpg": {
+    "sha256": "4b762883ead0c65a2606c92607f4e2513351b8ffc0c66b37ecad8c2d579ec988",
+    "bytes": 10357
+  },
+  "2026/09/ak-visual-review/category-apple-watch-1536x2048.jpg": {
+    "sha256": "80af1739b6372ee1808d98fc419e7d901f79895287b7e3869c9bd912d02bc632",
+    "bytes": 283726
+  },
+  "2026/09/ak-visual-review/category-apple-watch-225x300.jpg": {
+    "sha256": "4de3d258be884211b98656e7d7efa2f90f7d6e3dda5d8cdcabe5f81c14704200",
+    "bytes": 15374
+  },
+  "2026/09/ak-visual-review/category-apple-watch-300x300.jpg": {
+    "sha256": "1c7b0c3a1a8591e3ae6b18218ce9e6d42e47c5ecb1e01d30517a83069d0ae0c6",
+    "bytes": 18769
+  },
+  "2026/09/ak-visual-review/category-apple-watch-600x800.jpg": {
+    "sha256": "f488151b6486528bc787ba604b9285a58656613fddee93fb8421e22ce63c8971",
+    "bytes": 53454
+  },
+  "2026/09/ak-visual-review/category-apple-watch-768x1024.jpg": {
+    "sha256": "df14776f95e11c467cd214da1bcd27599d7124487a9fa3ac1b5968771ff4182c",
+    "bytes": 79015
+  },
+  "2026/09/ak-visual-review/category-apple-watch-scaled.jpg": {
+    "sha256": "1abaa43c0613e2c512f4c42318871a57f2cb9b5bbca0d6b32b4132fbd4d7f1c5",
+    "bytes": 441138
+  },
+  "2026/09/ak-visual-review/category-apple-watch.jpg": {
+    "sha256": "ae8c6c0dea6dad10edf47b6c9cdf3a4ce820c4088d14a66d4361c22a6334902e",
+    "bytes": 2511591
+  },
+  "2026/09/ak-visual-review/category-ipad-100x100.jpg": {
+    "sha256": "8cb55ba474b0b34464a6da6151e0dfe2b2a44ca58260f1f5f3b057608f24092f",
+    "bytes": 8187
+  },
+  "2026/09/ak-visual-review/category-ipad-1152x1536.jpg": {
+    "sha256": "946784fa83cc98507ad46bf29d4dcb14a76c2f110c665e55eb7dbfde6f8808ba",
+    "bytes": 103424
+  },
+  "2026/09/ak-visual-review/category-ipad-150x150.jpg": {
+    "sha256": "15eacedbc49dda7be26adb69360411a6e3e275c156f925fc101badc193569345",
+    "bytes": 9388
+  },
+  "2026/09/ak-visual-review/category-ipad-1536x2048.jpg": {
+    "sha256": "24f3b75835ba9871a3972c9394feb84918c5b07c4e0e066b3e55daef4c70e1be",
+    "bytes": 190226
+  },
+  "2026/09/ak-visual-review/category-ipad-225x300.jpg": {
+    "sha256": "ec069a2a1d701945710c14200d6963d202bf565746591e94087824fcc61498d2",
+    "bytes": 11907
+  },
+  "2026/09/ak-visual-review/category-ipad-300x300.jpg": {
+    "sha256": "ede2576e7f4b5f3ebc10f2ae1e2a4720323b0d567972716a6e5b752b4ce6b232",
+    "bytes": 13934
+  },
+  "2026/09/ak-visual-review/category-ipad-600x800.jpg": {
+    "sha256": "f5e9dd31c4db96942cced98fd24c6ce1326159b1353f7410275c42ea1fca60f8",
+    "bytes": 32256
+  },
+  "2026/09/ak-visual-review/category-ipad-768x1024.jpg": {
+    "sha256": "19881c567c4a95e7abb8daf8bf5931293488c032472d085d0fc8cbad0ab20d61",
+    "bytes": 48065
+  },
+  "2026/09/ak-visual-review/category-ipad-scaled.jpg": {
+    "sha256": "5c181e2910cb8dd6c874c1368d553d784f635124e399aa978f7a2957fa4d13cd",
+    "bytes": 318183
+  },
+  "2026/09/ak-visual-review/category-ipad.jpg": {
+    "sha256": "07a76275f26eda007a88554e6115c629179694f15e4c7d4e24452dfecae8cdf6",
+    "bytes": 3427290
+  },
+  "2026/09/ak-visual-review/category-macbook-100x100.jpg": {
+    "sha256": "c37abb27d4df786240c14714a53cf4c4b771341ec0961956c7a07819f91f3623",
+    "bytes": 7775
+  },
+  "2026/09/ak-visual-review/category-macbook-1152x1536.jpg": {
+    "sha256": "8d99219f12f6640465f4506f52a42d32118a720b887cc6675979c2089d75fd6c",
+    "bytes": 96395
+  },
+  "2026/09/ak-visual-review/category-macbook-150x150.jpg": {
+    "sha256": "d3b28dfc66ce7939f3dedd80c7172b2aec5271ac53e732b8fa46f3aec36664b4",
+    "bytes": 8626
+  },
+  "2026/09/ak-visual-review/category-macbook-1536x2048.jpg": {
+    "sha256": "a5d9e60fed5c84150f4842586aeb365b957a51d47cbf88d56cc8f2a82b97ca1c",
+    "bytes": 188158
+  },
+  "2026/09/ak-visual-review/category-macbook-225x300.jpg": {
+    "sha256": "d1bf5c476055fbdbf1201ea7909d6406eb1280882a00b5b37980b3407d25c5cf",
+    "bytes": 10669
+  },
+  "2026/09/ak-visual-review/category-macbook-300x300.jpg": {
+    "sha256": "5b4c152b11ee60827101c6eaa446a9272f0c0d9e9f00a1f3555e9e13d991f637",
+    "bytes": 12188
+  },
+  "2026/09/ak-visual-review/category-macbook-600x800.jpg": {
+    "sha256": "aa224f3d8de1890a2aa28e9329597e388d0168894b1f129dc3c7e17fc8498773",
+    "bytes": 27493
+  },
+  "2026/09/ak-visual-review/category-macbook-768x1024.jpg": {
+    "sha256": "ee55a152ff43a10785fbb189e064ff520bf388d0451ca9222b0ec8f7f2c494ed",
+    "bytes": 41367
+  },
+  "2026/09/ak-visual-review/category-macbook-scaled.jpg": {
+    "sha256": "adcd1b21c2518144061679f55b817a3c7664584a3a8af6ba7c212ab2780c8133",
+    "bytes": 315105
+  },
+  "2026/09/ak-visual-review/category-macbook.jpg": {
+    "sha256": "8696fe4c0e4b0391d954a6cf232bce42cf456523c91e61caba3fbd21a7161f21",
+    "bytes": 2118307
+  },
+  "2026/09/ak-visual-review/hero-apple-service-100x100.jpg": {
+    "sha256": "995d562545cdf64f75480e67b41d364050ecbdcc8821fd1edd07456b937a12f8",
+    "bytes": 3268
+  },
+  "2026/09/ak-visual-review/hero-apple-service-1024x410.jpg": {
+    "sha256": "ac4512ee3f422af0950869caecde214a4f6b9b1d1091da5d353c570f0328d0e2",
+    "bytes": 48665
+  },
+  "2026/09/ak-visual-review/hero-apple-service-150x150.jpg": {
+    "sha256": "4efbc56bbe0d77abd659ca694080329ffb8db61f0127ba2fc58e6d9b5633cfd6",
+    "bytes": 5462
+  },
+  "2026/09/ak-visual-review/hero-apple-service-1536x614.jpg": {
+    "sha256": "5b6c50021bb9de88707a604ffd5d8b61b3c3cce5e20ef424543e68b3ab8bc383",
+    "bytes": 83889
+  },
+  "2026/09/ak-visual-review/hero-apple-service-300x120.jpg": {
+    "sha256": "3b2556d2d4fe49541884cd6f35bc722d30d08cea7e2f9312d639c8f66c07d831",
+    "bytes": 8615
+  },
+  "2026/09/ak-visual-review/hero-apple-service-300x300.jpg": {
+    "sha256": "7a5372256db06d02289fc9bd021336d7c5fe6ca478a213aff644e26e215e1625",
+    "bytes": 14371
+  },
+  "2026/09/ak-visual-review/hero-apple-service-600x240.jpg": {
+    "sha256": "4b0772bcd185d23c5e53d35dc2dc5b738216d47c25b0751fce954f5c7ddff50b",
+    "bytes": 23124
+  },
+  "2026/09/ak-visual-review/hero-apple-service-768x307.jpg": {
+    "sha256": "be2b0fbf4cad741c2d24ddd4dc2c0fbc234545d87d6cb8660376f97a5490b2a8",
+    "bytes": 32979
+  },
+  "2026/09/ak-visual-review/hero-apple-service.jpg": {
+    "sha256": "4c3b299b83e6e0a8375a66382448bb1ba3e8e65f3ec9b048e458fc7eb480ae3a",
+    "bytes": 122848
+  },
+  "2026/09/ak-visual-review/hero-premium-devices-100x100.jpg": {
+    "sha256": "1b737bd86b3388715cc0a41fd06836ff4cb3f849be3c46a5e756579092aa8ffd",
+    "bytes": 2443
+  },
+  "2026/09/ak-visual-review/hero-premium-devices-1024x410.jpg": {
+    "sha256": "150a0b98fc48c7709a1c8c364f315334fd520e38628e92af5d9f523cdce82618",
+    "bytes": 38663
+  },
+  "2026/09/ak-visual-review/hero-premium-devices-150x150.jpg": {
+    "sha256": "d3282680b710cd5b32a098d7c82404ea8c85ec6d0d5adec877692fac184e7d6e",
+    "bytes": 4190
+  },
+  "2026/09/ak-visual-review/hero-premium-devices-1536x614.jpg": {
+    "sha256": "84beb9194e6b0d8d96f8def60fcc1562eaa49b22c42f45bb1e8bbbb30942a7dd",
+    "bytes": 66556
+  },
+  "2026/09/ak-visual-review/hero-premium-devices-300x120.jpg": {
+    "sha256": "b11b11c95ffd0bd0a05bbc41aa11134dce90eba8b717c8984cf44813f40557a4",
+    "bytes": 7553
+  },
+  "2026/09/ak-visual-review/hero-premium-devices-300x300.jpg": {
+    "sha256": "c593081081c284874ba75161ef50de1758c5e36efe0e52f170b74e3e7c899520",
+    "bytes": 9913
+  },
+  "2026/09/ak-visual-review/hero-premium-devices-600x240.jpg": {
+    "sha256": "e3c5871ddca8566e354867b102d3e2917e6020f3f25af23dee28678284fd790c",
+    "bytes": 19764
+  },
+  "2026/09/ak-visual-review/hero-premium-devices-768x307.jpg": {
+    "sha256": "9b2f6754d22a8923d48b20ba7c81aaaee13ec61cb06780be8ac31758d20721f5",
+    "bytes": 27777
+  },
+  "2026/09/ak-visual-review/hero-premium-devices.jpg": {
+    "sha256": "e6c98d931f5062b7d179a29d6fe3af7b12ceee2a62bdf2e8bd086c031d1526ae",
+    "bytes": 92544
+  },
+  "2026/09/ak-visual-review/hero-trade-in-dark-100x100.jpg": {
+    "sha256": "c443da9f9444536012651dd65e052f5a39f04776b1d003352e776a6311b2bc5d",
+    "bytes": 2577
+  },
+  "2026/09/ak-visual-review/hero-trade-in-dark-1024x410.jpg": {
+    "sha256": "f9f5edab1be36281568f038e7316ea889e3e4f8fc756d5568b6794c7a20c1931",
+    "bytes": 47550
+  },
+  "2026/09/ak-visual-review/hero-trade-in-dark-150x150.jpg": {
+    "sha256": "4baf2026094718edd35af42c744b7d30482397b0df4f945a8894007e940f7882",
+    "bytes": 4634
+  },
+  "2026/09/ak-visual-review/hero-trade-in-dark-1536x614.jpg": {
+    "sha256": "a75c787b9c1fdda16b64e3e3d179904e854a9548ea1c9aa1b9ae3f15ebee564c",
+    "bytes": 82966
+  },
+  "2026/09/ak-visual-review/hero-trade-in-dark-300x120.jpg": {
+    "sha256": "99415f2c2fdd195ff3121e634d3624062855d7305161e43bbebffd6b2be323a1",
+    "bytes": 8255
+  },
+  "2026/09/ak-visual-review/hero-trade-in-dark-300x300.jpg": {
+    "sha256": "b465dd5f01804f2401c81aedc1c180105bfbdd6c59de24c9d858918ebd30fae6",
+    "bytes": 11808
+  },
+  "2026/09/ak-visual-review/hero-trade-in-dark-600x240.jpg": {
+    "sha256": "b507797669c6b5f90fad62895f4cf5e130ebac6c1f31bff51a03d65966a6d74d",
+    "bytes": 22581
+  },
+  "2026/09/ak-visual-review/hero-trade-in-dark-768x307.jpg": {
+    "sha256": "019fa3452ab711b00654abe4107f0005c59dd1b8a22ba39bbae9ade8a1c7dcd0",
+    "bytes": 32208
+  },
+  "2026/09/ak-visual-review/hero-trade-in-dark.jpg": {
+    "sha256": "691ba2f2f93ab9d646af4e9c7138c88c4d3d766747c2f187515ed1bb6772ee1c",
+    "bytes": 119360
+  },
+  "2026/09/ak-visual-review/hero-trade-in-white-100x100.jpg": {
+    "sha256": "c6039880e9fde8eb6cfa958bc7763d33b542a6a77d995db96ba6e3cc0df6651b",
+    "bytes": 2710
+  },
+  "2026/09/ak-visual-review/hero-trade-in-white-1024x410.jpg": {
+    "sha256": "53253aa47f9a9011a25bd1914e4ed36663f85c667e6289b329900dc254e5b051",
+    "bytes": 46327
+  },
+  "2026/09/ak-visual-review/hero-trade-in-white-150x150.jpg": {
+    "sha256": "86d6bcae5da92166fe452fb2d4b739233dfda890802cf2194c62ef97286f1b61",
+    "bytes": 4845
+  },
+  "2026/09/ak-visual-review/hero-trade-in-white-1536x614.jpg": {
+    "sha256": "05fe2e54aa7e9da79659284698611dc33600bf3bad11c3cca5888892838cf265",
+    "bytes": 81011
+  },
+  "2026/09/ak-visual-review/hero-trade-in-white-300x120.jpg": {
+    "sha256": "bbf4312520c5bb41776788920d0ed2b056ec6a6793f825b863ebebe3e09d07d9",
+    "bytes": 8311
+  },
+  "2026/09/ak-visual-review/hero-trade-in-white-300x300.jpg": {
+    "sha256": "4519fed2771a6f84bb66523c769eec7860c1f8a1e299228cb61b0c45a56f58d2",
+    "bytes": 12000
+  },
+  "2026/09/ak-visual-review/hero-trade-in-white-600x240.jpg": {
+    "sha256": "4aab4103fd908e74ef0cf63c25b6ae45c33bdfe47b964ddf147a49eaa7773e40",
+    "bytes": 21888
+  },
+  "2026/09/ak-visual-review/hero-trade-in-white-768x307.jpg": {
+    "sha256": "2892d4da3e9ac2a750d3850337c0b20635d04007974c5708ff037b2b073759fa",
+    "bytes": 31853
+  },
+  "2026/09/ak-visual-review/hero-trade-in-white.jpg": {
+    "sha256": "0bbcccbf62f35ca5c240c0397ccb067b6f97137b1f82744c3b5395832dbdf1fe",
+    "bytes": 117120
+  },
+  "2026/09/apple-klinika-home-slide-1-100x100.png": {
+    "sha256": "9b11f01b598989d287b953f937ff0ab48e9037a89e8cbe68d1ccc3163b86f736",
+    "bytes": 15830
+  },
+  "2026/09/apple-klinika-home-slide-1-1024x439.png": {
+    "sha256": "b3fa10bfc05907dc44ef6695cb82d781e1fc68ee5cfde3586aabc98cbab38be2",
+    "bytes": 502248
+  },
+  "2026/09/apple-klinika-home-slide-1-150x150.png": {
+    "sha256": "1066bd910f40b33115ae358e904b19623bbcb76c65d0882ffa464a9e31c6725b",
+    "bytes": 33551
+  },
+  "2026/09/apple-klinika-home-slide-1-1536x658.png": {
+    "sha256": "0bba813da59ae7332662a957b1b0d095c7d8914e112c7148d40dc26efa21f5b7",
+    "bytes": 1025173
+  },
+  "2026/09/apple-klinika-home-slide-1-300x129.png": {
+    "sha256": "d9fac0e3de8969898a37f9fff1e685ef6841ec795dad3ad7b319d397e2a5123e",
+    "bytes": 56598
+  },
+  "2026/09/apple-klinika-home-slide-1-300x300.png": {
+    "sha256": "ccc27b61755b461ffcc9319bd42b8f5cafcf3f2f8c7ec4fa8aef0361076be21b",
+    "bytes": 121581
+  },
+  "2026/09/apple-klinika-home-slide-1-600x257.png": {
+    "sha256": "5bc0c421247285cf31820ffb94c53a934abab5c6c05ee9539dc9c81a63a39c4f",
+    "bytes": 196462
+  },
+  "2026/09/apple-klinika-home-slide-1-768x329.png": {
+    "sha256": "14ef91963bde13ff544696e4b9c6cea850057a6a2762137b08bf31eb4d3df7ef",
+    "bytes": 303327
+  },
+  "2026/09/apple-klinika-home-slide-1.png": {
+    "sha256": "535bfa961f3fe4cde25dbf9e17b040a3f5f4668f0d1f239dc5dd940593d63dca",
+    "bytes": 1828089
+  },
+  "2026/09/apple-klinika-home-slide-2-100x100.png": {
+    "sha256": "4776f77b3942c3ff06ee94c80ae02df215ccc58b6927a18d46b22b65ebfa79a7",
+    "bytes": 15437
+  },
+  "2026/09/apple-klinika-home-slide-2-1024x439.png": {
+    "sha256": "1ba3cc03791f68d7a0b3476ae08dfc3ce837cd300d6ae9ea6abc05cd02dfecab",
+    "bytes": 466295
+  },
+  "2026/09/apple-klinika-home-slide-2-150x150.png": {
+    "sha256": "81b6caca4f2d6a8131fbb52a7f2b87cfee97c3e55a8f364be87534bc47337091",
+    "bytes": 31013
+  },
+  "2026/09/apple-klinika-home-slide-2-1536x658.png": {
+    "sha256": "107240e30697c96798b251952962b0df8cb3ba43f836cc71b93d3ab5b9d417e9",
+    "bytes": 940068
+  },
+  "2026/09/apple-klinika-home-slide-2-300x129.png": {
+    "sha256": "24656c17c4b269f982ac925f672df18032da2e99a093d920aa553762d57b8e69",
+    "bytes": 54838
+  },
+  "2026/09/apple-klinika-home-slide-2-300x300.png": {
+    "sha256": "096d9c707a23c09ab4224d15abf8a8bb79a1693bd89a0be0e199bff66a9033db",
+    "bytes": 102477
+  },
+  "2026/09/apple-klinika-home-slide-2-600x257.png": {
+    "sha256": "847bfa07a823ac63d0aa2857c19b440fb7d35a2d906ceb1cbee1061936f060c9",
+    "bytes": 186480
+  },
+  "2026/09/apple-klinika-home-slide-2-768x329.png": {
+    "sha256": "3f01fc4fc5eee412c551395aad2b0905c1096f4cc85bd68e63865d758b9f6ead",
+    "bytes": 284997
+  },
+  "2026/09/apple-klinika-home-slide-2.png": {
+    "sha256": "36119cffa3ee2c458a74d99ec93a922e38c094c3a42f31cebebda86daf08a3f5",
+    "bytes": 1692665
+  },
+  "2026/09/apple-klinika-home-slide-3-100x100.png": {
+    "sha256": "0657208ba09593097b3088df09a91c74b11d2ba41c6bf4c5c9c10807c4f0fa25",
+    "bytes": 13664
+  },
+  "2026/09/apple-klinika-home-slide-3-1024x439.png": {
+    "sha256": "85c43e199630aeec489575ee53d7c9592aa655f18a13477921a2ae7c1e6e7eb7",
+    "bytes": 485612
+  },
+  "2026/09/apple-klinika-home-slide-3-150x150.png": {
+    "sha256": "56373b9266a7ef22535c8a9513183dd1932cd6aba6ea7d24001e31ba4512ead0",
+    "bytes": 27807
+  },
+  "2026/09/apple-klinika-home-slide-3-1536x658.png": {
+    "sha256": "6dad9c756016d5ae37d4a88637382800930a9e594c318267e9b20b968e624276",
+    "bytes": 1000988
+  },
+  "2026/09/apple-klinika-home-slide-3-300x129.png": {
+    "sha256": "cab93d91f1ccad6e0a33187bdb80278030d3e5b73e4dd072a0eb8e1fe5917228",
+    "bytes": 56210
+  },
+  "2026/09/apple-klinika-home-slide-3-300x300.png": {
+    "sha256": "0e96cac738da0118a23c5b047c7fd151ef4b83d294ba2b985956fb38600659ec",
+    "bytes": 93256
+  },
+  "2026/09/apple-klinika-home-slide-3-600x257.png": {
+    "sha256": "7a0ca590921950285991147cd7d57cf74cf70e0bdc36d693f018b122f325fc51",
+    "bytes": 191492
+  },
+  "2026/09/apple-klinika-home-slide-3-768x329.png": {
+    "sha256": "950945c98c1fbc949a2fbeb10eb4ff8908e0f2515a7cd089b6eee516b6a6107f",
+    "bytes": 293594
+  },
+  "2026/09/apple-klinika-home-slide-3.png": {
+    "sha256": "d019ab1fc285b4e7926cc827c635d64f0a9c84e345999870bea91ab61b0d11ce",
+    "bytes": 1813486
+  },
+  "2026/09/apple-klinika-home-slide-4-100x100.png": {
+    "sha256": "78762674ccfb7a62791f4b9e51b7dbfcefbfb765b685762be65ef61883ecfd02",
+    "bytes": 16178
+  },
+  "2026/09/apple-klinika-home-slide-4-1024x439.png": {
+    "sha256": "66479a100a4365f07226c3686d93ece7a99305658e454feb71b99adc374a310b",
+    "bytes": 486702
+  },
+  "2026/09/apple-klinika-home-slide-4-150x150.png": {
+    "sha256": "853afa2ea0a48830555d9b3cc933269e48c7feb552ea60db88974f19a04888be",
+    "bytes": 33959
+  },
+  "2026/09/apple-klinika-home-slide-4-1536x658.png": {
+    "sha256": "737a627832c7e2ae190cf3033b191f7f49c6457dfc38ab27fd208428222051eb",
+    "bytes": 1005528
+  },
+  "2026/09/apple-klinika-home-slide-4-300x129.png": {
+    "sha256": "f2e1245d5d7010f2496be6dff2173b3da18df88ce4af9d5f7ecfcda9c2253a46",
+    "bytes": 54732
+  },
+  "2026/09/apple-klinika-home-slide-4-300x300.png": {
+    "sha256": "068102c1191d18a807c3ac0f959e4068e73e5db3c0a9cfafd06e10e01f2ff90a",
+    "bytes": 120862
+  },
+  "2026/09/apple-klinika-home-slide-4-600x257.png": {
+    "sha256": "7ebc1c46b670f88753ebae95b1fc053b4b68df844c2e82c10a70e95ba1f78594",
+    "bytes": 189591
+  },
+  "2026/09/apple-klinika-home-slide-4-768x329.png": {
+    "sha256": "c0ea8f792417c959ed7ea9f071bc3f9b1953956f6581ea2f3229f78dcffac924",
+    "bytes": 293006
+  },
+  "2026/09/apple-klinika-home-slide-4.png": {
+    "sha256": "162a0fe3d1abf4167c18c75bf59258f0145a02ee11a4d5fb35a85814eba23672",
+    "bytes": 1794534
+  }
+}

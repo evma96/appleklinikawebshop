@@ -12,11 +12,41 @@
 
 ## Known Limitations
 
+- The publication-safety repair sanitizes 40 images from their first unpublished
+  appearance, preserving pixels, orientation, ICC and HDR data. Three local-only
+  commits are rebuilt; published history and the protected prelaunch tag are kept.
+  See `docs/publication-safety-review.md` for the boundary and verification.
+
+- Martin approved the small LOCAL storefront polish following checkpoint
+  `e51f111` for TEST acceptance. Legal pages still explicitly contain test/sample copy,
+  and the LOCAL catalogue still includes demo photos/data (including an iPhone
+  gallery/color mismatch). These were intentionally preserved; replacing them is
+  content preparation outside this small visual pass. See `docs/local-storefront-polish.md`.
+
 - Homepage campaign media and copy are editable WordPress settings, not Git data.
-  Until dedicated campaign/category images are selected, the homepage uses existing
-  catalogue images. Martin's supplied service photograph is bundled unchanged and
+  Split-layout hero/category tiles can use existing catalogue images until dedicated
+  media are selected. Artwork slides require their own image and destination;
+  disabled or incomplete rows are omitted instead of displaying fallback campaigns.
+  The artwork carousel and denser homepage grid are currently LOCAL-only; TEST and
+  production deployment and environment-specific media/settings migration are not
+  part of this refinement. Martin's supplied service photograph is bundled unchanged and
   cropped in its presentation area to exclude embedded advertising; a chosen Media
-  Library replacement is displayed normally. Hero rotation is manual (no autoplay).
+  Library replacement is displayed normally. Multi-slide rotation now includes
+  5.5-second autoplay, manual dots, swipe, pause and reduced-motion support.
+  Only bottom dots remain permanently visible; there are no previous/next arrows
+  or separate toolbar. Hover and dot focus do not pause rotation; selecting a dot
+  resets its interval. Pause remains keyboard/assistive-technology accessible.
+  Card row alignment is homepage-only; the current six-product LOCAL selection has
+  been checked at 1440, 900 and 390 px without changing media sizes or fixing outer
+  card height. Equal grid rows prevent small height differences in the mobile stack.
+  Other product selections still need visual verification before deployment.
+  The 2026-09-11 LOCAL visual review adds four supplied banners after the existing
+  four and replaces only the MacBook, iPad and Apple Watch category photos. iPhone
+  is unchanged. The original supplied artwork and product-photo labels are retained;
+  Martin approved this complete visual state on 2026-09-11; future changes require
+  a demonstrated defect or new direction. The editor retains up to eight hero slides.
+  Approved public settings and all associated media are also preserved under
+  `docs/checkpoints/approved-storefront-2026-09-11/` for LOCAL recovery.
   Recommended image sizes and editing instructions are in `docs/homepage-editing.md`.
 
 - GLS 1.4.1 needs the repository's one-line recipient-address filter extension.
@@ -80,7 +110,7 @@
 - Battery replacement extra prices are development defaults until final business pricing rules exist.
 - Selector demo products are local development fixtures and must not be treated as production inventory.
 - The local selector demo matrix is intentionally broad and can create many WooCommerce products for one model; production inventory needs stricter grouping and stock ownership rules.
-- The custom theme homepage now has a premium shell with centralized trust tile copy in theme render functions, admin-configurable featured product IDs/count, a dynamic homepage block that avoids shortcode paragraph wrapping, and homepage product sections reuse the approved shared shop product-card renderer; production may still need an admin-editable content control for the non-product homepage text blocks.
+- The custom theme homepage has admin-editable non-product content and featured product IDs/count, a dynamic homepage block that avoids shortcode paragraph wrapping, and the approved shared shop product-card renderer. The optional artwork-carousel refinement remains LOCAL-only; production copy, images and destinations still need explicit review before a separate deployment.
 - Category, cart, checkout, and account pages have shared compact styling, and the checkout company tax number field now masks numeric input as `12345678-1-23` while still relying on server-side validation.
 - The WooCommerce My Account page now uses a custom Apple Klinika shell with Rejoy-style sidebar rhythm, final account navigation, real WooCommerce order-card rendering, CTA-only buyback, warranty/return empty states backed by real order/refund data when available, grouped account settings, saved shipping/billing address user meta, and company billing meta reuse from checkout; browser QA confirmed the logged-in shell and endpoints, while actual account-detail save submission, checkout save-to-profile behavior, and real-order/warranty visuals still need production-like data checks.
 - The shop listing has a Rejoy-style filter panel, and SIM filtering now uses product meta; production products still need consistent SIM values during admin upload.
@@ -143,7 +173,8 @@
 - The product page now uses a WooCommerce template override to prevent duplicate default output, but the final production theme should still receive a full WooCommerce template audit before launch.
 - Footer information pages now exist with realistic placeholder content, but ÁSZF, privacy, shipping, warranty, contact, and returns copy still requires final business/legal approval before launch.
 - Footer information page trust-block copy is intentionally simple bootstrap text and should be reviewed against final shipping, warranty, and returns policies before production.
-- Contact page phone number, address, and map are placeholders; final business contact data and mail delivery settings must be confirmed before production.
+- Contact directions now offer Google Maps, Apple Maps and Waze on mobile, using HTTPS app/web links; desktop keeps Google Maps. The exact store pin avoids Apple's incorrect `2-4` → `24` address interpretation. Postcode and navigation coordinates are editable with the Contact content. Physical-device installed-app handoff remains unverified. Martin's latest instruction replaces the earlier two-click map requirement: the existing Google iframe now loads immediately with the Contact page. Manual-load controls and copy are removed; no new consent framework or reuse of the unrelated marketing flag was introduced. LOCAL verification is in `docs/contact-editing.md`.
+- LOCAL Contact now uses the owner-provided Szeged, Jósika utca 2–4. address and the +36 30 970 6700 phone from the existing owner-supplied service artwork. At Martin's request, the map now uses the standard Google Maps share/embed iframe, loaded immediately without an API key; directions also use Google Maps. Martin previously confirmed the Google map in his normal browser while the Codex preview was blank. The 2026-09-11 immediate-loading pass also visually verified the real Google map and store pin in the Codex in-app browser at desktop/mobile sizes; the earlier blank-iframe limitation did not recur. Public email and opening hours remain hidden until confirmed. Real mail delivery is not verified: automated checks use mail stubs, and the form now reports a transport failure instead of always claiming success. Settings and LOCAL-only verification are in `docs/contact-editing.md`. This work has not been merged or deployed.
 - The custom cart layout depends on WooCommerce cart hooks and form handling staying compatible with future WooCommerce updates, so it should be regression-tested after WooCommerce upgrades.
 - The company purchase checkout fields now include required-state handling, Hungarian tax number format validation, immutable order display, safe local e-mail rendering, and a local runtime contract covering keyboard/fill input, Woo store state, Store API responses, and three React field rebuilds. The same state contract still requires one TEST SERVER acceptance run before release; final invoice plugin integration and any official invoice-field mapping remain separate work.
 - Checkout address detail fields for house number, floor, staircase, and door are saved as WooCommerce Blocks address meta and shown once through formatted order addresses. Final invoice and shipping-label field mapping still needs a separate plugin-specific audit.

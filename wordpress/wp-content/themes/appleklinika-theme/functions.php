@@ -7,6 +7,7 @@ require_once get_template_directory() . '/inc/legal-documents.php';
 require_once get_template_directory() . '/inc/checkout-presentation.php';
 require_once get_template_directory() . '/inc/homepage-settings.php';
 require_once get_template_directory() . '/inc/homepage-presentation.php';
+require_once get_template_directory() . '/inc/contact-page.php';
 
 add_filter('render_block_data', 'appleklinika_checkout_billing_block_order');
 
@@ -622,6 +623,10 @@ function appleklinika_body_classes(array $classes): array
         $classes[] = 'ak-contact-page';
     }
 
+    if (is_page() && in_array(get_queried_object_id(), array_column(appleklinika_legal_public_documents(), 'page_id'), true)) {
+        $classes[] = 'ak-legal-page';
+    }
+
     return $classes;
 }
 
@@ -1064,14 +1069,14 @@ function appleklinika_handle_contact_submit(): void
         $message,
     ]);
 
-    wp_mail(
+    $sent = wp_mail(
         get_option('admin_email'),
         'Új Appleklinika kapcsolatfelvétel',
         $body,
         ['Reply-To: ' . $name . ' <' . $email . '>']
     );
 
-    wp_safe_redirect(add_query_arg('ak_contact_status', 'sent', $redirectUrl));
+    wp_safe_redirect(add_query_arg('ak_contact_status', $sent ? 'sent' : 'delivery-error', $redirectUrl));
     exit;
 }
 

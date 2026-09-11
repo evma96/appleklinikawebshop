@@ -70,6 +70,14 @@ $normalize = static function (string $html) use ($parse): string {
     }
     return trim($result);
 };
+$homepageCss = (string) file_get_contents(dirname(__DIR__) . '/assets/css/homepage.css');
+$homepageCss = (string) preg_replace('~/\*.*?\*/~s', '', $homepageCss);
+$cssRule = static function (string $selector) use ($homepageCss): string {
+    if (! preg_match('/(?:^|\})\s*' . preg_quote($selector, '/') . '\s*\{([^{}]*)\}/s', $homepageCss, $match)) {
+        return '';
+    }
+    return (string) preg_replace('/\s+/', '', $match[1]);
+};
 $blockHttp = static fn () => new WP_Error('homepage_test_http_blocked', 'External requests are disabled in homepage tests.');
 add_filter('pre_http_request', $blockHttp, PHP_INT_MAX);
 
@@ -84,11 +92,51 @@ add_filter('pre_option_appleklinika_home_featured_product_ids', $selectedFilter)
 add_filter('pre_option_appleklinika_home_featured_product_limit', $limitFilter);
 
 try {
+    $navigationRule = $cssRule('.ak-home-hero__navigation');
+    $navigationButtonRule = $cssRule('.ak-home-hero__navigation button');
+    $dotRule = $cssRule('.ak-home-hero__dots');
+    $toggleRule = $cssRule('.ak-home-hero__navigation [data-home-toggle]');
+    $toggleFocusRule = $cssRule('.ak-home-hero__navigation [data-home-toggle]:focus-visible');
+    $test->assert(str_contains($navigationRule, 'position:absolute;') && str_contains($navigationRule, 'inset:0;'), 'Carousel navigation overlays the hero instead of consuming a separate toolbar row.');
+    $test->assert(str_contains($navigationRule, 'pointer-events:none;') && str_contains($navigationButtonRule, 'pointer-events:auto;'), 'The overlay leaves the artwork link clickable while its actual controls receive pointer input.');
+    $test->assert(! str_contains($homepageCss, 'data-home-direction'), 'Homepage styling contains no previous/next arrow selectors.');
+    $test->assert(str_contains($dotRule, 'position:absolute;') && str_contains($dotRule, 'bottom:') && str_contains($dotRule, 'left:50%;'), 'Position dots remain anchored at the bottom centre of the image.');
+    $test->assert(str_contains($toggleRule, 'opacity:0;') && str_contains($toggleRule, 'pointer-events:none;') && ! str_contains($toggleRule, 'display:none') && ! str_contains($toggleRule, 'visibility:hidden'), 'Pause is visually discreet without being removed from keyboard or assistive-technology access.');
+    $test->assert(str_contains($toggleFocusRule, 'opacity:1;') && str_contains($toggleFocusRule, 'pointer-events:auto;'), 'Keyboard focus reveals a usable pause/resume control.');
+    $test->assert(str_contains($cssRule('.ak-home .ak-home-products'), 'grid-auto-rows:1fr;'), 'Homepage grid rows share natural available height across stacked mobile and tablet rows.');
+    $cardScope = '.ak-home .ak-home-products-shell.woocommerce .ak-home-products.wc-block-product-template';
+    $cardFrameRule = $cssRule($cardScope . ' li.wc-block-product');
+    $test->assert(str_contains($cardFrameRule, 'display:flex;') && str_contains($cardFrameRule, 'flex-direction:column;') && str_contains($cardFrameRule, 'height:auto;') && str_contains($cardFrameRule, 'align-self:stretch;'), 'Homepage card frames use one scoped, content-safe equal-row fill chain.');
+    $test->assert(str_contains($cssRule($cardScope . ' li.wc-block-product > .ak-product-card__inner'), 'flex:1;'), 'Only the direct shared card link fills the available homepage frame.');
+    $test->assert(str_contains($cssRule($cardScope . ' .ak-product-card__content'), 'grid-template-rows:42px1fr42px040px;'), 'Homepage alignment retains title, price and CTA row sizes and allocates spare space to metadata.');
+    $sharedCss = (string) file_get_contents(dirname(__DIR__) . '/assets/css/frontend.css');
+    $test->assert(! str_contains($sharedCss, $cardScope . ' li.wc-block-product'), 'The old homepage-only alignment override is removed from the shared stylesheet.');
+
     $defaults = appleklinika_home_content_defaults();
     $test->assert(is_array($defaults) && count($defaults['hero_items']) >= 1, 'Defaults contain a usable hero.');
     $test->assert(appleklinika_sanitize_home_content(null) === $defaults, 'Malformed top-level content falls back to safe defaults.');
     $test->assert(appleklinika_sanitize_home_content([]) === $defaults, 'Missing content fields preserve defaults.');
     $test->assert($defaults['categories'][0]['url'] === appleklinika_shop_type_url('iphone'), 'Default category destinations use the configured shop URLs.');
+    $test->assert($defaults['hero_layout'] === 'split', 'Existing installations keep the split hero layout by default.');
+    $test->assert($defaults['hero_items'][0]['enabled'] === true, 'Existing default hero rows are enabled.');
+    $legacy = $defaults;
+    unset($legacy['hero_layout']);
+    foreach ($legacy['hero_items'] as &$legacyRow) {
+        unset($legacyRow['enabled'], $legacyRow['url'], $legacyRow['alt']);
+    }
+    unset($legacyRow);
+    $legacy['hero_items'][] = array_replace($legacy['hero_items'][0], ['title' => 'Additional legacy slide']);
+    $legacyClean = appleklinika_sanitize_home_content($legacy);
+    $test->assert($legacyClean['hero_layout'] === 'split' && $legacyClean['hero_items'][0]['enabled'] === true, 'Saved pre-carousel content retains its split layout and visible hero.');
+    $test->assert($legacyClean['hero_items'][1]['enabled'] === true, 'Legacy rows beyond the first default row are enabled too.');
+    $test->assert($legacyClean['hero_items'][0]['title'] === $legacy['hero_items'][0]['title'] && $legacyClean['hero_items'][0]['primary_url'] === $legacy['hero_items'][0]['primary_url'], 'Legacy copy and button destinations are preserved during schema normalization.');
+    $test->assert(appleklinika_sanitize_home_content(['hero_layout' => 'untrusted-layout'])['hero_layout'] === 'split', 'Unknown hero layout values fall back to split.');
+    foreach ([true, 1, '1', false, 0, '0', 'unexpected'] as $enabledValue) {
+        $enabledInput = $defaults;
+        $enabledInput['hero_items'][0]['enabled'] = $enabledValue;
+        $enabledClean = appleklinika_sanitize_home_content($enabledInput);
+        $test->assert($enabledClean['hero_items'][0]['enabled'] === in_array($enabledValue, [true, 1, '1'], true), 'Hero enabled state uses the explicit boolean allowlist: ' . var_export($enabledValue, true));
+    }
 
     $input = $defaults;
     $input['unknown_field'] = '<script>alert(1)</script>';
@@ -131,7 +179,7 @@ try {
     $reordered = appleklinika_sanitize_home_content($reordered);
     $test->assert(array_column($reordered['hero_items'], 'title') === ['First configured slide', 'Second configured slide'] && array_keys($reordered['hero_items']) === [0, 1], 'Sparse hero indexes are normalized without changing the configured slide order.');
 
-    $caps = ['hero_items' => 6, 'hero_benefits' => 8, 'categories' => 12, 'trust_items' => 12, 'process_items' => 10];
+    $caps = ['hero_items' => 8, 'hero_benefits' => 8, 'categories' => 12, 'trust_items' => 12, 'process_items' => 10];
     foreach ($caps as $key => $cap) {
         $overfull = $defaults;
         $overfull[$key] = array_fill(0, $cap + 3, $defaults[$key][0]);
@@ -225,6 +273,7 @@ try {
     $secondPosition = strpos($multipleHtml, 'Second configured slide');
     $test->assert($firstPosition !== false && $secondPosition !== false && $firstPosition < $secondPosition, 'Multiple configured hero slides appear in their saved order.');
     $test->assert($multipleXpath->query('//h1')->length === 1, 'Multiple hero slides do not duplicate the primary page heading.');
+    $test->assert($multipleXpath->query('//*[@data-home-direction]')->length === 0, 'Split-layout carousel markup contains no previous/next arrows.');
 
     $contentOverride = $sanitized;
     $customHtml = $capture('appleklinika_render_homepage');
@@ -236,6 +285,75 @@ try {
     $test->assert($customXpath->query('//section')->length === 5, 'Missing or invalid media does not remove body sections.');
     foreach ($customXpath->query('//img') as $image) {
         $test->assert(trim($image->getAttribute('src')) !== '', 'Every rendered product or fallback image has a nonempty source.');
+    }
+
+    $contentOverride = $legacy;
+    $legacyHtml = $capture('appleklinika_render_homepage');
+    [, $legacyXpath] = $parse($legacyHtml);
+    $test->assert($legacyXpath->query('//*[@data-home-slide]')->length === count($legacy['hero_items']) && $legacyXpath->query('//h1')->length === 1, 'Legacy split content still renders its hero and single main heading.');
+    $test->assert(str_contains($legacyHtml, esc_html($legacy['hero_items'][0]['primary_label'])), 'The existing split-layout CTA remains rendered.');
+
+    if ($attachments !== []) {
+        $artwork = $defaults;
+        $artwork['hero_layout'] = 'artwork';
+        $artworkRow = array_merge($defaults['hero_items'][0], [
+            'enabled' => true,
+            'image_id' => (int) $attachments[0],
+            'url' => 'https://example.test/campaign-a/?type=iphone&source=home',
+            'alt' => 'Campaign <b>artwork</b> & "offer"',
+            'title' => 'DO NOT OVERLAY THIS TITLE',
+            'text' => 'DO NOT OVERLAY THIS PARAGRAPH',
+            'primary_label' => 'DO NOT OVERLAY THIS BUTTON',
+        ]);
+        $disabledRow = array_replace($artworkRow, ['enabled' => false, 'url' => 'https://example.test/disabled-campaign/']);
+        $missingImageRow = array_replace($artworkRow, ['image_id' => 0, 'url' => 'https://example.test/missing-image/']);
+        $missingUrlRow = array_replace($artworkRow, ['url' => '']);
+        $unsafeUrlRow = array_replace($artworkRow, ['url' => 'javascript:alert(1)']);
+        $lastRow = array_replace($artworkRow, ['url' => '/campaign-b/', 'alt' => 'Second campaign']);
+        // Keep six rows to exercise filtering independently of the saved row cap.
+        $artwork['hero_items'] = [$disabledRow, $artworkRow, $missingImageRow, $missingUrlRow, $unsafeUrlRow, $lastRow];
+        $artworkClean = appleklinika_sanitize_home_content($artwork);
+        $test->assert($artworkClean['hero_layout'] === 'artwork' && $artworkClean['hero_items'][0]['enabled'] === false, 'Artwork layout and an explicitly disabled row survive sanitization.');
+        $test->assert($artworkClean['hero_items'][1]['alt'] === 'Campaign artwork & "offer"', 'Artwork alternative text is sanitized as plain text.');
+        $test->assert($artworkClean['hero_items'][4]['url'] === '', 'Artwork destination links reject executable URL protocols.');
+        $contentOverride = $artwork;
+        $artworkHtml = $capture('appleklinika_render_homepage');
+        [, $artworkXpath] = $parse($artworkHtml);
+        $artworkSlides = $artworkXpath->query('//*[@data-home-slide]');
+        $artworkLinks = $artworkXpath->query('//a[' . $class('ak-home-hero__artwork') . ']');
+        $test->assert($artworkSlides->length === 2 && $artworkLinks->length === 2, 'Only enabled artwork rows with both an image and safe destination are rendered.');
+        $hrefs = [];
+        foreach ($artworkLinks as $link) {
+            $hrefs[] = $link->getAttribute('href');
+            $test->assert($artworkXpath->query('./img', $link)->length === 1 && trim($link->textContent) === '', 'Each artwork slide is one image-only link without a copy overlay.');
+        }
+        $test->assert($hrefs === [$artworkClean['hero_items'][1]['url'], $artworkClean['hero_items'][5]['url']], 'Filtering retains configured artwork order and exact destinations.');
+        $firstArtworkImage = $artworkLinks->length > 0 ? $artworkXpath->query('./img', $artworkLinks->item(0))->item(0) : null;
+        $test->assert($firstArtworkImage instanceof DOMElement && $firstArtworkImage->getAttribute('alt') === 'Campaign artwork & "offer"', 'Rendered artwork preserves safe accessible alternative text.');
+        $test->assert($artworkXpath->query('//*[' . $class('ak-home-hero__copy') . ' or ' . $class('ak-home-hero__text') . ' or ' . $class('ak-home-hero__actions') . ' or ' . $class('ak-home-hero__benefits') . ']')->length === 0, 'Artwork mode suppresses stored split copy, CTA overlays and duplicate hero benefits.');
+        $test->assert($artworkXpath->query('//h1')->length === 1 && $artworkXpath->query('//h1[' . $class('screen-reader-text') . ']')->length === 1, 'Artwork mode retains one accessible page heading without overlaying the image.');
+        $test->assert($artworkXpath->query('//*[@data-home-hero and @data-home-interval="5500"]')->length === 1, 'Carousel markup exposes the agreed 5.5-second interval.');
+        $test->assert($artworkXpath->query('//*[@data-home-dot]')->length === 2 && $artworkXpath->query('//*[@data-home-toggle]')->length === 1, 'Multiple artwork slides include matching dots and an autoplay pause control.');
+        $pauseControl = $artworkXpath->query('//*[@data-home-toggle]')->item(0);
+        $test->assert($pauseControl instanceof DOMElement && $pauseControl->tagName === 'button' && ! $pauseControl->hasAttribute('hidden') && $pauseControl->getAttribute('tabindex') !== '-1' && $pauseControl->getAttribute('aria-label') !== '', 'The visually discreet pause control remains a named, keyboard-reachable button.');
+        $test->assert($artworkXpath->query('//*[@data-home-direction]')->length === 0, 'Artwork carousel markup contains no previous/next arrows.');
+        $test->assert($artworkXpath->query('//script|//*[@onerror or @onload]')->length === 0 && ! str_contains($artworkHtml, 'javascript:'), 'Artwork mode does not introduce executable injected markup.');
+
+        $singleArtwork = $artwork;
+        $singleArtwork['hero_items'] = [$artworkRow];
+        $contentOverride = $singleArtwork;
+        [, $singleXpath] = $parse($capture('appleklinika_render_homepage'));
+        $test->assert($singleXpath->query('//*[@data-home-slide]')->length === 1 && $singleXpath->query('//*[@data-home-navigation]')->length === 0, 'A single valid artwork slide renders without redundant carousel controls.');
+
+        $disabledArtwork = $artwork;
+        $disabledArtwork['hero_items'] = [$disabledRow, $missingImageRow, $missingUrlRow, $unsafeUrlRow];
+        $contentOverride = $disabledArtwork;
+        [, $disabledXpath] = $parse($capture('appleklinika_render_homepage'));
+        $test->assert($disabledXpath->query('//*[@data-home-hero]')->length === 0 && $disabledXpath->query('//*[@data-home-slide]')->length === 0, 'An entirely disabled or incomplete artwork set does not restore a hidden campaign as fallback.');
+        $test->assert($disabledXpath->query('//main/section')->length === 4 && $disabledXpath->query('//h1')->length === 1, 'An empty artwork set leaves the remaining sections and accessible main heading intact.');
+        $test->assert($capture('appleklinika_render_header') === $headerBefore, 'Artwork layout and filtering do not change the shared header.');
+    } else {
+        echo "SKIP: Artwork rendering checks require an existing local image attachment.\n";
     }
 } finally {
     remove_filter('pre_option_appleklinika_home_content', $contentFilter);
