@@ -8,6 +8,7 @@ use Appleklinika\BackOffice\Domain\DeliveryMode;
 use Appleklinika\BackOffice\Domain\FulfilmentWorkflow;
 use Appleklinika\BackOffice\Domain\OrderQueueQuery;
 use Appleklinika\BackOffice\Infrastructure\WooOrderBackOfficeRepository;
+use Appleklinika\BackOffice\Infrastructure\OrderDocuments;
 use InvalidArgumentException;
 use WC_Order;
 
@@ -27,6 +28,7 @@ final class BackOfficeRouter
         add_action('template_redirect', [$this, 'render']);
         add_action('admin_post_appleklinika_backoffice_action', [$this, 'handleAction']);
         add_action('admin_post_appleklinika_backoffice_download_label', [$this, 'handleLabelDownload']);
+        add_action('admin_post_appleklinika_backoffice_download_invoice', [$this, 'handleInvoiceDownload']);
         add_action('woocommerce_checkout_create_order_line_item', [$this->orders, 'captureDeviceIdentifierSnapshot'], 10, 4);
         add_action('woocommerce_checkout_order_created', [$this->orders, 'captureQueueShippingSnapshot']);
         add_action('woocommerce_order_details_after_order_table', [$this, 'renderCustomerProgress'], 15);
@@ -132,6 +134,16 @@ final class BackOfficeRouter
 
     public function handleLabelDownload(): void
     {
+        $this->downloadDocument('gls_label', 'label');
+    }
+
+    public function handleInvoiceDownload(): void
+    {
+        $this->downloadDocument('invoice', 'invoice');
+    }
+
+    private function downloadDocument(string $document, string $nonceType): void
+    {
         $this->requireAccess();
         $orderId = isset($_GET['order_id']) ? absint(wp_unslash($_GET['order_id'])) : 0;
         $order = $orderId > 0 ? wc_get_order($orderId) : false;
@@ -139,23 +151,18 @@ final class BackOfficeRouter
             wp_die('A rendelés nem található.', 'Rendelés nem található', ['response' => 404]);
         }
 
-        check_admin_referer('appleklinika_backoffice_download_label_' . $orderId);
-        $filename = sanitize_file_name((string) $order->get_meta('_gls_print_label', true));
-        if ($filename === '' || ! defined('GLS_LABELS_DIR')) {
-            wp_die('A GLS címke nem érhető el.', 'Címke nem található', ['response' => 404]);
+        check_admin_referer('appleklinika_backoffice_download_' . $nonceType . '_' . $orderId);
+        $path = (new OrderDocuments())->filePath($order, $document);
+        if ($path === null) {
+            wp_die('A dokumentum nem érhető el.', 'Dokumentum nem található', ['response' => 404]);
         }
 
-        $labelsDirectory = realpath(GLS_LABELS_DIR);
-        $labelPath = realpath(trailingslashit(GLS_LABELS_DIR) . $filename);
-        if ($labelsDirectory === false || $labelPath === false || ! str_starts_with($labelPath, trailingslashit($labelsDirectory))) {
-            wp_die('Érvénytelen GLS címke.', 'Címke nem található', ['response' => 404]);
-        }
-
+        nocache_headers();
+        header('X-Content-Type-Options: nosniff');
         header('Content-Type: application/pdf');
-        header('Content-Disposition: inline; filename="' . basename($labelPath) . '"');
-        header('Content-Length: ' . (string) filesize($labelPath));
-        header('Cache-Control: private, max-age=0, must-revalidate');
-        readfile($labelPath);
+        header('Content-Disposition: inline; filename="' . $document . '-' . $orderId . '.pdf"');
+        header('Content-Length: ' . (string) filesize($path));
+        readfile($path);
         exit;
     }
 
@@ -193,47 +200,56 @@ final class BackOfficeRouter
 
         $this->documentStart('Apple Klinika Back Office');
         echo '<main class="akbo-shell">';
-        $this->renderApplicationHeader('Nyitott rendelések');
+        $queueLabels = FulfilmentWorkflow::queueLabels();
+        $this->renderApplicationHeader('Rendelések');
         $this->notice();
 
         echo '<section class="akbo-summary" aria-label="Nyitott rendelési összesítő">';
-        foreach (['new' => 'Feldolgozásra vár', 'preparation' => 'Előkészítés alatt', 'packing' => 'Csomagolás alatt', 'ready_for_shipping' => 'Átadásra előkészítve', 'problem' => 'Probléma'] as $key => $label) {
-            echo '<div><span>' . esc_html($label) . '</span><strong>' . esc_html((string) ($counts[$key] ?? 0)) . '</strong></div>';
+        foreach (['new', 'preparation', 'packing', 'ready_for_shipping', 'problem'] as $key) {
+            $label = $queueLabels[$key];
+            echo '<a class="' . ($queue === $key ? 'is-active' : '') . '" href="' . esc_url($this->queueUrl($key, '', '', 1)) . '"><span>' . esc_html($label) . '</span><strong>' . esc_html((string) ($counts[$key] ?? 0)) . '</strong><small>Rendelések megnyitása →</small></a>';
         }
         echo '</section>';
 
         echo '<form class="akbo-search" method="get" action="' . esc_url(home_url('/backoffice/')) . '">';
-        echo '<label for="akbo-queue">Állapot</label><select id="akbo-queue" name="queue">';
-        foreach (['' => 'Összes nyitott', 'new' => 'Feldolgozásra vár', 'preparation' => 'Előkészítés alatt', 'packing' => 'Csomagolás alatt', 'ready_for_shipping' => 'Átadásra előkészítve', 'handed_to_gls' => 'Teljesítve', 'problem' => 'Problémás'] as $key => $label) {
+        echo '<div class="akbo-filter-field"><label for="akbo-queue">Munkasor</label><select id="akbo-queue" name="queue" onchange="this.form.submit()">';
+        foreach ($queueLabels as $key => $label) {
             echo '<option value="' . esc_attr($key) . '" ' . selected($queue, $key, false) . '>' . esc_html($label) . '</option>';
         }
-        echo '</select><label for="akbo-search">Keresés a nyitott rendeléseken</label>';
-        echo '<div><input id="akbo-search" type="search" name="s" value="' . esc_attr($search) . '" placeholder="Rendelés, név, e-mail, telefon vagy eszközazonosító">';
-        echo '<select name="search_type" aria-label="Keresés típusa">';
+        echo '</select></div><div class="akbo-search-field"><label for="akbo-search">Keresés a kiválasztott munkasorban</label>';
+        echo '<input id="akbo-search" type="search" name="s" value="' . esc_attr($search) . '" placeholder="Rendelésszám, név, e-mail, telefon vagy IMEI"></div>';
+        echo '<div class="akbo-type-field"><label for="akbo-search-type">Keresés típusa</label><select id="akbo-search-type" name="search_type">';
         foreach (['' => 'Automatikus', 'order' => 'Rendelésszám', 'customer' => 'Ügyfélnév', 'email' => 'E-mail', 'phone' => 'Telefon', 'device' => 'IMEI / belső azonosító'] as $type => $label) {
             echo '<option value="' . esc_attr($type) . '" ' . selected($requestedSearchType, $type, false) . '>' . esc_html($label) . '</option>';
         }
-        echo '</select><button type="submit">Keresés</button></div>';
+        echo '</select></div><button type="submit">Keresés</button>';
         if ($search !== '') {
-            echo '<p class="akbo-help">Aktív keresési típus: <strong>' . esc_html($this->searchTypeLabel($searchType)) . '</strong>.</p>';
+            echo '<p class="akbo-search-hint">Keresés: <strong>' . esc_html($search) . '</strong> · ' . esc_html($this->searchTypeLabel($searchType)) . ' <a href="' . esc_url($this->queueUrl($queue, '', '', 1)) . '">Keresés törlése</a></p>';
         }
         echo '</form>';
 
-        echo '<section class="akbo-card"><p class="akbo-result-count">' . esc_html((string) $total) . ' találat · ' . esc_html((string) $page) . '/' . esc_html((string) $pageCount) . '. oldal</p><div class="akbo-table-wrap"><table class="akbo-table"><thead><tr><th>Rendelés</th><th>Ügyfél</th><th>Készülék</th><th>Fizetés / figyelem</th><th>Back Office állapot</th><th>Szállítás</th></tr></thead><tbody>';
+        echo '<section class="akbo-card akbo-worklist"><div class="akbo-list-heading"><h2>' . esc_html($queueLabels[$queue] ?? 'Rendelések') . '</h2><p class="akbo-result-count">' . esc_html((string) $total) . ' találat · ' . esc_html((string) $page) . '/' . esc_html((string) $pageCount) . '. oldal</p></div><div class="akbo-table-wrap"><table class="akbo-table akbo-order-table"><thead><tr><th>Rendelés</th><th>Ügyfél / átvétel</th><th>Termék / összeg</th><th>Állapot / fizetés</th><th>Következő teendő</th></tr></thead><tbody>';
         if ($orders === []) {
-            echo '<tr><td colspan="6" class="akbo-empty">Nincs a feltételnek megfelelő rendelés.</td></tr>';
+            echo '<tr><td colspan="5" class="akbo-empty">Ebben a munkasorban nincs a keresésnek megfelelő rendelés. Válassz másik munkasort vagy töröld a keresést.</td></tr>';
         }
         foreach ($orders as $order) {
             $primaryDevice = $this->orders->queuePrimaryItem($order);
             $state = $this->orders->state($order);
-            $attention = $this->attention($order, $state);
+            $mode = $this->orders->deliveryMode($order);
+            $block = $this->orders->fulfilmentBlockReason($order);
+            $next = FulfilmentWorkflow::primaryAction($state, $mode, $this->orders->hasGlsLabel($order));
+            $closed = $order->has_status('completed') || in_array($state, [FulfilmentWorkflow::HANDED_TO_GLS, FulfilmentWorkflow::PICKED_UP], true);
+            $attention = $closed ? '' : $this->attention($order, $state);
+            $nextLabel = $closed ? 'Feldolgozás lezárva' : ($block !== null ? ($attention ?: 'Átvételi mód ellenőrzése') : ($next !== null ? FulfilmentWorkflow::actions()[$next] : 'Rendelés ellenőrzése'));
+            if (! $closed && $block === null && $next === 'create_label' && ! $this->orders->canCreateGlsLabel()) {
+                $nextLabel = 'GLS kapcsolat ellenőrzése';
+            }
             echo '<tr>';
-            echo '<td><a href="' . esc_url($this->orderUrl($order->get_id(), $worklistContext)) . '">#' . esc_html($order->get_order_number()) . '</a><small>' . esc_html(wc_format_datetime($order->get_date_created())) . '</small></td>';
-            echo '<td>' . esc_html($order->get_formatted_billing_full_name()) . '<small>' . esc_html($order->get_billing_email()) . '</small></td>';
-            echo '<td>' . esc_html($primaryDevice) . '</td>';
-            echo '<td><span class="akbo-badge">' . esc_html($this->paymentLabel($order)) . '</span>' . ($attention === '' ? '' : '<small class="akbo-attention">' . esc_html($attention) . '</small>') . '</td>';
-            echo '<td><span class="akbo-badge akbo-state--' . esc_attr($state) . '">' . esc_html(FulfilmentWorkflow::labels()[$state]) . '</span></td>';
-            echo '<td>' . esc_html($this->orders->queueShippingMethod($order)) . '</td>';
+            echo '<td data-label="Rendelés"><a href="' . esc_url($this->orderUrl($order->get_id(), $worklistContext)) . '">#' . esc_html($order->get_order_number()) . '</a><small>' . esc_html(wc_format_datetime($order->get_date_created())) . '</small></td>';
+            echo '<td data-label="Ügyfél / átvétel"><strong>' . esc_html($order->get_formatted_billing_full_name() ?: 'Nincs név megadva') . '</strong><small>' . esc_html($order->get_billing_email()) . '</small><small class="akbo-delivery">' . esc_html($this->orders->deliveryModeLabel($order)) . '</small></td>';
+            echo '<td data-label="Termék / összeg">' . esc_html($primaryDevice) . '<small class="akbo-amount">' . wp_kses_post($order->get_formatted_order_total()) . '</small></td>';
+            echo '<td data-label="Állapot / fizetés"><span class="akbo-badge akbo-state--' . esc_attr($state) . '">' . esc_html($order->has_status('completed') ? 'Lezárt rendelés' : FulfilmentWorkflow::labels()[$state]) . '</span><small class="' . ($order->is_paid() ? ($order->get_payment_method() === 'cod' ? '' : 'akbo-payment-ok') : 'akbo-attention') . '">' . esc_html($this->paymentLabel($order)) . '</small></td>';
+            echo '<td data-label="Következő teendő"><span class="' . ($block !== null && ! $closed ? 'akbo-attention' : '') . '">' . esc_html($nextLabel) . '</span><small><a href="' . esc_url($this->orderUrl($order->get_id(), $worklistContext)) . '">Megnyitás →</a></small></td>';
             echo '</tr>';
         }
         echo '</tbody></table></div>';
@@ -312,7 +328,7 @@ final class BackOfficeRouter
             $to = FulfilmentWorkflow::labels()[FulfilmentWorkflow::state((string) ($entry['to'] ?? ''))];
             echo '<tr><td>' . esc_html(substr((string) ($entry['at'] ?? ''), 11, 5)) . '</td><td>' . esc_html((string) ($entry['user'] ?? 'Ismeretlen felhasználó')) . '</td><td>';
             echo $orderId > 0 ? '<a href="' . esc_url($this->url(['order' => $orderId])) . '">#' . esc_html((string) $orderId) . '</a>' : '—';
-            echo '</td><td>' . esc_html(FulfilmentWorkflow::actions()[(string) ($entry['action'] ?? '')] ?? 'Ismeretlen művelet') . '</td><td>' . esc_html($from . ' → ' . $to) . '</td></tr>';
+            echo '</td><td>' . esc_html(FulfilmentWorkflow::actions()[(string) ($entry['action'] ?? '')] ?? 'Ismeretlen művelet') . '</td><td>' . esc_html($from === $to ? $to : $from . ' → ' . $to) . '</td></tr>';
         }
         echo '</tbody></table></div></section></main>';
         $this->documentEnd();
@@ -325,31 +341,53 @@ final class BackOfficeRouter
         $deliveryMode = $this->orders->deliveryMode($order);
         $this->documentStart('Rendelés #' . $order->get_order_number());
         echo '<main class="akbo-shell">';
-        $backLink = '<a class="akbo-back" href="' . esc_url($this->url($worklistContext)) . '">← Vissza a rendelésekhez</a>';
+        echo '<a class="akbo-back" href="' . esc_url($this->url($worklistContext)) . '">← Vissza a rendelésekhez</a>';
         $printHelp = $deliveryMode === DeliveryMode::GLS ? 'Belső rendelési összesítő, nem GLS szállítási címke.' : 'Belső rendelési összesítő.';
         $printLink = '<div class="akbo-print-action"><a class="akbo-print-link" target="_blank" href="' . esc_url($this->url(['order' => $order->get_id(), 'print' => 1])) . '">Rendelési lap nyomtatása</a><small>' . esc_html($printHelp) . '</small></div>';
-        $this->renderApplicationHeader('Rendelés #' . $order->get_order_number(), $backLink . $printLink);
+        $this->renderApplicationHeader('Rendelés #' . $order->get_order_number(), $printLink);
         $this->notice();
-        echo '<div class="akbo-status-line"><span class="akbo-badge akbo-state--' . esc_attr($state) . '">' . esc_html(FulfilmentWorkflow::labels()[$state]) . '</span><span>' . esc_html($this->paymentLabel($order)) . '</span><span>Átvétel módja: <strong>' . esc_html($this->orders->deliveryModeLabel($order)) . '</strong></span></div>';
+        echo '<div class="akbo-status-line"><span class="akbo-badge akbo-state--' . esc_attr($state) . '">' . esc_html($order->has_status('completed') ? 'Lezárt rendelés' : FulfilmentWorkflow::labels()[$state]) . '</span><span>' . esc_html($this->paymentLabel($order)) . '</span><span>' . esc_html($this->orders->deliveryModeLabel($order)) . '</span><strong>' . wp_kses_post($order->get_formatted_order_total()) . '</strong></div>';
+        $this->renderProgress($order, $state, $deliveryMode);
 
         echo '<div class="akbo-layout"><div class="akbo-main">';
-        $this->renderActions($order, $state, $deliveryMode, $worklistContext);
         $this->renderDevices($order);
         $this->renderCustomerAndOrder($order);
+        $this->renderInternalNotes($order, $worklistContext);
+        echo '</div><aside class="akbo-side">';
+        $this->renderActions($order, $state, $deliveryMode, $worklistContext);
+        $this->renderInvoice($order);
         if ($deliveryMode === DeliveryMode::GLS) {
             $this->renderGls($order);
         }
-        $this->renderInternalNotes($order, $worklistContext);
-        echo '</div><aside class="akbo-side">';
         $this->renderHistory($order);
         echo '</aside></div></main>';
         $this->documentEnd();
     }
 
+    private function renderProgress(WC_Order $order, string $state, string $deliveryMode): void
+    {
+        if (! DeliveryMode::isSupported($deliveryMode) || $order->has_status('completed')) {
+            return;
+        }
+        $safeState = FulfilmentWorkflow::customerProgressState($state, $this->orders->history($order), $deliveryMode);
+        $labels = FulfilmentWorkflow::customerProgressLabels($deliveryMode);
+        $current = array_search($safeState, array_keys($labels), true);
+        echo '<ol class="akbo-progress" aria-label="Rendelés feldolgozása">';
+        foreach (array_values($labels) as $index => $label) {
+            $class = $index < $current ? 'is-complete' : ($index === $current ? 'is-current' : '');
+            echo '<li class="' . esc_attr($class) . '"' . ($index === $current ? ' aria-current="step"' : '') . '><span>' . ($index + 1) . '</span>' . esc_html($label) . '</li>';
+        }
+        echo '</ol>';
+    }
+
     /** @param array<string, scalar> $worklistContext */
     private function renderActions(WC_Order $order, string $state, string $deliveryMode, array $worklistContext): void
     {
-        echo '<section class="akbo-card"><h2>Következő lépés</h2>';
+        echo '<section class="akbo-card akbo-next-action"><p class="akbo-eyebrow">Feldolgozás</p><h2>Következő lépés</h2>';
+        if ($order->has_status('completed') || in_array($state, [FulfilmentWorkflow::HANDED_TO_GLS, FulfilmentWorkflow::PICKED_UP], true)) {
+            echo '<p class="akbo-completion">A rendelés feldolgozása lezárult.</p></section>';
+            return;
+        }
         $blockReason = $this->orders->fulfilmentBlockReason($order);
         if ($blockReason !== null) {
             echo '<p class="akbo-action-block">' . esc_html($blockReason) . '</p></section>';
@@ -361,6 +399,16 @@ final class BackOfficeRouter
         if ($primaryAction === 'create_label' && ! $this->orders->canCreateGlsLabel()) {
             echo '<p class="akbo-action-block">' . esc_html($this->orders->glsReadinessMessage() ?? 'GLS kapcsolat nincs konfigurálva ebben a környezetben.') . ' A rendelés szállításra előkészítve marad.</p>';
         } elseif ($primaryAction !== null) {
+            echo '<p class="akbo-help">' . esc_html(match ($primaryAction) {
+                'start' => 'Vedd munkába a rendelést, és ellenőrizd a megrendelt készüléket.',
+                'start_packing' => 'Az ellenőrzött készülék és a tartozékok csomagolása következik.',
+                'packing_completed' => 'A csomag lezárása után jelöld szállításra késznek.',
+                'prepare_pickup' => 'Készítsd elő a rendelést a személyes átvételre.',
+                'picked_up' => 'Csak a vásárlónak történő tényleges átadás után rögzítsd az átvételt.',
+                'handed_to_gls' => 'Csak a futárnak történő tényleges átadás után rögzítsd az átadást.',
+                'resume' => 'A probléma rendezése után a rendelés visszakerül az előkészítéshez.',
+                default => 'A következő művelet a rendelés aktuális állapotához kapcsolódik.',
+            }) . '</p>';
             echo '<div class="akbo-actions">' . $this->actionForm($order, $primaryAction, FulfilmentWorkflow::actions()[$primaryAction], 'akbo-button akbo-button--primary', $worklistContext) . '</div>';
         } else {
             echo '<p class="akbo-help">Ehhez a rendeléshez jelenleg nincs további normál teljesítési lépés.</p>';
@@ -378,34 +426,73 @@ final class BackOfficeRouter
     private function renderDevices(WC_Order $order): void
     {
         echo '<section class="akbo-card"><h2>Termék / készülék</h2>';
-        foreach ($this->orders->deviceItems($order) as $item) {
+        $items = $this->orders->deviceItems($order);
+        if ($items === []) {
+            echo '<p class="akbo-empty">A rendeléshez nincs rögzített terméktétel.</p>';
+        }
+        foreach ($items as $item) {
             echo '<article class="akbo-device"><h3>' . esc_html($item['name']) . ' <small>× ' . esc_html((string) $item['quantity']) . '</small></h3>';
             if ($item['details'] === []) {
                 echo '<p class="akbo-empty">Nincs további Apple Klinika készülékadat.</p>';
             } else {
                 echo '<dl class="akbo-details">';
                 foreach ($item['details'] as $label => $value) {
-                    echo '<div><dt>' . esc_html($label) . '</dt><dd>' . esc_html($value) . '</dd></div>';
+                    $source = $item['detail_sources'][$label] ?? '';
+                    $sourceLabel = $label === 'Belső azonosító / IMEI' ? ($source === 'order' ? 'Rendeléskor mentett adat' : 'Aktuális termékadat') : '';
+                    echo '<div><dt>' . esc_html($label) . '</dt><dd>' . esc_html($value) . ($sourceLabel !== '' ? '<small class="akbo-data-source">' . esc_html($sourceLabel) . '</small>' : '') . '</dd></div>';
                 }
                 echo '</dl>';
             }
             echo '</article>';
+        }
+        if ($items !== []) {
+            echo '<p class="akbo-help">A rendeléskor mentett adatok az elsődlegesek; a hiányzó készülékadatok a termék aktuális nyilvántartásából érkeznek.</p>';
         }
         echo '</section>';
     }
 
     private function renderCustomerAndOrder(WC_Order $order): void
     {
-        echo '<section class="akbo-card akbo-two-columns"><div><h2>Ügyfél</h2><dl class="akbo-details"><div><dt>Név</dt><dd>' . esc_html($order->get_formatted_billing_full_name()) . '</dd></div><div><dt>E-mail</dt><dd>' . esc_html($order->get_billing_email()) . '</dd></div><div><dt>Telefon</dt><dd>' . esc_html($order->get_billing_phone()) . '</dd></div><div><dt>Számlázási cím</dt><dd>' . wp_kses_post(nl2br(esc_html($order->get_formatted_billing_address()))) . '</dd></div><div><dt>Szállítási cím</dt><dd>' . wp_kses_post(nl2br(esc_html($order->get_formatted_shipping_address()))) . '</dd></div></dl></div>';
-        echo '<div><h2>Rendelés</h2><dl class="akbo-details"><div><dt>Létrehozva</dt><dd>' . esc_html(wc_format_datetime($order->get_date_created())) . '</dd></div><div><dt>Fizetési mód</dt><dd>' . esc_html($order->get_payment_method_title()) . '</dd></div><div><dt>Átvétel módja</dt><dd>' . esc_html($this->orders->deliveryModeLabel($order)) . '</dd></div><div><dt>WooCommerce szállítási metódus</dt><dd>' . esc_html($this->shippingMethod($order)) . '</dd></div><div><dt>Ügyfél megjegyzése</dt><dd>' . esc_html($order->get_customer_note() ?: '—') . '</dd></div></dl></div></section>';
+        echo '<section class="akbo-card"><h2>Ügyfél és átvétel</h2><dl class="akbo-details"><div><dt>Név</dt><dd>' . esc_html($order->get_formatted_billing_full_name() ?: '—') . '</dd></div><div><dt>E-mail</dt><dd>' . esc_html($order->get_billing_email() ?: '—') . '</dd></div><div><dt>Telefon</dt><dd>' . esc_html($order->get_billing_phone() ?: '—') . '</dd></div><div><dt>Átvétel módja</dt><dd>' . esc_html($this->orders->deliveryModeLabel($order)) . '</dd></div><div><dt>Számlázási cím</dt><dd>' . self::addressHtml($order->get_formatted_billing_address()) . '</dd></div>';
+        if ($this->orders->deliveryMode($order) !== DeliveryMode::PICKUP) {
+            echo '<div><dt>Szállítási cím</dt><dd>' . self::addressHtml($order->get_formatted_shipping_address()) . '</dd></div>';
+        }
+        echo '</dl>';
+        if ($order->get_customer_note() !== '') {
+            echo '<div class="akbo-customer-note"><strong>Ügyfél megjegyzése</strong><p>' . nl2br(esc_html($order->get_customer_note())) . '</p></div>';
+        }
+        echo '</section><section class="akbo-card"><h2>Fizetés és rendelési adatok</h2><dl class="akbo-details"><div><dt>Rendelés összege</dt><dd>' . wp_kses_post($order->get_formatted_order_total()) . '</dd></div><div><dt>Fizetési mód</dt><dd>' . esc_html($order->get_payment_method_title() ?: 'Nincs megadva') . '</dd></div><div><dt>Fizetés</dt><dd>' . esc_html($this->paymentLabel($order)) . '</dd></div><div><dt>Rendelés állapota</dt><dd>' . esc_html(wc_get_order_status_name($order->get_status())) . '</dd></div><div><dt>Beérkezett</dt><dd>' . esc_html(wc_format_datetime($order->get_date_created(), 'Y. m. d. H:i')) . '</dd></div><div><dt>Szállítási mód</dt><dd>' . esc_html($this->shippingMethod($order)) . '</dd></div></dl></section>';
+    }
+
+    public static function addressHtml(string $address): string
+    {
+        // WooCommerce already returns escaped text separated by <br/> tags.
+        return trim($address) === '' ? '—' : wp_kses($address, ['br' => []]);
+    }
+
+    private function renderInvoice(WC_Order $order): void
+    {
+        $invoice = (new OrderDocuments())->invoice($order);
+        echo '<section class="akbo-card"><h2>Számla</h2>';
+        if ($invoice['number'] !== '') {
+            echo '<p class="akbo-document-number">' . esc_html($invoice['number']) . '</p>';
+        }
+        if ($invoice['available']) {
+            $url = wp_nonce_url(add_query_arg(['action' => 'appleklinika_backoffice_download_invoice', 'order_id' => $order->get_id()], admin_url('admin-post.php')), 'appleklinika_backoffice_download_invoice_' . $order->get_id());
+            echo '<a class="akbo-button akbo-button--secondary" target="_blank" rel="noopener" href="' . esc_url($url) . '">Számla megnyitása / nyomtatása</a>';
+        } else {
+            echo '<p class="akbo-empty">' . esc_html(! $invoice['provider_active'] ? 'A Számlázz.hu kapcsolat jelenleg nem aktív.' : ($invoice['recorded'] ? 'A számla rögzítve van, de a PDF-fájl nem érhető el.' : 'Ehhez a rendeléshez még nincs elkészült számla.')) . '</p>';
+        }
+        echo '<p class="akbo-help">Új számla kiállítása jelenleg nem érhető el innen.</p></section>';
     }
 
     private function renderGls(WC_Order $order): void
     {
-        $hasLabel = $this->orders->hasGlsLabel($order);
+        $document = (new OrderDocuments())->glsLabel($order);
+        $hasLabel = $document['available'];
         $labelUrl = $this->labelDownloadUrl($order);
         $tracking = $this->orders->trackingCodes($order);
-        echo '<section class="akbo-card"><h2>GLS</h2><p><strong>Állapot:</strong> ' . esc_html($hasLabel ? 'Címke létrehozva' : 'Nincs címke') . '</p>';
+        echo '<section class="akbo-card"><h2>GLS címke és követés</h2><p>' . esc_html($hasLabel ? 'A címke nyomtatásra kész.' : ($document['recorded'] ? 'Címke rögzítve, de a PDF nem érhető el.' : 'Még nincs elkészült címke.')) . '</p>';
         if ($hasLabel) {
             echo '<p><a class="akbo-button" target="_blank" href="' . esc_url($labelUrl) . '">Meglévő GLS címke nyomtatása</a></p>';
         } elseif (! $hasLabel) {
@@ -419,6 +506,9 @@ final class BackOfficeRouter
         if ($tracking !== []) {
             echo '<p><strong>Követési azonosító:</strong> ' . esc_html(implode(', ', $tracking)) . '</p>';
         }
+        foreach ((new OrderDocuments())->trackingLinks($order) as $link) {
+            echo '<p><a class="akbo-link" target="_blank" rel="noopener" href="' . esc_url($link['url']) . '">Csomag követése: ' . esc_html($link['code']) . ' ↗</a></p>';
+        }
         echo '</section>';
     }
 
@@ -430,7 +520,10 @@ final class BackOfficeRouter
         $this->renderWorklistContextInputs($worklistContext);
         wp_nonce_field('appleklinika_backoffice_note_' . $order->get_id());
         echo '<label for="akbo-note">Csak munkatársaknak; az ügyfél nem látja.</label><textarea id="akbo-note" name="note" rows="3" required></textarea><button class="akbo-button" type="submit">Belső megjegyzés mentése</button></form>';
-        $notes = wc_get_order_notes(['order_id' => $order->get_id(), 'type' => 'internal']);
+        $notes = array_filter(wc_get_order_notes(['order_id' => $order->get_id(), 'type' => 'internal']), fn ($note): bool => $this->orders->isManualInternalNote((string) $note->content));
+        if ($notes === []) {
+            echo '<p class="akbo-empty">Még nincs munkatársi megjegyzés.</p>';
+        }
         if ($notes !== []) {
             echo '<ul class="akbo-notes">';
             foreach ($notes as $note) {
@@ -447,13 +540,15 @@ final class BackOfficeRouter
 
     private function renderHistory(WC_Order $order): void
     {
-        echo '<section class="akbo-card"><h2>Műveleti előzmények</h2><ol class="akbo-history">';
+        echo '<section class="akbo-card"><h2>Műveleti előzmények</h2><ol class="akbo-history" tabindex="0" aria-label="Rendelés műveleti előzményei">';
         $history = array_reverse($this->orders->history($order));
         if ($history === []) {
             echo '<li class="akbo-empty">Még nincs Back Office művelet.</li>';
         }
         foreach ($history as $entry) {
-            echo '<li><strong>' . esc_html(FulfilmentWorkflow::actions()[$entry['action']] ?? $entry['action']) . '</strong><span>' . esc_html(FulfilmentWorkflow::labels()[$entry['from']] ?? $entry['from']) . ' → ' . esc_html(FulfilmentWorkflow::labels()[$entry['to']] ?? $entry['to']) . '</span><small>' . esc_html($entry['user'] . ' · ' . $entry['at']) . '</small></li>';
+            $from = FulfilmentWorkflow::labels()[$entry['from']] ?? $entry['from'];
+            $to = FulfilmentWorkflow::labels()[$entry['to']] ?? $entry['to'];
+            echo '<li><strong>' . esc_html(FulfilmentWorkflow::actions()[$entry['action']] ?? $entry['action']) . '</strong><span>' . esc_html($from === $to ? $to : $from . ' → ' . $to) . '</span><small>' . esc_html($entry['user'] . ' · ' . $entry['at']) . '</small></li>';
         }
         echo '</ol></section>';
     }
@@ -461,12 +556,11 @@ final class BackOfficeRouter
     private function renderPackingSheet(WC_Order $order): void
     {
         $deliveryMode = $this->orders->deliveryMode($order);
-        $recipient = $deliveryMode === DeliveryMode::PICKUP ? $order->get_formatted_billing_full_name() : ($order->get_formatted_shipping_full_name() ?: $order->get_formatted_billing_full_name());
         $address = $deliveryMode === DeliveryMode::PICKUP ? $order->get_formatted_billing_address() : ($order->get_formatted_shipping_address() ?: $order->get_formatted_billing_address());
         $printHelp = $deliveryMode === DeliveryMode::GLS ? 'Belső rendelési összesítő, nem GLS szállítási címke.' : 'Belső rendelési összesítő.';
         $this->documentStart('Rendelési lap #' . $order->get_order_number(), true);
         echo '<main class="akbo-print"><header><h1>Apple Klinika — rendelési lap</h1><p>Rendelés: <strong>#' . esc_html($order->get_order_number()) . '</strong> · ' . esc_html(wc_format_datetime($order->get_date_created())) . '</p><p class="akbo-help">' . esc_html($printHelp) . '</p></header>';
-        echo '<section><h2>Ügyfél és átvétel</h2><p><strong>' . esc_html($recipient) . '</strong><br>' . wp_kses_post(nl2br(esc_html($address))) . '<br>' . esc_html($order->get_billing_phone()) . '</p><p><strong>Átvétel módja:</strong> ' . esc_html($this->orders->deliveryModeLabel($order)) . '</p></section>';
+        echo '<section><h2>Ügyfél és átvétel</h2><p>' . self::addressHtml($address) . '<br>' . esc_html($order->get_billing_phone()) . '</p><p><strong>Átvétel módja:</strong> ' . esc_html($this->orders->deliveryModeLabel($order)) . '</p></section>';
         echo '<section><h2>Készülék</h2>';
         foreach ($this->orders->deviceItems($order) as $item) {
             echo '<h3>' . esc_html($item['name']) . ' × ' . esc_html((string) $item['quantity']) . '</h3><dl>';
@@ -500,7 +594,7 @@ final class BackOfficeRouter
     public static function normalizeWorklistContext(array $source): array
     {
         $queue = strtolower((string) preg_replace('/[^a-z0-9_]/', '', (string) ($source['queue'] ?? '')));
-        if ($queue !== '' && ! array_key_exists($queue, FulfilmentWorkflow::queueStates())) {
+        if (! array_key_exists($queue, FulfilmentWorkflow::queueLabels())) {
             $queue = '';
         }
 
@@ -553,7 +647,7 @@ final class BackOfficeRouter
     {
         $user = wp_get_current_user();
         $isActivity = isset($_GET['view']) && sanitize_key(wp_unslash($_GET['view'])) === 'activity';
-        echo '<header class="akbo-header"><div><p class="akbo-eyebrow">Apple Klinika</p><h1>Back Office</h1><p>' . esc_html($context) . '</p></div><div class="akbo-header-actions"><nav class="akbo-primary-nav" aria-label="Back Office"><a class="' . ($isActivity ? '' : 'is-active') . '" href="' . esc_url($this->url()) . '">Rendelések</a><a class="' . ($isActivity ? 'is-active' : '') . '" href="' . esc_url($this->url(['view' => 'activity'])) . '">Mai aktivitás</a></nav><div class="akbo-user"><span>' . esc_html($user->display_name ?: $user->user_login) . '</span><a class="akbo-link" href="' . esc_url(wp_logout_url(home_url('/backoffice/'))) . '">Kijelentkezés</a></div>' . $aside . '</div></header>';
+        echo '<header class="akbo-header"><div><p class="akbo-eyebrow">Apple Klinika <span>Back Office</span></p><h1>' . esc_html($context) . '</h1></div><div class="akbo-header-actions"><nav class="akbo-primary-nav" aria-label="Back Office"><a class="' . ($isActivity ? '' : 'is-active') . '" href="' . esc_url($this->url()) . '">Rendelések</a><a class="' . ($isActivity ? 'is-active' : '') . '" href="' . esc_url($this->url(['view' => 'activity'])) . '">Mai aktivitás</a></nav><div class="akbo-user"><span>' . esc_html($user->display_name ?: $user->user_login) . '</span><a class="akbo-link" href="' . esc_url(wp_logout_url(home_url('/backoffice/'))) . '">Kijelentkezés</a></div>' . $aside . '</div></header>';
     }
 
     private function attention(WC_Order $order, string $state): string
@@ -570,13 +664,16 @@ final class BackOfficeRouter
     private function paymentLabel(WC_Order $order): string
     {
         if ($order->is_paid()) {
-            return 'Fizetés rendben';
+            // WooCommerce marks COD as processing before cash collection.
+            return $order->get_payment_method() === 'cod' ? 'Utánvét' : 'Fizetés rendben';
         }
 
         return match ($order->get_status()) {
             'pending' => 'Fizetésre vár',
             'on-hold' => 'Ellenőrzés szükséges',
-            'cancelled', 'failed', 'refunded' => 'Törölt',
+            'cancelled' => 'Törölt rendelés',
+            'failed' => 'Sikertelen fizetés',
+            'refunded' => 'Visszatérítve',
             default => 'Ellenőrzés szükséges',
         };
     }
@@ -690,7 +787,8 @@ final class BackOfficeRouter
     private function documentStart(string $title, bool $print = false): void
     {
         status_header(200);
-        ?><!doctype html><html <?php language_attributes(); ?>><head><meta charset="<?php bloginfo('charset'); ?>"><meta name="viewport" content="width=device-width, initial-scale=1"><title><?php echo esc_html($title); ?></title><?php wp_head(); ?><link rel="stylesheet" href="<?php echo esc_url(plugins_url('assets/backoffice.css', dirname(__DIR__, 2) . '/appleklinika-backoffice.php')); ?>"></head><body class="akbo-body<?php echo $print ? ' akbo-body--print' : ''; ?>"><?php
+        $styleUrl = add_query_arg('ver', (string) filemtime(dirname(__DIR__, 2) . '/assets/backoffice.css'), plugins_url('assets/backoffice.css', dirname(__DIR__, 2) . '/appleklinika-backoffice.php'));
+        ?><!doctype html><html <?php language_attributes(); ?>><head><meta charset="<?php bloginfo('charset'); ?>"><meta name="viewport" content="width=device-width, initial-scale=1"><title><?php echo esc_html($title); ?></title><?php wp_head(); ?><link rel="stylesheet" href="<?php echo esc_url($styleUrl); ?>"></head><body class="akbo-body<?php echo $print ? ' akbo-body--print' : ''; ?>"><?php
     }
 
     private function documentEnd(): void

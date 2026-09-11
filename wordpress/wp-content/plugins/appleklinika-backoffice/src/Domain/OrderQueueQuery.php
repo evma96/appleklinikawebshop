@@ -15,6 +15,7 @@ final class OrderQueueQuery
     /** @return array<string, mixed> */
     public function arguments(string $queue, int $page, string $term, string $searchType, bool $hposEnabled): array
     {
+        $queue = array_key_exists($queue, FulfilmentWorkflow::queueLabels()) ? $queue : '';
         $arguments = [
             'type' => 'shop_order',
             'limit' => self::PAGE_SIZE,
@@ -25,7 +26,13 @@ final class OrderQueueQuery
             'orderby' => 'date ID',
             'order' => 'DESC',
             'return' => 'objects',
-            'status' => FulfilmentWorkflow::operationalOrderStatuses(),
+            'status' => match ($queue) {
+                'payment_pending' => ['pending'],
+                'payment_on_hold' => ['on-hold'],
+                'handed_to_gls' => [...FulfilmentWorkflow::operationalOrderStatuses(), 'completed'],
+                'wc_completed' => ['completed'],
+                default => FulfilmentWorkflow::operationalOrderStatuses(),
+            },
         ];
 
         $queueMetaQuery = $this->queueMetaQuery($queue);
@@ -119,6 +126,9 @@ final class OrderQueueQuery
         }
 
         $digits = preg_replace('/\D+/', '', $term) ?? '';
+        if ($digits === $term && strlen($digits) <= 6) {
+            return 'order';
+        }
         if ($digits === $term && strlen($digits) >= 10) {
             return 'device';
         }
@@ -132,29 +142,44 @@ final class OrderQueueQuery
     /** @return array<string, mixed> */
     private function queueMetaQuery(string $queue): array
     {
-        if ($queue === '') {
+        // WooCommerce completion and physical handover are separate facts. This
+        // status-only view also finds completed orders without Back Office metadata.
+        if ($queue === 'wc_completed') {
             return [];
+        }
+
+        if (in_array($queue, ['', 'payment_pending', 'payment_on_hold'], true)) {
+            return $this->missingOrNotInStateQuery(FulfilmentWorkflow::terminalStates());
         }
 
         $states = FulfilmentWorkflow::queueStates()[$queue] ?? [];
         if ($queue === 'new') {
-            $stateQuery = [
-                'relation' => 'OR',
-                [
-                    'key' => FulfilmentWorkflow::META_KEY,
-                    'compare' => 'NOT EXISTS',
-                ],
-            ];
-
-            $stateQuery[] = [
-                'key' => FulfilmentWorkflow::META_KEY,
-                'value' => FulfilmentWorkflow::NEW,
-                'compare' => '=',
-            ];
-            return $stateQuery;
+            // state() treats missing, empty and unrecognised metadata as NEW.
+            // Use the same definition for the worklist and its dashboard count.
+            return $this->missingOrNotInStateQuery(array_values(array_diff(
+                array_keys(FulfilmentWorkflow::labels()),
+                [FulfilmentWorkflow::NEW]
+            )));
         }
 
         return $this->stateMetaQuery($states);
+    }
+
+    /** @param list<string> $states @return array<string|int, mixed> */
+    private function missingOrNotInStateQuery(array $states): array
+    {
+        return [
+            'relation' => 'OR',
+            [
+                'key' => FulfilmentWorkflow::META_KEY,
+                'compare' => 'NOT EXISTS',
+            ],
+            [
+                'key' => FulfilmentWorkflow::META_KEY,
+                'value' => $states,
+                'compare' => 'NOT IN',
+            ],
+        ];
     }
 
     /** @param list<string> $states @return array<string|int, mixed> */

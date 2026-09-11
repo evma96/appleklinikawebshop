@@ -24,6 +24,10 @@ test-integration:
 
 test-backoffice-workflow:
 	$(COMPOSE) exec -T wordpress php /var/www/html/wp-content/plugins/appleklinika-backoffice/tests/fulfilment-workflow.php
+	$(COMPOSE) exec -T wordpress php /var/www/html/wp-content/plugins/appleklinika-backoffice/tests/queue-query.php
+	$(COMPOSE) exec -T wordpress php /var/www/html/wp-content/plugins/appleklinika-backoffice/tests/order-documents.php
+	$(COMPOSE) exec -T wordpress php /var/www/html/wp-content/plugins/appleklinika-backoffice/tests/repository-operations.php
+	$(COMPOSE) exec -T wordpress php /var/www/html/wp-content/plugins/appleklinika-backoffice/tests/router-views.php
 
 test-inventory-catalog:
 	$(COMPOSE) exec -T wordpress php /var/www/html/wp-content/plugins/appleklinika-inventory/tests/catalog-storage.php

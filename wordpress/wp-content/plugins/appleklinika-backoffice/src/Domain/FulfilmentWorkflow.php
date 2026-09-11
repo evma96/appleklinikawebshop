@@ -52,6 +52,7 @@ final class FulfilmentWorkflow
     public static function actions(): array
     {
         return [
+            'note' => 'Belső megjegyzés hozzáadása',
             'start' => 'Feldolgozás megkezdése',
             'start_packing' => 'Csomagolás megkezdése',
             'packing_completed' => 'Csomagolás kész',
@@ -107,9 +108,32 @@ final class FulfilmentWorkflow
             'preparation' => [self::PREPARATION, self::STARTED, self::DEVICE_CHECKED],
             'packing' => [self::PACKING],
             'ready_for_shipping' => [self::READY_FOR_SHIPPING, self::READY_FOR_PICKUP, self::PACKED, self::DOCUMENTS_READY, self::LABEL_CREATED],
-            'handed_to_gls' => [self::HANDED_TO_GLS, self::COMPLETED, self::PICKED_UP],
+            'handed_to_gls' => self::terminalStates(),
             'problem' => [self::PROBLEM],
         ];
+    }
+
+    /** @return array<string, string> */
+    public static function queueLabels(): array
+    {
+        return [
+            '' => 'Összes nyitott',
+            'new' => 'Feldolgozásra vár',
+            'preparation' => 'Előkészítés alatt',
+            'packing' => 'Csomagolás alatt',
+            'ready_for_shipping' => 'Átadásra előkészítve',
+            'problem' => 'Problémás',
+            'payment_pending' => 'Fizetésre vár',
+            'payment_on_hold' => 'Fizetés ellenőrzendő',
+            'handed_to_gls' => 'Átadva / átvéve',
+            'wc_completed' => 'Lezárt rendelések',
+        ];
+    }
+
+    /** @return list<string> */
+    public static function terminalStates(): array
+    {
+        return [self::HANDED_TO_GLS, self::COMPLETED, self::PICKED_UP];
     }
 
     /** @return array<string, string> */
