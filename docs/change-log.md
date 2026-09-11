@@ -16,6 +16,10 @@
 
 ## Unreleased
 
+- Restricted the five Back Office standalone regression scripts to CLI execution during the staging-candidate pre-commit review; direct HTTP requests return 404 before running test code. No application workflow changed in this safety follow-up.
+
+- Refined Back Office daily processing with a denser actionable queue, linked live summary cards, delivery-specific progress and next-action hierarchy, responsive order details, safe multiline addresses, explicit COD wording, order-time device metadata precedence, and manual-note employee activity. Fixed open/terminal queue consistency and separated physical handover from WooCommerce completion. Added protected existing invoice/GLS PDF access using provider-owned files, real tracking links, and pre-provider workflow/sandbox guards. No provider was activated or called, no invoice-generation action was added, and no historical migration was performed. Local QA details: `docs/backoffice-daily-processing-qa.md`.
+
 - Added the Apple Klinika Buyback Phase 1B-A pure domain foundation with immutable value objects, a complete actor/mode/guard-aware status-transition policy, versioned aggregate events, typed application ports, and a deterministic 639-assertion domain test suite while keeping schema version `1.0.0` and public behavior unchanged.
 - Added the standalone Apple Klinika Buyback Phase 1A plugin foundation with semantic schema versioning, idempotent migrations for request/snapshot/event tables, capability-gated read-only WooCommerce diagnostics, read-only legacy record detection, and a Docker-backed activation/migration smoke test without public buyback UI or legacy import.
 - Added a visible, accessible `Eltávolítás` action to each filled-cart row using WooCommerce's cart-item removal URL and nonce, and renamed the existing coupon submit action to `Kupon alkalmazása` with cart-scoped responsive sizing.
@@ -246,3 +250,4 @@
 - Fixed BO-SEARCH-001 by wrapping exact device-identifier metadata filters in a valid HPOS query group, and added delivery-mode-aware GLS and personal-pickup workflows derived from canonical WooCommerce shipping method IDs.
 - Changed Back Office notes to show manual employee text only, renamed the optional internal document to `Rendelési lap`, and made unconfigured GLS readiness explicit without a fake label or handover path.
 - Fixed Back Office queue pagination for same-second order creation: the bounded WooCommerce/HPOS query now sorts by creation date and immutable order ID, both descending, so an order appears on exactly one page in a stable result set.
+- Fixed Back Office worklist selector submission and automatic short numeric order-ID detection, while preserving explicit search types and HPOS-backed device search.

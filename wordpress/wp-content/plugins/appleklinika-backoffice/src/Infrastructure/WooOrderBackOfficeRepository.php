@@ -124,31 +124,54 @@ final class WooOrderBackOfficeRepository
         return DeliveryMode::label($this->deliveryMode($order));
     }
 
-    /** @return list<array{product_id:int,name:string,quantity:int,details:array<string,string>}> */
+    /** @return list<array{product_id:int,name:string,quantity:int,details:array<string,string>,detail_sources:array<string,string>}> */
     public function deviceItems(WC_Order $order): array
     {
         $items = [];
+        $lineItems = $order->get_items('line_item');
 
-        foreach ($order->get_items('line_item') as $item) {
+        foreach ($lineItems as $item) {
             if (! $item instanceof WC_Order_Item_Product) {
                 continue;
             }
 
             $productId = $item->get_variation_id() ?: $item->get_product_id();
-            $product = $item->get_product();
             $details = [];
+            $sources = [];
             foreach ($this->deviceMetaLabels() as $key => $label) {
-                $value = (string) get_post_meta($productId, '_appleklinika_' . $key, true);
+                $value = trim((string) $item->get_meta('_appleklinika_' . $key, true));
+                if ($key === 'internal_identifier') {
+                    $snapshots = $this->deviceIdentifierSnapshots($item);
+                    if ($snapshots === [] && $value !== '') {
+                        $snapshots = [$value];
+                    }
+                    if ($snapshots === []) {
+                        $serial = trim((string) $item->get_meta('_appleklinika_serial_number', true));
+                        $snapshots = $serial === '' ? [] : [$serial];
+                    }
+                    // Order-level snapshots do not identify a particular line in a multi-item order.
+                    if ($snapshots === [] && count($lineItems) === 1) {
+                        $snapshots = $this->deviceIdentifierSnapshots($order);
+                    }
+                    $value = implode(' / ', $snapshots);
+                }
+                $source = 'order';
+                if ($value === '' && $productId > 0) {
+                    $value = (string) get_post_meta($productId, '_appleklinika_' . $key, true);
+                    $source = 'product';
+                }
                 if ($value !== '') {
-                    $details[$label] = $this->humanValue($key, $value);
+                    $details[$label] = $key === 'internal_identifier' ? $value : $this->humanValue($key, $value);
+                    $sources[$label] = $source;
                 }
             }
 
             $items[] = [
                 'product_id' => $productId,
-                'name' => $product ? $product->get_name() : $item->get_name(),
+                'name' => $item->get_name(),
                 'quantity' => $item->get_quantity(),
                 'details' => $details,
+                'detail_sources' => $sources,
             ];
         }
 
@@ -205,13 +228,29 @@ final class WooOrderBackOfficeRepository
 
     public function glsReadinessMessage(): ?string
     {
-        if (! class_exists('GLS_Shipping_Order') || ! class_exists('GLS_Shipping_Account_Helper')) {
+        if (! defined('GLS_SHIPPING_ABSPATH') || ! class_exists('GLS_Shipping_For_Woo') || ! class_exists('GLS_Shipping_Account_Helper') || ! class_exists('GLS_Shipping_Sender_Address_Helper')) {
             return 'GLS kapcsolat nincs konfigurálva ebben a környezetben.';
         }
 
         $account = \GLS_Shipping_Account_Helper::get_active_account();
         if (! is_array($account) || trim((string) ($account['client_id'] ?? '')) === '' || trim((string) ($account['username'] ?? '')) === '' || trim((string) ($account['password'] ?? '')) === '') {
             return 'GLS kapcsolat nincs konfigurálva ebben a környezetben.';
+        }
+
+        $host = strtolower((string) wp_parse_url(home_url('/'), PHP_URL_HOST));
+        $localOrTest = wp_get_environment_type() !== 'production' || in_array($host, ['localhost', '127.0.0.1', '[::1]', '::1'], true);
+        if ($localOrTest && ($account['mode'] ?? '') !== 'sandbox') {
+            return 'Helyi és tesztkörnyezetben GLS címke kizárólag Sandbox kapcsolattal készíthető.';
+        }
+
+        $sender = \GLS_Shipping_Sender_Address_Helper::format_for_api_pickup(
+            \GLS_Shipping_Sender_Address_Helper::get_default_sender_address(),
+            (string) \GLS_Shipping_Account_Helper::get_account_setting('phone_number')
+        );
+        foreach (['Name', 'Street', 'City', 'ZipCode', 'CountryIsoCode', 'ContactPhone'] as $field) {
+            if (trim((string) ($sender[$field] ?? '')) === '') {
+                return 'A GLS feladóadatai hiányosak. A feladási cím és telefonszám beállítása szükséges.';
+            }
         }
 
         return null;
@@ -280,10 +319,57 @@ final class WooOrderBackOfficeRepository
             throw new InvalidArgumentException('A belső megjegyzés nem lehet üres.');
         }
 
-        $user = get_userdata(get_current_user_id());
+        $userId = get_current_user_id();
+        $user = get_userdata($userId);
+        if ($userId <= 0 || ! $user || (! current_user_can('manage_appleklinika_backoffice') && ! current_user_can('manage_options'))) {
+            throw new InvalidArgumentException('Belső megjegyzéshez Back Office jogosultság szükséges.');
+        }
         $userName = $user ? $user->display_name : 'Ismeretlen felhasználó';
-        $order->add_order_note(self::MANUAL_NOTE_MARKER . ' ' . $note, false, true);
+        $content = self::MANUAL_NOTE_MARKER . ' ' . $note;
+        $orderId = $order->get_id();
+        $authorApplied = false;
+        // WooCommerce's default author selection requires edit_shop_orders. Attribute
+        // this one authorized Back Office note without granting that broader capability.
+        $noteAuthor = static function (array $data, array $context) use ($orderId, $content, $userId, $user, &$authorApplied): array {
+            if ($authorApplied || get_current_user_id() !== $userId
+                || (int) ($context['order_id'] ?? 0) !== $orderId
+                || ! empty($context['is_customer_note'])
+                || (int) ($data['comment_post_ID'] ?? 0) !== $orderId
+                || ($data['comment_type'] ?? '') !== 'order_note'
+                || ($data['comment_content'] ?? '') !== $content) {
+                return $data;
+            }
+
+            $authorApplied = true;
+            $data['comment_author'] = $user->display_name;
+            $data['comment_author_email'] = $user->user_email;
+            $data['user_id'] = $userId;
+            return $data;
+        };
+        add_filter('woocommerce_new_order_note_data', $noteAuthor, 10, 2);
+        try {
+            $noteId = $order->add_order_note($content, false, true);
+        } finally {
+            remove_filter('woocommerce_new_order_note_data', $noteAuthor, 10);
+        }
+        if (! $noteId) {
+            throw new InvalidArgumentException('A belső megjegyzést nem sikerült menteni.');
+        }
+        $state = $this->state($order);
+        $activity = [
+            'order_id' => $order->get_id(),
+            'action' => 'note',
+            'from' => $state,
+            'to' => $state,
+            'user_id' => $userId,
+            'user' => $userName,
+            'at' => current_time('mysql'),
+        ];
+        $history = $this->history($order);
+        $history[] = $activity;
+        $order->update_meta_data(self::HISTORY_META_KEY, $history);
         $order->save();
+        $this->recordTodayActivity($activity);
     }
 
     public function isManualInternalNote(string $content): bool
@@ -320,12 +406,34 @@ final class WooOrderBackOfficeRepository
 
     public function createGlsLabel(WC_Order $order): void
     {
+        // Reject an ineligible workflow before loading or invoking the provider.
+        FulfilmentWorkflow::transition($this->state($order), 'create_label', $this->deliveryMode($order));
+        $blockReason = $this->fulfilmentBlockReason($order);
+        if ($blockReason !== null) {
+            throw new InvalidArgumentException($blockReason);
+        }
         if ($this->hasGlsLabel($order)) {
             throw new InvalidArgumentException('Ehhez a rendeléshez már létezik GLS címke; új címke nem készült.');
         }
         $readiness = $this->glsReadinessMessage();
         if ($readiness !== null) {
             throw new InvalidArgumentException($readiness);
+        }
+
+        // The active plugin only includes these operation classes in wp-admin.
+        // Reuse its own implementation for the authorized front-end operation.
+        foreach ([
+            'GLS_Shipping_API_Data' => 'includes/api/class-gls-shipping-api-data.php',
+            'GLS_Shipping_API_Service' => 'includes/api/class-gls-shipping-api-service.php',
+            'GLS_Shipping_Order' => 'includes/admin/class-gls-shipping-order.php',
+        ] as $class => $relativePath) {
+            if (! class_exists($class)) {
+                $path = GLS_SHIPPING_ABSPATH . $relativePath;
+                if (! is_readable($path)) {
+                    throw new InvalidArgumentException('A GLS bővítmény címkekészítő funkciója nem érhető el.');
+                }
+                require_once $path;
+            }
         }
 
         $gls = new \GLS_Shipping_Order();
@@ -338,6 +446,20 @@ final class WooOrderBackOfficeRepository
         if (! $order instanceof WC_Order || ! $this->hasGlsLabel($order)) {
             throw new InvalidArgumentException('A GLS nem adott vissza menthető címkét; a teljesítési állapot nem változott.');
         }
+    }
+
+    /** @return list<string> */
+    private function deviceIdentifierSnapshots(WC_Order|WC_Order_Item_Product $source): array
+    {
+        $identifiers = [];
+        foreach ($source->get_meta(OrderQueueQuery::DEVICE_IDENTIFIER_META_KEY, false, 'edit') as $meta) {
+            $value = $meta->value;
+            if (is_scalar($value) && trim((string) $value) !== '') {
+                $identifiers[] = trim((string) $value);
+            }
+        }
+
+        return array_values(array_unique($identifiers));
     }
 
     /** @return array<string, string> */

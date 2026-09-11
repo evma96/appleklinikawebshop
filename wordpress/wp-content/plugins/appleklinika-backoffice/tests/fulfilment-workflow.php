@@ -2,6 +2,11 @@
 
 declare(strict_types=1);
 
+if (PHP_SAPI !== 'cli') {
+    http_response_code(404);
+    exit;
+}
+
 require_once dirname(__DIR__) . '/src/Domain/DeliveryMode.php';
 require_once dirname(__DIR__) . '/src/Domain/FulfilmentWorkflow.php';
 require_once dirname(__DIR__) . '/src/Domain/OrderQueueQuery.php';
@@ -62,7 +67,7 @@ final class FulfilmentWorkflowTest
         $this->assert($deviceSearch['meta_query'][0]['relation'] === 'OR', 'A combined queue and device search preserves the queue OR group inside the outer AND group.');
         $this->assert($deviceSearch['meta_query'][1]['key'] === OrderQueueQuery::DEVICE_IDENTIFIER_META_KEY && $deviceSearch['meta_query'][1]['compare'] === '=', 'Device identifier search uses an exact order snapshot lookup.');
         $deviceOnlySearch = $queueQuery->arguments('', 1, 'AK-DEMO-13PRO-079', 'device', true);
-        $this->assert($deviceOnlySearch['meta_query']['relation'] === 'AND' && $deviceOnlySearch['meta_query'][0]['key'] === OrderQueueQuery::DEVICE_IDENTIFIER_META_KEY, 'A single device condition remains inside an HPOS-compatible meta-query group.');
+        $this->assert($deviceOnlySearch['meta_query']['relation'] === 'AND' && $deviceOnlySearch['meta_query'][1]['key'] === OrderQueueQuery::DEVICE_IDENTIFIER_META_KEY && $deviceOnlySearch['meta_query'][0][1]['compare'] === 'NOT IN', 'Device searches preserve both the open-order exclusion and an HPOS-compatible exact metadata group.');
         $preparationQueue = $queueQuery->arguments('preparation', 1, '', '', true);
         $this->assert($preparationQueue['meta_query']['relation'] === 'OR' && $preparationQueue['meta_query'][0]['compare'] === 'IN' && $preparationQueue['meta_query'][0]['value'] === FulfilmentWorkflow::queueStates()['preparation'], 'Multi-state queue-only queries keep their group boundary and use one equivalent HPOS-native IN condition.');
         $readyQueue = $queueQuery->arguments('ready_for_shipping', 1, '', '', true);
@@ -74,6 +79,9 @@ final class FulfilmentWorkflowTest
         $this->assert($nameSearch['page'] === 4 && isset($nameSearch['field_query']), 'Customer search is a paged HPOS field query, not an in-memory order loop.');
         $orderSearch = $queueQuery->arguments('', 1, '#529', 'order', true);
         $this->assert(($orderSearch['id'] ?? 0) === 529, 'Order-number search uses WooCommerce\'s HPOS-compatible ID constraint.');
+        $automaticOrderSearch = $queueQuery->arguments('', 1, '1376', '', true);
+        $this->assert($queueQuery->searchType('1376', '') === 'order' && ($automaticOrderSearch['id'] ?? 0) === 1376 && $queueQuery->searchType('#1376', '') === 'order', 'Automatic search recognizes short numeric WooCommerce order IDs with or without a leading #.');
+        $this->assert($queueQuery->searchType('356789012345678', '') === 'device' && $queueQuery->searchType('Teszt Vásárló', '') === 'customer', 'Automatic device and customer search detection remains unchanged for their existing input forms.');
         $this->assert(OrderQueueQuery::PRIMARY_ITEM_NAME_META_KEY !== '' && OrderQueueQuery::SHIPPING_METHOD_META_KEY !== '', 'New queue rows can use order-time item and shipping snapshots without loading product details per row.');
 
         $this->assert(FulfilmentWorkflow::state(FulfilmentWorkflow::STARTED) === FulfilmentWorkflow::PREPARATION && FulfilmentWorkflow::state(FulfilmentWorkflow::LABEL_CREATED) === FulfilmentWorkflow::READY_FOR_SHIPPING, 'Old workflow states normalize safely to the simplified workflow.');
@@ -124,6 +132,7 @@ final class FulfilmentWorkflowTest
         $this->assert(str_contains($customerProgress, '$order->get_user_id() !== get_current_user_id()') && ! str_contains($customerProgress, 'Back Office belső megjegyzés') && ! str_contains($customerProgress, "['user']"), 'Customer progress is restricted to the order owner and does not render internal notes or employee names.');
         $this->assert(is_string($router) && str_contains($router, 'fulfilmentBlockReason') && str_contains($router, 'Rendelés állapota frissítve:') && str_contains($router, 'notice_type'), 'Blocked actions and successful state changes both have visible Post/Redirect/Get feedback.');
         $this->assert(is_string($router) && str_contains($router, 'orderUrl($order->get_id(), $worklistContext)') && str_contains($router, 'renderWorklistContextInputs($worklistContext)') && str_contains($router, 'worklistContext($_POST)'), 'List-to-detail links, state-change PRG, and internal-note PRG all carry the validated worklist context.');
+        $this->assert(is_string($router) && str_contains($router, 'name="queue" onchange="this.form.submit()"'), 'Changing the worklist filter submits its existing GET form instead of leaving the rendered list stale.');
         $this->assert(is_string($repository) && str_contains($repository, 'MANUAL_NOTE_MARKER') && str_contains($router, 'isManualInternalNote($content)'), 'Manual internal notes have a dedicated marker, so workflow system notes remain out of the notes section.');
         $this->assert(is_string($router) && str_contains($router, 'if ($deliveryMode === DeliveryMode::GLS)') && str_contains($router, 'Rendelési lap nyomtatása') && str_contains($router, 'GLS kapcsolat nincs konfigurálva ebben a környezetben.'), 'Pickup details omit the GLS panel, printing is delivery-neutral, and unavailable GLS readiness is explicit.');
         $this->assert(is_string($router) && str_contains($router, '$action === \'handed_to_gls\' && ! $this->orders->hasGlsLabel($order)'), 'A GLS handover is rejected server-side until a real GLS label exists.');
