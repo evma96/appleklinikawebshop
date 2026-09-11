@@ -6,6 +6,8 @@ The Back Office is a private order-fulfilment workspace at `/backoffice/`. Activ
 
 All reads and mutations are protected server-side. Order actions use WordPress nonces, validate the WooCommerce order through `wc_get_order()`, and use WooCommerce CRUD APIs. No Back Office REST route is public.
 
+An optional, explicitly configured dedicated host can serve this same application and database. Only an exact request-host match activates scoped core URL generation for native WordPress login, login POST, logout and Back Office navigation. The default storefront remains unchanged; this is not cross-subdomain SSO and does not broaden employee capabilities. See [dedicated-host configuration, verification and rollback](backoffice-staging-host.md).
+
 ## Source of truth
 
 WooCommerce remains the source of truth for orders, payment, shipping and stock. The physical device is the ordered unique WooCommerce product. Its device metadata uses the existing `Appleklinika Inventory` fields, including `_appleklinika_storage_capacity`, `_appleklinika_color`, `_appleklinika_overall_grade`, `_appleklinika_sim_config`, `_appleklinika_battery_health`, and `_appleklinika_internal_identifier`.
@@ -79,6 +81,6 @@ The shipping plugin's existing metadata is displayed only for GLS orders. `Bels≈
 
 ## Verification
 
-`make test-backoffice-workflow` runs the standalone workflow, queue-query, provider-document, repository-operation, and rendered-view suites. They do not bootstrap live integrations or make external calls; document tests clean isolated temporary PDF fixtures. Rendered address tests use the installed WordPress sanitizer without bootstrapping WordPress. `make test` includes all five suites. See [runtime QA and remaining integration limits](backoffice-daily-processing-qa.md).
+`make test-backoffice-workflow` runs the standalone workflow, queue-query, provider-document, repository-operation, rendered-view and dedicated-host URL suites. They do not bootstrap live integrations or make external calls; document tests clean isolated temporary PDF fixtures. Rendered address tests use the installed WordPress sanitizer without bootstrapping WordPress. `make test` includes all six suites (194 assertions). See [runtime QA and remaining integration limits](backoffice-daily-processing-qa.md).
 
-All five regression entry points require PHP CLI. Direct HTTP requests return 404 before loading stubs or creating temporary test documents, so a deployed plugin cannot expose an executable browser-based test harness.
+All six regression entry points require PHP CLI. Direct HTTP requests return 404 before loading stubs or creating temporary test documents, so a deployed plugin cannot expose an executable browser-based test harness.
