@@ -623,6 +623,10 @@ function appleklinika_body_classes(array $classes): array
         $classes[] = 'ak-contact-page';
     }
 
+    if (is_page() && in_array(get_queried_object_id(), array_column(appleklinika_legal_public_documents(), 'page_id'), true)) {
+        $classes[] = 'ak-legal-page';
+    }
+
     return $classes;
 }
 

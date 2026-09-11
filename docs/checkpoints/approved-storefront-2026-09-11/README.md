@@ -5,10 +5,15 @@ The containing commit on `feature/homepage-carousel-polish` preserves the approv
 theme code, homepage, eight-slide carousel, category photos, Contact map and mobile
 directions chooser. This snapshot does not run automatically or change the site.
 
+Publication review found private GPS/capture metadata in four photo families
+(40 files). These files are sanitized losslessly from their first appearance in
+the rewritten unpublished history, with the manifest updated. Pixels, orientation,
+ICC and HDR data are preserved. See `../../publication-safety-review.md`.
+
 `content.json` records the public homepage/Contact options, featured product
 selection, resolved unchanged iPhone category image, and the 12 media-library
-entries used by those sections. `media/` retains their exact original and generated
-image files relative to the WordPress uploads directory. `files.json` records
+entries used by those sections. `media/` retains the original and generated
+image pixels with private capture metadata removed, relative to the WordPress uploads directory. `files.json` records
 SHA-256 hashes and byte counts for every copy. The tracked theme already contains
 the default service photo. No credentials, customer records or orders are exported.
 

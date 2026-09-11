@@ -296,6 +296,14 @@ Martin approved the current LOCAL homepage, carousel, category photos and Contac
 on 2026-09-11. Their code and public content/media recovery snapshot are preserved
 in the feature-branch checkpoint; see [Approved LOCAL storefront](docs/checkpoints/approved-storefront-2026-09-11/README.md).
 
+The subsequent [small LOCAL polish pass](docs/local-storefront-polish.md) changes
+only the shop page's Hungarian title and legal-page heading alignment. Martin
+approved these follow-up changes for feature-branch commit and TEST acceptance.
+
+The [publication safety repair](docs/publication-safety-review.md) removes private
+photo metadata from its first appearance in the unpublished history. The approved
+image pixels and rendering metadata are preserved; published history is immutable.
+
 Internal identifier / IMEI remains admin-only and is not rendered on the frontend.
 
 ## Local Selector Demo Products
