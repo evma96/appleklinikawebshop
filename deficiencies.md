@@ -227,3 +227,8 @@
   incident retain their existing classification. This phase does not reopen them.
 - Detailed scope, evidence, source ownership and TEST rollout prerequisites:
   [Order/email lifecycle](docs/order-email-lifecycle.md).
+
+## LOCAL recovery — 2026-09-28
+
+- Deleted temporary-worktree mounts were replaced by the durable storefront source documented in `docs/local-development.md`; existing LOCAL database/core volumes and all uploads were preserved. The two implementation checkpoints and their five differing shared files remain unreconciled.
+- At the initial restoration checkpoint, Contact map iframe output was unchanged and immediate, but the in-app browser map surface remained blank; authenticated Back Office work-queue verification awaited a separate LOCAL login. Final recovery verification is a separate follow-up to these initial observations. Neither observation is a deployment or provider integration result.
