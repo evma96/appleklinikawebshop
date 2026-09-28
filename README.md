@@ -338,3 +338,7 @@ and the separate invoicing-plugin PRO activation still block actual provider
 acceptance. See [implementation and audit correction](docs/order-email-lifecycle.md)
 for exact triggers, safety gates, local evidence and the remaining TEST steps.
 Run `make test-order-lifecycle` for the dedicated offline checks.
+
+## Durable LOCAL recovery
+
+Use the [durable LOCAL development guide](docs/local-development.md) for the restored storefront at localhost:8082 and the separate Back Office at localhost:18080. The storefront runs from `/Users/apple/Desktop/appleklinika-storefront-active`, preserving the existing LOCAL database/uploads; the dirty primary worktree and obsolete temporary preview paths are not runtime sources. The recovery overlay is LOCAL-only and opt-in through the private `.env`.

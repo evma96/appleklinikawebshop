@@ -1,0 +1,28 @@
+# Opt-in LOCAL recovery overlay. Never use for TEST or production.
+# Select through the ignored .env COMPOSE_FILE value; see docs/local-development.md.
+services:
+  wordpress:
+    # Old LOCAL content may still contain localhost:8080 links. Same durable app.
+    ports:
+      - "${LOCAL_LEGACY_WORDPRESS_PORT:-127.0.0.1:8080}:80"
+    environment:
+      WORDPRESS_CONFIG_EXTRA: |
+        define('WP_HOME', '${LOCAL_WORDPRESS_URL:?Set the LOCAL storefront URL}');
+        define('WP_SITEURL', '${LOCAL_WORDPRESS_URL:?Set the LOCAL storefront URL}');
+        define('WP_ENVIRONMENT_TYPE', 'local');
+        define('DISABLE_WP_CRON', true);
+        define('WP_HTTP_BLOCK_EXTERNAL', true);
+        define('AUTOMATIC_UPDATER_DISABLED', true);
+        define('DISALLOW_FILE_MODS', true);
+    volumes:
+      - ./wordpress/wp-content:/var/www/html/wp-content:ro
+      - ./wordpress/wp-content/uploads:/var/www/html/wp-content/uploads
+
+# Reuse the original LOCAL stores. Compose must not create/import replacement data.
+volumes:
+  wordpress_data:
+    external: true
+    name: ${LOCAL_WORDPRESS_VOLUME:?Set the existing LOCAL WordPress volume}
+  mariadb_data:
+    external: true
+    name: ${LOCAL_DATABASE_VOLUME:?Set the existing LOCAL database volume}
