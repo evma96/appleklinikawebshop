@@ -210,3 +210,20 @@
 - Which Apple product family should be added after iPad, MacBook, and Apple Watch: AirPods, accessories, or another device line?
 - Should production catalog deletion become archive-only after real products depend on catalog values?
 - Who owns the final legal text for ÁSZF, privacy, warranty, shipping, and returns pages?
+# 2026-09-16 lifecycle implementation follow-up
+
+- **HIGH / CONFIG + TEST access:** The actual TEST invoice plugin still displays
+  its separate PRO activation gate; TEST SSH times out. Számlázz.hu TEST itself
+  provides #profi capability. Existing plugin entitlement must be activated or
+  clarified; no live subscription change is implied. The new lifecycle is local
+  only, and the requested real provider acceptance remains blocked.
+- **APPLICATION, locally addressed / pending TEST:** Current-array GLS tracking,
+  invoice-ready primary mail, one handoff-only shipping mail, durable duplicate
+  guards and shared Back Office/Woo-admin transitions are implemented and locally
+  exercised. They must not be described as a completed TEST fix yet.
+- **SMTP / delivery evidence outstanding:** Application acceptance and actual
+  recipient inbox delivery remain separate. No transport provider was installed.
+- Known legal/sample content and the previously resolved storefront media-access
+  incident retain their existing classification. This phase does not reopen them.
+- Detailed scope, evidence, source ownership and TEST rollout prerequisites:
+  [Order/email lifecycle](docs/order-email-lifecycle.md).

@@ -329,3 +329,12 @@ http://localhost:8080/wp-admin/admin.php?appleklinika_seed_selector_demo=confirm
 ```
 
 The seeder is idempotent by SKU, so rerunning it updates the same local selector demo products instead of creating endless duplicates.
+# TEST order/email lifecycle implementation
+
+The isolated `feature/order-email-lifecycle` work adds invoice-ready customer mail,
+an audited GLS-handoff notification, shared fulfillment transitions and current
+multi-parcel tracking reads. It has **not been deployed to TEST**: server access
+and the separate invoicing-plugin PRO activation still block actual provider
+acceptance. See [implementation and audit correction](docs/order-email-lifecycle.md)
+for exact triggers, safety gates, local evidence and the remaining TEST steps.
+Run `make test-order-lifecycle` for the dedicated offline checks.
