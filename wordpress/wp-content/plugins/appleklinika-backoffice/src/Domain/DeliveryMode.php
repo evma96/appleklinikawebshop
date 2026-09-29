@@ -23,7 +23,7 @@ final class DeliveryMode
     /** @param list<string> $methodIds */
     public static function fromShippingMethodIds(array $methodIds): string
     {
-        $methodIds = array_values(array_unique(array_filter(array_map('strval', $methodIds))));
+        $methodIds = array_values(array_unique(array_map('strval', $methodIds)));
         if (count($methodIds) !== 1) {
             return self::UNKNOWN;
         }

@@ -135,6 +135,8 @@ final class FulfilmentWorkflowTest
         $this->assert(is_string($router) && str_contains($router, 'name="queue" onchange="this.form.submit()"'), 'Changing the worklist filter submits its existing GET form instead of leaving the rendered list stale.');
         $this->assert(is_string($repository) && str_contains($repository, 'MANUAL_NOTE_MARKER') && str_contains($router, 'isManualInternalNote($content)'), 'Manual internal notes have a dedicated marker, so workflow system notes remain out of the notes section.');
         $this->assert(is_string($router) && str_contains($router, 'if ($deliveryMode === DeliveryMode::GLS)') && str_contains($router, 'Rendelési lap nyomtatása') && str_contains($router, 'GLS kapcsolat nincs konfigurálva ebben a környezetben.'), 'Pickup details omit the GLS panel, printing is delivery-neutral, and unavailable GLS readiness is explicit.');
+        $change = file_get_contents(dirname(__DIR__) . '/src/Application/ChangeFulfilment.php');
+        $this->assert(str_contains($router, '$this->fulfilment->execute') && str_contains($change, "! \$order['label'] || ! \$order['tracking']"), 'Back Office delegates handoff to the shared service, which requires both label and tracking.');
         $this->assert(is_string($router) && str_contains($router, 'rawurlencode((string) $value)') && ! str_contains($router, "'notice' => rawurlencode"), 'Worklist context values, including #order searches, are encoded safely through PRG URLs.');
 
         echo "Back Office fulfilment workflow passed: {$this->assertions} assertions.\n";

@@ -12,6 +12,9 @@ require_once dirname(__DIR__) . '/src/Domain/FulfilmentWorkflow.php';
 require_once dirname(__DIR__) . '/src/Domain/OrderQueueQuery.php';
 require_once dirname(__DIR__) . '/src/Infrastructure/WooOrderBackOfficeRepository.php';
 
+require_once dirname(__DIR__) . '/src/Application/Port/OrderMutex.php';
+class RepositoryFixtureMutex implements \Appleklinika\BackOffice\Application\Port\OrderMutex { public int $calls = 0; public function synchronized(int $id, callable $operation): mixed { ++$this->calls; return $operation(); } }
+
 use Appleklinika\BackOffice\Domain\FulfilmentWorkflow;
 use Appleklinika\BackOffice\Domain\OrderQueueQuery;
 use Appleklinika\BackOffice\Infrastructure\WooOrderBackOfficeRepository;
@@ -152,7 +155,8 @@ final class RepositoryOperationsTest
     }
     public function run(): void
     {
-        $repository = new WooOrderBackOfficeRepository();
+        $mutex = new RepositoryFixtureMutex();
+        $repository = new WooOrderBackOfficeRepository(null, $mutex);
         $order = new WC_Order();
         $item = new WC_Order_Item_Product('Ordered device name');
         $order->items = [$item];
@@ -178,7 +182,8 @@ final class RepositoryOperationsTest
         $order->items = [new WC_Order_Item_Product('Deleted product snapshot', 0)];
         $this->assert($repository->deviceItems($order)[0]['details'][$identifier] === 'ORDER_SNAPSHOT', 'Order snapshots remain available after the original product is deleted.');
 
-        $repository->transition($order, 'start', 81);
+        $GLOBALS['orders'][1376] = $order;
+        $repository->recordTransition($order, 'start', FulfilmentWorkflow::PREPARATION, 81);
         $order->probeForeignNotes = true;
         $repository->addInternalNote($order, ' Confidential note text ');
         $history = $repository->history($order);
@@ -248,6 +253,33 @@ final class RepositoryOperationsTest
         $this->assert(GLS_Shipping_Order::$calls === 1 && $repository->hasGlsLabel($order), 'An eligible action reuses the installed provider entry point and verifies recorded label metadata.');
         $this->rejects(fn () => $repository->createGlsLabel($order), 'A recorded label prevents duplicate generation even if its file is later unavailable.');
         $this->assert(GLS_Shipping_Order::$calls === 1, 'Duplicate prevention takes effect before the provider call.');
+
+        $order->update_meta_data('_appleklinika_backoffice_delivery_mode', 'gls');
+        $order->shippingMethod = 'local_pickup';
+        $this->assert($repository->deliveryMode($order) === 'pickup', 'A stale GLS snapshot never overrides actual pickup shipping.');
+        $this->rejects(fn () => $repository->createGlsLabel($order), 'Stale carrier snapshots cannot authorize generation for pickup.');
+        $order->shippingMethod = '';
+        $this->assert($repository->deliveryMode($order) === 'unknown', 'Missing WooCommerce method data stays unknown regardless of old metadata.');
+        $order->shippingMethod = 'gls_shipping_method';
+        $beforeState = $order->get_meta(FulfilmentWorkflow::META_KEY);
+        $repository->recordDocumentAccess($order, 'invoice');
+        $entry = array_slice($repository->history($order), -1)[0];
+        $this->assert($entry['action'] === 'open_invoice' && $entry['order_id'] === 1376 && $entry['user_id'] === 81 && $entry['user'] === 'QA Employee' && $entry['at'] === '2026-09-10 10:15:00', 'Document access records the real actor, order, action and time in existing history.');
+        $this->assert($entry['from'] === $entry['to'] && $order->get_meta(FulfilmentWorkflow::META_KEY) === $beforeState, 'Document access never changes fulfilment state.');
+        $this->assert(array_slice($repository->todayActivity(), -1)[0]['action'] === 'open_invoice', 'Document access also appears in today’s bounded activity index.');
+        $repository->recordDocumentAccess($order, 'gls_label');
+        $this->assert(array_slice($repository->history($order), -1)[0]['action'] === 'open_gls_label', 'Label access has its own activity action.');
+        $this->rejects(fn () => $repository->recordDocumentAccess($order, 'arbitrary'), 'Unrecognized document operations cannot enter history.');
+        $GLOBALS['backoffice_capability'] = false;
+        $this->rejects(fn () => $repository->recordDocumentAccess($order, 'invoice'), 'Document access audit cannot be written by a user without Back Office access.');
+        $GLOBALS['backoffice_capability'] = true;
+
+        $this->assert($mutex->calls >= 8, 'Notes and document history use the same order lock contract.');
+        $stale = new WC_Order();
+        $stale->update_meta_data(FulfilmentWorkflow::META_KEY, 'new');
+        $beforeHistory = count($repository->history($order));
+        $repository->recordDocumentAccess($stale, 'invoice');
+        $this->assert(count($repository->history($order)) === $beforeHistory + 1 && $repository->state($order) === 'ready_for_shipping', 'Document audit reloads under lock; a stale request cannot overwrite state or history.');
 
         echo "Back Office repository operations passed: {$this->assertions} assertions.\n";
     }
