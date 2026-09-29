@@ -341,4 +341,17 @@ Run `make test-order-lifecycle` for the dedicated offline checks.
 
 ## Durable LOCAL recovery
 
-Use the [durable LOCAL development guide](docs/local-development.md) for the restored storefront at localhost:8082 and the separate Back Office at localhost:18080. The storefront runs from `/Users/apple/Desktop/appleklinika-storefront-active`, preserving the existing LOCAL database/uploads; the dirty primary worktree and obsolete temporary preview paths are not runtime sources. The recovery overlay is LOCAL-only and opt-in through the private `.env`.
+The recovery checkpoint preserves the storefront source at `/Users/apple/Desktop/appleklinika-storefront-active` and the existing LOCAL data. Both running LOCAL environments now use the integration source described below; see the [durable LOCAL development guide](docs/local-development.md) for current startup instructions. The dirty primary worktree and obsolete temporary preview paths are not runtime sources. LOCAL overlays are opt-in through private environment files.
+
+## LOCAL fulfillment / Back Office reconciliation
+
+The integration candidate runs both LOCAL URLs from
+`/Users/apple/Desktop/appleklinika-integration-active` on
+`feature/local-fulfillment-backoffice-integration`, preserving separate databases
+and the original protected checkpoints. Back Office and Woo admin delegate to
+one locked fulfillment service and persist the same Woo order state/history
+read by My Account and the email lifecycle. The opt-in LOCAL runtime blocks mail
+and provider traffic. See the [reconciliation record](docs/local-reconciliation.md)
+for the semantic decisions and completed LOCAL verification evidence,
+and the [current startup instructions](docs/local-development.md). No TEST or
+production deployment is part of this work.

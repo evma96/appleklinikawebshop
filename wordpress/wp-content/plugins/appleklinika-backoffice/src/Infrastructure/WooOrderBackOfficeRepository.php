@@ -7,6 +7,7 @@ namespace Appleklinika\BackOffice\Infrastructure;
 use Appleklinika\BackOffice\Domain\DeliveryMode;
 use Appleklinika\BackOffice\Domain\FulfilmentWorkflow;
 use Appleklinika\BackOffice\Domain\OrderQueueQuery;
+use Appleklinika\BackOffice\Application\Port\OrderMutex;
 use InvalidArgumentException;
 use WC_Order;
 use WC_Order_Item_Product;
@@ -20,7 +21,7 @@ final class WooOrderBackOfficeRepository
 
     private readonly OrderQueueQuery $queueQuery;
 
-    public function __construct(?OrderQueueQuery $queueQuery = null)
+    public function __construct(?OrderQueueQuery $queueQuery = null, private readonly ?OrderMutex $mutex = null)
     {
         $this->queueQuery = $queueQuery ?? new OrderQueueQuery();
     }
@@ -111,12 +112,18 @@ final class WooOrderBackOfficeRepository
 
     public function deliveryMode(WC_Order $order): string
     {
-        $stored = (string) $order->get_meta(self::DELIVERY_MODE_META_KEY, true);
-        if (DeliveryMode::isSupported($stored)) {
-            return $stored;
-        }
-
+        // A stale display snapshot cannot authorize carrier operations after
+        // WooCommerce shipping items have been removed or changed to pickup.
         return DeliveryMode::fromShippingMethodIds($this->shippingMethodIds($order));
+    }
+
+    public function shippingMethods(WC_Order $order): array
+    {
+        return array_values(array_map(static fn ($method): array => [
+            'name' => (string) $method->get_name(),
+            'method_id' => (string) $method->get_method_id(),
+            'instance_id' => (string) $method->get_instance_id(),
+        ], $order->get_shipping_methods()));
     }
 
     public function deliveryModeLabel(WC_Order $order): string
@@ -229,12 +236,21 @@ final class WooOrderBackOfficeRepository
     public function glsReadinessMessage(): ?string
     {
         if (! defined('GLS_SHIPPING_ABSPATH') || ! class_exists('GLS_Shipping_For_Woo') || ! class_exists('GLS_Shipping_Account_Helper') || ! class_exists('GLS_Shipping_Sender_Address_Helper')) {
-            return 'GLS kapcsolat nincs konfigurálva ebben a környezetben.';
+            return 'GLS kapcsolat nincs konfigurálva ebben a környezetben: a bővítmény vagy a szükséges szolgáltatói osztályok nem aktívak.';
         }
 
         $account = \GLS_Shipping_Account_Helper::get_active_account();
-        if (! is_array($account) || trim((string) ($account['client_id'] ?? '')) === '' || trim((string) ($account['username'] ?? '')) === '' || trim((string) ($account['password'] ?? '')) === '') {
-            return 'GLS kapcsolat nincs konfigurálva ebben a környezetben.';
+        if (! is_array($account)) {
+            return 'Nincs használható GLS-fiók kiválasztva a szolgáltatói bővítményben.';
+        }
+        $missing = [];
+        foreach (['client_id' => 'ügyfélszám', 'username' => 'felhasználónév', 'password' => 'jelszó'] as $key => $label) {
+            if (trim((string) ($account[$key] ?? '')) === '') {
+                $missing[] = $label;
+            }
+        }
+        if ($missing !== []) {
+            return 'Hiányos GLS-fiókbeállítás: ' . implode(', ', $missing) . '. Címkekészítéshez a TEST-kapcsolat beállítása szükséges.';
         }
 
         $host = strtolower((string) wp_parse_url(home_url('/'), PHP_URL_HOST));
@@ -269,11 +285,38 @@ final class WooOrderBackOfficeRepository
         return is_array($history) ? $history : [];
     }
 
-    public function transition(WC_Order $order, string $action, int $userId): void
+
+    public function recordDocumentAccess(WC_Order $order, string $document): void
     {
-        $from = $this->state($order);
-        $to = FulfilmentWorkflow::transition($from, $action, $this->deliveryMode($order));
-        $this->recordTransition($order, $action, $to, $userId);
+        ($this->mutex ?? new WooOrderMutex())->synchronized($order->get_id(), function () use ($order, $document): void {
+            $fresh = wc_get_order($order->get_id());
+            if (! $fresh instanceof WC_Order) {
+                throw new InvalidArgumentException('A rendelés nem található.');
+            }
+            $this->recordDocumentAccessLocked($fresh, $document);
+        });
+    }
+
+    private function recordDocumentAccessLocked(WC_Order $order, string $document): void
+    {
+        $action = match ($document) {
+            'invoice' => 'open_invoice',
+            'gls_label' => 'open_gls_label',
+            default => throw new InvalidArgumentException('Ismeretlen dokumentumtípus.'),
+        };
+        $userId = get_current_user_id();
+        if ($userId < 1 || (! current_user_can('manage_appleklinika_backoffice') && ! current_user_can('manage_options'))) {
+            throw new InvalidArgumentException('Nincs Back Office jogosultság.');
+        }
+        $user = get_userdata($userId);
+        $state = $this->state($order);
+        $activity = ['order_id' => $order->get_id(), 'action' => $action, 'from' => $state, 'to' => $state,
+            'user_id' => $userId, 'user' => $user ? $user->display_name : 'Ismeretlen felhasználó', 'at' => current_time('mysql')];
+        $history = $this->history($order);
+        $history[] = $activity;
+        $order->update_meta_data(self::HISTORY_META_KEY, $history);
+        $order->save();
+        $this->recordTodayActivity($activity);
     }
 
     /** Persistence adapter; callers validate through ChangeFulfilment. */
@@ -322,6 +365,17 @@ final class WooOrderBackOfficeRepository
     }
 
     public function addInternalNote(WC_Order $order, string $note): void
+    {
+        ($this->mutex ?? new WooOrderMutex())->synchronized($order->get_id(), function () use ($order, $note): void {
+            $fresh = wc_get_order($order->get_id());
+            if (! $fresh instanceof WC_Order) {
+                throw new InvalidArgumentException('A rendelés nem található.');
+            }
+            $this->addInternalNoteLocked($fresh, $note);
+        });
+    }
+
+    private function addInternalNoteLocked(WC_Order $order, string $note): void
     {
         $note = trim($note);
         if ($note === '') {
@@ -522,10 +576,10 @@ final class WooOrderBackOfficeRepository
     /** @return list<string> */
     private function shippingMethodIds(WC_Order $order): array
     {
-        return array_values(array_filter(array_map(
+        return array_values(array_map(
             static fn ($method): string => (string) $method->get_method_id(),
             $order->get_shipping_methods()
-        )));
+        ));
     }
 
     /** @param array{order_id:int,action:string,from:string,to:string,user_id:int,user:string,at:string} $activity */

@@ -18,7 +18,7 @@ up:
 down:
 	$(COMPOSE) down
 
-test: test-unit test-integration
+test: test-unit test-integration test-order-lifecycle
 
 test-unit:
 	@echo "No unit test suite is configured yet."
@@ -154,3 +154,7 @@ quality: lint static
 quality-fix: format
 
 check: test quality
+
+.PHONY: test-backoffice-workflow
+# Both previously separate suites run offline from the reconciled source.
+test-backoffice-workflow: test-order-lifecycle

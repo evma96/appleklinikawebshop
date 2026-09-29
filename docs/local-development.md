@@ -1,4 +1,61 @@
-# Durable LOCAL development — recovery 2026-09-28
+# Durable LOCAL development — recovery and reconciliation 2026-09-28
+
+## Current integration runtime
+
+The sections below this one preserve the original recovery record. Since the
+separately authorized reconciliation, **both running WordPress containers bind
+source from `/Users/apple/Desktop/appleklinika-integration-active`**, branch
+`feature/local-fulfillment-backoffice-integration`. The storefront and Back Office
+protected source worktrees/branches remain unchanged; they are not the current
+runtime source. Databases and WordPress/core volumes remain separate and unchanged.
+
+Start the integrated storefront and Back Office from that directory:
+
+```sh
+cd /Users/apple/Desktop/appleklinika-integration-active
+make up
+docker compose --env-file .env.backoffice up -d
+# Stop either without deleting database/core volumes:
+docker compose stop
+docker compose --env-file .env.backoffice stop
+```
+
+The ignored `.env` and `.env.backoffice` retain their respective LOCAL project,
+port, database/core volume and URL values. Both select
+`docker-compose.yml:docker-compose.local.yml:docker-compose.integration.yml`.
+`LOCAL_RUNTIME_NETWORK` identifies each existing project's database network,
+not a new/shared database. `LOCAL_UPLOADS_PATH` selects the corresponding private
+copy under `.local-runtime/storefront-uploads` or `.local-runtime/backoffice-uploads`.
+The protected original uploads are untouched. Keep an empty
+`wordpress/wp-content/uploads` mount-point directory in the checkout, and retain
+the ignored WooCommerce vendor dependency tree. These private/runtime files must
+not be committed or copied into a deployment. Do not overwrite private environment
+files with the example.
+
+The integration overlay sets `AK_LOCAL_VERIFICATION=1` and mounts the LOCAL PHP
+guard. WordPress HTTP requests and `wp_mail` fail locally; direct cURL execution,
+socket transports, URL-file access and sendmail delivery are disabled. The runtime
+also retains the recovery overlay's disabled cron/updates and read-only source
+mount. Browser-side external embeds are separate. This is a deliberately offline
+verification environment: provider failure here is not provider acceptance evidence.
+The guard files are loaded only by the opt-in Compose overlay, never by the plugin
+or a TEST/production deployment. Provider credentials/options were not edited.
+
+The existing LOCAL Apache compatibility rules now also route `/backoffice/` to
+its registered query variable, supporting the storefront's existing plain
+permalinks without a database-wide URL/permalink change. Authentication and
+capability checks remain in the Back Office router. The lifecycle plugin is now
+active on the storefront LOCAL database as well as Back Office.
+
+Run `make test` for the combined offline suites. `make test-backoffice-workflow`
+and `make test-order-lifecycle` select that same suite; do not add their counts
+as independent coverage. The runner has Docker network disabled.
+`make quality` still reports the repository's unconfigured linter/static-analysis
+placeholders; PHP syntax validation is part of the real combined suite.
+
+See [LOCAL reconciliation](local-reconciliation.md) for verification and cleanup.
+
+## Historical recovery record
 
 ## Sources and URLs
 

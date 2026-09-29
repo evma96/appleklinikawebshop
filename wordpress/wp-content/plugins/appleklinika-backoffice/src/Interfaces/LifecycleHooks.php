@@ -108,11 +108,12 @@ final class LifecycleHooks
         return $previous;
     }
 
-    public function automaticInvoiceAllowed(bool $allowed, int $id): bool
+    /** The vendor sends booleans from automations and status lists from its metabox. */
+    public function automaticInvoiceAllowed(mixed $allowed, int $id): mixed
     {
         $order = wc_get_order($id);
         return $order instanceof \WC_Order && LifecycleConfiguration::manages($order)
-            ? $allowed && SzamlazzAutomation::ownsAttempt($id) : $allowed;
+            && ! SzamlazzAutomation::ownsAttempt($id) ? false : $allowed;
     }
 
     public function invoiceXml(mixed $xml, \WC_Order $order, string $type): mixed

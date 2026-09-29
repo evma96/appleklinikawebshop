@@ -43,6 +43,10 @@ final class InvoiceProviderStub
 {
     public string|false|null $pathOverride = null;
     public array $calls = [];
+    public string $agentKey = '';
+
+    public function get_szamlazz_agent_key(WC_Order $order): string { return $this->agentKey; }
+    public function generate_invoice(): never { throw new RuntimeException('Inspection must never generate an invoice.'); }
 
     public function generate_download_link(WC_Order $order, string $type, bool $absolute): string|false
     {
@@ -118,8 +122,8 @@ try {
         '_gls_tracking_codes' => ['12345678901', '12345678901', 'TEST-NOT-A-PARCEL', ['invalid']],
     ]);
 
-    $assert($documents->invoice($order) === ['provider_active' => false, 'recorded' => true, 'number' => 'ISOLATED-TEST', 'available' => false], 'An inactive invoice provider cannot expose even a present file.');
-    $assert($documents->glsLabel($order) === ['provider_active' => false, 'recorded' => true, 'available' => false] && $documents->trackingLinks($order) === [], 'Inactive GLS cannot present working document or tracking actions.');
+    $assert(array_intersect_key($documents->invoice($order), array_flip(['provider_active', 'recorded', 'number', 'available'])) === ['provider_active' => false, 'recorded' => true, 'number' => 'ISOLATED-TEST', 'available' => false], 'An inactive invoice provider cannot expose even a present file.');
+    $assert(array_intersect_key($documents->glsLabel($order), array_flip(['provider_active', 'recorded', 'available'])) === ['provider_active' => false, 'recorded' => true, 'available' => false] && $documents->trackingLinks($order) === [], 'Inactive GLS cannot present working document or tracking actions.');
     $assert(WC_Szamlazz()->calls === [], 'Inactive invoice providers are never invoked.');
 
     $GLOBALS['document_test_active_plugins'] = $providers;
@@ -161,6 +165,22 @@ try {
     $GLOBALS['document_test_active_plugins'] = [];
     $GLOBALS['document_test_network_plugins'] = array_fill_keys($providers, 1);
     $assert($documents->invoice($order)['available'] && $documents->glsLabel($order)['available'], 'Network-active providers are recognized without activating plugins.');
+
+    $assert($documents->invoice(new WC_Order())['state'] === 'missing', 'Missing invoice metadata remains missing, not fabricated availability.');
+    $assert(str_contains($documents->invoice(new WC_Order())['generation_block'], 'Agent-kulcs'), 'The provider-resolved missing account key is an exact generation blocker.');
+    WC_Szamlazz()->agentKey = 'ISOLATED-SECRET-NEVER-OUTPUT';
+    $blocked = $documents->invoice(new WC_Order());
+    $assert(str_contains($blocked['generation_block'], 'TEST') && ! str_contains(json_encode($blocked), WC_Szamlazz()->agentKey), 'Configured credentials never leak and an unverified TEST account still blocks generation.');
+    $manual = $documents->invoice(new WC_Order(['_wc_szamlazz_invoice' => 'MANUAL', '_wc_szamlazz_invoice_manual' => 1, '_wc_szamlazz_completed' => '2026-09-01']));
+    $assert($manual['state'] === 'issued' && $manual['manual'] && $manual['paid'] === '2026-09-01' && !$manual['available'], 'Manual/paid provider metadata is independent from file availability.');
+    $void = $documents->invoice(new WC_Order(['_wc_szamlazz_void' => 'VOID-1', '_wc_szamlazz_completed' => '2026-09-01']));
+    $assert($void['state'] === 'voided' && !$void['recorded'] && $void['paid'] === '', 'A void record without a current invoice is not an issued or paid current invoice.');
+    $disabled = $documents->invoice(new WC_Order(['_wc_szamlazz_own' => 'Externally handled']));
+    $assert($disabled['state'] === 'disabled' && !$disabled['recorded'] && str_contains($disabled['generation_block'], 'tiltva'), 'Provider-disabled invoicing is explicit and does not invent an invoice number.');
+    $assert($documents->invoice(new WC_Order(['_wc_szamlazz_receipt' => 'RECEIPT']))['state'] === 'receipt', 'Receipts are not presented as invoices.');
+    $parcel = new WC_Order(['_gls_parcel_ids' => ['123', '123', ['invalid'], 'https://evil'], '_gls_tracking_codes' => [['invalid']], '_gls_tracking_code' => '456']);
+    $assert($documents->glsLabel($parcel)['parcel_ids'] === ['123'] && $documents->glsLabel($parcel)['tracking_codes'] === ['456'], 'Malformed/duplicate parcel data is rejected; a valid legacy tracking number remains usable.');
+    $assert($documents->trackingLinks($parcel)[0]['code'] === '456', 'The internal parcel ID never substitutes for a parcel tracking number.');
 
     echo "Back Office order documents passed: {$assertions} assertions.\n";
 } finally {

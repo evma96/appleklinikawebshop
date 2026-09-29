@@ -131,10 +131,15 @@ final class BackOfficeRouter
         }
 
         check_admin_referer('appleklinika_backoffice_download_' . $nonceType . '_' . $orderId);
+        if ($document === 'gls_label' && $this->orders->deliveryMode($order) !== DeliveryMode::GLS) {
+            wp_die('Ehhez a rendeléshez nem tartozik azonosított GLS szállítás.', 'Dokumentum nem található', ['response' => 404]);
+        }
         $path = (new OrderDocuments())->filePath($order, $document);
         if ($path === null) {
             wp_die('A dokumentum nem érhető el.', 'Dokumentum nem található', ['response' => 404]);
         }
+
+        $this->orders->recordDocumentAccess($order, $document);
 
         nocache_headers();
         header('X-Content-Type-Options: nosniff');
@@ -307,7 +312,7 @@ final class BackOfficeRouter
             $to = FulfilmentWorkflow::labels()[FulfilmentWorkflow::state((string) ($entry['to'] ?? ''))];
             echo '<tr><td>' . esc_html(substr((string) ($entry['at'] ?? ''), 11, 5)) . '</td><td>' . esc_html((string) ($entry['user'] ?? 'Ismeretlen felhasználó')) . '</td><td>';
             echo $orderId > 0 ? '<a href="' . esc_url($this->url(['order' => $orderId])) . '">#' . esc_html((string) $orderId) . '</a>' : '—';
-            echo '</td><td>' . esc_html(FulfilmentWorkflow::actions()[(string) ($entry['action'] ?? '')] ?? 'Ismeretlen művelet') . '</td><td>' . esc_html($from === $to ? $to : $from . ' → ' . $to) . '</td></tr>';
+            echo '</td><td>' . esc_html(FulfilmentWorkflow::activityLabels()[(string) ($entry['action'] ?? '')] ?? 'Ismeretlen művelet') . '</td><td>' . esc_html($from === $to ? $to : $from . ' → ' . $to) . '</td></tr>';
         }
         echo '</tbody></table></div></section></main>';
         $this->documentEnd();
@@ -335,9 +340,7 @@ final class BackOfficeRouter
         echo '</div><aside class="akbo-side">';
         $this->renderActions($order, $state, $deliveryMode, $worklistContext);
         $this->renderInvoice($order);
-        if ($deliveryMode === DeliveryMode::GLS) {
-            $this->renderGls($order);
-        }
+        $this->renderShipping($order);
         $this->renderHistory($order);
         echo '</aside></div></main>';
         $this->documentEnd();
@@ -363,6 +366,7 @@ final class BackOfficeRouter
     private function renderActions(WC_Order $order, string $state, string $deliveryMode, array $worklistContext): void
     {
         echo '<section class="akbo-card akbo-next-action"><p class="akbo-eyebrow">Feldolgozás</p><h2>Következő lépés</h2>';
+        echo '<p><strong>Jelenlegi állapot:</strong> ' . esc_html(FulfilmentWorkflow::labels()[$state]) . '</p>';
         if ($order->has_status('completed') || in_array($state, [FulfilmentWorkflow::DELIVERED, FulfilmentWorkflow::PICKED_UP], true)) {
             echo '<p class="akbo-completion">A rendelés feldolgozása lezárult.</p></section>';
             return;
@@ -454,16 +458,53 @@ final class BackOfficeRouter
     {
         $invoice = (new OrderDocuments())->invoice($order);
         echo '<section class="akbo-card"><h2>Számla</h2>';
+        echo '<p><strong>' . esc_html($invoice['state_label']) . '</strong></p>';
         if ($invoice['number'] !== '') {
             echo '<p class="akbo-document-number">' . esc_html($invoice['number']) . '</p>';
+        }
+        if ($invoice['manual']) {
+            echo '<p>Kézzel rögzített dokumentum a számlázóbővítményben.</p>';
+        }
+        if ($invoice['paid'] !== '') {
+            echo '<p>Számlázz.hu szerinti kiegyenlítés: ' . esc_html($invoice['paid'] === '1' ? 'kiegyenlített, dátum nélkül' : $invoice['paid']) . '</p>';
+        } elseif ($invoice['recorded']) {
+            echo '<p>A számlázóbővítményben nincs rögzített kiegyenlítés.</p>';
+        }
+        foreach (['void_number' => 'Sztornóbizonylat', 'receipt_number' => 'Nyugtaszám', 'disabled_reason' => 'Számlázás letiltásának oka'] as $key => $label) {
+            if ($invoice[$key] !== '') {
+                echo '<p><strong>' . esc_html($label) . ':</strong> ' . esc_html($invoice[$key]) . '</p>';
+            }
         }
         if ($invoice['available']) {
             $url = wp_nonce_url(add_query_arg(['action' => 'appleklinika_backoffice_download_invoice', 'order_id' => $order->get_id()], admin_url('admin-post.php')), 'appleklinika_backoffice_download_invoice_' . $order->get_id());
             echo '<a class="akbo-button akbo-button--secondary" target="_blank" rel="noopener" href="' . esc_url($url) . '">Számla megnyitása / nyomtatása</a>';
         } else {
-            echo '<p class="akbo-empty">' . esc_html(! $invoice['provider_active'] ? 'A Számlázz.hu kapcsolat jelenleg nem aktív.' : ($invoice['recorded'] ? 'A számla rögzítve van, de a PDF-fájl nem érhető el.' : 'Ehhez a rendeléshez még nincs elkészült számla.')) . '</p>';
+            if (! $invoice['provider_active'] || $invoice['recorded']) {
+                echo '<p class="akbo-empty">' . esc_html(! $invoice['provider_active'] ? 'A Számlázz.hu kapcsolat jelenleg nem aktív.' : 'A számla rögzítve van, de a PDF-fájl nem érhető el.') . '</p>';
+            }
         }
-        echo '<p class="akbo-help">Új számla kiállítása jelenleg nem érhető el innen.</p></section>';
+        echo '<p class="akbo-help">' . esc_html($invoice['generation_block']) . '</p></section>';
+    }
+
+    private function renderShipping(WC_Order $order): void
+    {
+        $mode = $this->orders->deliveryMode($order);
+        $methods = $this->orders->shippingMethods($order);
+        echo '<section class="akbo-card"><h2>Szállítás / átvétel</h2>';
+        foreach ($methods as $method) {
+            echo '<p><strong>' . esc_html($method['name'] ?: 'Névtelen szállítási tétel') . '</strong><br><small>WooCommerce metódus: ' . esc_html($method['method_id'] ?: 'hiányzik') . ($method['instance_id'] !== '' ? ' · példány: ' . esc_html($method['instance_id']) : '') . '</small></p>';
+        }
+        if ($mode === DeliveryMode::UNKNOWN) {
+            echo '<p class="akbo-action-block">' . esc_html($methods === []
+                ? 'Nincs WooCommerce szállítási tétel a rendelésen. Az átvételi mód nem állapítható meg; ellenőrzés szükséges.'
+                : 'A WooCommerce szállítási metódus hiányos, nem támogatott vagy többféle átvételt jelöl. Ellenőrzés szükséges.') . '</p>';
+            echo '<p class="akbo-help">A korábbi feldolgozási állapot önmagában nem azonosítja a szállítót.</p>';
+        } elseif ($mode === DeliveryMode::PICKUP) {
+            echo '<p>Személyes átvétel az üzletben. Futárcímke és csomagkövetés nem szükséges.</p>';
+        } else {
+            $this->renderGls($order);
+        }
+        echo '</section>';
     }
 
     private function renderGls(WC_Order $order): void
@@ -471,25 +512,30 @@ final class BackOfficeRouter
         $document = (new OrderDocuments())->glsLabel($order);
         $hasLabel = $document['available'];
         $labelUrl = $this->labelDownloadUrl($order);
-        $tracking = $this->orders->trackingCodes($order);
-        echo '<section class="akbo-card"><h2>GLS címke és követés</h2><p>' . esc_html($hasLabel ? 'A címke nyomtatásra kész.' : ($document['recorded'] ? 'Címke rögzítve, de a PDF nem érhető el.' : 'Még nincs elkészült címke.')) . '</p>';
+        $tracking = $document['tracking_codes'];
+        echo '<h3>GLS címke és követés</h3><p>' . esc_html($hasLabel ? 'A címke nyomtatásra kész.' : ($document['recorded'] ? 'Címke rögzítve, de a PDF nem érhető el.' : 'Még nincs elkészült címke.')) . '</p>';
         if ($hasLabel) {
-            echo '<p><a class="akbo-button" target="_blank" href="' . esc_url($labelUrl) . '">Meglévő GLS címke nyomtatása</a></p>';
+            echo '<p><a class="akbo-button" target="_blank" rel="noopener" href="' . esc_url($labelUrl) . '">GLS címke megnyitása / nyomtatása</a></p>';
         } elseif (! $hasLabel) {
             $readiness = $this->orders->glsReadinessMessage();
             if ($readiness !== null) {
                 echo '<p class="akbo-action-block">' . esc_html($readiness) . '</p>';
             } else {
-                echo '<p class="akbo-help">A címke csak a fenti, sorrendben elérhető művelettel készülhet el. A címke létrehozása nem jelenti a fizikai GLS-átadást.</p>';
+                echo '<p class="akbo-help">' . esc_html($document['recorded'] ? 'Már rögzített címke esetén nem készül automatikusan új címke. A szolgáltatói PDF-et ellenőrizni kell.' : 'A címke csak a fenti, sorrendben elérhető művelettel készülhet el. A címke létrehozása nem jelenti a fizikai GLS-átadást.') . '</p>';
             }
         }
         if ($tracking !== []) {
-            echo '<p><strong>Követési azonosító:</strong> ' . esc_html(implode(', ', $tracking)) . '</p>';
+            echo '<p><strong>GLS csomagszám:</strong> ' . esc_html(implode(', ', $tracking)) . '</p>';
+        } else {
+            echo '<p>Még nincs rögzített GLS csomagszám.</p>';
+        }
+        if ($document['parcel_ids'] !== []) {
+            echo '<p><strong>GLS belső parcel ID:</strong> ' . esc_html(implode(', ', $document['parcel_ids'])) . '</p>';
         }
         foreach ((new OrderDocuments())->trackingLinks($order) as $link) {
             echo '<p><a class="akbo-link" target="_blank" rel="noopener" href="' . esc_url($link['url']) . '">Csomag követése: ' . esc_html($link['code']) . ' ↗</a></p>';
         }
-        echo '</section>';
+        echo '<p class="akbo-help">A követési link a GLS oldalát nyitja meg; itt nem történik élő státuszlekérdezés.</p>';
     }
 
     /** @param array<string, scalar> $worklistContext */
@@ -528,7 +574,7 @@ final class BackOfficeRouter
         foreach ($history as $entry) {
             $from = FulfilmentWorkflow::labels()[$entry['from']] ?? $entry['from'];
             $to = FulfilmentWorkflow::labels()[$entry['to']] ?? $entry['to'];
-            echo '<li><strong>' . esc_html(FulfilmentWorkflow::actions()[$entry['action']] ?? $entry['action']) . '</strong><span>' . esc_html($from === $to ? $to : $from . ' → ' . $to) . '</span><small>' . esc_html($entry['user'] . ' · ' . $entry['at']) . '</small></li>';
+            echo '<li><strong>' . esc_html(FulfilmentWorkflow::activityLabels()[$entry['action']] ?? $entry['action']) . '</strong><span>' . esc_html($from === $to ? $to : $from . ' → ' . $to) . '</span><small>' . esc_html($entry['user'] . ' · ' . $entry['at']) . '</small></li>';
         }
         echo '</ol></section>';
     }

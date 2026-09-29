@@ -232,3 +232,27 @@
 
 - Deleted temporary-worktree mounts were replaced by the durable storefront source documented in `docs/local-development.md`; existing LOCAL database/core volumes and all uploads were preserved. The two implementation checkpoints and their five differing shared files remain unreconciled.
 - At the initial restoration checkpoint, Contact map iframe output was unchanged and immediate, but the in-app browser map surface remained blank; authenticated Back Office work-queue verification awaited a separate LOCAL login. Final recovery verification is a separate follow-up to these initial observations. Neither observation is a deployment or provider integration result.
+
+## LOCAL reconciliation — 2026-09-28
+
+- The five source conflicts described in the historical recovery record are now
+  reconciled in the separate integration candidate; neither protected branch was
+  modified. See `docs/local-reconciliation.md` for the per-file decisions.
+- Resolved application defect found during LOCAL verification: the Számlázz.hu
+  order metabox passes a status array through `wc_szamlazz_should_generate_auto_invoice`,
+  whereas the custom lifecycle hook previously accepted only a boolean. This
+  caused a Woo-admin order-page TypeError. The hook now preserves the provider's
+  value/type for unmanaged or owned attempts and still blocks unowned managed
+  attempts. Sixteen focused offline assertions cover the contract; the order
+  admin page renders again. No license check or provider guard was bypassed.
+- The previous LOCAL Woo-admin correction verification blocker was resolved on
+  2026-09-29 with explicit owner authorization for the temporary QA user's
+  `edit_others_posts` capability. No Administrator role or application permission
+  bypass was needed. Correction, shared Back Office/My Account state, actor/reason
+  audit and duplicate-submit rejection passed; the QA account/order were removed.
+  See `docs/local-reconciliation.md` for cleanup and unchanged-data proof.
+- LOCAL mail/provider transports are deliberately disabled. This reconciliation
+  provides no new TEST provider E2E or actual inbox-delivery proof. Existing
+  legal/sample content, catalog imperfections and provider/license/SMTP acceptance
+  remain outside this task. The prior corrected deployment/media issue remains
+  recorded in the earlier audit notes and was not reopened.

@@ -51,6 +51,14 @@ final class FulfilmentWorkflow
     }
 
     /** @return array<string, string> */
+    public static function activityLabels(): array
+    {
+        return self::actions() + [
+            'open_invoice' => 'Számla PDF megnyitása',
+            'open_gls_label' => 'GLS címke PDF megnyitása',
+        ];
+    }
+
     public static function actions(): array
     {
         return [
