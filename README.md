@@ -333,11 +333,28 @@ The seeder is idempotent by SKU, so rerunning it updates the same local selector
 
 The isolated `feature/order-email-lifecycle` work adds invoice-ready customer mail,
 an audited GLS-handoff notification, shared fulfillment transitions and current
-multi-parcel tracking reads. It has **not been deployed to TEST**: server access
-and the separate invoicing-plugin PRO activation still block actual provider
-acceptance. See [implementation and audit correction](docs/order-email-lifecycle.md)
+multi-parcel tracking reads. It has **not been deployed to TEST**. As of 2026-10-01, private TEST SSH
+access is restored; Martin is handling the separate invoicing-plugin PRO
+activation. Actual provider acceptance remains pending. See [implementation and audit correction](docs/order-email-lifecycle.md)
 for exact triggers, safety gates, local evidence and the remaining TEST steps.
 Run `make test-order-lifecycle` for the dedicated offline checks.
+
+## Transactional email presentation and transport readiness
+
+The two managed lifecycle emails now have scoped Apple Klinika HTML/plain views,
+order-snapshot details, invoice information and current multi-parcel tracking.
+Their invoice/handoff eligibility, duplicate protection and provider behavior are
+unchanged. Other Woo emails keep their existing templates and settings.
+
+With the guarded LOCAL integration runtime running, use
+`make test-email-presentation` for memory-only Woo rendering checks, or
+`make preview-order-emails` to serve five fixture previews at
+`http://127.0.0.1:18789/` (stop with Ctrl-C). No order is saved, no email is sent,
+and no provider is contacted. Generated files remain in ignored `.local-runtime/`.
+See [email presentation and mail/DNS readiness](docs/transactional-email-readiness.md)
+for the 2026-10-01 audit, verification limits and the owner decisions still needed
+for authenticated transport and inbox delivery. No SMTP service was installed,
+DNS changed or new lifecycle deployed by this pass.
 
 ## Durable LOCAL recovery
 

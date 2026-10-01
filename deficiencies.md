@@ -256,3 +256,27 @@
   legal/sample content, catalog imperfections and provider/license/SMTP acceptance
   remain outside this task. The prior corrected deployment/media issue remains
   recorded in the earlier audit notes and was not reopened.
+
+
+## Transactional email readiness — 2026-10-01
+
+- **HIGH / CONFIG — authenticated transport not ready:** Read-only TEST inspection
+  found no SMTP plugin/configuration or active mail override. PHP points to a
+  missing sendmail executable. Woo uses a Gmail From address, not an authenticated
+  Apple Klinika domain sender. No email was sent and no transport was changed.
+- Public DNS has one hosting-oriented SPF record and a 2048-bit RSA DKIM key at
+  `default._domainkey`. DMARC exists with `p=none` and no aggregate-report address.
+  DNS presence does not prove outgoing signing/alignment or inbox delivery.
+  Current DNS indicates Tárhely.com mail hosting; usable SMTP entitlement and
+  limits require owner/provider confirmation. No DNS records were modified.
+- **LOCAL presentation verified / delivery pending:** The two lifecycle messages
+  have branded scoped HTML/plain templates and five memory-only Woo previews.
+  Desktop, 390px and 320px checks found no horizontal overflow. Invoice, actual
+  carrier-handoff eligibility, correction/history and duplicate guards are
+  unchanged. No real invoice, parcel or email was created in this pass.
+- TEST SSH is restored through the private alias. The historical timeout is no
+  longer the access blocker; Martin separately handles Woo PRO activation. The
+  approved integration checkpoint is preserved and the lifecycle remains
+  undeployed. Full provider acceptance and native email-client/inbox checks are
+  still pending, as are the previously documented legal/content blockers.
+- Plan and evidence: [transactional email readiness](docs/transactional-email-readiness.md).

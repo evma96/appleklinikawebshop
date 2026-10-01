@@ -2,6 +2,19 @@
 
 Date: 2026-09-16. Branch: `feature/order-email-lifecycle`.
 
+## Current follow-up — 2026-10-01
+
+The protected integration candidate is `79be7f7e3de1f855929ff143ab8453f6c77072f9`.
+Private TEST SSH is restored via `appleklinika-test`; the old public-IP allowlist
+bootstrap is retired. Martin is handling the separate Woo invoicing-plugin PRO
+activation. No invoice-dependent lifecycle deployment or provider acceptance has
+been performed in this email-presentation follow-up. See
+[transactional email readiness](transactional-email-readiness.md) for the scoped
+LOCAL templates, mail/DNS observations and transport decision. The earlier
+implementation findings below are retained as dated evidence, not current SSH
+status. The resolved provider-hook array/boolean issue remains documented in
+[LOCAL reconciliation](local-reconciliation.md).
+
 ## Status and scope
 
 Implemented and exercised in an isolated LOCAL fixture. **Not deployed to TEST;
