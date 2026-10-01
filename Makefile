@@ -158,3 +158,12 @@ check: test quality
 .PHONY: test-backoffice-workflow
 # Both previously separate suites run offline from the reconciled source.
 test-backoffice-workflow: test-order-lifecycle
+
+# Read-only, guarded LOCAL Woo rendering with memory-only fixture orders.
+.PHONY: test-email-presentation
+test-email-presentation:
+	$(COMPOSE) exec -T wordpress php /var/www/html/wp-content/plugins/appleklinika-backoffice/tests/integration/email-presentation.php --local-email-preview
+
+.PHONY: preview-order-emails
+preview-order-emails:
+	sh scripts/preview-order-emails.sh

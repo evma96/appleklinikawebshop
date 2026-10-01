@@ -6,6 +6,7 @@ namespace Appleklinika\BackOffice\Interfaces;
 
 use Appleklinika\BackOffice\Domain\CustomerNotification;
 use Appleklinika\BackOffice\Infrastructure\OrderDocuments;
+use Appleklinika\BackOffice\Infrastructure\LifecycleEmailPresentation;
 
 /** Woo owns rendering, sender configuration and transport. No independent mail client. */
 abstract class LifecycleEmail extends \WC_Email
@@ -46,47 +47,32 @@ abstract class LifecycleEmail extends \WC_Email
         }
     }
 
+    /** A plain-text alternative by default; preserve any explicitly saved Woo format. */
+    public function init_form_fields()
+    {
+        parent::init_form_fields();
+        $this->form_fields['email_type']['default'] = 'multipart';
+    }
+
     public function get_content_html()
     {
-        if (! $this->object instanceof \WC_Order) {
-            return '';
-        }
-        ob_start();
-        do_action('woocommerce_email_header', $this->get_heading(), $this);
-        echo '<p>Rendelés: <strong>#' . esc_html($this->object->get_order_number()) . '</strong></p>';
-        if ($this->event === CustomerNotification::PAID) {
-            echo '<p>A fizetésed sikeresen megérkezett. A számlát a levélhez csatoltuk.</p>';
-            do_action('woocommerce_email_order_details', $this->object, false, false, $this);
-            do_action('woocommerce_email_customer_details', $this->object, false, false, $this);
-        } else {
-            echo '<p>A csomagodat átadtuk a GLS futárszolgálatnak.</p>';
-            foreach ((new OrderDocuments())->trackingLinks($this->object) as $link) {
-                echo '<p>GLS csomagszám: <a href="' . esc_url($link['url']) . '">' . esc_html($link['code']) . '</a></p>';
-            }
-        }
-        echo '<p><a href="' . esc_url($this->object->get_view_order_url()) . '">Rendelés megtekintése a fiókomban</a></p>';
-        do_action('woocommerce_email_footer', $this);
-        return (string) ob_get_clean();
+        return $this->renderView('lifecycle.php');
     }
 
     public function get_content_plain()
     {
+        return $this->renderView('plain/lifecycle.php');
+    }
+
+    private function renderView(string $template): string
+    {
         if (! $this->object instanceof \WC_Order) {
             return '';
         }
+        $view = (new LifecycleEmailPresentation())->forOrder($this->object, $this->event);
+        $heading = $this->get_heading();
         ob_start();
-        echo $this->get_heading() . "\nRendelés: #" . $this->object->get_order_number() . "\n\n";
-        if ($this->event === CustomerNotification::PAID) {
-            echo "A fizetésed sikeresen megérkezett. A számlát a levélhez csatoltuk.\n\n";
-            do_action('woocommerce_email_order_details', $this->object, false, true, $this);
-            do_action('woocommerce_email_customer_details', $this->object, false, true, $this);
-        } else {
-            echo "A csomagodat átadtuk a GLS futárszolgálatnak.\n";
-            foreach ((new OrderDocuments())->trackingLinks($this->object) as $link) {
-                echo 'GLS csomagszám: ' . $link['code'] . "\n" . $link['url'] . "\n";
-            }
-        }
-        echo "\nRendelés megtekintése a fiókomban: " . $this->object->get_view_order_url() . "\n";
+        include dirname(__DIR__, 2) . '/templates/emails/' . $template;
         return (string) ob_get_clean();
     }
 }
