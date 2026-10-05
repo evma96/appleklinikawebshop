@@ -258,7 +258,7 @@
   recorded in the earlier audit notes and was not reopened.
 
 
-## Transactional email readiness — 2026-10-01
+## Transactional email readiness — initial audit, 2026-10-01
 
 - **HIGH / CONFIG — authenticated transport not ready:** Read-only TEST inspection
   found no SMTP plugin/configuration or active mail override. PHP points to a
@@ -280,3 +280,65 @@
   undeployed. Full provider acceptance and native email-client/inbox checks are
   still pending, as are the previously documented legal/content blockers.
 - Plan and evidence: [transactional email readiness](docs/transactional-email-readiness.md).
+
+
+## Mail provider correction — 2026-10-01
+
+- Martin confirmed existing **Hetzner Webhosting** mailboxes. The earlier
+  Tárhely.com provider inference from public DNS is superseded for SMTP setup.
+  Do not use mHosting/Websupport. Keep the dated DNS observations; they do not
+  establish the actual mailbox account or prove outbound authentication failure.
+- TEST can reach `mail.your-server.de:587` with verified STARTTLS/TLS 1.3 and
+  advertised SMTP authentication. Actual mailbox selection, authentication and
+  QA inbox delivery remain pending a Hetzner account session and the authorized
+  mailbox credential. No password reset, new mailbox, message or DNS change was
+  performed. Details: `docs/transactional-email-readiness.md`.
+
+- Authenticated Hetzner inspection resolved a domain mismatch: this account holds
+  `appleklinika.hu` with active `info`, plus `szamlazas` and `webmaster`; no .com
+  domain or requested order-mailbox aliases were listed. Martin approved the
+  existing `info@appleklinika.hu` as From and Reply-To for QA only. The current
+  blocker is secure entry of its existing mailbox password. No authentication,
+  send, password reset, mailbox creation or DNS modification has occurred.
+
+
+## TEST SMTP progress — 2026-10-01
+
+- **Previous authenticated-transport blocker resolved on TEST:** official
+  FluentSMTP 2.4.1 uses the existing Hetzner mailbox over authenticated STARTTLS
+  on port 587. Approved QA From/Reply-To: `info@appleklinika.hu`, name
+  `Apple Klinika`. The mailbox password was entered by Martin in the masked
+  HTTPS UI and stored with plugin-supported encryption; never exported to
+  plaintext or Git. The future production .com sender remains unestablished.
+- **TEST email acceptance complete — PASS:** application generation, authenticated
+  SMTP, actual Gmail Inbox delivery, SPF, DKIM, DMARC, mobile rendering and the
+  received PDF are verified. Martin confirmed all three messages in the normal
+  Inbox (none in Spam), correct mobile layout/typography/buttons/spacing/Hungarian
+  text and successful PDF opening. His supplied Gmail headers show authentication
+  PASS on all three with aligned `.hu` sender/envelope/DKIM (`default2607`). No DNS
+  correction is indicated for this QA identity. The earlier pasted-source PDF
+  omission was an evidence limitation, now resolved by manual verification.
+  No further email-design changes are required; templates remain unchanged.
+  This closes the TEST transport/customer-email verification only, not the
+  separate production-sender or invoice-dependent provider lifecycle work.
+- **Safety/persistence PASS:** 18 focused checks passed after TEST WordPress
+  restart; non-QA recipients/CC/BCC, ordinary web/cron sends, missing transport
+  and fallback are blocked. Existing failed/refund/account/password mail retains
+  its standard transport path. HTTP health passed; temporary QA user/session and
+  access helper were cleaned up. No customer orders, invoices or parcels were
+  created, and the accepted email source/templates were not changed or deployed.
+- No DNS, mailbox, production, main, Barion/GLS/Szamlazz lifecycle or license
+  changes. Exact scope and historical blockers remain in
+  `docs/transactional-email-readiness.md`.
+
+## Security remediation — Round 1 (2026-10-05)
+
+See [the scoped repair record](docs/security-remediation-round1.md). The missing
+WordPress release, current tax/GLS authorization gaps, stale QA #525, invoice
+filesystem permissions and upload execution/core write containment are addressed.
+Current old demo images are sanitized; their already-published history remains.
+After source rollout verification the audit remainder is Critical 0 / High 0 /
+Medium 3 / Low 5. Medium: historical image exposure, recovery rehearsal/automation,
+and monitoring. All five low findings remain scoped follow-up work. The separate
+legal-content and PRO/full invoice-lifecycle gates remain; no launch sign-off is
+implied. No restore rehearsal, monitoring or header work was started.

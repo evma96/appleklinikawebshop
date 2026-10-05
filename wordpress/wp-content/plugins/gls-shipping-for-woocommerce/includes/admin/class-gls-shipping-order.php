@@ -327,13 +327,25 @@ class GLS_Shipping_Order
         }
     }
     
+    /** Nonces prevent CSRF; staff and per-order capabilities authorize the action. */
+    private function authorize_order_ajax()
+    {
+        $nonce = isset($_POST['postNonce']) && is_string($_POST['postNonce'])
+            ? sanitize_text_field(wp_unslash($_POST['postNonce'])) : '';
+        if (!wp_verify_nonce($nonce, 'import-nonce')) {
+            wp_send_json_error(array('error' => 'Invalid security token'), 403);
+        }
+        $order_id = isset($_POST['orderId']) && is_scalar($_POST['orderId']) ? absint($_POST['orderId']) : 0;
+        if (!$order_id || !current_user_can('edit_shop_orders') || !current_user_can('edit_shop_order', $order_id)) {
+            wp_send_json_error(array('error' => 'You are not allowed to manage this order'), 403);
+        }
+        return $order_id;
+    }
+
     public function generate_label_and_tracking_number()
     {
-        if (!isset($_POST['postNonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['postNonce'])), 'import-nonce')) {
-            die('Busted!');
-        }
+        $order_id = $this->authorize_order_ajax();
 
-        $order_id = isset($_POST['orderId']) ? sanitize_text_field(wp_unslash($_POST['orderId'])) : '';
         $count = isset($_POST['count']) ? intval($_POST['count']) : null;
         $print_position = isset($_POST['printPosition']) ? intval($_POST['printPosition']) : null;
         $cod_reference = isset($_POST['codReference']) ? sanitize_text_field(wp_unslash($_POST['codReference'])) : null;
@@ -417,12 +429,8 @@ class GLS_Shipping_Order
 
     public function get_parcel_status()
     {
-        if (!isset($_POST['postNonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['postNonce'])), 'import-nonce')) {
-            wp_send_json_error(array('error' => 'Invalid security token'));
-            wp_die();
-        }
+        $order_id = $this->authorize_order_ajax();
 
-        $order_id = isset($_POST['orderId']) ? intval($_POST['orderId']) : 0;
         $parcel_number = isset($_POST['parcelNumber']) ? sanitize_text_field(wp_unslash($_POST['parcelNumber'])) : '';
 
         if (empty($order_id) || empty($parcel_number)) {
@@ -588,12 +596,8 @@ class GLS_Shipping_Order
      */
     public function update_pickup_location()
     {
-        if (!isset($_POST['postNonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['postNonce'])), 'import-nonce')) {
-            wp_send_json_error(array('error' => 'Invalid security token'));
-            wp_die();
-        }
+        $order_id = $this->authorize_order_ajax();
 
-        $order_id = isset($_POST['orderId']) ? intval($_POST['orderId']) : 0;
         $pickup_info = isset($_POST['pickupInfo']) ? sanitize_text_field(wp_unslash($_POST['pickupInfo'])) : '';
 
         if (empty($order_id) || empty($pickup_info)) {
