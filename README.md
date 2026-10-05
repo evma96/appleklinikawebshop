@@ -329,3 +329,13 @@ http://localhost:8080/wp-admin/admin.php?appleklinika_seed_selector_demo=confirm
 ```
 
 The seeder is idempotent by SKU, so rerunning it updates the same local selector demo products instead of creating endless duplicates.
+
+## Security remediation — Round 1 (2026-10-05)
+
+This TEST branch carries only the security backport from LOCAL checkpoint
+`9c5241088f8de2d0780090d6ffca546f01a86067`. The accepted, licence-gated
+email/fulfilment implementation is preserved in the LOCAL integration history
+and is not introduced by this deployment. See
+[the security repair record](docs/security-remediation-round1.md) for backup,
+permissions, image privacy, regression evidence and remaining launch gates.
+Run `make test-security` for the 72 isolated authorization assertions.
