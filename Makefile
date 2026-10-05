@@ -14,7 +14,7 @@ up:
 down:
 	$(COMPOSE) down
 
-test: test-unit test-integration
+test: test-unit test-integration test-security
 
 test-unit:
 	@echo "No unit test suite is configured yet."
@@ -150,3 +150,7 @@ quality: lint static
 quality-fix: format
 
 check: test quality
+
+.PHONY: test-security
+test-security:
+	docker run --rm --network none -v "$(CURDIR)/wordpress/wp-content:/usr/src/wordpress/wp-content:ro" -v "$(CURDIR)/scripts/test-security.sh:/test-security.sh:ro" --entrypoint sh wordpress:7.0.2-php8.2-apache /test-security.sh

@@ -210,3 +210,13 @@
 - Which Apple product family should be added after iPad, MacBook, and Apple Watch: AirPods, accessories, or another device line?
 - Should production catalog deletion become archive-only after real products depend on catalog values?
 - Who owns the final legal text for ÁSZF, privacy, warranty, shipping, and returns pages?
+
+## Security remediation — Round 1 (2026-10-05)
+
+This TEST branch carries only the security backport from LOCAL checkpoint
+`9c5241088f8de2d0780090d6ffca546f01a86067`. The accepted, licence-gated
+email/fulfilment implementation is preserved in the LOCAL integration history
+and is not introduced by this deployment. See
+[the security repair record](docs/security-remediation-round1.md) for backup,
+permissions, image privacy, regression evidence and remaining launch gates.
+Run `make test-security` for the 72 isolated authorization assertions.

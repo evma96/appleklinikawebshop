@@ -5034,14 +5034,15 @@ function appleklinika_filter_order_confirmation_address_block(string $content, a
         $content
     );
 
-    if ($blockName === 'woocommerce/order-confirmation-billing-address') {
-        $content .= appleklinika_order_confirmation_tax_number_html();
+    // Woo returns an empty block when its key/owner/guest-verification checks deny access.
+    if ($blockName === 'woocommerce/order-confirmation-billing-address' && trim($content) !== '') {
+        $content .= appleklinika_order_confirmation_tax_number_html(true);
     }
 
     return $content;
 }
 
-function appleklinika_order_confirmation_tax_number_html(): string
+function appleklinika_order_confirmation_tax_number_html(bool $wooAuthorizedAddress = false): string
 {
     $orderId = absint(get_query_var('order-received'));
 
@@ -5050,7 +5051,22 @@ function appleklinika_order_confirmation_tax_number_html(): string
     }
 
     $order = wc_get_order($orderId);
-    $taxNumber = $order instanceof WC_Order ? (string) $order->get_meta('appleklinika_tax_number', true) : '';
+    if (! $order instanceof WC_Order) {
+        return '';
+    }
+
+    $staff = current_user_can('edit_shop_orders') && current_user_can('edit_shop_order', $orderId);
+    $owner = get_current_user_id() > 0 && (int) $order->get_customer_id() === get_current_user_id()
+        && current_user_can('view_order', $orderId);
+    // Guest access is delegated to Woo's already-authorized address block, including
+    // its session/grace-period/email verification. A key alone never grants access.
+    $guest = $wooAuthorizedAddress && (int) $order->get_customer_id() === 0
+        && isset($_GET['key']) && is_string($_GET['key'])
+        && $order->key_is_valid(wc_clean(wp_unslash($_GET['key'])));
+    if (! $staff && ! $owner && ! $guest) {
+        return '';
+    }
+    $taxNumber = (string) $order->get_meta('appleklinika_tax_number', true);
 
     if ($taxNumber === '') {
         return '';
