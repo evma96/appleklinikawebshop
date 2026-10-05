@@ -3,6 +3,150 @@
 Date: 2026-10-01. Branch: `feature/local-fulfillment-backoffice-integration`.
 Base checkpoint: `79be7f7e3de1f855929ff143ab8453f6c77072f9` (preserved).
 
+## Current TEST SMTP acceptance — 2026-10-01
+
+This section supersedes the earlier transport-not-configured/credential-pending
+observations below; those remain as historical audit evidence.
+
+**Final acceptance: PASS for this TEST SMTP and customer-email delivery run.**
+Martin completed customer-side verification on 2026-10-01 without granting access
+to his Gmail account. All three messages arrived in the normal Gmail Inbox, not
+Spam. He confirmed correct mobile layout, typography, buttons, spacing and
+Hungarian text, and that the actual received PDF attachment opens correctly.
+
+| Verification | Result | Evidence |
+| --- | --- | --- |
+| Authenticated SMTP transport | PASS | Three messages accepted by Hetzner over authenticated STARTTLS. |
+| Actual Gmail Inbox delivery | PASS | Martin confirmed all three in Inbox, none in Spam. |
+| SPF | PASS | Gmail Authentication-Results on all three supplied message sources. |
+| DKIM | PASS | Gmail Authentication-Results on all three; aligned `.hu` signing domain. |
+| DMARC | PASS | Gmail Authentication-Results on all three; aligned sender identity. |
+| Mobile rendering | PASS | Martin's visual check of layout, typography, buttons, spacing and Hungarian text. |
+| Received PDF | PASS | Martin opened the actual attachment successfully. |
+
+No further email-design changes are required. Accepted templates remain unchanged
+at checkpoint `172366d22f83a4a5e73a533c257861e15adcf518`. This acceptance covers the
+approved `.hu` QA sender and controlled Gmail delivery; the future production
+sender and invoice-dependent order/provider E2E remain separate workstreams.
+
+- Installed official WordPress.org **FluentSMTP 2.4.1** on TEST only. Archive SHA-256:
+  `4932248e0fae299842ca0bd6b8dc71de7efef9b0302ffd7f29df39028673553f`.
+- Hetzner `mail.your-server.de:587`, STARTTLS (`tls`), authenticated mailbox
+  `info@appleklinika.hu`; forced From name `Apple Klinika`, From and Reply-To
+  `info@appleklinika.hu`, matching return path. Martin approved this .hu identity
+  for QA; the preferred future .com order sender is not yet established.
+- Martin entered the existing mailbox password directly into the plugin's masked
+  HTTPS field. It was not read out, copied into a plaintext file, logged or added
+  to Git. Plugin-supported database encryption with WordPress SALT keys is enabled.
+  No mailbox password reset, mailbox creation or DNS modification was performed.
+- Three and only three controlled QA messages were submitted: basic WordPress
+  plain email; accepted paid-order HTML/plain email with a clearly labelled
+  fictional PDF attachment; accepted handoff HTML/plain email with two fictional
+  tracking links. All three were accepted through authenticated TLS SMTP.
+  Martin confirmed that all three arrived. This is owner-confirmed inbox receipt,
+  not a model-inspected Gmail session. He explicitly elected to inspect Gmail
+  himself; no access to his Gmail account is needed or used.
+- **Received authentication PASS on all three:** Martin supplied Gmail's original
+  source/headers for the basic, paid-order and shipping QA messages. Each
+  `Authentication-Results: mx.google.com` reports `spf=pass`, `dkim=pass` and
+  `dmarc=pass`. All three Message-IDs match the recorded outbound QA messages.
+  Envelope sender/Return-Path, visible From and DKIM signing domain align with
+  `appleklinika.hu`; the observed DKIM selector is `default2607`. DMARC `p=none`
+  is a monitoring policy, not an authentication failure. No DNS correction is
+  indicated for this tested identity, and no DNS change was made.
+- Received paid/shipping sources contain their correct Hungarian subjects,
+  personalized accents, HTML and plain-text alternatives, logo URL, account link
+  and 0/2 tracking links, with no localhost URLs. This verifies received content,
+  not visual rendering inside a native mail client.
+- **Customer-side verification complete:** Martin confirmed normal Gmail Inbox
+  placement for all three, correct mobile presentation and successful opening of
+  the received PDF. The earlier pasted source omitted its base64 payload; the
+  successful manual opening resolves that evidence limitation, with no attachment
+  defect found. The recorded outbound MIME also contains a valid 1-page,
+  1936-byte QA PDF. Raw headers, recipient addresses and signatures were not added
+  to Git.
+- Sent MIME verification passed: From/Reply-To, Hungarian subjects/accents,
+  HTML plus useful plain fallback, 1/0 PDF attachments, 0/2 tracking links and no
+  localhost URLs. Nine copied presentation/source files match checkpoint
+  `172366d22f83a4a5e73a533c257861e15adcf518` byte-for-byte. They ran only as a
+  private CLI fixture outside the active plugins, with unsaved Woo objects.
+  The QA account link goes to the existing TEST My Account page because no
+  persisted order exists; tracking numbers and PDF are fixtures, not provider proof.
+- No Barion/GLS/Szamlazz API requests, real invoices/parcels, Woo orders or stock
+  effects. The current application repository remains at
+  `067d63cbbdd38dc52a95d14fb3bd6ec309088d2d`; the new invoice-dependent lifecycle
+  was not deployed. Temporary server-side template fixtures were removed after
+  private QA evidence was captured outside Git.
+- **18 transport safety assertions passed after a normal TEST WordPress container
+  restart:** ordinary sends held; explicit approved QA permitted; other/multiple
+  recipients and CC/BCC held; missing SMTP and fallback configuration held;
+  approved sender/Reply-To and encrypted storage intact. Failed/refund/new-account/
+  password-reset Woo classes retain their standard `wp_mail` route (no customer
+  mail sent). Homepage, WP REST and Back Office entry returned HTTP 200 afterward.
+- The dedicated temporary TEST account had `read` plus only FluentSMTP-specific
+  access, never Administrator, order management or general `manage_options`.
+  Its account and sessions were deleted using WordPress/Woo APIs; the temporary
+  capability helper was removed. No real account was changed.
+
+### TEST-only transport safety and persistence
+
+FluentSMTP is installed in the existing TEST plugins bind mount; its encrypted
+settings live in the persistent TEST WordPress database. The mail safety MU file
+lives in the persistent TEST WordPress content volume at
+`wp-content/mu-plugins/appleklinika-test-mail-safety.php`. It intentionally holds
+ordinary requests and cron mail. A controlled CLI verification must explicitly
+opt in and use the sole owner-approved recipient, with no CC/BCC. The private
+recipient is configuration, not repository documentation. No unauthenticated PHP
+mail fallback is permitted if FluentSMTP or its authenticated configuration is
+missing. SMTP protocol debug and email-body logs are disabled; blocked/failed
+attempts emit only sanitized diagnostic categories.
+
+The configuration and guard survived container restart. Keep the plugin and
+persistent guard/settings when maintaining TEST. Do not relax the recipient hold
+or enable production sends as part of a normal application deploy. Owner
+visual/placement/PDF verification is now complete. The later invoice/provider
+lifecycle run remains a separate gate.
+
+## Provider correction and transport preflight — 2026-10-01
+
+Martin confirmed that Apple Klinika's existing mailboxes are hosted on **Hetzner
+Webhosting**. Use that mailbox infrastructure. The earlier Tárhely.com inference
+below was based on public DNS and did not establish the actual mailbox provider;
+it is superseded for SMTP selection. Do not use or request access to the
+mHosting/Websupport control panel. The observed DNS records remain dated facts,
+not proof of outbound sender authorization or message authentication results.
+
+The owner-specified endpoint `mail.your-server.de:587` was checked from TEST via
+`appleklinika-test`: STARTTLS, certificate verification and TLS 1.3 passed; SMTP
+AUTH LOGIN/PLAIN was advertised. No authentication, sender probe or message send
+was attempted. This proves network/TLS readiness only, not SMTP credentials or
+inbox delivery. Use a full mailbox address as the SMTP username, as documented in
+[Hetzner's official configuration guide](https://docs.hetzner.com/managed/email/set-up-email-account/setting-up-an-email-account/).
+
+Authenticated konsoleH inspection subsequently found one hosting account with
+**appleklinika.hu**, not appleklinika.com. Its existing mailboxes are `info`,
+`szamlazas` and `webmaster`; the only listed forward is `postmaster` to `webmaster`.
+The `info@appleklinika.hu` mailbox is active without automatic expiry. No
+`rendeles`, `webshop` or `felvasarlas` mailbox/alias was found in this account.
+
+Martin explicitly approved **info@appleklinika.hu** as both From and Reply-To for
+this QA transport test, with From name `Apple Klinika`. This does not establish or
+change the future production .com sender. No mailbox was created, modified or
+reset. The existing mailbox password is not retrievable from konsoleH and was
+not found in the inspected TEST/LOCAL private mail configuration. Credential
+entry by Martin is the current manual step; no SMTP authentication or send has
+occurred yet.
+
+Public appleklinika.hu DNS observed during this account check: MX priority 10
+`www749.your-server.de`; SPF `v=spf1 +a +mx ?all`; DMARC
+`v=DMARC1;p=none;sp=none;pct=50;adkim=r;aspf=r;`. These records do not substitute for
+received-message authentication results. No DNS changes were made.
+
+The three controlled delivery messages must go only to the Martin-controlled QA
+recipient supplied in this conversation. Keep the private recipient and mailbox
+password out of Git and reports. Native receipt and SPF/DKIM/DMARC header checks
+are pending. Do not deploy the invoice-dependent lifecycle for transport testing.
+
 ## Scope and current state
 
 LOCAL presentation only for `paid_invoice` and `carrier_handoff`, plus read-only
@@ -85,12 +229,12 @@ and [email troubleshooting](https://woocommerce.com/document/email-faq/).
 
 ## Smallest sensible implementation plan — not applied
 
-1. **First choice to evaluate:** the existing Tárhely.com mailbox SMTP service,
+1. **Current choice:** the owner-confirmed existing Hetzner Webhosting SMTP service,
    provided the owner confirms a suitable account, supported TLS SMTP settings,
    transactional sending permission, volume limits, DKIM signing/alignment and
    an acceptable operational support/delivery policy. This avoids choosing a new
    paid service prematurely. DNS alone does not prove these capabilities.
-2. **Alternative:** a dedicated transactional SMTP service such as Postmark after
+2. **Deferred alternative only if Hetzner proves unsuitable:** a dedicated transactional SMTP service such as Postmark after
    Martin selects/authorizes the account and cost. Use a transactional stream,
    not a marketing stream. Woo can keep its current email generation while a
    maintained SMTP connector handles authentication; no need for a custom SMTP

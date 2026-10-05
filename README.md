@@ -352,9 +352,17 @@ With the guarded LOCAL integration runtime running, use
 `http://127.0.0.1:18789/` (stop with Ctrl-C). No order is saved, no email is sent,
 and no provider is contacted. Generated files remain in ignored `.local-runtime/`.
 See [email presentation and mail/DNS readiness](docs/transactional-email-readiness.md)
-for the 2026-10-01 audit, verification limits and the owner decisions still needed
-for authenticated transport and inbox delivery. No SMTP service was installed,
-DNS changed or new lifecycle deployed by this pass.
+for the 2026-10-01 audit and verification limits. The subsequent TEST-only transport
+setup uses FluentSMTP with Hetzner Webhosting on port 587/STARTTLS, with the
+owner-approved `info@appleklinika.hu` QA identity. All three authorized QA messages
+were accepted through authenticated SMTP and Martin confirmed all three arrived.
+Owner-supplied Gmail headers confirm SPF, DKIM and DMARC PASS on all three.
+Martin also confirmed normal Gmail Inbox placement for all three (none in Spam),
+correct mobile rendering and successful PDF opening. SMTP, Inbox delivery,
+SPF/DKIM/DMARC, mobile rendering and PDF verification are PASS for this TEST run;
+no further email-design changes are required. Ordinary TEST mail remains held;
+only explicit CLI QA sends to the approved private recipient are permitted. No DNS or mailbox changes,
+production configuration or invoice-dependent lifecycle deployment occurred.
 
 ## Durable LOCAL recovery
 
@@ -372,3 +380,11 @@ and provider traffic. See the [reconciliation record](docs/local-reconciliation.
 for the semantic decisions and completed LOCAL verification evidence,
 and the [current startup instructions](docs/local-development.md). No TEST or
 production deployment is part of this work.
+
+## Security remediation — Round 1
+
+The scoped 2026-10-05 LOCAL/TEST repairs and encrypted pre-change recovery set are
+recorded in [Security remediation](docs/security-remediation-round1.md). Run
+`make test-security` for the isolated order/tax and GLS authorization checks.
+The accepted invoice-dependent lifecycle remains separate from this security
+rollout; no production deployment or public history rewrite is included.
