@@ -339,3 +339,14 @@ and is not introduced by this deployment. See
 [the security repair record](docs/security-remediation-round1.md) for backup,
 permissions, image privacy, regression evidence and remaining launch gates.
 Run `make test-security` for the 72 isolated authorization assertions.
+
+## TEST recovery and operations
+
+The isolated restore, encrypted daily TEST backup, Mac independent-copy job,
+five-minute health checks and bounded container logs are documented in
+[Security / operations Round 2](docs/security-operations-round2.md).
+Operational templates are in `docker/operations/` and scripts in
+`scripts/operations/`. They are TEST-scoped; production activation is a separate
+approval. Human alert delivery is not yet configured, and independent-copy timing
+depends on the Mac being awake and connected. No secrets or recovery sets belong
+in Git.

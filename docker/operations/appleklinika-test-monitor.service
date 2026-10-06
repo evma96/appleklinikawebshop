@@ -1,0 +1,8 @@
+[Unit]
+Description=Apple Klinika TEST health and backup visibility
+After=docker.service
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/appleklinika-ops/test-monitor.py
+TimeoutStartSec=90
+UMask=0077

@@ -1,0 +1,8 @@
+[Unit]
+Description=Apple Klinika TEST five-minute health check
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=5min
+AccuracySec=20s
+[Install]
+WantedBy=timers.target
