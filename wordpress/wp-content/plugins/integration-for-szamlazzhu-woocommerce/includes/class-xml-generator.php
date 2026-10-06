@@ -56,10 +56,10 @@ if ( ! class_exists( 'WC_Szamlazz_Xml_Generator', false ) ) :
 			// a CURL inicializálása
 			$ch = curl_init($agent_url);
 
-			// A curl hívás esetén tanúsítványhibát kaphatunk az SSL tanúsítvány valódiságától
-			// függetlenül, ez az alábbi CURL paraméter állítással kiküszöbölhető,
-			// ilyenkor nincs külön SSL ellenőrzés:
-			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+			// Verify the certificate chain and hostname using the runtime CA store.
+			// Never retry without verification, including for TEST Agent accounts.
+			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
 
 			// POST-ban küldjük az adatokat
 			curl_setopt($ch, CURLOPT_POST, true);
@@ -94,6 +94,12 @@ if ( ! class_exists( 'WC_Szamlazz_Xml_Generator', false ) ) :
 
 			// kiolvassuk a curl-ból volt-e hiba
 			$http_error = curl_error($ch);
+			if ($agent_response === false) {
+				$agent_response = '';
+				if ($http_error === '') {
+					$http_error = 'Szamla Agent transport failed.';
+				}
+			}
 
 			// ezekben a változókban tároljuk a szétbontott választ
 			$agent_header = '';
@@ -153,6 +159,11 @@ if ( ! class_exists( 'WC_Szamlazz_Xml_Generator', false ) ) :
 			$response['error'] = false;
 			$response['messages'] = array();
 			$response['agent_body'] = $agent_body;
+
+			// The temporary request contains the Agent key and customer data.
+			// Remove it on transport errors too, including failed TLS verification.
+			unlink($xmlfile);
+
 			if ( $http_error != "" ) {
 				$response['error'] = true;
 				$response['http_error'] = $http_error;
@@ -163,9 +174,6 @@ if ( ! class_exists( 'WC_Szamlazz_Xml_Generator', false ) ) :
 
 				return $response;
 			}
-
-			//Delete the XML
-			unlink($xmlfile);
 
 			if ($volt_hiba) {
 				$response['error'] = true;

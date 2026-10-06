@@ -5,3 +5,7 @@ vendor/
 wordpress/wp-content/uploads/
 wordpress/wp-content/cache/
 *.log
+
+# Private, durable LOCAL integration runtime.
+.env.backoffice
+.local-runtime/
