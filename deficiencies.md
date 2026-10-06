@@ -220,3 +220,22 @@ and is not introduced by this deployment. See
 [the security repair record](docs/security-remediation-round1.md) for backup,
 permissions, image privacy, regression evidence and remaining launch gates.
 Run `make test-security` for the 72 isolated authorization assertions.
+
+## Security / operations Round 2 — 2026-10-05
+
+- Closed M7 for TEST: actual isolated restore passed (17.9 minutes); database,
+  1,072 media files, private configuration, orders/history and Back Office were
+  verified. Daily encrypted routine and verified Mac copies are implemented.
+  Independent RPO remains conditional on Mac availability; approve an always-on
+  destination, key custody and production schedule before production activation.
+- M8 partially addressed: five-minute disk/container/HTTPS/PHP/SMTP/backup/TLS
+  checks, Mac public checks and Docker log rotation are active. Actual unattended
+  human notification delivery is still missing; do not label it complete.
+- M6 remains: old image blobs are downloadable in 184 public commits and 50 ref
+  tips, including main/protected tag. GPS is not the Szeged business location.
+  No public history was rewritten; provenance and explicit risk/rewrite decision
+  are required. Exact coordinates/serials are not included in documentation.
+- Remaining audit counts: C0 / H0 / M2 / L5. Low findings, sample legal content and
+  Woo Szamlazz PRO/full lifecycle acceptance were not remediated in this round.
+- See `docs/security-operations-round2.md` for scope, evidence, limitations,
+  maintenance behavior and the documented setup errors corrected during rollout.
