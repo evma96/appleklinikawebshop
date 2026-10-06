@@ -14,7 +14,7 @@ namespace {
     function home_url(string $path): string { return 'http://localhost:8082/'; }
     function wp_parse_url(string $url, int $component): mixed { return parse_url($url, $component); }
     function wp_get_environment_type(): string { return 'local'; }
-    function get_option(string $key, mixed $default): mixed { return $default; }
+    function get_option(string $key, mixed $default): mixed { return $key === 'home' ? 'http://localhost:8082' : $default; }
 }
 namespace Appleklinika\BackOffice\Infrastructure {
     // Only the attempt ownership port is stubbed. The real hook/environment code runs.

@@ -14,7 +14,9 @@ final class LifecycleConfiguration
 
     public static function isTestEnvironment(): bool
     {
-        $host = strtolower((string) wp_parse_url(home_url('/'), PHP_URL_HOST));
+        // The dedicated staff host rewrites home_url(); rollout belongs to the
+        // canonical installation, not the host used to perform an order action.
+        $host = strtolower((string) wp_parse_url((string) get_option('home', ''), PHP_URL_HOST));
         return in_array($host, ['teszt.appleklinika.com', 'localhost', '127.0.0.1'], true)
             && wp_get_environment_type() !== 'production';
     }

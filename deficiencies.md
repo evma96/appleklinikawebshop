@@ -361,3 +361,8 @@ implied. No restore rehearsal, monitoring or header work was started.
   Woo Szamlazz PRO/full lifecycle acceptance were not remediated in this round.
 - See `docs/security-operations-round2.md` for scope, evidence, limitations,
   maintenance behavior and the documented setup errors corrected during rollout.
+
+## TEST lifecycle acceptance — 2026-10-06
+
+- Found and fixed: dedicated Back Office URL rewriting disabled TEST lifecycle hooks and could point customer email account links at the staff host. Canonical installation checks and customer-only URL normalization preserve the existing staff login/cookie boundary. Focused regression and deployed acceptance results: `docs/test-lifecycle-acceptance-20261006.md`.
+- Existing legal/sample content and previously documented operations/public-history findings remain separate launch gates; this change does not resolve them.
