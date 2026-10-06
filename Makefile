@@ -1,5 +1,9 @@
 .DEFAULT_GOAL := check
 
+.PHONY: test-order-lifecycle
+test-order-lifecycle:
+	docker run --rm --network none -v "$(CURDIR)/wordpress/wp-content:/usr/src/wordpress/wp-content:ro" -v "$(CURDIR)/scripts/test-order-lifecycle.sh:/test-order-lifecycle.sh:ro" --entrypoint sh wordpress:7.0.2-php8.2-apache /test-order-lifecycle.sh
+
 COMPOSE := docker compose
 
 .PHONY: install up down test test-unit test-integration test-inventory-catalog test-inventory-product-frontend test-theme-storefront test-theme-catalog-search test-theme-account-shell test-legal-content test-cart-checkout test-checkout-stepper test-checkout-summary test-order-company-contract test-order-finalization test-order-flow test-order-presentation test-order-email test-checkout-lifecycle test-customer-address-book test-customer-address-book-persistence test-customer-address-book-migration test-customer-address-book-account test-customer-address-book-checkout test-customer-address-book-order-snapshot test-customer-address-book-privacy test-buyback test-buyback-domain test-buyback-persistence test-buyback-legacy test-buyback-pricing-admin test-buyback-condition-admin test-buyback-battery-admin test-buyback-offer-mode-admin test-buyback-pricing-engine test-buyback-pricebook-activation test-buyback-public-active-book test-buyback-public-request test-buyback-mail-notifications test-buyback-local-demo lint format static quality quality-fix check
@@ -14,7 +18,7 @@ up:
 down:
 	$(COMPOSE) down
 
-test: test-unit test-integration test-security
+test: test-unit test-integration test-order-lifecycle test-security
 
 test-unit:
 	@echo "No unit test suite is configured yet."
@@ -150,6 +154,19 @@ quality: lint static
 quality-fix: format
 
 check: test quality
+
+.PHONY: test-backoffice-workflow
+# Both previously separate suites run offline from the reconciled source.
+test-backoffice-workflow: test-order-lifecycle
+
+# Read-only, guarded LOCAL Woo rendering with memory-only fixture orders.
+.PHONY: test-email-presentation
+test-email-presentation:
+	$(COMPOSE) exec -T wordpress php /var/www/html/wp-content/plugins/appleklinika-backoffice/tests/integration/email-presentation.php --local-email-preview
+
+.PHONY: preview-order-emails
+preview-order-emails:
+	sh scripts/preview-order-emails.sh
 
 .PHONY: test-security
 test-security:

@@ -329,16 +329,65 @@ http://localhost:8080/wp-admin/admin.php?appleklinika_seed_selector_demo=confirm
 ```
 
 The seeder is idempotent by SKU, so rerunning it updates the same local selector demo products instead of creating endless duplicates.
+# TEST order/email lifecycle implementation
 
-## Security remediation — Round 1 (2026-10-05)
+The isolated `feature/order-email-lifecycle` work adds invoice-ready customer mail,
+an audited GLS-handoff notification, shared fulfillment transitions and current
+multi-parcel tracking reads. It has **not been deployed to TEST**. As of 2026-10-01, private TEST SSH
+access is restored; Martin is handling the separate invoicing-plugin PRO
+activation. Actual provider acceptance remains pending. See [implementation and audit correction](docs/order-email-lifecycle.md)
+for exact triggers, safety gates, local evidence and the remaining TEST steps.
+Run `make test-order-lifecycle` for the dedicated offline checks.
 
-This TEST branch carries only the security backport from LOCAL checkpoint
-`9c5241088f8de2d0780090d6ffca546f01a86067`. The accepted, licence-gated
-email/fulfilment implementation is preserved in the LOCAL integration history
-and is not introduced by this deployment. See
-[the security repair record](docs/security-remediation-round1.md) for backup,
-permissions, image privacy, regression evidence and remaining launch gates.
-Run `make test-security` for the 72 isolated authorization assertions.
+## Transactional email presentation and transport readiness
+
+The two managed lifecycle emails now have scoped Apple Klinika HTML/plain views,
+order-snapshot details, invoice information and current multi-parcel tracking.
+Their invoice/handoff eligibility, duplicate protection and provider behavior are
+unchanged. Other Woo emails keep their existing templates and settings.
+
+With the guarded LOCAL integration runtime running, use
+`make test-email-presentation` for memory-only Woo rendering checks, or
+`make preview-order-emails` to serve five fixture previews at
+`http://127.0.0.1:18789/` (stop with Ctrl-C). No order is saved, no email is sent,
+and no provider is contacted. Generated files remain in ignored `.local-runtime/`.
+See [email presentation and mail/DNS readiness](docs/transactional-email-readiness.md)
+for the 2026-10-01 audit and verification limits. The subsequent TEST-only transport
+setup uses FluentSMTP with Hetzner Webhosting on port 587/STARTTLS, with the
+owner-approved `info@appleklinika.hu` QA identity. All three authorized QA messages
+were accepted through authenticated SMTP and Martin confirmed all three arrived.
+Owner-supplied Gmail headers confirm SPF, DKIM and DMARC PASS on all three.
+Martin also confirmed normal Gmail Inbox placement for all three (none in Spam),
+correct mobile rendering and successful PDF opening. SMTP, Inbox delivery,
+SPF/DKIM/DMARC, mobile rendering and PDF verification are PASS for this TEST run;
+no further email-design changes are required. Ordinary TEST mail remains held;
+only explicit CLI QA sends to the approved private recipient are permitted. No DNS or mailbox changes,
+production configuration or invoice-dependent lifecycle deployment occurred.
+
+## Durable LOCAL recovery
+
+The recovery checkpoint preserves the storefront source at `/Users/apple/Desktop/appleklinika-storefront-active` and the existing LOCAL data. Both running LOCAL environments now use the integration source described below; see the [durable LOCAL development guide](docs/local-development.md) for current startup instructions. The dirty primary worktree and obsolete temporary preview paths are not runtime sources. LOCAL overlays are opt-in through private environment files.
+
+## LOCAL fulfillment / Back Office reconciliation
+
+The integration candidate runs both LOCAL URLs from
+`/Users/apple/Desktop/appleklinika-integration-active` on
+`feature/local-fulfillment-backoffice-integration`, preserving separate databases
+and the original protected checkpoints. Back Office and Woo admin delegate to
+one locked fulfillment service and persist the same Woo order state/history
+read by My Account and the email lifecycle. The opt-in LOCAL runtime blocks mail
+and provider traffic. See the [reconciliation record](docs/local-reconciliation.md)
+for the semantic decisions and completed LOCAL verification evidence,
+and the [current startup instructions](docs/local-development.md). No TEST or
+production deployment is part of this work.
+
+## Security remediation — Round 1
+
+The scoped 2026-10-05 LOCAL/TEST repairs and encrypted pre-change recovery set are
+recorded in [Security remediation](docs/security-remediation-round1.md). Run
+`make test-security` for the isolated order/tax and GLS authorization checks.
+The accepted invoice-dependent lifecycle remains separate from this security
+rollout; no production deployment or public history rewrite is included.
 
 ## TEST recovery and operations
 

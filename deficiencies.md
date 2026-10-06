@@ -210,16 +210,138 @@
 - Which Apple product family should be added after iPad, MacBook, and Apple Watch: AirPods, accessories, or another device line?
 - Should production catalog deletion become archive-only after real products depend on catalog values?
 - Who owns the final legal text for ÁSZF, privacy, warranty, shipping, and returns pages?
+# 2026-09-16 lifecycle implementation follow-up
+
+- **HIGH / CONFIG + TEST access:** The actual TEST invoice plugin still displays
+  its separate PRO activation gate; TEST SSH times out. Számlázz.hu TEST itself
+  provides #profi capability. Existing plugin entitlement must be activated or
+  clarified; no live subscription change is implied. The new lifecycle is local
+  only, and the requested real provider acceptance remains blocked.
+- **APPLICATION, locally addressed / pending TEST:** Current-array GLS tracking,
+  invoice-ready primary mail, one handoff-only shipping mail, durable duplicate
+  guards and shared Back Office/Woo-admin transitions are implemented and locally
+  exercised. They must not be described as a completed TEST fix yet.
+- **SMTP / delivery evidence outstanding:** Application acceptance and actual
+  recipient inbox delivery remain separate. No transport provider was installed.
+- Known legal/sample content and the previously resolved storefront media-access
+  incident retain their existing classification. This phase does not reopen them.
+- Detailed scope, evidence, source ownership and TEST rollout prerequisites:
+  [Order/email lifecycle](docs/order-email-lifecycle.md).
+
+## LOCAL recovery — 2026-09-28
+
+- Deleted temporary-worktree mounts were replaced by the durable storefront source documented in `docs/local-development.md`; existing LOCAL database/core volumes and all uploads were preserved. The two implementation checkpoints and their five differing shared files remain unreconciled.
+- At the initial restoration checkpoint, Contact map iframe output was unchanged and immediate, but the in-app browser map surface remained blank; authenticated Back Office work-queue verification awaited a separate LOCAL login. Final recovery verification is a separate follow-up to these initial observations. Neither observation is a deployment or provider integration result.
+
+## LOCAL reconciliation — 2026-09-28
+
+- The five source conflicts described in the historical recovery record are now
+  reconciled in the separate integration candidate; neither protected branch was
+  modified. See `docs/local-reconciliation.md` for the per-file decisions.
+- Resolved application defect found during LOCAL verification: the Számlázz.hu
+  order metabox passes a status array through `wc_szamlazz_should_generate_auto_invoice`,
+  whereas the custom lifecycle hook previously accepted only a boolean. This
+  caused a Woo-admin order-page TypeError. The hook now preserves the provider's
+  value/type for unmanaged or owned attempts and still blocks unowned managed
+  attempts. Sixteen focused offline assertions cover the contract; the order
+  admin page renders again. No license check or provider guard was bypassed.
+- The previous LOCAL Woo-admin correction verification blocker was resolved on
+  2026-09-29 with explicit owner authorization for the temporary QA user's
+  `edit_others_posts` capability. No Administrator role or application permission
+  bypass was needed. Correction, shared Back Office/My Account state, actor/reason
+  audit and duplicate-submit rejection passed; the QA account/order were removed.
+  See `docs/local-reconciliation.md` for cleanup and unchanged-data proof.
+- LOCAL mail/provider transports are deliberately disabled. This reconciliation
+  provides no new TEST provider E2E or actual inbox-delivery proof. Existing
+  legal/sample content, catalog imperfections and provider/license/SMTP acceptance
+  remain outside this task. The prior corrected deployment/media issue remains
+  recorded in the earlier audit notes and was not reopened.
+
+
+## Transactional email readiness — initial audit, 2026-10-01
+
+- **HIGH / CONFIG — authenticated transport not ready:** Read-only TEST inspection
+  found no SMTP plugin/configuration or active mail override. PHP points to a
+  missing sendmail executable. Woo uses a Gmail From address, not an authenticated
+  Apple Klinika domain sender. No email was sent and no transport was changed.
+- Public DNS has one hosting-oriented SPF record and a 2048-bit RSA DKIM key at
+  `default._domainkey`. DMARC exists with `p=none` and no aggregate-report address.
+  DNS presence does not prove outgoing signing/alignment or inbox delivery.
+  Current DNS indicates Tárhely.com mail hosting; usable SMTP entitlement and
+  limits require owner/provider confirmation. No DNS records were modified.
+- **LOCAL presentation verified / delivery pending:** The two lifecycle messages
+  have branded scoped HTML/plain templates and five memory-only Woo previews.
+  Desktop, 390px and 320px checks found no horizontal overflow. Invoice, actual
+  carrier-handoff eligibility, correction/history and duplicate guards are
+  unchanged. No real invoice, parcel or email was created in this pass.
+- TEST SSH is restored through the private alias. The historical timeout is no
+  longer the access blocker; Martin separately handles Woo PRO activation. The
+  approved integration checkpoint is preserved and the lifecycle remains
+  undeployed. Full provider acceptance and native email-client/inbox checks are
+  still pending, as are the previously documented legal/content blockers.
+- Plan and evidence: [transactional email readiness](docs/transactional-email-readiness.md).
+
+
+## Mail provider correction — 2026-10-01
+
+- Martin confirmed existing **Hetzner Webhosting** mailboxes. The earlier
+  Tárhely.com provider inference from public DNS is superseded for SMTP setup.
+  Do not use mHosting/Websupport. Keep the dated DNS observations; they do not
+  establish the actual mailbox account or prove outbound authentication failure.
+- TEST can reach `mail.your-server.de:587` with verified STARTTLS/TLS 1.3 and
+  advertised SMTP authentication. Actual mailbox selection, authentication and
+  QA inbox delivery remain pending a Hetzner account session and the authorized
+  mailbox credential. No password reset, new mailbox, message or DNS change was
+  performed. Details: `docs/transactional-email-readiness.md`.
+
+- Authenticated Hetzner inspection resolved a domain mismatch: this account holds
+  `appleklinika.hu` with active `info`, plus `szamlazas` and `webmaster`; no .com
+  domain or requested order-mailbox aliases were listed. Martin approved the
+  existing `info@appleklinika.hu` as From and Reply-To for QA only. The current
+  blocker is secure entry of its existing mailbox password. No authentication,
+  send, password reset, mailbox creation or DNS modification has occurred.
+
+
+## TEST SMTP progress — 2026-10-01
+
+- **Previous authenticated-transport blocker resolved on TEST:** official
+  FluentSMTP 2.4.1 uses the existing Hetzner mailbox over authenticated STARTTLS
+  on port 587. Approved QA From/Reply-To: `info@appleklinika.hu`, name
+  `Apple Klinika`. The mailbox password was entered by Martin in the masked
+  HTTPS UI and stored with plugin-supported encryption; never exported to
+  plaintext or Git. The future production .com sender remains unestablished.
+- **TEST email acceptance complete — PASS:** application generation, authenticated
+  SMTP, actual Gmail Inbox delivery, SPF, DKIM, DMARC, mobile rendering and the
+  received PDF are verified. Martin confirmed all three messages in the normal
+  Inbox (none in Spam), correct mobile layout/typography/buttons/spacing/Hungarian
+  text and successful PDF opening. His supplied Gmail headers show authentication
+  PASS on all three with aligned `.hu` sender/envelope/DKIM (`default2607`). No DNS
+  correction is indicated for this QA identity. The earlier pasted-source PDF
+  omission was an evidence limitation, now resolved by manual verification.
+  No further email-design changes are required; templates remain unchanged.
+  This closes the TEST transport/customer-email verification only, not the
+  separate production-sender or invoice-dependent provider lifecycle work.
+- **Safety/persistence PASS:** 18 focused checks passed after TEST WordPress
+  restart; non-QA recipients/CC/BCC, ordinary web/cron sends, missing transport
+  and fallback are blocked. Existing failed/refund/account/password mail retains
+  its standard transport path. HTTP health passed; temporary QA user/session and
+  access helper were cleaned up. No customer orders, invoices or parcels were
+  created, and the accepted email source/templates were not changed or deployed.
+- No DNS, mailbox, production, main, Barion/GLS/Szamlazz lifecycle or license
+  changes. Exact scope and historical blockers remain in
+  `docs/transactional-email-readiness.md`.
 
 ## Security remediation — Round 1 (2026-10-05)
 
-This TEST branch carries only the security backport from LOCAL checkpoint
-`9c5241088f8de2d0780090d6ffca546f01a86067`. The accepted, licence-gated
-email/fulfilment implementation is preserved in the LOCAL integration history
-and is not introduced by this deployment. See
-[the security repair record](docs/security-remediation-round1.md) for backup,
-permissions, image privacy, regression evidence and remaining launch gates.
-Run `make test-security` for the 72 isolated authorization assertions.
+See [the scoped repair record](docs/security-remediation-round1.md). The missing
+WordPress release, current tax/GLS authorization gaps, stale QA #525, invoice
+filesystem permissions and upload execution/core write containment are addressed.
+Current old demo images are sanitized; their already-published history remains.
+After source rollout verification the audit remainder is Critical 0 / High 0 /
+Medium 3 / Low 5. Medium: historical image exposure, recovery rehearsal/automation,
+and monitoring. All five low findings remain scoped follow-up work. The separate
+legal-content and PRO/full invoice-lifecycle gates remain; no launch sign-off is
+implied. No restore rehearsal, monitoring or header work was started.
 
 ## Security / operations Round 2 — 2026-10-05
 

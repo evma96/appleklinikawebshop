@@ -29,7 +29,7 @@ class GLS_Shipping_My_Account
         }
 
         $gls_pickup_info = $order->get_meta('_gls_pickup_info', true);
-        $tracking_code   = $order->get_meta('_gls_tracking_code', true);
+        $tracking_links = GLS_Shipping_Account_Helper::get_order_tracking_links($order);
 
         if (!empty($gls_pickup_info)) {
             $pickup_info = json_decode($gls_pickup_info);
@@ -41,16 +41,16 @@ class GLS_Shipping_My_Account
             echo '<strong>' . esc_html__('Country:', 'gls-shipping-for-woocommerce') . '</strong> ' . esc_html($pickup_info->contact->countryCode) . '<br/><br/>';
         }
 
-        if ($tracking_code) {
-            $gls_shipping_method_settings = get_option("woocommerce_gls_shipping_method_settings");
-            $tracking_url = "https://gls-group.eu/" . $gls_shipping_method_settings['country'] . "/en/parcel-tracking/?match=" . $tracking_code;
-
-            echo '<strong>' . esc_html__('GLS Tracking Number: ', 'gls-shipping-for-woocommerce') . '<a href="' . esc_url($tracking_url) . '" target="_blank">' . esc_html($tracking_code) . '</a></strong><br>';
+        foreach ($tracking_links as $link) {
+            echo '<strong>' . esc_html__('GLS Tracking Number: ', 'gls-shipping-for-woocommerce') . '<a href="' . esc_url($link['url']) . '" target="_blank" rel="noopener">' . esc_html($link['code']) . '</a></strong><br>';
         }
     }
 
     public function display_gls_pickup_info_on_account_page($order)
     {
+        if (!$order || (!$order->get_meta('_gls_pickup_info', true) && !GLS_Shipping_Account_Helper::get_order_tracking_links($order))) {
+            return;
+        }
         echo '<div style="border: 1px solid #ddd;padding: 20px;margin-bottom: 24px;">';
         $this->display_gls_pickup_info($order->get_id());
         echo "</div>";
@@ -60,12 +60,19 @@ class GLS_Shipping_My_Account
     {
         // Only add info to customer emails, not admin emails
         if ($sent_to_admin) {
-            // return;
+            return;
         }
 
         // Only add info to processing and completed order
         if ($email->id != 'customer_completed_order' && $email->id != 'customer_processing_order') {
-            // return;
+            return;
+        }
+
+        if ($plain_text) {
+            foreach (GLS_Shipping_Account_Helper::get_order_tracking_links($order) as $link) {
+                echo "\nGLS: " . $link['code'] . "\n" . $link['url'] . "\n";
+            }
+            return;
         }
 
         $this->display_gls_pickup_info($order->get_id());

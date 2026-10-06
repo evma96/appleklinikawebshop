@@ -8,6 +8,29 @@
  */
 class GLS_Shipping_Account_Helper
 {
+    /** Current multi-parcel storage, with a legacy-order fallback. No provider call. */
+    public static function get_order_tracking_links($order)
+    {
+        $country = strtoupper((string) self::get_account_setting('country'));
+        if (!in_array($country, self::get_allowed_account_countries(), true)) {
+            return array();
+        }
+        $codes = $order->get_meta('_gls_tracking_codes', true);
+        $codes = is_array($codes) ? $codes : array();
+        $codes = array_values(array_unique(array_filter(array_map(static function ($code) {
+            return is_scalar($code) && ctype_digit(trim((string) $code)) ? trim((string) $code) : '';
+        }, $codes))));
+        if (!$codes) {
+            $legacy = $order->get_meta('_gls_tracking_code', true);
+            if (is_scalar($legacy) && ctype_digit(trim((string) $legacy))) {
+                $codes = array(trim((string) $legacy));
+            }
+        }
+        return array_map(static function ($code) use ($country) {
+            return array('code' => $code, 'url' => 'https://gls-group.eu/' . $country . '/en/parcel-tracking/?match=' . rawurlencode($code));
+        }, $codes);
+    }
+
     /**
      * Get the active account from settings
      * 
