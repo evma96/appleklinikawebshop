@@ -107,6 +107,19 @@ $savedFormat = static fn () => ['email_type' => 'plain'];
 add_filter('pre_option_woocommerce_appleklinika_paid_invoice_settings', $savedFormat);
 $assert((new PaidInvoiceEmail())->get_email_type() === 'plain', 'An explicitly saved Woo email format remains honored.');
 remove_filter('pre_option_woocommerce_appleklinika_paid_invoice_settings', $savedFormat);
+// Model the actual separate Back Office origin without saving settings.
+$staffUrls = \Appleklinika\BackOffice\Infrastructure\DedicatedHostUrls::forRequest(
+    'https://backoffice.staging.example', 'backoffice.staging.example', [get_option('home'), get_option('siteurl')]
+);
+$canonicalOrder = previewOrder();
+$presentation = new LifecycleEmailPresentation();
+$canonicalView = $presentation->forOrder($canonicalOrder, CustomerNotification::PAID);
+foreach (['home_url', 'site_url', 'network_site_url'] as $hook) { add_filter($hook, [$staffUrls, 'rewrite']); }
+$assert(str_contains($canonicalOrder->get_view_order_url(), 'backoffice.staging.example'), 'Fixture reproduces native staff-origin order links.');
+$staffView = $presentation->forOrder($canonicalOrder, CustomerNotification::PAID);
+$assert($staffView === $canonicalView, 'Every customer email field, account URL and logo remains canonical in staff context.');
+$assert(\Appleklinika\BackOffice\Infrastructure\LifecycleConfiguration::isTestEnvironment(), 'Staff routing retains LOCAL lifecycle hooks.');
+foreach (['home_url', 'site_url', 'network_site_url'] as $hook) { remove_filter($hook, [$staffUrls, 'rewrite']); }
 $assert($mailAttempts === 0 && $networkAttempts === 0, 'Rendering did not attempt mail or network traffic.');
 $links = '';
 foreach (array_keys($scenarios) as $name) {

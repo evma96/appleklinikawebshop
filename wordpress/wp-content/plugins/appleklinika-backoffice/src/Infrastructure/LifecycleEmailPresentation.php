@@ -59,9 +59,20 @@ final class LifecycleEmailPresentation
             'billing_address' => $order->get_formatted_billing_address(),
             'invoice_number' => is_scalar($order->get_meta('_wc_szamlazz_invoice', true)) ? (string) $order->get_meta('_wc_szamlazz_invoice', true) : '',
             'tracking' => $paid ? [] : (new OrderDocuments())->trackingLinks($order),
-            'account_url' => $order->get_view_order_url(),
-            'logo_url' => plugins_url('appleklinika-inventory/assets/brand/appleklinika-logo.jpg'),
+            'account_url' => $this->storefrontUrl($order->get_view_order_url(), 'home'),
+            'logo_url' => $this->storefrontUrl(plugins_url('appleklinika-inventory/assets/brand/appleklinika-logo.jpg'), 'siteurl'),
         ];
+    }
+
+    /** Staff-host routing must not send customers to the staff login domain. */
+    private function storefrontUrl(string $url, string $option): string
+    {
+        $requestBase = $option === 'home' ? home_url('/') : site_url('/');
+        $canonicalBase = (string) get_option($option, '');
+        if ($canonicalBase !== '' && str_starts_with($url, $requestBase)) {
+            return rtrim($canonicalBase, '/') . '/' . substr($url, strlen($requestBase));
+        }
+        return $url;
     }
 
     public static function plain(string $html): string

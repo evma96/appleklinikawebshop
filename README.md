@@ -399,3 +399,7 @@ Operational templates are in `docker/operations/` and scripts in
 approval. Human alert delivery is not yet configured, and independent-copy timing
 depends on the Mac being awake and connected. No secrets or recovery sets belong
 in Git.
+
+### Dedicated staff-host lifecycle acceptance
+
+The TEST lifecycle checks the canonical WordPress installation URL, so the separate Back Office origin retains invoice/email hooks and Woo fulfilment correction. Customer lifecycle emails normalize their account and logo URLs to the canonical storefront. See [the acceptance evidence](docs/test-lifecycle-acceptance-20261006.md).
