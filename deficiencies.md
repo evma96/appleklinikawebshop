@@ -366,3 +366,7 @@ implied. No restore rehearsal, monitoring or header work was started.
 
 - Found and fixed: dedicated Back Office URL rewriting disabled TEST lifecycle hooks and could point customer email account links at the staff host. Canonical installation checks and customer-only URL normalization preserve the existing staff login/cookie boundary. Focused regression and deployed acceptance results: `docs/test-lifecycle-acceptance-20261006.md`.
 - Existing legal/sample content and previously documented operations/public-history findings remain separate launch gates; this change does not resolve them.
+
+## TEST GLS label persistence regression — 2026-10-07
+
+The E2E found a successful GLS sandbox parcel whose PDF was not saved: WordPress selected an FTP code-update transport on the immutable code mount. The single-order label adapter now writes only the protected runtime label directory through the native direct filesystem adapter (0640), reports write failures and preserves provider IDs before saving the PDF. Any existing label/tracking/parcel reference rejects a repeated single-order creation. Recovered-label and remaining lifecycle acceptance are recorded separately; no full PASS is claimed here. Bulk generation and generic ambiguous network-timeout recovery are outside this targeted repair.

@@ -283,6 +283,13 @@ class GLS_Shipping_Order
                 throw new Exception("Order not found: $order_id");
             }
             
+            // A saved provider reference must never create a second parcel, even if PDF storage failed.
+            foreach (array('_gls_print_label', '_gls_parcel_ids', '_gls_tracking_codes', '_gls_tracking_code') as $key) {
+                if (!empty($order->get_meta($key, true))) {
+                    throw new Exception('A rendeléshez már tartozik GLS csomag. A meglévő címkét kell megnyitni vagy helyreállítani; új csomag nem készült.');
+                }
+            }
+
             // Get final count - use provided value, saved value, or default to 1
             if ($count !== null) {
                 $final_count = $count;
@@ -364,13 +371,14 @@ class GLS_Shipping_Order
     public function save_label_and_tracking_info($body, $order_id)
     {
         $order = wc_get_order($order_id);
-        if (!empty($body['Labels'])) {
-            $this->save_print_labels($body['Labels'], $order_id, $order);
-        }
-
+        // Preserve provider IDs first so a local PDF failure cannot cause a duplicate on retry.
         if (!empty($body['PrintLabelsInfoList'])) {
             $this->save_tracking_info($body['PrintLabelsInfoList'], $order_id, $order);
         }
+        if (empty($body['Labels'])) {
+            throw new Exception('A GLS címke hiányzik; a meglévő csomag egyeztetése szükséges.');
+        }
+        $this->save_print_labels($body['Labels'], $order_id, $order);
 
         // Fire hook after successful label generation
         do_action('gls_label_generated', $order_id, $order, $body);
@@ -378,26 +386,24 @@ class GLS_Shipping_Order
 
     public function save_print_labels($labels, $order_id, $order)
     {
-        require_once(ABSPATH . 'wp-admin/includes/file.php');
-    
-        WP_Filesystem();
-        global $wp_filesystem;
-    
-        $label_print = implode(array_map('chr', $labels));
-        
-        // Ensure labels directory exists
+        // Runtime PDFs belong to the writable protected uploads directory. Do not use
+        // WordPress's code-update transport detection (FTP on an immutable code mount).
+        require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-base.php';
+        require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-direct.php';
+        $filesystem = new WP_Filesystem_Direct(null);
         GLS_Shipping_For_Woo::get_instance()->setup_labels_directory();
-        
-        // Use secure labels directory
-        $timestamp = current_time('YmdHis');
-        $file_name = 'shipping_label_' . $order_id . '_' . $timestamp . '.pdf';
-        $file_path = GLS_LABELS_DIR . '/' . $file_name;
-        
-        if ($wp_filesystem->put_contents($file_path, $label_print)) {
-            // Store just the filename, URL with nonce is generated on display
-            $order->update_meta_data('_gls_print_label', $file_name);
-            $order->save();
+        $label_print = implode(array_map('chr', $labels));
+        if (!str_starts_with($label_print, '%PDF-')) {
+            throw new Exception('A GLS válasza nem PDF címke; a meglévő csomag egyeztetése szükséges.');
         }
+        $timestamp = current_time('YmdHis');
+        $file_name = 'shipping_label_' . absint($order_id) . '_' . $timestamp . '.pdf';
+        $file_path = GLS_LABELS_DIR . '/' . $file_name;
+        if (!$filesystem->put_contents($file_path, $label_print, 0640)) {
+            throw new Exception('A GLS címke helyi mentése sikertelen; a meglévő csomag egyeztetése szükséges.');
+        }
+        $order->update_meta_data('_gls_print_label', $file_name);
+        $order->save();
     }
     
 
