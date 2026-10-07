@@ -19,3 +19,11 @@ Focused regression includes dedicated-host lifecycle recognition, production/mis
 The genuine QA storefront order reached Barion sandbox success, one stock reduction, an automatic TEST/minta invoice with complete company/tax/house-number fields, and one accepted primary email. Martin confirmed receipt/PDF/mobile/authentication checks. Callback, native invoice-event and dispatch retries did not duplicate effects. Further fulfilment/GLS/shared-correction acceptance is pending this targeted host repair; do not interpret this document as a full lifecycle PASS.
 
 Private provider references, recipient details, screenshots and operational evidence remain outside the public repository. No credentials are included here.
+
+## GLS runtime PDF regression — 2026-10-07
+
+The sandbox returned one parcel and tracking code, but PDF persistence silently failed because `WP_Filesystem()` selected `ftpsockets` against immutable code ownership. The writable label directory remained protected (0750, www-data). No second PrintLabels request was made.
+
+The repair uses WordPress's native direct-filesystem adapter only for runtime label storage, writes 0640 PDFs, reports failure, and saves provider IDs before the PDF. Repeating a single-order request with any saved label/parcel/tracking reference stops before the provider. No global FS_METHOD, filesystem ownership, firewall, authentication, or protected document access is relaxed.
+
+Offline regression uses the real WordPress filesystem adapter with a stub provider: successful storage and permissions, successful retry, partial write failure, retained provider IDs, invalid PDF, and four existing-reference guards. The existing parcel may be recovered using the official GLS [GetPrintData API](https://api.test.mygls.hu/docs/MyGLS_API.pdf); this retrieves already printed package data rather than creating another parcel. Private provider evidence remains outside Git.
