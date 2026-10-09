@@ -42,3 +42,11 @@ TEST QA order 750 preserved the official point `Szeged 1 posta` / `880002`, gros
 MPL 4.2.8 map compatibility: the upstream markercluster bundle reads mutable global `L`, allowing another map widget to break initialization. A checksum-guarded, one-line Browserify module binding (`scripts/mpl-selector-compat.py`) uses the same bundled Leaflet instance. No provider, licensing, GLS or legal behavior is changed. Re-review this patch when updating the pinned dependency.
 
 Initialize optional `vp_woo_pont_pricing` to an empty array when absent. The vendor otherwise emits a PHP foreach warning; editable base tariffs stay unchanged. The pinned map compatibility repair was browser-verified on desktop/mobile with no fresh JavaScript errors.
+
+## Owner-approved minimum manual dispatch — 2026-10-09 closure
+
+This supersedes the earlier requirement to prepare every catalog weight or obtain API/PRO access before MPL availability. GLS remains the primary automated carrier. The owner approved fixed gross customer charges of HUF 1,040 to a postal point/terminal and HUF 2,090 for home delivery, with the shop checking actual packing and absorbing any higher carrier charge.
+
+Enable `appleklinika_mpl_manual_fulfilment=yes` for this reviewed TEST rollout. The existing native method has an editable `manual_price`; point prices remain editable in the supported selector. Missing measurements remain unknown, never invented or written to products. They no longer remove the option in manual mode. Known weight/dimension limits and the terminal value ceiling remain enforced, including partial known measurements and mixed carts. Automatic mode retains its strict measurement requirements and weight bands.
+
+Back Office explains manual dispatch instead of demanding an API licence. Staff must verify the package, make the actual postal booking, and retain the postal receipt/tracking reference in the internal order note. No automatic MPL provider action, label or handoff email is claimed; this task does not build GLS-level MPL automation. Existing automatic mode, GLS, payment/invoice lifecycle and carrier handoff safeguards remain unchanged. Missing MPL API/PRO access is optional automation work, not by itself a launch blocker. Legal assessment of minimum availability remains with the owner's adviser; no legal text is changed.

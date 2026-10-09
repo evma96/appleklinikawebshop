@@ -44,6 +44,9 @@ final class MplCarrier
 
     public static function readiness(): ?string
     {
+        if (MplPackage::manualDispatch()) {
+            return 'Kézi MPL-feladás: ellenőrizd a becsomagolt méretet és súlyt, majd intézd a feladást a Postán. A vásárlói díj fix; a feladási bizonylatot és csomagszámot rögzítsd belső megjegyzésben. Automatikus MPL címke nem készül.';
+        }
         if (!class_exists('VP_Woo_Pont_Pro') || !\VP_Woo_Pont_Pro::is_pro_enabled()) {
             return 'Az MPL címkéhez a Csomagpontok és Címkék bővítmény támogatott PRO/tesztlicence szükséges.';
         }
