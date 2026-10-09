@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Install the pinned, unmodified free selector. Does not activate it or license PRO."""
+"""Install the pinned free selector with the reviewed map compatibility patch. Does not activate it or license PRO."""
 import argparse
 import hashlib
 import io
 import json
 from pathlib import Path
 import shutil
+import runpy
 import tempfile
 import urllib.request
 import zipfile
@@ -30,4 +31,5 @@ with tempfile.TemporaryDirectory(dir=args.plugins_directory) as temporary:
                 raise SystemExit('Unsafe archive member.')
         archive.extractall(root)
     shutil.move(str(root / manifest['slug']), destination)
+runpy.run_path(str(Path(__file__).with_name('mpl-selector-compat.py')))['apply'](args.plugins_directory)
 print(f"Installed {manifest['slug']} {manifest['version']}; SHA-256 verified; not activated.")
