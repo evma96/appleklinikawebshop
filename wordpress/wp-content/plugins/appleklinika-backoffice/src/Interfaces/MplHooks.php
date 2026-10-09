@@ -10,6 +10,7 @@ final class MplHooks
     public function register(): void
     {
         add_filter('render_block_data', [$this,'checkoutBlock']);
+        add_action('wp_enqueue_scripts', [$this,'checkoutStyles'], 100);
         add_filter('pre_http_request', [$this,'providerGuard'], 90, 3);
         add_filter('vp_woo_pont_import_database_providers', static fn() => ['postapont']);
         add_filter('vp_woo_pont_shipping_cost_based_on_gross_total', '__return_true');
@@ -22,6 +23,13 @@ final class MplHooks
         foreach (['shipped','pickup','delivery'] as $event) {
             add_filter('woocommerce_email_enabled_vp_woo_pont_order_'.$event, static fn($enabled,$order) => $order instanceof \WC_Order && MplCarrier::matches($order) ? false : $enabled, 10, 2);
         }
+    }
+    public function checkoutStyles(): void
+    {
+        if (!is_checkout()) { return; }
+        // Vendor assumes only its own pickup method when no new-style locations exist.
+        // Keep the already configured legacy in-store pickup visible beside MPL.
+        wp_add_inline_style('vp-woo-pont-picker-block', '#pickup-options .wc-block-components-local-pickup-rates-control{display:block!important} #shipping-method .wc-block-checkout__shipping-method-option-price{font-size:inherit!important} #shipping-method .wc-block-checkout__shipping-method-option-price:after{content:none!important}');
     }
     /** Mount the maintained vendor block in its supported native pickup parent. */
     public function checkoutBlock(array $block): array
