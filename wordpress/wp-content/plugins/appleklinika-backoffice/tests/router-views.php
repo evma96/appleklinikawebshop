@@ -31,6 +31,7 @@ function wp_die(string $message, string $title, array $args): never { throw new 
 function wc_get_order(int $id): mixed { return $GLOBALS['view_test_order'] ?? false; }
 function check_admin_referer(string $action): void { if (!($GLOBALS['view_test_nonce'] ?? false)) { throw new RuntimeException('nonce', 403); } }
 
+require_once dirname(__DIR__) . '/src/Infrastructure/MplCarrier.php';
 require_once dirname(__DIR__, 4) . '/wp-includes/kses.php';
 require_once dirname(__DIR__) . '/src/Domain/DeliveryMode.php';
 require_once dirname(__DIR__) . '/src/Domain/FulfilmentWorkflow.php';

@@ -14,6 +14,8 @@ final class LifecycleEmailPresentation
     {
         $accepted = $event === CustomerNotification::PAID;
         $cash = CashPickup::matches($order);
+        $carrier = MplCarrier::matches($order) ? 'MPL' : 'GLS';
+        $carrierWithArticle = $carrier === 'MPL' ? 'az MPL' : 'a GLS';
         $paid = $accepted && !$cash;
         $received = $event === CustomerNotification::RECEIVED;
         $methods = [];
@@ -21,7 +23,7 @@ final class LifecycleEmailPresentation
             $methods[] = $method->get_method_id();
         }
         $pickup = DeliveryMode::fromShippingMethodIds($methods) === DeliveryMode::PICKUP;
-        $parcelPoint = count(array_filter($methods, static fn ($id) => str_contains($id, 'parcel_shop') || str_contains($id, 'parcel_locker'))) > 0;
+        $parcelPoint = (MplCarrier::matches($order) && $order->get_meta('_vp_woo_pont_point_id', true) !== '') || count(array_filter($methods, static fn ($id) => str_contains($id, 'parcel_shop') || str_contains($id, 'parcel_locker'))) > 0;
         $contact = function_exists('appleklinika_contact_content') ? appleklinika_contact_content() : [];
         $storeAddress = trim(implode(' ', array_filter([
             $contact['postcode'] ?? get_option('woocommerce_store_postcode', ''),
@@ -45,14 +47,15 @@ final class LifecycleEmailPresentation
         $name = trim($order->get_billing_first_name());
         return [
             'paid' => $paid,
+            'carrier' => $carrier,
             'accepted' => $accepted,
             'cash' => $cash,
             'received' => $received,
             'greeting' => $name !== '' ? 'Kedves ' . $name . '!' : 'Kedves Vásárlónk!',
             'number' => $order->get_order_number(),
             'date' => $date ? wc_format_datetime($date, $received ? 'Y. F j. H:i' : 'Y. F j.') : '',
-            'intro' => $received ? 'Rendelésed beérkezett az Apple Klinikához. Ez az automatikus értesítés kizárólag a rendelés beérkezését jelzi; nem jelenti annak elfogadását vagy végleges visszaigazolását, és önmagában nem hozza létre a szerződést. A választott fizetési mód szerinti feldolgozást követően külön e-mailben tájékoztatunk a rendelés elfogadásáról.' : ($accepted && $cash ? 'Rendelésed elfogadtuk és visszaigazoltuk. A készüléket félretettük, és megkezdtük az előkészítést. A vételárat készpénzben, személyes átvételkor fizeted ki az üzletben.' : ($paid ? 'Rendelésed elfogadtuk és visszaigazoltuk. A fizetésed sikeresen megérkezett. Megkezdjük rendelésed teljesítését.' : 'A rendelésed csomagját átadtuk a GLS futárszolgálatnak. A szállítás állapotát az alábbi linken követheted.')),
-            'preheader' => $received ? 'Automatikus átvételi értesítés – a rendelés elfogadásáról külön tájékoztatunk.' : ($accepted && $cash ? 'Elfogadott rendelés – fizetés készpénzben, személyes átvételkor.' : ($paid ? 'Sikeres fizetés, a számlád a levél mellékletében.' : 'Csomagod már a GLS-nél van. Itt találod a nyomkövetési adatait.')),
+            'intro' => $received ? 'Rendelésed beérkezett az Apple Klinikához. Ez az automatikus értesítés kizárólag a rendelés beérkezését jelzi; nem jelenti annak elfogadását vagy végleges visszaigazolását, és önmagában nem hozza létre a szerződést. A választott fizetési mód szerinti feldolgozást követően külön e-mailben tájékoztatunk a rendelés elfogadásáról.' : ($accepted && $cash ? 'Rendelésed elfogadtuk és visszaigazoltuk. A készüléket félretettük, és megkezdtük az előkészítést. A vételárat készpénzben, személyes átvételkor fizeted ki az üzletben.' : ($paid ? 'Rendelésed elfogadtuk és visszaigazoltuk. A fizetésed sikeresen megérkezett. Megkezdjük rendelésed teljesítését.' : 'A rendelésed csomagját átadtuk ' . $carrierWithArticle . ' futárszolgálatnak. A szállítás állapotát az alábbi linken követheted.')),
+            'preheader' => $received ? 'Automatikus átvételi értesítés – a rendelés elfogadásáról külön tájékoztatunk.' : ($accepted && $cash ? 'Elfogadott rendelés – fizetés készpénzben, személyes átvételkor.' : ($paid ? 'Sikeres fizetés, a számlád a levél mellékletében.' : 'Csomagod már ' . $carrierWithArticle . '-nél van. Itt találod a nyomkövetési adatait.')),
             'items' => $items,
             'totals' => $order->get_order_item_totals(),
             'payment_instructions' => $received && $order->get_payment_method() === 'bacs' ? $this->bankInstructions($order) : '',
@@ -62,7 +65,7 @@ final class LifecycleEmailPresentation
             'delivery_address' => $pickup ? esc_html($storeAddress) : ($parcelPoint ? '' : $order->get_formatted_shipping_address()),
             'delivery_note' => $received ? 'A kiválasztott szállítási vagy átvételi módot rögzítettük. A teljesítésről a rendelés elfogadása után tájékoztatunk.' : ($pickup
                 ? (!$cash ? 'Az átvétel előtt ellenőrizd a rendelésed állapotát a fiókodban. Ott jelezzük, amikor átvehető.' : ((new WooOrderBackOfficeRepository())->state($order) === 'ready_for_pickup' ? 'Rendelésed az üzletben átvehető. Kérjük, a rendelési számot hozd magaddal.' : ((new WooOrderBackOfficeRepository())->state($order) === 'picked_up' ? 'A személyes átvételt rögzítettük.' : 'Rendelésed előkészítés alatt áll. Az aktuális állapotot a fiókodban ellenőrizheted; ott jelezzük, amikor átvehető.')))
-                : ($parcelPoint ? 'A kiválasztott átvételi pont adatait a rendelésednél találod.' : ($paid ? 'A csomag GLS-nek történő átadásakor külön értesítést küldünk a nyomkövetési adatokkal.' : 'A kézbesítés aktuális állapotát a GLS nyomkövetése mutatja.'))),
+                : ($parcelPoint ? 'A kiválasztott átvételi pont adatait a rendelésednél találod.' : ($paid ? 'A csomag ' . $carrier . '-nek történő átadásakor külön értesítést küldünk a nyomkövetési adatokkal.' : 'A kézbesítés aktuális állapotát ' . $carrierWithArticle . ' nyomkövetése mutatja.'))),
             'billing_address' => $order->get_formatted_billing_address(),
             'invoice_number' => is_scalar($order->get_meta('_wc_szamlazz_invoice', true)) ? (string) $order->get_meta('_wc_szamlazz_invoice', true) : '',
             'tracking' => $accepted || $received ? [] : (new OrderDocuments())->trackingLinks($order),

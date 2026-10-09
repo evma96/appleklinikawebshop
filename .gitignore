@@ -9,3 +9,6 @@ wordpress/wp-content/cache/
 # Private, durable LOCAL integration runtime.
 .env.backoffice
 .local-runtime/
+
+# Pinned third-party dependency installed by scripts/install-mpl-selector.py.
+wordpress/wp-content/plugins/hungarian-pickup-points-for-woocommerce/

@@ -39,7 +39,7 @@ if (! defined('ABSPATH')) { exit; }
 <h2 style="margin:26px 0 12px;font-family:Arial,Helvetica,sans-serif;font-size:19px;line-height:1.4;color:#202124;">Csomagkövetés</h2>
 <?php foreach ($view['tracking'] as $index => $link): ?>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;margin-bottom:12px;background:#f7f8fa;"><tr><td style="padding:18px;">
-<p style="margin:0 0 12px;font-size:14px;line-height:1.6;word-break:break-all;">GLS csomagszám: <strong><?php echo esc_html($link['code']); ?></strong></p>
+<p style="margin:0 0 12px;font-size:14px;line-height:1.6;word-break:break-all;"><?php echo esc_html($view['carrier']); ?> csomagszám: <strong><?php echo esc_html($link['code']); ?></strong></p>
 <table role="presentation" cellpadding="0" cellspacing="0"><tr><td bgcolor="#bf1630" style="background:#bf1630;border-radius:4px;mso-padding-alt:13px 18px;">
 <a href="<?php echo esc_url($link['url']); ?>" style="display:inline-block;padding:13px 18px;font-size:15px;line-height:20px;font-weight:bold;text-decoration:none;color:#ffffff;">Csomag követése<?php echo count($view['tracking']) > 1 ? ' · ' . esc_html((string) ($index + 1)) : ''; ?></a>
 </td></tr></table></td></tr></table>

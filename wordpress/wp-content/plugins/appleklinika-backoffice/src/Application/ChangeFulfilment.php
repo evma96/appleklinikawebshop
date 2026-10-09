@@ -39,7 +39,7 @@ final class ChangeFulfilment
                     throw new \InvalidArgumentException('Állapotjavítás nem helyettesíti a készpénzes rendelés elfogadását.');
                 }
                 $allowed = array_keys(FulfilmentWorkflow::customerProgressLabels($order['mode']));
-                $allowed = array_diff($allowed, [FulfilmentWorkflow::HANDED_TO_GLS, FulfilmentWorkflow::DELIVERED, FulfilmentWorkflow::PICKED_UP]);
+                $allowed = array_diff($allowed, [FulfilmentWorkflow::HANDED_TO_GLS, FulfilmentWorkflow::HANDED_TO_CARRIER, FulfilmentWorkflow::DELIVERED, FulfilmentWorkflow::PICKED_UP]);
                 $allowed[] = FulfilmentWorkflow::PROBLEM;
                 if (! in_array($target, $allowed, true) || trim($reason) === '') {
                     throw new \InvalidArgumentException('Javításhoz válassz belső állapotot és adj meg indoklást. Átadást a külön művelettel rögzíts.');
@@ -49,14 +49,15 @@ final class ChangeFulfilment
                 $to = FulfilmentWorkflow::transition($order['state'], $action, $order['mode']);
                 if ($action === 'accept_cash_pickup') { $this->orders->verifyCashReservation($id); }
                 if ($action === 'record_cash_pickup') { $this->orders->recordCashPayment($id, $actor); }
-                if ($action === 'create_label') {
+                if (in_array($action, ['create_label','create_mpl_label'], true)) {
                     if ($order['label']) {
-                        throw new \InvalidArgumentException('Ehhez a rendeléshez már létezik GLS címke.');
+                        throw new \InvalidArgumentException('Ehhez a rendeléshez már létezik szállítói címke.');
                     }
                     $this->orders->createLabel($id);
                 }
-                if ($action === 'handed_to_gls' && (! $order['label'] || ! $order['tracking'])) {
-                    throw new \InvalidArgumentException('GLS-átadáshoz elkészült címke és érvényes csomagszám szükséges.');
+                if ($action === 'handed_to_carrier' && empty($order['manifest'])) { throw new \InvalidArgumentException('Az MPL átadáshoz a feladójegyzék lezárása is szükséges.'); }
+                if (in_array($action, ['handed_to_gls','handed_to_carrier'], true) && (! $order['label'] || ! $order['tracking'])) {
+                    throw new \InvalidArgumentException('A szállítói átadáshoz elkészült címke és érvényes csomagszám szükséges.');
                 }
             }
             $this->orders->record($id, $action, $to, $actor, $reason);

@@ -14,6 +14,8 @@ final class WC_Order
     {
     }
 
+    public function get_shipping_methods(): array { return []; }
+
     public function get_meta(string $key, bool $single = true): mixed
     {
         return $this->meta[$key] ?? '';
@@ -80,6 +82,7 @@ function wp_upload_dir(mixed $time = null, bool $create = true): array
     return ['basedir' => $GLOBALS['document_test_uploads']];
 }
 
+require_once dirname(__DIR__) . '/src/Infrastructure/MplCarrier.php';
 require_once dirname(__DIR__) . '/src/Infrastructure/OrderDocuments.php';
 
 use Appleklinika\BackOffice\Infrastructure\OrderDocuments;

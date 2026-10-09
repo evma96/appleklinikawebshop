@@ -419,3 +419,5 @@ The owner-defined cash-at-pickup branch shares the existing Woo/Back Office life
 See [cash personal-pickup workflow](docs/cash-personal-pickup.md) for explicit staff
 acceptance, actual cash collection, TEST-only enablement and verification limits.
 The cash-pickup invoice is available through an authenticated owner-only download on the order page.
+
+MPL TEST shipping preparation, pinned free selector, editable tariffs and shared carrier lifecycle: [MPL checkout/fulfilment](docs/mpl-checkout-fulfilment.md). Provider registration/licence and missing packaged catalog dimensions remain explicit gates.

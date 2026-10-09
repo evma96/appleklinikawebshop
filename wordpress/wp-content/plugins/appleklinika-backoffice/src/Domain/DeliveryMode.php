@@ -7,6 +7,7 @@ namespace Appleklinika\BackOffice\Domain;
 final class DeliveryMode
 {
     public const GLS = 'gls';
+    public const MPL = 'mpl';
     public const PICKUP = 'pickup';
     public const UNKNOWN = 'unknown';
 
@@ -39,6 +40,7 @@ final class DeliveryMode
     {
         return match ($mode) {
             self::GLS => 'GLS házhozszállítás',
+            self::MPL => 'MPL kézbesítés',
             self::PICKUP => 'Személyes átvétel az üzletben',
             default => 'Ismeretlen átvételi mód – ellenőrzés szükséges',
         };
@@ -46,6 +48,6 @@ final class DeliveryMode
 
     public static function isSupported(string $mode): bool
     {
-        return in_array($mode, [self::GLS, self::PICKUP], true);
+        return in_array($mode, [self::GLS, self::MPL, self::PICKUP], true);
     }
 }
