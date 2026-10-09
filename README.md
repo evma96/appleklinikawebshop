@@ -431,3 +431,5 @@ Independent public TEST availability and authenticated human operations alerts: 
 External monitor follow-up: GitHub issue-list eventual consistency during the first rapid drill produced duplicate surfaces. The monitor now reads once per run and carries mutation responses through the sequence, with an offline stale-list regression check. Exact-marker duplicates are closed while the oldest incident is retained.
 
 The owner confirmed receipt of both operations QA messages. Inbox display/arrival ordering is clarified separately; alerts include explicit RFC Date, unique Message-ID and UTC event time. These presentation headers do not change incident deduplication.
+
+Disabled production backup preparation and encrypted off-server transfer: [backup readiness](docs/production-backup-readiness.md). Active TEST backups are unchanged; no production timer or paid target is enabled.

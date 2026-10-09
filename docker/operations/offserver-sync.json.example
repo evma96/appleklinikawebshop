@@ -1,0 +1,10 @@
+{
+  "enabled": false,
+  "host": "u000000.your-storagebox.de",
+  "username": "u000000-sub1",
+  "directory": "appleklinika-encrypted",
+  "identity_file": "/CHANGE_ME/private-storage-key",
+  "known_hosts": "/CHANGE_ME/private-known-hosts",
+  "backup_root": "/CHANGE_ME/encrypted-backups",
+  "state_file": "/CHANGE_ME/private-state/offserver.json"
+}
