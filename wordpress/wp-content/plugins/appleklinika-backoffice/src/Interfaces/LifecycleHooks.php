@@ -22,6 +22,9 @@ final class LifecycleHooks
         foreach (['customer_processing_order', 'customer_completed_order'] as $email) {
             add_filter('woocommerce_email_enabled_' . $email, [$this, 'legacyEmailEnabled'], 20, 2);
         }
+        add_filter('woocommerce_email_enabled_customer_on_hold_order', [$this, 'acknowledgementReplacesOnHold'], 20, 2);
+        add_action('woocommerce_checkout_order_processed', [$this, 'checkoutSubmitted'], 10);
+        add_action('woocommerce_store_api_checkout_order_processed', [$this, 'storeApiSubmitted'], 10);
         add_action('woocommerce_payment_complete', [$this, 'paymentComplete'], 20);
         add_action('woocommerce_pre_payment_complete', [$this, 'enrol']);
         add_action('wc_szamlazz_document_created', [$this, 'documentCreated']);
@@ -35,6 +38,7 @@ final class LifecycleHooks
 
     public function emailClasses(array $emails): array
     {
+        $emails['appleklinika_' . CustomerNotification::RECEIVED] = new OrderReceivedEmail();
         $emails['appleklinika_' . CustomerNotification::PAID] = new PaidInvoiceEmail();
         $emails['appleklinika_' . CustomerNotification::SHIPPED] = new CarrierHandoffEmail();
         return $emails;
@@ -42,7 +46,33 @@ final class LifecycleHooks
 
     public function legacyEmailEnabled(bool $enabled, mixed $order): bool
     {
-        return $order instanceof \WC_Order && LifecycleConfiguration::manages($order) ? false : $enabled;
+        // Gateway/status hooks may retain an object loaded before submission metadata.
+        $current = $order instanceof \WC_Order ? wc_get_order($order->get_id()) : false;
+        return $current instanceof \WC_Order && LifecycleConfiguration::manages($current) ? false : $enabled;
+    }
+
+    public function acknowledgementReplacesOnHold(bool $enabled, mixed $order): bool
+    {
+        $current = $order instanceof \WC_Order ? wc_get_order($order->get_id()) : false;
+        return $current instanceof \WC_Order && LifecycleConfiguration::submitted($current) ? false : $enabled;
+    }
+
+    public function storeApiSubmitted(\WC_Order $order): void
+    {
+        $this->checkoutSubmitted($order->get_id());
+    }
+
+    public function checkoutSubmitted(int $id): void
+    {
+        try {
+            if ($this->lifecycle->orderSubmitted($id)) {
+                // Immediate transport before redirect/payment. Durable notification
+                // state makes a repeated POST harmless; failed transport uses normal retries.
+                $this->dispatch($id, CustomerNotification::RECEIVED);
+            }
+        } catch (\Throwable) {
+            $this->store->issue($id, 'checkout_acknowledgement_interrupted');
+        }
     }
 
     public function paymentComplete(int $id): void
@@ -82,6 +112,10 @@ final class LifecycleHooks
     {
         try {
             $result = $this->lifecycle->notify($id, $event);
+            if ($result === 'accepted' && $event === CustomerNotification::RECEIVED) {
+                // Release a paid notification that waited for acknowledgement.
+                $this->queue($id, CustomerNotification::PAID);
+            }
             if ($result === 'failed' && ($this->store->notification($id, $event)['attempts'] ?? 0) < 3) {
                 // A known transport rejection is retryable. An uncertain send is not.
                 $this->queue($id, $event, 300);
@@ -139,7 +173,8 @@ final class LifecycleHooks
     private function queue(int $id, string $event, int $delay = 10, int $deferrals = 0): void
     {
         $order = wc_get_order($id);
-        if (! $order instanceof \WC_Order || ! LifecycleConfiguration::manages($order)) {
+        if (! $order instanceof \WC_Order || ! ($event === CustomerNotification::RECEIVED
+            ? LifecycleConfiguration::submitted($order) : LifecycleConfiguration::manages($order))) {
             return;
         }
         $args = [$id, $event, $deferrals];

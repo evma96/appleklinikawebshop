@@ -7,12 +7,13 @@ namespace Appleklinika\BackOffice\Infrastructure;
 use Appleklinika\BackOffice\Domain\CustomerNotification;
 use Appleklinika\BackOffice\Domain\DeliveryMode;
 
-/** Read-only Woo order snapshot for the two customer email views. Never sends or saves. */
+/** Read-only Woo order snapshot for the customer email views. Never sends or saves. */
 final class LifecycleEmailPresentation
 {
     public function forOrder(\WC_Order $order, string $event): array
     {
         $paid = $event === CustomerNotification::PAID;
+        $received = $event === CustomerNotification::RECEIVED;
         $methods = [];
         foreach ($order->get_shipping_methods() as $method) {
             $methods[] = $method->get_method_id();
@@ -42,26 +43,47 @@ final class LifecycleEmailPresentation
         $name = trim($order->get_billing_first_name());
         return [
             'paid' => $paid,
+            'received' => $received,
             'greeting' => $name !== '' ? 'Kedves ' . $name . '!' : 'Kedves Vásárlónk!',
             'number' => $order->get_order_number(),
-            'date' => $date ? wc_format_datetime($date, 'Y. F j.') : '',
-            'intro' => $paid ? 'A fizetésed sikeresen megérkezett. Megkezdjük rendelésed feldolgozását.' : 'A rendelésed csomagját átadtuk a GLS futárszolgálatnak. A szállítás állapotát az alábbi linken követheted.',
-            'preheader' => $paid ? 'Sikeres fizetés, a számlád a levél mellékletében.' : 'Csomagod már a GLS-nél van. Itt találod a nyomkövetési adatait.',
+            'date' => $date ? wc_format_datetime($date, $received ? 'Y. F j. H:i' : 'Y. F j.') : '',
+            'intro' => $received ? 'Rendelésed beérkezett az Apple Klinikához. Ez az automatikus értesítés kizárólag a rendelés beérkezését jelzi; nem jelenti annak elfogadását vagy végleges visszaigazolását, és önmagában nem hozza létre a szerződést. A választott fizetési mód szerinti feldolgozást követően külön e-mailben tájékoztatunk a rendelés elfogadásáról.' : ($paid ? 'Rendelésed elfogadtuk és visszaigazoltuk. A fizetésed sikeresen megérkezett. Megkezdjük rendelésed teljesítését.' : 'A rendelésed csomagját átadtuk a GLS futárszolgálatnak. A szállítás állapotát az alábbi linken követheted.'),
+            'preheader' => $received ? 'Automatikus átvételi értesítés – a rendelés elfogadásáról külön tájékoztatunk.' : ($paid ? 'Sikeres fizetés, a számlád a levél mellékletében.' : 'Csomagod már a GLS-nél van. Itt találod a nyomkövetési adatait.'),
             'items' => $items,
             'totals' => $order->get_order_item_totals(),
+            'payment_instructions' => $received && $order->get_payment_method() === 'bacs' ? $this->bankInstructions($order) : '',
             'payment' => $order->get_payment_method_title(),
             'shipping' => $order->get_shipping_method(),
             'delivery_title' => $pickup ? 'Személyes átvétel' : ($parcelPoint ? 'Csomagpont / automata' : 'Szállítási cím'),
             'delivery_address' => $pickup ? esc_html($storeAddress) : ($parcelPoint ? '' : $order->get_formatted_shipping_address()),
-            'delivery_note' => $pickup
+            'delivery_note' => $received ? 'A kiválasztott szállítási vagy átvételi módot rögzítettük. A teljesítésről a rendelés elfogadása után tájékoztatunk.' : ($pickup
                 ? 'Az átvétel előtt ellenőrizd a rendelésed állapotát a fiókodban. Ott jelezzük, amikor átvehető.'
-                : ($parcelPoint ? 'A kiválasztott átvételi pont adatait a rendelésednél találod.' : ($paid ? 'A csomag GLS-nek történő átadásakor külön értesítést küldünk a nyomkövetési adatokkal.' : 'A kézbesítés aktuális állapotát a GLS nyomkövetése mutatja.')),
+                : ($parcelPoint ? 'A kiválasztott átvételi pont adatait a rendelésednél találod.' : ($paid ? 'A csomag GLS-nek történő átadásakor külön értesítést küldünk a nyomkövetési adatokkal.' : 'A kézbesítés aktuális állapotát a GLS nyomkövetése mutatja.'))),
             'billing_address' => $order->get_formatted_billing_address(),
             'invoice_number' => is_scalar($order->get_meta('_wc_szamlazz_invoice', true)) ? (string) $order->get_meta('_wc_szamlazz_invoice', true) : '',
-            'tracking' => $paid ? [] : (new OrderDocuments())->trackingLinks($order),
-            'account_url' => $this->storefrontUrl($order->get_view_order_url(), 'home'),
+            'tracking' => $paid || $received ? [] : (new OrderDocuments())->trackingLinks($order),
+            'account_url' => $received && ! $order->get_customer_id() ? '' : $this->storefrontUrl($order->get_view_order_url(), 'home'),
             'logo_url' => $this->storefrontUrl(plugins_url('appleklinika-inventory/assets/brand/appleklinika-logo.jpg'), 'siteurl'),
         ];
+    }
+
+    /** Preserve configured BACS instructions while replacing its on-hold acknowledgement. */
+    private function bankInstructions(\WC_Order $order): string
+    {
+        $gateways = WC()->payment_gateways()->payment_gateways();
+        $gateway = $gateways['bacs'] ?? null;
+        if (! $gateway instanceof \WC_Gateway_BACS) { return ''; }
+        // Native rendering only: no status mutation, provider request or invented bank details.
+        $status = static fn ($value, $candidate) => $candidate === $order ? $order->get_status() : $value;
+        add_filter('woocommerce_bacs_email_instructions_order_status', $status, 10, 2);
+        ob_start();
+        try {
+            $gateway->email_instructions($order, false);
+            return (string) ob_get_contents();
+        } finally {
+            ob_end_clean();
+            remove_filter('woocommerce_bacs_email_instructions_order_status', $status, 10);
+        }
     }
 
     /** Staff-host routing must not send customers to the staff login domain. */

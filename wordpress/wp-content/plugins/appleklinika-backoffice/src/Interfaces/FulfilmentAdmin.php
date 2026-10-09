@@ -32,7 +32,7 @@ final class FulfilmentAdmin
         if (! empty($invoice['state'])) {
             echo '<p>Számla-folyamat: <strong>' . esc_html((string) $invoice['state']) . '</strong>. Hiba vagy bizonytalan eredmény esetén előbb Számlázz.hu-egyeztetés szükséges; automatikus újraszámlázás nincs.</p>';
         }
-        foreach (['paid_invoice' => 'Rendelés és számla', 'carrier_handoff' => 'GLS-átadás'] as $event => $label) {
+        foreach (['order_received' => 'Automatikus átvételi értesítés', 'paid_invoice' => 'Rendelés és számla', 'carrier_handoff' => 'GLS-átadás'] as $event => $label) {
             $record = (array) $order->get_meta(WooOrderLifecycleStore::EMAIL . $event, true);
             echo '<p>' . esc_html($label) . ': ' . esc_html((string) ($record['state'] ?? 'még nem küldve')) . '</p>';
         }

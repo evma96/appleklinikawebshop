@@ -16,11 +16,13 @@ if (! defined('ABSPATH')) { exit; }
 <h1 class="ak-email-title" style="margin:0 0 24px;font-family:Arial,Helvetica,sans-serif;font-size:34px;line-height:1.16;font-weight:bold;letter-spacing:-0.7px;text-align:left;color:#202124;"><?php echo esc_html($heading); ?></h1>
 <p style="margin:0 0 12px;font-size:16px;line-height:1.6;"><?php echo esc_html($view['greeting']); ?></p>
 <p style="margin:0 0 22px;font-size:16px;line-height:1.6;"><?php echo esc_html($view['intro']); ?></p>
-<?php if ($view['paid']): ?>
+<?php if ($view['paid'] || $view['received']): ?>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;background:#f7f8fa;"><tr><td style="padding:16px 18px;font-size:14px;line-height:1.7;">
-<strong style="color:#202124;">Fizetve</strong><?php if ($view['payment'] !== ''): ?> · <?php echo esc_html($view['payment']); ?><?php endif; ?><br>
+<strong style="color:#202124;"><?php echo $view['paid'] ? 'Fizetve' : 'Választott fizetési mód'; ?></strong><?php if ($view['payment'] !== ''): ?> · <?php echo esc_html($view['payment']); ?><?php endif; ?><br>
 <?php if ($view['date'] !== ''): ?>Rendelés dátuma: <?php echo esc_html($view['date']); ?><?php endif; ?>
 </td></tr></table>
+<?php if ($view['expected_fulfilment'] !== ''): ?><p style="margin:16px 0;font-size:14px;line-height:1.7;"><?php echo esc_html($view['expected_fulfilment']); ?></p><?php endif; ?>
+<?php if ($view['payment_instructions'] !== ''): ?><div style="margin:16px 0;font-size:14px;line-height:1.7;"><?php echo wp_kses_post($view['payment_instructions']); ?></div><?php endif; ?>
 <h2 style="margin:28px 0 12px;font-family:Arial,Helvetica,sans-serif;font-size:19px;line-height:1.4;color:#202124;">A rendelésed</h2>
 <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;table-layout:fixed;border-collapse:collapse;font-size:14px;line-height:1.6;">
 <thead><tr><th scope="col" align="left" style="padding:10px 0;border-bottom:1px solid #e5e7eb;color:#737780;font-weight:normal;">Termék / mennyiség</th><th scope="col" align="right" class="ak-email-price" style="width:128px;padding:10px 0;border-bottom:1px solid #e5e7eb;color:#737780;font-weight:normal;">Összeg</th></tr></thead>
@@ -54,10 +56,12 @@ if (! defined('ABSPATH')) { exit; }
 </td></tr></table>
 <?php if ($view['billing_address'] !== ''): ?><h2 style="margin:24px 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:16px;color:#202124;">Számlázási adatok</h2><p style="margin:0 0 24px;font-size:14px;line-height:1.7;color:#626770;"><?php echo wp_kses_post($view['billing_address']); ?></p><?php endif; ?>
 <?php endif; ?>
+<?php if ($view['account_url'] !== ''): ?>
 <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:24px;"><tr><td bgcolor="<?php echo $view['paid'] ? '#bf1630' : '#202124'; ?>" style="border-radius:4px;mso-padding-alt:14px 20px;">
 <a href="<?php echo esc_url($view['account_url']); ?>" style="display:inline-block;padding:14px 20px;font-size:15px;line-height:20px;font-weight:bold;text-decoration:none;color:#ffffff;">Rendelés megtekintése</a>
 </td></tr></table>
 <p style="margin:12px 0 0;font-size:12px;line-height:1.6;color:#737780;">A részleteket és az aktuális állapotot a fiókodban találod.</p>
+<?php endif; ?>
 </td></tr><tr><td class="ak-email-pad" style="padding:22px 36px;border-top:1px solid #e5e7eb;font-size:12px;line-height:1.7;color:#737780;">
 <strong style="color:#202124;">Apple Klinika</strong><br>Ez a levél a rendelésedhez kapcsolódó értesítés.
 </td></tr></table>

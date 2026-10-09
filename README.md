@@ -405,3 +405,10 @@ in Git.
 The TEST lifecycle checks the canonical WordPress installation URL, so the separate Back Office origin retains invoice/email hooks and Woo fulfilment correction. Customer lifecycle emails normalize their account and logo URLs to the canonical storefront. See [the acceptance evidence](docs/test-lifecycle-acceptance-20261006.md).
 
 The TEST lifecycle acceptance also covers GLS PDF persistence with immutable application files: see [`docs/test-lifecycle-acceptance-20261006.md`](docs/test-lifecycle-acceptance-20261006.md). Existing provider IDs block duplicate single-order parcel requests after partial storage failures.
+
+### Checkout acknowledgement and acceptance
+
+The scoped three-message candidate and payment-method limits are documented in
+[Checkout acknowledgement](docs/order-acknowledgement.md). It retains the approved
+email design and separates receipt from paid/invoiced acceptance; TEST acceptance
+is recorded separately from LOCAL fixture results.

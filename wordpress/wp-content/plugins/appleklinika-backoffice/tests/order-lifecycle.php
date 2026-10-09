@@ -11,10 +11,11 @@ use Appleklinika\BackOffice\Domain\{LifecycleOrder, CustomerNotification as Even
 
 final class MemoryOrders implements OrderLifecycleStore
 {
-    public bool $managed = true, $paid = true, $handoff = false;
+    public bool $managed = true, $paid = true, $handoff = false, $submitted = false, $submissionEligible = false;
     public string $status = 'processing', $number = '', $pdf = '';
     public array $tracking = [], $emails = [], $invoice = [], $issues = [];
-    public function order(int $id): ?LifecycleOrder { return new LifecycleOrder($id, $this->managed, $this->paid, $this->status, $this->number, $this->pdf, $this->handoff, $this->tracking); }
+    public function order(int $id): ?LifecycleOrder { return new LifecycleOrder($id, $this->managed, $this->paid, $this->status, $this->number, $this->pdf, $this->handoff, $this->tracking, $this->submitted, $this->submissionEligible); }
+    public function recordSubmission(int $id): void { $this->submitted = true; }
     public function notification(int $id, string $event): array { return $this->emails[$event] ?? []; }
     public function recordNotification(int $id, string $event, array $record): void { $this->emails[$event] = $record; }
     public function invoiceRecord(int $id): array { return $this->invoice; }
@@ -97,6 +98,33 @@ for ($i = 0; $i < 5; ++$i) { $service->notify(1, Event::PAID); }
 $assert(count($mailer->sent) === 3 && $store->emails[Event::PAID]['state'] === 'failed', 'Known rejection has bounded retries.');
 $store->managed = false; $service->paymentConfirmed(1);
 $assert($service->notify(1, Event::PAID) === 'ineligible', 'Legacy orders remain out of scope.');
+
+// Acknowledgement is its own durable checkout event, not a paid-order synonym.
+[$store, $invoice, $mailer, $service] = $new();
+$store->paid = false; $store->status = 'pending';
+$assert(!$service->orderSubmitted(1), 'An admin/imported order cannot be acknowledged by a fabricated checkout event.');
+$assert($service->notify(1, Event::RECEIVED) === 'ineligible', 'No acknowledgement on page views, drafts or payment-only enrollment.');
+$store->submissionEligible = true;
+$assert($service->orderSubmitted(1), 'Validated checkout persists submission before transport.');
+for ($i=0; $i<5; ++$i) { $service->orderSubmitted(1); $service->notify(1, Event::RECEIVED); }
+$assert($mailer->sent === [Event::RECEIVED] && $invoice->calls === 0, 'Repeated submissions acknowledge once before payment without invoicing.');
+$store->paid = true; $store->status = 'processing'; $service->paymentConfirmed(1);
+for ($i=0; $i<5; ++$i) { $service->notify(1, Event::RECEIVED); $service->notify(1, Event::PAID); }
+$assert($mailer->sent === [Event::RECEIVED, Event::PAID] && $invoice->calls === 1, 'Payment/callback repeats cannot resend either earlier message.');
+[$store, $invoice, $mailer, $service] = $new();
+$store->submissionEligible = true; $service->orderSubmitted(1); $service->paymentConfirmed(1);
+$assert($service->notify(1, Event::PAID) === 'waiting_acknowledgement' && $mailer->sent === [], 'Fast payment cannot overtake acknowledgement.');
+$mailer->throw = true; $service->notify(1, Event::RECEIVED); $mailer->throw = false;
+$assert($service->notify(1, Event::RECEIVED) === 'skipped', 'Uncertain acknowledgement is not blindly duplicated.');
+$assert($service->notify(1, Event::PAID) === 'waiting_acknowledgement', 'Uncertain first message requires reconciliation before later acceptance.');
+[$store, $invoice, $mailer, $service] = $new();
+$store->submissionEligible = true; $service->orderSubmitted(1); $mailer->accept = false;
+for ($i=0; $i<5; ++$i) { $service->notify(1, Event::RECEIVED); }
+$assert(count($mailer->sent) === 3, 'Known first-message rejection has existing bounded retry policy.');
+foreach (['checkout-draft','cancelled','refunded','trash','auto-draft'] as $status) {
+    $store->status = $status;
+    $assert($service->notify(1, Event::RECEIVED) === 'ineligible', 'No acknowledgement for ' . $status);
+}
 
 final class FulfilmentFixture implements FulfilmentStore
 {
