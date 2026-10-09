@@ -32,7 +32,7 @@ abstract class LifecycleEmail extends \WC_Email
             return false;
         }
         $attachments = [];
-        if ($this->event === CustomerNotification::PAID) {
+        if ($this->event === CustomerNotification::PAID && !\Appleklinika\BackOffice\Infrastructure\CashPickup::matches($this->object)) {
             $path = (new OrderDocuments())->filePath($this->object, 'invoice');
             if ($path === null) {
                 return false;

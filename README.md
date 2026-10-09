@@ -412,3 +412,9 @@ The scoped three-message candidate and payment-method limits are documented in
 [Checkout acknowledgement](docs/order-acknowledgement.md). It retains the approved
 email design and separates receipt from paid/invoiced acceptance; TEST acceptance
 is recorded separately from LOCAL fixture results.
+
+## Cash personal pickup
+
+The owner-defined cash-at-pickup branch shares the existing Woo/Back Office lifecycle.
+See [cash personal-pickup workflow](docs/cash-personal-pickup.md) for explicit staff
+acceptance, actual cash collection, TEST-only enablement and verification limits.

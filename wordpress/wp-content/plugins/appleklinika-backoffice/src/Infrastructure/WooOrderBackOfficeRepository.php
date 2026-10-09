@@ -211,6 +211,16 @@ final class WooOrderBackOfficeRepository
         return $this->shippingMethodName($order);
     }
 
+    public function primaryAction(WC_Order $order): ?string
+    {
+        $next = FulfilmentWorkflow::primaryAction($this->state($order), $this->deliveryMode($order), $this->hasGlsLabel($order));
+        if (CashPickup::matches($order) && LifecycleConfiguration::submitted($order)) {
+            if (in_array($next, ['start', 'resume'], true) && !CashPickup::accepted($order)) { return 'accept_cash_pickup'; }
+            if ($next === 'picked_up') { return 'record_cash_pickup'; }
+        }
+        return $next;
+    }
+
     public function fulfilmentBlockReason(WC_Order $order): ?string
     {
         $status = $order->get_status();
@@ -223,7 +233,7 @@ final class WooOrderBackOfficeRepository
         if (! in_array($status, FulfilmentWorkflow::operationalOrderStatuses(), true)) {
             return 'Ez a rendelés nem szerepel a nyitott operatív munkalistában.';
         }
-        if (! $order->is_paid()) {
+        if (! $order->is_paid() && !(CashPickup::matches($order) && LifecycleConfiguration::submitted($order) && $order->has_status('on-hold'))) {
             return 'A rendelés még nem dolgozható fel: a fizetés ellenőrzése szükséges.';
         }
         if (! DeliveryMode::isSupported($this->deliveryMode($order))) {

@@ -36,6 +36,7 @@ require_once dirname(__DIR__) . '/src/Domain/DeliveryMode.php';
 require_once dirname(__DIR__) . '/src/Domain/FulfilmentWorkflow.php';
 require_once dirname(__DIR__) . '/src/Domain/OrderQueueQuery.php';
 require_once dirname(__DIR__) . '/src/Infrastructure/WooOrderBackOfficeRepository.php';
+require_once dirname(__DIR__) . '/src/Infrastructure/CashPickup.php';
 require_once dirname(__DIR__) . '/src/Infrastructure/OrderDocuments.php';
 require_once dirname(__DIR__) . '/src/Interfaces/BackOfficeRouter.php';
 
@@ -128,6 +129,7 @@ $actions = $render('renderActions', $order, 'new', 'pickup', []);
 $assert(str_contains($actions, 'fizetés ellenőrzése') && ! str_contains($actions, '<form'), 'Unpaid orders display the actual block without an enabled mutation.');
 $order->status = 'processing';
 $order->meta['_appleklinika_backoffice_delivery_mode'] = 'gls';
+$order->meta[FulfilmentWorkflow::META_KEY] = 'ready_for_shipping';
 $actions = $render('renderActions', $order, 'ready_for_shipping', 'gls', []);
 $assert(str_contains($actions, 'GLS kapcsolat nincs konfigurálva') && ! str_contains($actions, 'value="create_label"'), 'Unavailable provider does not appear as a functional label button.');
 $order->payment = 'cod';

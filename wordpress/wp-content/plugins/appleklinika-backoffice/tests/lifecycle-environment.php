@@ -2,6 +2,8 @@
 declare(strict_types=1);
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 require_once dirname(__DIR__) . '/src/Infrastructure/LifecycleConfiguration.php';
+require_once dirname(__DIR__) . '/src/Infrastructure/CashPickup.php';
+require_once dirname(__DIR__) . '/src/Domain/DeliveryMode.php';
 use Appleklinika\BackOffice\Infrastructure\LifecycleConfiguration as Config;
 function home_url($path='') { return $GLOBALS['home'].$path; }
 function wp_parse_url($url,$part) { return parse_url($url,$part); }
@@ -11,6 +13,8 @@ final class WC_Order {
     public int $marker=0, $created=200;
     public string $payment='barion', $via='checkout', $status='pending';
     public array|string $submitted='';
+    public string $shipping='gls_shipping_method';
+    public function get_shipping_methods() { return [new class($this->shipping) { public function __construct(private string $method) {} public function get_method_id() { return $this->method; } }]; }
     public function get_created_via() { return $this->via; }
     public function get_status() { return $this->status; }
     public function get_payment_method() { return $this->payment; }
@@ -46,6 +50,14 @@ $order->submitted=['source'=>'validated_checkout'];
 $assert(Config::submitted($order) && Config::manages($order), 'Submitted BACS uses paid/invoice checks for later acceptance.');
 $order->payment='cod';
 $assert(!Config::canSubmit($order) && !Config::manages($order), 'Disabled cash gateway is not silently enrolled into an invented acceptance rule.');
+$order->shipping='local_pickup'; $order->submitted='';
+$assert(!Config::canSubmit($order), 'Cash pickup rollout is disabled by default.');
+$GLOBALS['options']['appleklinika_cash_pickup_enabled']='yes';
+$assert(Config::canSubmit($order), 'Explicit cash pickup rollout permits checkout.');
+$order->submitted=['source'=>'validated_checkout'];
+$assert(Config::manages($order), 'Submitted pickup cash shares managed workflow.');
+$order->shipping='gls_shipping_method';
+$assert(!Config::canSubmit($order) && !Config::manages($order), 'Courier cash is never enrolled.');
 $order->payment='barion';
 foreach(['admin','rest-api','import'] as $via) { $order->via=$via; $assert(!Config::canSubmit($order), 'Non-checkout source excluded: '.$via); }
 $order->via='store-api'; $order->status='checkout-draft';

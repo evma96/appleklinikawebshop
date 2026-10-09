@@ -11,6 +11,7 @@ require_once dirname(__DIR__) . '/src/Domain/DeliveryMode.php';
 require_once dirname(__DIR__) . '/src/Domain/FulfilmentWorkflow.php';
 require_once dirname(__DIR__) . '/src/Domain/OrderQueueQuery.php';
 require_once dirname(__DIR__) . '/src/Infrastructure/WooOrderBackOfficeRepository.php';
+require_once dirname(__DIR__) . '/src/Infrastructure/CashPickup.php';
 
 require_once dirname(__DIR__) . '/src/Application/Port/OrderMutex.php';
 class RepositoryFixtureMutex implements \Appleklinika\BackOffice\Application\Port\OrderMutex { public int $calls = 0; public function synchronized(int $id, callable $operation): mixed { ++$this->calls; return $operation(); } }
@@ -85,6 +86,7 @@ class WC_Order extends RepositoryMetaDouble
     public function get_items(string $type): array { return $this->items; }
     public function get_status(): string { return $this->status; }
     public function is_paid(): bool { return $this->paid; }
+    public function get_payment_method(): string { return 'barion'; }
     public function get_shipping_methods(): array
     {
         return [new class($this->shippingMethod) {

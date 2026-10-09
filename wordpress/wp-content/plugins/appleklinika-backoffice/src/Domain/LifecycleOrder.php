@@ -18,6 +18,8 @@ final class LifecycleOrder
         public readonly array $tracking,
         public readonly bool $submitted = false,
         public readonly bool $submissionEligible = false,
+        public readonly bool $cashPickup = false,
+        public readonly bool $cashAccepted = false,
     ) {
     }
 }

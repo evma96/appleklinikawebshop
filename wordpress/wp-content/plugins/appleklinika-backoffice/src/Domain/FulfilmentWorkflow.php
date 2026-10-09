@@ -64,6 +64,8 @@ final class FulfilmentWorkflow
         return [
             'note' => 'Belső megjegyzés hozzáadása',
             'start' => 'Feldolgozás megkezdése',
+            'accept_cash_pickup' => 'Készlet ellenőrizve – rendelés elfogadása',
+            'record_cash_pickup' => 'Készpénz átvéve – személyes átadás rögzítése',
             'start_packing' => 'Csomagolás megkezdése',
             'packing_completed' => 'Csomagolás kész',
             'create_label' => 'GLS címke létrehozása',
@@ -98,11 +100,11 @@ final class FulfilmentWorkflow
             self::PROBLEM => ['resume' => self::PREPARATION],
         ];
         $pickupTransitions = [
-            self::NEW => ['start' => self::PREPARATION, 'problem' => self::PROBLEM],
+            self::NEW => ['accept_cash_pickup' => self::PREPARATION, 'start' => self::PREPARATION, 'problem' => self::PROBLEM],
             self::PREPARATION => ['prepare_pickup' => self::READY_FOR_PICKUP, 'problem' => self::PROBLEM],
-            self::READY_FOR_PICKUP => ['picked_up' => self::PICKED_UP, 'problem' => self::PROBLEM],
+            self::READY_FOR_PICKUP => ['record_cash_pickup' => self::PICKED_UP, 'picked_up' => self::PICKED_UP, 'problem' => self::PROBLEM],
             self::PICKED_UP => [],
-            self::PROBLEM => ['resume' => self::PREPARATION],
+            self::PROBLEM => ['accept_cash_pickup' => self::PREPARATION, 'resume' => self::PREPARATION],
         ];
         $transitions = $deliveryMode === DeliveryMode::PICKUP ? $pickupTransitions : $glsTransitions;
 

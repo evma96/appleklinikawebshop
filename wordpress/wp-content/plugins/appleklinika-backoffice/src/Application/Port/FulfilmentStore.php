@@ -7,5 +7,7 @@ interface FulfilmentStore
     /** @return array{state:string,mode:string,blocked:?string,label:bool,tracking:bool} */
     public function snapshot(int $id): array;
     public function createLabel(int $id): void;
+    public function verifyCashReservation(int $id): void;
+    public function recordCashPayment(int $id, int $actor): void;
     public function record(int $id, string $action, string $to, int $actor, string $reason): void;
 }

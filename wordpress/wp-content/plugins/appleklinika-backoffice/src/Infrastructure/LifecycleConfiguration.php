@@ -29,9 +29,9 @@ final class LifecycleConfiguration
 
     public static function canSubmit(\WC_Order $order): bool
     {
-        // Cash is currently disabled and has no agreed second-stage rule. Do not
-        // silently enrol it or alter its legacy acceptance behavior.
-        return self::enabled() && in_array($order->get_payment_method(), ['barion', 'bacs'], true)
+        // Cash requires the explicit pickup rollout; no COD courier branch is enrolled.
+        return self::enabled() && (in_array($order->get_payment_method(), ['barion', 'bacs'], true)
+            || (get_option('appleklinika_cash_pickup_enabled', 'no') === 'yes' && CashPickup::matches($order)))
             && in_array($order->get_created_via(), ['checkout', 'store-api'], true)
             && ! in_array($order->get_status(), ['checkout-draft', 'auto-draft', 'trash', 'cancelled', 'refunded'], true)
             && $order->get_date_created() !== null
@@ -42,7 +42,7 @@ final class LifecycleConfiguration
     {
         if (! self::isTestEnvironment()) { return false; }
         if ((int) $order->get_meta('_appleklinika_lifecycle_version', true) === 1) { return true; }
-        if (self::submitted($order) && $order->get_payment_method() === 'bacs') { return true; }
+        if (self::submitted($order) && ($order->get_payment_method() === 'bacs' || CashPickup::matches($order))) { return true; }
         return self::enabled() && $order->get_payment_method() === 'barion'
             && $order->get_date_created() !== null
             && $order->get_date_created()->getTimestamp() >= (int) get_option('appleklinika_lifecycle_enabled_at', 0);

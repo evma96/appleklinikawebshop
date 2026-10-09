@@ -32,7 +32,8 @@ final class WooOrderLifecycleStore implements OrderLifecycleStore
             $id, LifecycleConfiguration::manages($order), $order->is_paid(), $order->get_status(),
             (string) $order->get_meta('_wc_szamlazz_invoice', true), $documents->filePath($order, 'invoice') ?? '',
             $handoff && in_array($state, ['handed_to_gls', 'delivered'], true), $documents->trackingLinks($order),
-            LifecycleConfiguration::submitted($order), LifecycleConfiguration::canSubmit($order)
+            LifecycleConfiguration::submitted($order), LifecycleConfiguration::canSubmit($order),
+            CashPickup::matches($order), CashPickup::matches($order) && CashPickup::accepted($order)
         );
     }
 
