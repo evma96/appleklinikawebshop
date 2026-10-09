@@ -406,3 +406,7 @@ Independent GitHub availability and standalone authenticated internal SMTP alert
 External monitor follow-up: GitHub issue-list eventual consistency during the first rapid drill produced duplicate surfaces. The monitor now reads once per run and carries mutation responses through the sequence, with an offline stale-list regression check. Exact-marker duplicates are closed while the oldest incident is retained.
 
 The owner confirmed receipt of both operations QA messages. Inbox display/arrival ordering is clarified separately; alerts include explicit RFC Date, unique Message-ID and UTC event time. These presentation headers do not change incident deduplication.
+
+## Production backup readiness gates
+
+The reusable encrypted backup candidate and Storage Box transfer adapter are disabled. Actual always-on independent storage, restricted credentials/host pin, remote retention/snapshots and off-Mac recovery-key custody need owner provisioning/approval. A real remote transfer and isolated restore are required before production backup acceptance. Existing proven TEST backups remain active and unchanged.
