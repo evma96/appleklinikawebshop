@@ -30,7 +30,10 @@ records application behaviour, not changes to VirtualJog or legal wording.
   invoice attempt records, notification records and the existing reentrant order
   mutex prevent duplicate side effects. Failed/uncertain invoices remain visible
   for reconciliation; they are not blindly retried.
-- The invoice is exposed by the existing order/My Account document path. No extra
+- The invoice uses the existing provider file resolver. A cash-pickup My Account
+  link downloads it through an authenticated owner/nonce check; private upload
+  directories stay blocked. The first TEST browser run exposed that the existing
+  provider integration had no usable customer download route, so this was added. No extra
   pickup-completion or repeated acceptance email is added. Woo `completed` remains
   a separate closure. For managed cash orders `is_paid` also requires the explicit
   cash receipt record, preventing a status-only edit from asserting actual payment.

@@ -85,6 +85,14 @@ try {
     $assert($invoice->calls===1&&count($customer())===2&&wc_get_product($product->get_id())->get_stock_quantity()===2,'Retries duplicate neither invoice, email nor stock.');
     $history=$repo->history(wc_get_order($id));
     $assert(array_column($history,'action')===['accept_cash_pickup','prepare_pickup','record_cash_pickup'],'Audit history has exactly the three real actions.');
+    $access=new \Appleklinika\BackOffice\Infrastructure\CustomerInvoice();
+    $assert($access->path(wc_get_order($id),(int)$buyer)!==null,'Paid cash buyer can resolve their private invoice.');
+    $assert($access->path(wc_get_order($id),0)===null,'Anonymous invoice access denied.');
+    $assert($access->path(wc_get_order($id),1)===null,'Another user cannot access the invoice.');
+    wp_set_current_user((int)$buyer);ob_start();(new \Appleklinika\BackOffice\Interfaces\CustomerInvoiceHooks())->render(wc_get_order($id));$invoiceUi=ob_get_clean();
+    $assert(str_contains($invoiceUi,'ak_customer_invoice=')&&str_contains($invoiceUi,'_wpnonce=')&&!str_contains($invoiceUi,'/uploads/'),'Account invoice uses owner-bound authenticated route, never public upload URL.');
+    $unpaid=wc_get_order($id);$unpaid->delete_meta_data(CashPickup::PAYMENT);
+    $assert($access->path($unpaid,(int)$buyer)===null,'Cash receipt is required for customer invoice access.');
     $assert($requests===0,'No provider/network calls in the local fixture.');
     file_put_contents('/fixtures/cash-accepted-email.html',$accepted['message']);
     file_put_contents('/fixtures/cash-account.html',$account);
