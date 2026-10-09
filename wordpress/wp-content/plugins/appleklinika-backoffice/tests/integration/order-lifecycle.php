@@ -23,12 +23,24 @@ $product->set_manage_stock(true); $product->set_stock_quantity(5); $product->sav
 $existingBuyer = get_user_by('email', 'buyer@example.invalid');
 $buyer = $existingBuyer ? $existingBuyer->ID : wp_insert_user(['user_login'=>'lifecycle_fixture_' . wp_generate_password(8, false), 'user_pass'=>wp_generate_password(40), 'user_email'=>'buyer@example.invalid', 'role'=>'customer']);
 $order = wc_create_order(['customer_id'=>$buyer]);
+$order->set_created_via('store-api');
 $order->set_payment_method('barion'); $order->set_payment_method_title('Barion');
 $order->set_address(['first_name'=>'Fixture', 'last_name'=>'Customer', 'email'=>'buyer@example.invalid', 'country'=>'HU', 'city'=>'Budapest', 'postcode'=>'1111', 'address_1'=>'Fixture utca 1.'], 'billing');
 $order->set_address(['first_name'=>'Fixture', 'last_name'=>'Customer', 'country'=>'HU', 'city'=>'Budapest', 'postcode'=>'1111', 'address_1'=>'Fixture utca 1.'], 'shipping');
 $order->add_product($product, 1);
 $shipping = new WC_Order_Item_Shipping(); $shipping->set_method_id('gls_shipping_method'); $shipping->set_method_title('GLS házhozszállítás'); $shipping->set_total(100);
 $order->add_item($shipping); $order->calculate_totals(); $order->save(); $id = $order->get_id();
+$order->set_status('checkout-draft'); $order->save();
+do_action('woocommerce_store_api_checkout_order_processed', $order);
+$assert(count(array_filter($mail, static fn ($m) => $m['to'] === 'buyer@example.invalid')) === 0, 'Draft never acknowledges.');
+$order->set_status('pending'); $order->save();
+for ($i=0; $i<3; ++$i) { do_action('woocommerce_store_api_checkout_order_processed', $order); do_action('woocommerce_checkout_order_processed', $id, [], $order); }
+$ack = array_values(array_filter($mail, static fn ($m) => $m['to'] === 'buyer@example.invalid'));
+$assert(count($ack) === 1 && $ack[0]['subject'] === 'Rendelésed beérkezett', 'Classic/Store API retries produce one immediate acknowledgement.');
+$assert($ack[0]['attachments'] === [] && !str_contains($ack[0]['message'], 'Fizetve'), 'Acknowledgement has no attachment or premature payment claim.');
+$assert(str_contains($ack[0]['message'], 'nem jelenti annak elfogadását') && str_contains($ack[0]['message'], 'önmagában nem hozza létre a szerződést'), 'Acknowledgement explicitly distinguishes acceptance.');
+$assert(!wc_get_order($id)->is_paid() && wc_get_product($product->get_id())->get_stock_quantity() === 5, 'Acknowledgement does not charge/reduce stock.');
+$mail = [];
 $order->payment_complete('LOCAL-FIXTURE-NO-PROVIDER');
 $fresh = wc_get_order($id);
 $assert($fresh->is_paid() && $fresh->has_status('processing'), 'Woo payment state remains correct.');
@@ -49,7 +61,7 @@ do_action('wc_szamlazz_document_created', ['order_id'=>$id, 'document_type'=>'in
 for ($i=0; $i<3; ++$i) { do_action('woocommerce_payment_complete', $id); do_action('appleklinika_lifecycle_dispatch', $id, 'paid_invoice'); }
 $customer = $customerMail();
 $assert(count($customer) === 1, 'Exactly one primary email accepted across duplicate hooks.');
-$assert(str_contains($customer[0]['subject'], 'Köszönjük, megkaptuk a rendelésed!'), 'Primary subject is correct.');
+$assert(str_contains($customer[0]['subject'], 'Rendelésed visszaigazoltuk'), 'Primary subject is correct.');
 foreach (['Lifecycle fixture device', 'Barion', 'GLS', 'Fixture utca', 'Rendelés megtekintése'] as $text) {
     $assert(str_contains($customer[0]['message'], $text), 'Primary content includes ' . $text);
 }
@@ -101,9 +113,31 @@ try { apply_filters('wc_szamlazz_xml', $xml, $fresh, 'invoice', []); $assert(fal
 catch (RuntimeException) { $assert(true, 'Unverified resolved provider account is rejected before network.'); }
 delete_option('appleklinika_szamlazz_test_agent_sha256');
 
+// BACS uses the same genuine checkout boundary but never confirms unpaid money.
+$bacs = wc_create_order(['customer_id'=>$buyer]); $bacs->set_created_via('checkout');
+$bacs->set_payment_method('bacs'); $bacs->set_payment_method_title('Banki átutalás');
+$bacs->set_address(['first_name'=>'Fixture','last_name'=>'Bank','email'=>'bank@example.invalid','country'=>'HU'], 'billing');
+$bacs->add_product($product, 1); $bacs->calculate_totals(); $bacs->save();
+$gateways=WC()->payment_gateways()->payment_gateways(); $gateway=$gateways['bacs'];
+$gateway->instructions='Fixture átutalási útmutató';
+$gateway->account_details=[['account_name'=>'Fixture','account_number'=>'FIXTURE-ACCOUNT-NO-MONEY','bank_name'=>'Fixture bank','sort_code'=>'','iban'=>'','bic'=>'']];
+do_action('woocommerce_checkout_order_processed', $bacs->get_id(), [], $bacs);
+$bacs->update_status('on-hold');
+$bacsMail=array_values(array_filter($mail,static fn($m)=>$m['to']==='bank@example.invalid'));
+$assert(count($bacsMail)===1 && $bacsMail[0]['subject']==='Rendelésed beérkezett', 'BACS native on-hold acknowledgement is replaced, not duplicated.');
+$assert(str_contains($bacsMail[0]['message'],'FIXTURE-ACCOUNT-NO-MONEY') && str_contains($bacsMail[0]['message'],'Fixture átutalási útmutató'), 'Configured BACS instructions and accounts survive replacement.');
+$assert($bacsMail[0]['attachments']===[] && !str_contains($bacsMail[0]['message'],'Fizetve'), 'Bank acknowledgement never claims payment or attaches invoice.');
+do_action('appleklinika_lifecycle_dispatch',$bacs->get_id(),'paid_invoice');
+$assert(wc_get_order($bacs->get_id())->get_meta(WooOrderLifecycleStore::INVOICE,true)==='', 'Submission never invoices unpaid bank transfer.');
+$bacs->payment_complete('LOCAL-BANK-SETTLEMENT-FIXTURE');
+$assert((wc_get_order($bacs->get_id())->get_meta(WooOrderLifecycleStore::INVOICE,true)['state']??'')==='blocked', 'Later recorded bank payment reaches existing licensed invoice gate.');
+$assert(count(array_filter($mail,static fn($m)=>$m['to']==='bank@example.invalid'))===1, 'No acceptance without bank invoice.');
+$bacs->delete(true);
+
 $legacy = wc_create_order(); $legacy->set_payment_method('barion'); $legacy->set_date_created(time()-86400); $legacy->save();
 $assert(apply_filters('woocommerce_email_enabled_customer_processing_order', true, $legacy) === true, 'Historical orders keep their native emails.');
 $legacy->delete(true);
+file_put_contents('/fixtures/received-email.html', $ack[0]['message']);
 file_put_contents('/fixtures/primary-email.html', $customer[0]['message']);
 file_put_contents('/fixtures/shipping-email.html', $customer[1]['message']);
 file_put_contents('/fixtures/customer-progress.html', '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/wp-content/plugins/appleklinika-backoffice/assets/customer-progress.css"><style>body{font-family:Arial;padding:20px;margin:auto;max-width:960px}</style>' . $account);

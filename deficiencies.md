@@ -370,3 +370,16 @@ implied. No restore rehearsal, monitoring or header work was started.
 ## TEST GLS label persistence regression — 2026-10-07
 
 The E2E found a successful GLS sandbox parcel whose PDF was not saved: WordPress selected an FTP code-update transport on the immutable code mount. The single-order label adapter now writes only the protected runtime label directory through the native direct filesystem adapter (0640), reports write failures and preserves provider IDs before saving the PDF. Any existing label/tracking/parcel reference rejects a repeated single-order creation. Recovered-label and remaining lifecycle acceptance are recorded separately; no full PASS is claimed here. Bulk generation and generic ambiguous network-timeout recovery are outside this targeted repair.
+
+## Checkout acknowledgement candidate — 2026-10-08
+
+- LOCAL candidate separates automatic receipt from paid/invoiced order acceptance;
+  TEST three-message delivery is pending. See `docs/order-acknowledgement.md`.
+- Fixed in the candidate: BACS status callbacks can carry stale order objects and
+  miss a freshly persisted acknowledgement marker. Suppression now reloads the
+  order; a real Woo fixture proves one customer acknowledgement and retained bank
+  instructions. No provider/SMTP behavior was changed.
+- Cash/COD is disabled; its eventual contractual acceptance trigger remains a
+  business/legal decision. It was not silently enabled or given a new rule.
+- Current TEST legal pages are still sample documents. Exact comparison against
+  current VirtualJog wording requires that document; no authoritative copy is invented.

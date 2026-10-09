@@ -20,6 +20,17 @@ final class OrderLifecycle
     ) {
     }
 
+    /** Called only at the validated checkout-submission boundary, never on reads/payment callbacks. */
+    public function orderSubmitted(int $id): bool
+    {
+        return $this->mutex->synchronized($id, function () use ($id): bool {
+            $order = $this->store->order($id);
+            if ($order === null || ! $order->submissionEligible) { return false; }
+            if (! $order->submitted) { $this->store->recordSubmission($id); }
+            return true;
+        });
+    }
+
     public function paymentConfirmed(int $id): void
     {
         $this->mutex->synchronized($id, function () use ($id): void {
@@ -72,6 +83,10 @@ final class OrderLifecycle
             $order = $this->store->order($id);
             if ($order === null || ! CustomerNotification::eligible($event, $order)) {
                 return 'ineligible';
+            }
+            if ($event === CustomerNotification::PAID && $order->submitted
+                && ($this->store->notification($id, CustomerNotification::RECEIVED)['state'] ?? '') !== 'accepted') {
+                return 'waiting_acknowledgement';
             }
             $record = $this->store->notification($id, $event);
             if (! CustomerNotification::mayAttempt($record)) {

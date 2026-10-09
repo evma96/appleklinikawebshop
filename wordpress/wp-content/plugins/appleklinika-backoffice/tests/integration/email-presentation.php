@@ -5,7 +5,7 @@ declare(strict_types=1);
 // Memory-only orders. No database writes, send(), payment hooks or provider calls.
 if (PHP_SAPI !== 'cli' || !in_array('--local-email-preview', $argv ?? [], true)) { http_response_code(404); exit(1); }
 if (getenv('AK_LOCAL_VERIFICATION') !== '1') { throw new RuntimeException('LOCAL network/mail guard required.'); }
-$_SERVER['HTTP_HOST'] = 'localhost:8082';
+$_SERVER['HTTP_HOST'] = getenv('AK_LIFECYCLE_FIXTURE') === '1' ? 'localhost:18882' : 'localhost:8082';
 require '/var/www/html/wp-load.php';
 if (wp_get_environment_type() !== 'local' || wp_parse_url(home_url(), PHP_URL_HOST) !== 'localhost'
     || !defined('WP_HTTP_BLOCK_EXTERNAL') || !WP_HTTP_BLOCK_EXTERNAL || ini_get('sendmail_path') !== '/bin/false') {
@@ -18,7 +18,7 @@ $networkAttempts = $mailAttempts = 0;
 add_filter('pre_http_request', static function () use (&$networkAttempts) { ++$networkAttempts; return new WP_Error('preview_network_blocked'); }, PHP_INT_MAX);
 add_filter('pre_wp_mail', static function () use (&$mailAttempts) { ++$mailAttempts; return false; }, PHP_INT_MAX);
 
-use Appleklinika\BackOffice\Interfaces\{PaidInvoiceEmail, CarrierHandoffEmail};
+use Appleklinika\BackOffice\Interfaces\{OrderReceivedEmail, PaidInvoiceEmail, CarrierHandoffEmail};
 use Appleklinika\BackOffice\Infrastructure\LifecycleEmailPresentation;
 use Appleklinika\BackOffice\Domain\CustomerNotification;
 
@@ -30,6 +30,7 @@ final class PreviewOrder extends WC_Order
 function previewOrder(string $shippingId = 'gls_shipping_method', array $tracking = []): PreviewOrder
 {
     $order = new PreviewOrder();
+    $order->set_customer_id(900001);
     $order->set_currency('HUF'); $order->set_date_created('2026-10-01 10:30:00');
     $order->set_payment_method('barion'); $order->set_payment_method_title('Barion bankkártyás fizetés');
     $address = ['first_name'=>'Ágnes','last_name'=>'Minta','email'=>'preview@example.invalid','country'=>'HU','city'=>'Budapest','postcode'=>'1111','address_1'=>'Példa utca 12.','address_2'=>'III. emelet 8.'];
@@ -54,6 +55,8 @@ $assert = static function ($ok, string $message) use (&$assertions) { ++$asserti
 $directory = '/tmp/appleklinika-email-preview';
 if (!is_dir($directory)) { mkdir($directory, 0700, true); }
 $scenarios = [
+    'received-delivery' => [new OrderReceivedEmail(), previewOrder()],
+    'received-pickup' => [new OrderReceivedEmail(), previewOrder('local_pickup')],
     'paid-delivery' => [new PaidInvoiceEmail(), previewOrder()],
     'paid-pickup' => [new PaidInvoiceEmail(), previewOrder('local_pickup')],
     'paid-locker' => [new PaidInvoiceEmail(), previewOrder('gls_shipping_method_parcel_locker')],
@@ -82,6 +85,11 @@ foreach ($scenarios as $name => [$email, $order]) {
         $assert(str_contains($plain,'2 db'), 'Quantity remains correct.');
         $assert(str_contains($html,'Számlázási adatok') && str_contains($plain,'Példa utca'), 'Order billing snapshot retained.');
         $assert(str_contains($compactPlain, 'Végösszeg:' . ($name === 'paid-pickup' ? '275960Ft' : '277950Ft')), 'Exact total includes the correct shipping cost.');
+    } elseif (str_starts_with($name,'received-')) {
+        $assert(str_contains($html,'Rendelésed beérkezett') && str_contains($plain,'nem jelenti annak elfogadását'), 'Acknowledgement subject and legal distinction preserved.');
+        $assert(!str_contains($plain,'Fizetve') && !str_contains($html,'Számlád a mellékletben'), 'Acknowledgement has no payment or PDF claim.');
+        $assert(str_contains($plain,'10:30') && str_contains($plain,'2 db') && str_contains($html,'Apple iPhone 15 Pro Max'), 'Acknowledgement includes time, quantities and long product details.');
+        $assert(str_contains($plain,'Választott fizetési mód') && str_contains($plain,'Barion'), 'Acknowledgement identifies the chosen payment only.');
     } else {
         $assert(str_contains($plain,'átadtuk a GLS futárszolgálatnak'), 'Announces actual handoff.');
         $assert(!str_contains($html,'Számlád a mellékletben'), 'Shipping does not claim a repeated invoice attachment.');
@@ -103,6 +111,14 @@ $assert(!str_contains($html,'<script>'), 'Customer input cannot introduce HTML.'
 $item = new WC_Order_Item_Product(); $item->set_name('<img src=x onerror=alert(1)>'); $item->set_quantity(1); $item->set_total(0); $order->add_item($item);
 $assert(!str_contains($email->get_content_html(),'<img src=x'), 'Product names escaped.');
 $assert(!str_contains($email->get_content_plain(),'<script>'), 'Plain text strips markup.');
+$guest = previewOrder(); $guest->set_customer_id(0);
+$receipt = new OrderReceivedEmail(); $receipt->set_object($guest);
+$assert(!str_contains($receipt->get_content_html(), 'Rendelés megtekintése'), 'Guest acknowledgement does not link to someone else’s My Account order.');
+$customCopy = static fn () => ['expected_fulfilment'=>'Várható teljesítés: egyedi egyeztetés alapján'];
+add_filter('pre_option_woocommerce_appleklinika_paid_invoice_settings', $customCopy);
+$customEmail = new PaidInvoiceEmail(); $customEmail->set_object(previewOrder());
+$assert(str_contains($customEmail->get_content_plain(), 'egyedi egyeztetés alapján'), 'Expected fulfilment copy is configurable through the existing Woo email settings.');
+remove_filter('pre_option_woocommerce_appleklinika_paid_invoice_settings', $customCopy);
 $savedFormat = static fn () => ['email_type' => 'plain'];
 add_filter('pre_option_woocommerce_appleklinika_paid_invoice_settings', $savedFormat);
 $assert((new PaidInvoiceEmail())->get_email_type() === 'plain', 'An explicitly saved Woo email format remains honored.');
@@ -127,4 +143,4 @@ foreach (array_keys($scenarios) as $name) {
 }
 file_put_contents($directory.'/index.html', '<!doctype html><html lang="hu"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Apple Klinika email previews</title><body style="font:17px/1.7 Arial;background:#f3f4f6;color:#202124;margin:32px"><main style="max-width:800px;margin:auto"><h1>Apple Klinika · levélelőnézetek</h1><p>LOCAL előnézet, kitalált rendelési adatokkal. Nem történt mentés, levélküldés vagy szolgáltatói kérés. A mintarendelések fiókhivatkozásai nem nyitnak létező rendelést.</p><ul>'.$links.'</ul><p>A levél megjelenése asztali és keskeny böngészőablakban is ellenőrizhető. Gmail / Outlook / Apple Mail klienspróba és valódi kézbesítés külön szükséges.</p></main></body></html>');
 file_put_contents($directory.'/results.json',json_encode(['assertions'=>$assertions,'scenarios'=>array_keys($scenarios),'persisted_orders'=>0,'mail_attempts'=>$mailAttempts,'network_attempts'=>$networkAttempts,'mode'=>'LOCAL memory-only Woo render; not delivery or provider proof'],JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE));
-echo "Email presentation: $assertions assertions passed; five memory-only scenarios; zero orders saved, mails or provider requests.\n";
+echo "Email presentation: $assertions assertions passed; seven memory-only scenarios; zero orders saved, mails or provider requests.\n";

@@ -6,8 +6,10 @@ echo Text::plain($heading) . "\n\n";
 echo Text::plain($view['greeting']) . "\n\n" . $view['intro'] . "\n\n";
 echo 'Rendelés: #' . Text::plain($view['number']) . "\n";
 if ($view['date'] !== '') { echo 'Rendelés dátuma: ' . $view['date'] . "\n"; }
-if ($view['paid']) {
-    echo 'Fizetve' . ($view['payment'] !== '' ? ' · ' . Text::plain($view['payment']) : '') . "\n\nA rendelésed\n";
+if ($view['paid'] || $view['received']) {
+    if ($view['expected_fulfilment'] !== '') { echo $view['expected_fulfilment'] . "\n"; }
+    if ($view['payment_instructions'] !== '') { echo Text::plain($view['payment_instructions']) . "\n"; }
+    echo ($view['paid'] ? 'Fizetve' : 'Választott fizetési mód') . ($view['payment'] !== '' ? ' · ' . Text::plain($view['payment']) : '') . "\n\nA rendelésed\n";
     foreach ($view['items'] as $item) {
         echo Text::plain($item['name']) . ' — ' . $item['quantity'] . ' db — ' . Text::plain($item['total']) . "\n";
         foreach ($item['details'] as $detail) { echo $detail['label'] . ': ' . $detail['value'] . "\n"; }
@@ -28,4 +30,5 @@ if ($view['paid']) {
     if ($view['invoice_number'] !== '') { echo 'Számlaszám: ' . Text::plain($view['invoice_number']) . "\n"; }
     if ($view['billing_address'] !== '') { echo "\nSzámlázási adatok\n" . Text::plain($view['billing_address']) . "\n"; }
 }
-echo "\nRendelés megtekintése a fiókomban:\n" . $view['account_url'] . "\n\nApple Klinika\nEz a levél a rendelésedhez kapcsolódó értesítés.\n";
+if ($view['account_url'] !== '') { echo "\nRendelés megtekintése a fiókomban:\n" . $view['account_url'] . "\n"; }
+echo "\nApple Klinika\nEz a levél a rendelésedhez kapcsolódó értesítés.\n";

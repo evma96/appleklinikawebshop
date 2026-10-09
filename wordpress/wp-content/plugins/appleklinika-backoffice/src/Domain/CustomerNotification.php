@@ -6,11 +6,15 @@ namespace Appleklinika\BackOffice\Domain;
 
 final class CustomerNotification
 {
+    public const RECEIVED = 'order_received';
     public const PAID = 'paid_invoice';
     public const SHIPPED = 'carrier_handoff';
 
     public static function eligible(string $event, LifecycleOrder $order): bool
     {
+        if ($event === self::RECEIVED) {
+            return $order->submitted && ! in_array($order->status, ['cancelled', 'refunded', 'checkout-draft', 'trash', 'auto-draft'], true);
+        }
         if (! $order->managed || ! $order->paid || in_array($order->status, ['cancelled', 'failed', 'refunded', 'checkout-draft'], true)) {
             return false;
         }

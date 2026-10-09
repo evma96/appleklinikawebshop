@@ -9,9 +9,12 @@ function wp_get_environment_type() { return $GLOBALS['environment']; }
 function get_option($key,$default=null) { return $GLOBALS['options'][$key] ?? $default; }
 final class WC_Order {
     public int $marker=0, $created=200;
-    public string $payment='barion';
+    public string $payment='barion', $via='checkout', $status='pending';
+    public array|string $submitted='';
+    public function get_created_via() { return $this->via; }
+    public function get_status() { return $this->status; }
     public function get_payment_method() { return $this->payment; }
-    public function get_meta($key,$single=true) { return $this->marker; }
+    public function get_meta($key,$single=true) { return $key === '_appleklinika_lifecycle_submitted' ? $this->submitted : $this->marker; }
     public function get_date_created() { return new DateTimeImmutable('@'.$this->created); }
 }
 $n=0; $assert=static function($ok,$why)use(&$n){++$n;if(!$ok){throw new RuntimeException($why);}};
@@ -36,6 +39,19 @@ $GLOBALS['environment']='production';
 $assert(!Config::enabled() && !Config::manages($order), 'A staff URL cannot override the production environment guard.');
 $GLOBALS['environment']='staging'; $GLOBALS['options']['home']='https://appleklinika.com';
 $assert(!Config::enabled(), 'A TEST-looking request cannot enable a canonical production installation.');
+$GLOBALS['options']['home']='https://teszt.appleklinika.com';
+$order->marker=0; $order->payment='bacs';
+$assert(Config::canSubmit($order) && !Config::manages($order), 'Bank transfer eligible for acknowledgement but not enrolled before submission.');
+$order->submitted=['source'=>'validated_checkout'];
+$assert(Config::submitted($order) && Config::manages($order), 'Submitted BACS uses paid/invoice checks for later acceptance.');
+$order->payment='cod';
+$assert(!Config::canSubmit($order) && !Config::manages($order), 'Disabled cash gateway is not silently enrolled into an invented acceptance rule.');
+$order->payment='barion';
+foreach(['admin','rest-api','import'] as $via) { $order->via=$via; $assert(!Config::canSubmit($order), 'Non-checkout source excluded: '.$via); }
+$order->via='store-api'; $order->status='checkout-draft';
+$assert(!Config::canSubmit($order), 'Store API draft reads do not acknowledge.');
+$order->status='pending'; $assert(Config::canSubmit($order), 'Validated Store API submission is eligible.');
+$order->created=50; $assert(!Config::canSubmit($order), 'Historical order cannot receive retroactive acknowledgement.');
 unset($GLOBALS['options']['home']);
 $assert(!Config::enabled(), 'Missing canonical installation URL fails closed.');
 echo "Lifecycle environment: $n assertions passed.\n";

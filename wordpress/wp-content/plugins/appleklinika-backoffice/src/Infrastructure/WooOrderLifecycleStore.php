@@ -31,8 +31,14 @@ final class WooOrderLifecycleStore implements OrderLifecycleStore
         return new LifecycleOrder(
             $id, LifecycleConfiguration::manages($order), $order->is_paid(), $order->get_status(),
             (string) $order->get_meta('_wc_szamlazz_invoice', true), $documents->filePath($order, 'invoice') ?? '',
-            $handoff && in_array($state, ['handed_to_gls', 'delivered'], true), $documents->trackingLinks($order)
+            $handoff && in_array($state, ['handed_to_gls', 'delivered'], true), $documents->trackingLinks($order),
+            LifecycleConfiguration::submitted($order), LifecycleConfiguration::canSubmit($order)
         );
+    }
+
+    public function recordSubmission(int $id): void
+    {
+        $this->save($id, '_appleklinika_lifecycle_submitted', ['source' => 'validated_checkout']);
     }
 
     public function notification(int $id, string $event): array

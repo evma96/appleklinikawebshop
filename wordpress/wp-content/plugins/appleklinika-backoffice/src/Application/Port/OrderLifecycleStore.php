@@ -9,6 +9,7 @@ use Appleklinika\BackOffice\Domain\LifecycleOrder;
 interface OrderLifecycleStore
 {
     public function order(int $id): ?LifecycleOrder;
+    public function recordSubmission(int $id): void;
     public function notification(int $id, string $event): array;
     public function recordNotification(int $id, string $event, array $record): void;
     public function invoiceRecord(int $id): array;
