@@ -435,3 +435,6 @@ The owner confirmed receipt of both operations QA messages. Inbox display/arriva
 Disabled production backup preparation and encrypted off-server transfer: [backup readiness](docs/production-backup-readiness.md). Active TEST backups are unchanged; no production timer or paid target is enabled.
 
 Conservative TEST surface restrictions, compatible headers and inactive dependency removal: [LOW security follow-up](docs/security-low-followup.md). No CSP redesign or active provider update.
+
+### Manual MPL minimum availability
+The owner-approved manual MPL mode preserves the supported point selector and offers fixed editable customer charges without fabricated catalog weights. See [MPL checkout/fulfilment](docs/mpl-checkout-fulfilment.md). GLS remains the primary automated carrier; no MPL API/PRO licence is required for this manual checkout mode.

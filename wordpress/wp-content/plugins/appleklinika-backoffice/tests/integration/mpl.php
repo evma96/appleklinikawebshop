@@ -33,7 +33,25 @@ try {
     $filtered=(new \Appleklinika\BackOffice\Interfaces\MplHooks())->rates(['vp_pont:1'=>$rate],$package);
     $check((float)$filtered['vp_pont:1']->get_cost()===1040.0,'No misleading zero price before point selection');
     $p->set_weight('');$contents=[['data'=>$p,'quantity'=>1]];
-    $check(MplPackage::fromContents($contents)['kg']===0.0,'Unknown product weight fails closed');$p->set_weight('1');
+    $check(MplPackage::fromContents($contents)['kg']===0.0,'Unknown product weight is not invented');
+    $previousManual=get_option('appleklinika_mpl_manual_fulfilment',null);
+    try {
+        update_option('appleklinika_mpl_manual_fulfilment','yes');
+        $manualPackage=['contents'=>$contents,'destination'=>['country'=>'HU']];
+        $manualRates=(new MplHomeShipping(9943))->get_rates_for_package($manualPackage);
+        $check(count($manualRates)===1 && (float)current($manualRates)->get_cost()===2090.0,'Manual home has approved fixed price with missing weight');
+        $check(MplPackage::eligible('postapont_posta',MplPackage::fromContents($contents)),'Missing weight retains manual post office choice');
+        $p->set_price('500001');
+        $check(!MplPackage::eligible('postapont_automata',MplPackage::fromContents($contents)),'Unknown weight still preserves locker value ceiling');
+        $p->set_price('1000');$p->set_weight('20');
+        $manualRates=(new MplHomeShipping(9944))->get_rates_for_package($manualPackage);
+        $check((float)current($manualRates)->get_cost()===2090.0,'Manual fixed customer charge does not become provider weight-band charge');
+        $check(str_contains(MplCarrier::readiness(),'Kézi MPL-feladás'),'Back Office explains manual operation rather than requiring PRO');
+        $check($requests===0,'Manual mode performs no carrier request');
+    } finally {
+        $previousManual===null ? delete_option('appleklinika_mpl_manual_fulfilment') : update_option('appleklinika_mpl_manual_fulfilment',$previousManual);
+        $p->set_weight('1');$p->set_price('1000');
+    }
     $order=wc_create_order();$order->set_payment_method('bacs');$order->set_created_via('store-api');$order->set_status('processing');
     $order->set_address(['first_name'=>'Ágnes','last_name'=>'Fixture','email'=>'mpl-fixture@example.invalid','country'=>'HU','city'=>'Szeged','postcode'=>'6722','address_1'=>'Fixture utca 1.'],'billing');
     $item=new WC_Order_Item_Shipping();$item->set_method_id('vp_pont');$item->set_method_title('MPL PostaPont');$item->set_total(1040);$order->add_item($item);$order->add_product($p);$order->calculate_totals();

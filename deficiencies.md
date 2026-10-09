@@ -414,3 +414,6 @@ The reusable encrypted backup candidate and Storage Box transfer adapter are dis
 ## Conservative LOW follow-up
 
 LOCAL private-config permissions, unused XML-RPC, trivial public user enumeration and compatible TEST headers are addressed in the scoped candidate. Obsolete inactive defaults are removed while active integrations and a fallback theme remain. Legacy cloud SSH /32 removal still needs the expired Hetzner session restored; WireGuard is healthy. See `docs/security-low-followup.md`.
+
+## Final non-legal closure — manual MPL scope correction
+The previous fail-closed weight requirement hid MPL for the real catalog. The owner now authorizes manual dispatch at fixed customer charges (point HUF 1,040; home HUF 2,090), absorbing any carrier-cost difference. The targeted correction permits unknown measurements in manual mode while retaining known service/value limits, editable fees and the supported point selector. No product weight is fabricated, no API project or licence bypass is introduced. Earlier missing advanced MPL automation is no longer classified as a High launch finding by itself.

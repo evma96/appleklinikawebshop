@@ -1,7 +1,6 @@
 <?php
 declare(strict_types=1);
 namespace Appleklinika\BackOffice\Interfaces;
-use Appleklinika\BackOffice\Domain\MplParcelRules;
 use Appleklinika\BackOffice\Infrastructure\{MplCarrier,MplPackage,MplHomeShipping};
 
 /** Thin Woo/plugin adapters; carrier rules and transport stay outside hooks. */
@@ -69,7 +68,7 @@ final class MplHooks
     {
         $parcel = MplPackage::fromContents(WC()->cart ? WC()->cart->get_cart() : []);
         foreach (MplCarrier::POINTS as $service) {
-            if (!MplParcelRules::eligible($service,$parcel['kg'],$parcel['dimensions'],$parcel['value'])) { unset($costs[$service]); }
+            if (!MplPackage::eligible($service,$parcel)) { unset($costs[$service]); }
         }
         return $costs;
     }
@@ -77,7 +76,7 @@ final class MplHooks
     {
         $point = WC()->session ? WC()->session->get('selected_vp_pont') : null;
         $parcel = MplPackage::fromContents($package['contents'] ?? []);
-        $available = array_filter(MplCarrier::POINTS, static fn($s) => MplParcelRules::eligible($s,$parcel['kg'],$parcel['dimensions'],$parcel['value']));
+        $available = array_filter(MplCarrier::POINTS, static fn($s) => MplPackage::eligible($s,$parcel));
         foreach ($rates as $id=>$rate) {
             if ($rate->get_method_id() !== 'vp_pont') { continue; }
             if (($package['destination']['country'] ?? '') !== 'HU' || !$available || ($point && !in_array($point['provider'] ?? '',$available,true))) { unset($rates[$id]); continue; }
@@ -92,7 +91,7 @@ final class MplHooks
         if (!MplCarrier::matches($order)) { return; }
         $parcel=MplPackage::fromContents(WC()->cart->get_cart());
         $service = in_array($order->get_meta('_vp_woo_pont_provider', true), MplCarrier::POINTS, true) ? $order->get_meta('_vp_woo_pont_provider', true) : 'home';
-        if (!MplParcelRules::eligible($service,$parcel['kg'],$parcel['dimensions'],$parcel['value'])) {
+        if (!MplPackage::eligible($service,$parcel)) {
             $errors->add('ak_mpl_package','A csomag súlya vagy mérete ehhez az MPL szolgáltatáshoz nem megfelelő. Válassz másik szállítási módot.');
         }
     }

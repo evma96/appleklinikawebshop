@@ -22,4 +22,17 @@ final class MplParcelRules
         $max = $service === 'postapont_automata' ? [31,35,50] : [60,60,120];
         return $dimensions[0] <= $max[0] && $dimensions[1] <= $max[1] && $dimensions[2] <= $max[2];
     }
+
+    /** Owner-approved manual dispatch: unknown measurements require staff review, not invented values. */
+    public static function eligibleForManualDispatch(string $service, float $knownKg, array $knownDimensions = [], float $value = 0): bool
+    {
+        $limits = ['home'=>40, 'postapont_posta'=>30, 'postapont_postapont'=>20, 'postapont_automata'=>20];
+        if (!isset($limits[$service]) || $knownKg < 0 || $knownKg > $limits[$service]) { return false; }
+        if ($service === 'postapont_automata' && $value > 500000) { return false; }
+        if (!$knownDimensions) { return true; }
+        if (count($knownDimensions) !== 3 || min($knownDimensions) < 0) { return false; }
+        sort($knownDimensions, SORT_NUMERIC);
+        $max = $service === 'postapont_automata' ? [31,35,50] : [60,60,120];
+        return $knownDimensions[0] <= $max[0] && $knownDimensions[1] <= $max[1] && $knownDimensions[2] <= $max[2];
+    }
 }

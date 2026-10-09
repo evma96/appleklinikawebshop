@@ -30,4 +30,12 @@ foreach ([[M::MPL,'handed_to_gls'],[M::GLS,'handed_to_carrier'],[M::PICKUP,'crea
     try { F::transition(F::READY_FOR_SHIPPING,$action,$mode); $rejected=false; } catch (InvalidArgumentException) { $rejected=true; }
     $check($rejected,'Wrong carrier action rejected');
 }
+$check(R::eligibleForManualDispatch('home',0,[],120000),'Manual unknown parcel can be priced without inventing weight');
+$check(R::eligibleForManualDispatch('postapont_automata',0,[],500000),'Manual locker unknown dimensions require staff review');
+$check(!R::eligibleForManualDispatch('postapont_automata',0,[],500001),'Unknown measurements do not erase known locker value limit');
+$check(!R::eligibleForManualDispatch('home',41,[]),'Manual known overweight rejected');
+$check(!R::eligibleForManualDispatch('postapont_automata',0,[51,0,0]),'Partial known oversize still rejected');
+$check(!R::eligibleForManualDispatch('postapont_postapont',21,[]),'Manual partner weight constraint preserved');
+$check(!R::eligibleForManualDispatch('other',0,[]),'Unknown service rejected');
+$check(!R::eligibleForManualDispatch('home',0,[-1,1,1]),'Invalid known dimensions rejected');
 echo "MPL tariff/fulfilment: $count assertions passed.\n";
