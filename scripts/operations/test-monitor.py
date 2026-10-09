@@ -60,5 +60,8 @@ def main():
  path=root/'monitor.json';old=json.loads(path.read_text()) if path.exists() else {}
  tmp=path.with_suffix('.tmp');tmp.write_text(json.dumps(report)+'\n');tmp.replace(path)
  if old.get('issues')!=issues: print(json.dumps({'status':report['status'],'issues':issues}),flush=True)
- if issues: raise SystemExit(1)
+ alert=pathlib.Path(__file__).with_name('monitor-alert.py')
+ delivered=subprocess.run(['python3',str(alert)],timeout=55).returncode if alert.exists() else 1
+ if delivered: print('Human alert transport needs attention; no unauthenticated fallback.',flush=True)
+ if issues or delivered: raise SystemExit(1)
 if __name__=='__main__': main()

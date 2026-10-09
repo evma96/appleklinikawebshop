@@ -398,3 +398,7 @@ The cash TEST run generated `E-APP-2026-4` once but exposed a missing customer i
 - MPL initial TEST compatibility finding: the installed rate did not render its selector until the maintained vendor block and native Woo pickup feature were mounted. The focused checkout follow-up addresses this; provider credentials and real catalog packing data remain separate external/data blockers.
 
 MPL 4.2.8 map compatibility: the upstream markercluster bundle reads mutable global `L`, allowing another map widget to break initialization. A checksum-guarded, one-line Browserify module binding (`scripts/mpl-selector-compat.py`) uses the same bundled Leaflet instance. No provider, licensing, GLS or legal behavior is changed. Re-review this patch when updating the pinned dependency.
+
+## TEST human monitoring follow-up
+
+Independent GitHub availability and standalone authenticated internal SMTP alerting are implemented in `docs/test-monitoring.md`. Actual workflow execution and controlled failure/recovery delivery must be verified separately; SMTP acceptance alone does not prove Inbox receipt. GitHub schedules are best-effort and require repository/issue notification subscription for human notification.
