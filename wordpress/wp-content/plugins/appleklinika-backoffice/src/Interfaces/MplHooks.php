@@ -9,6 +9,7 @@ final class MplHooks
 {
     public function register(): void
     {
+        add_filter('render_block_data', [$this,'checkoutBlock']);
         add_filter('pre_http_request', [$this,'providerGuard'], 90, 3);
         add_filter('vp_woo_pont_import_database_providers', static fn() => ['postapont']);
         add_filter('vp_woo_pont_shipping_cost_based_on_gross_total', '__return_true');
@@ -21,6 +22,26 @@ final class MplHooks
         foreach (['shipped','pickup','delivery'] as $event) {
             add_filter('woocommerce_email_enabled_vp_woo_pont_order_'.$event, static fn($enabled,$order) => $order instanceof \WC_Order && MplCarrier::matches($order) ? false : $enabled, 10, 2);
         }
+    }
+    /** Mount the maintained vendor block in its supported native pickup parent. */
+    public function checkoutBlock(array $block): array
+    {
+        if (($block['blockName'] ?? '') !== 'woocommerce/checkout-pickup-options-block') { return $block; }
+        foreach ($block['innerBlocks'] ?? [] as $child) {
+            if (($child['blockName'] ?? '') === 'vp-woo-pont/pont-picker-block') { return $block; }
+        }
+        $children = parse_blocks('<!-- wp:vp-woo-pont/pont-picker-block --><div class="wp-block-vp-woo-pont-pont-picker-block"></div><!-- /wp:vp-woo-pont/pont-picker-block -->');
+        $block['innerBlocks'][] = $children[0];
+        $content = $block['innerContent'] ?? [];
+        if (!$content) { $content = ['<div class="wp-block-woocommerce-checkout-pickup-options-block">','</div>']; }
+        // The stock block is empty; keep its wrapper and insert one React child.
+        if (count($content) === 1 && is_string($content[0])) {
+            $end = strrpos($content[0], '</div>');
+            if ($end === false) { return $block; }
+            $content = [substr($content[0],0,$end),null,substr($content[0],$end)];
+        } else { array_splice($content, max(0,count($content)-1), 0, [null]); }
+        $block['innerContent'] = $content;
+        return $block;
     }
     public function providerGuard($result, array $args, string $url)
     {

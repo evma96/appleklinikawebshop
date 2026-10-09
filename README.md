@@ -421,3 +421,5 @@ acceptance, actual cash collection, TEST-only enablement and verification limits
 The cash-pickup invoice is available through an authenticated owner-only download on the order page.
 
 MPL TEST shipping preparation, pinned free selector, editable tariffs and shared carrier lifecycle: [MPL checkout/fulfilment](docs/mpl-checkout-fulfilment.md). Provider registration/licence and missing packaged catalog dimensions remain explicit gates.
+
+MPL Blocks integration uses Woo's native pickup feature and the maintained selector in step 3; see [MPL checkout and fulfilment](docs/mpl-checkout-fulfilment.md) for activation/import and configuration prerequisites.

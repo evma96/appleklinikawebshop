@@ -31,3 +31,7 @@ Read-only adapter consumes vendor `_vp_woo_pont_*` order metadata. Label PDFs ar
 Offline tariff boundary and carrier-transition checks plus a disposable real Woo database verify rates, missing-data exclusion, shared state/history, manifest prerequisite, one MPL handoff email despite retries, carrier-specific copy/URL and duplicate-vendor-email suppression. Provider and inbox results remain external tests, not implied by these assertions.
 
 TEST browser checkout/point selection and cleanup evidence are recorded separately in the private prelaunch evidence directory. MPL provider proof is pending legitimate Posta Sandbox access and supported label licence. No legal documents were changed.
+
+### Checkout Blocks compatibility follow-up
+
+The first TEST browser check exposed a configuration/compatibility gap: a shipping rate alone does not mount the vendor's pickup selector. Enable Woo's native pickup feature (`woocommerce_pickup_location_settings.enabled=yes`) and mount the unmodified vendor picker inside its supported `woocommerce/checkout-pickup-options-block` parent at render time. Stored checkout content and legal sample wording remain unchanged. The three-step presentation includes Woo's shipping/pickup choice and pickup controls in step 3, and uses the selected pickup rate in the final review. The vendor activation routine must run before the first official point import (it creates its data directories). Official import produced 1,955 post offices, 647 terminals and 164 partner points on 2026-10-09.

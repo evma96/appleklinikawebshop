@@ -394,3 +394,5 @@ The cash TEST run generated `E-APP-2026-4` once but exposed a missing customer i
 - Posta webshop registration and Sandbox API/agreement credentials are not yet present; supported selector PRO/test licence is additionally needed for automatic labels. No provider result is claimed.
 - All 122 published TEST products lack weight. Correct MPL availability requires approved packaged product weights/dimensions; QA fixtures do not repair catalog data.
 - Shared MPL state/email behavior and current editable tariff bands are implemented separately from these external/configuration gates; see `docs/mpl-checkout-fulfilment.md`.
+
+- MPL initial TEST compatibility finding: the installed rate did not render its selector until the maintained vendor block and native Woo pickup feature were mounted. The focused checkout follow-up addresses this; provider credentials and real catalog packing data remain separate external/data blockers.
