@@ -389,3 +389,8 @@ The E2E found a successful GLS sandbox parcel whose PDF was not saved: WordPress
 The previous missing operational acceptance decision is now supplied by the owner: explicit staff stock verification/acceptance, then cash payment at actual pickup. The LOCAL candidate implements this using shared state/history and existing invoice/notification idempotency. Real TEST provider verification remains a deployment gate; no overall non-legal launch PASS is claimed. VirtualJog wording is untouched. See `docs/cash-personal-pickup.md`.
 
 The cash TEST run generated `E-APP-2026-4` once but exposed a missing customer invoice link. The scoped correction adds an owner/nonce-protected cash-pickup download; public upload protection is retained. Provider generation and email behavior are unchanged.
+
+## MPL prelaunch gates (2026-10-09)
+- Posta webshop registration and Sandbox API/agreement credentials are not yet present; supported selector PRO/test licence is additionally needed for automatic labels. No provider result is claimed.
+- All 122 published TEST products lack weight. Correct MPL availability requires approved packaged product weights/dimensions; QA fixtures do not repair catalog data.
+- Shared MPL state/email behavior and current editable tariff bands are implemented separately from these external/configuration gates; see `docs/mpl-checkout-fulfilment.md`.

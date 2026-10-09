@@ -22,7 +22,7 @@ final class WooOrderLifecycleStore implements OrderLifecycleStore
         $history = (new WooOrderBackOfficeRepository())->history($order);
         $handoff = false;
         foreach ($history as $entry) {
-            if (($entry['action'] ?? '') === 'handed_to_gls' && ($entry['to'] ?? '') === 'handed_to_gls') {
+            if (in_array(($entry['action'] ?? ''), ['handed_to_gls','handed_to_carrier'], true) && ($entry['to'] ?? '') === $entry['action']) {
                 $handoff = true;
             }
         }
@@ -31,7 +31,7 @@ final class WooOrderLifecycleStore implements OrderLifecycleStore
         return new LifecycleOrder(
             $id, LifecycleConfiguration::manages($order), $order->is_paid(), $order->get_status(),
             (string) $order->get_meta('_wc_szamlazz_invoice', true), $documents->filePath($order, 'invoice') ?? '',
-            $handoff && in_array($state, ['handed_to_gls', 'delivered'], true), $documents->trackingLinks($order),
+            $handoff && in_array($state, ['handed_to_gls', 'handed_to_carrier', 'delivered'], true), $documents->trackingLinks($order),
             LifecycleConfiguration::submitted($order), LifecycleConfiguration::canSubmit($order),
             CashPickup::matches($order), CashPickup::matches($order) && CashPickup::accepted($order)
         );

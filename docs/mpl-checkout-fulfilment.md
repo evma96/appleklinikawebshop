@@ -1,0 +1,33 @@
+# MPL checkout and fulfilment — TEST candidate
+
+## Source and dependency
+
+Reviewed 2026-10-09 against the live Magyar Posta pages:
+- https://www.posta.hu/webaruhazi_regisztracio : gross HUF 1,040 for pickup points/post offices/terminals; home delivery HUF 2,090 up to 10 kg, 3,140 above 10 through 20 kg, 6,300 above 20 through 40 kg. General webshop registration is required; these tariffs do not include collection at the merchant's premises.
+- https://www.posta.hu/belfoldi_csomagmegoldasok : home 40 kg, post office 30 kg, partner pickup point 20 kg, terminal 20 kg. Normal domestic parcel maximum 120 × 60 × 60 cm; terminal 50 × 35 × 31 cm.
+- https://www.posta.hu/ugyfelszolgalat/csomagautomata : terminal value ceiling HUF 500,000 and all three side limits apply, not merely volume.
+- https://www.posta.hu/mplapi : label/tracking API registration and agreement required.
+
+Free supported selector: **Hungarian Pickup Points & Shipping Labels for WooCommerce 4.2.8**, from WordPress.org, by Viszt Péter. `docker/mpl-selector.json` pins its release archive checksum. Install with `python3 scripts/install-mpl-selector.py <plugins-directory>`; the unmodified downloaded dependency is ignored in Git. No purchase, licence bypass, or custom static pickup-point list. The plugin refreshes the official postal point database; only its Posta data importer is enabled by our TEST adapter.
+
+Its supported automatic label/manifest workflow needs a separate legitimate PRO/test licence, in addition to Posta Sandbox API key/password, customer/agreement codes and sender details. No such access was present on TEST. `appleklinika_mpl_api_enabled=no` blocks provider requests, including native plugin handlers. A production API hostname is denied in this TEST adapter. The official registration page is opened for Martin; secret fields must be entered privately after registration.
+
+## Editable checkout configuration
+
+`appleklinika_mpl_enabled=yes` enables the adapter only under the existing LOCAL/TEST lifecycle guard. In the Hungary shipping zone add `ak_mpl_home` and the vendor's `vp_pont` alongside the unchanged GLS and personal-pickup methods. Home rates are editable Woo shipping-instance fields. Pickup-point prices and provider choices are editable in WooCommerce → Settings → Shipping → Pickup points; only `postapont_posta`, `postapont_postapont`, `postapont_automata` are intended here. Prices are configured gross, with Woo shipping-tax extraction, not a new tax policy.
+
+All 122 existing published TEST products lack weight (read-only inventory). No guessed catalog data was inserted. Woo weight and dimensions must represent the **packed product**; a combined parcel stacks those boxes conservatively. Unknown weight/dimensions, non-Hungarian destinations, excessive weight/size or terminal value fail closed. Therefore the current catalog remains a **CONFIG/DATA launch blocker for MPL availability** until real packaging data is supplied. Known-weight/size QA products prove checkout independently. Multi-parcel carton optimization and oversized service are not introduced.
+
+## Shared lifecycle and documents
+
+The existing `FulfilmentWorkflow`, `ChangeFulfilment`, Woo metadata/history, customer timeline and notification ledger are extended for MPL. Existing GLS action and persisted state names remain unchanged. MPL uses `handed_to_carrier` in the same state machine; it is not a separate order-status model.
+
+Labels stay in `ready_for_shipping`. Actual staff handoff requires provider label + tracking evidence and a closed MPL manifest; only that logged transition schedules the existing shipping email once. MPL wording and official postal tracking links are used in HTML/plain-text email. Native redundant provider customer emails are suppressed for MPL orders. Completion remains a later explicit delivery closure. Existing invoice/Barion/cash behavior is preserved.
+
+Read-only adapter consumes vendor `_vp_woo_pont_*` order metadata. Label PDFs are blocked at the public upload path and served through the existing capability + per-order nonce Back Office document route, with document-access history. Label integration cannot be called before supported license/configuration readiness; no provider PASS is claimed from fixtures.
+
+## Verification status
+
+Offline tariff boundary and carrier-transition checks plus a disposable real Woo database verify rates, missing-data exclusion, shared state/history, manifest prerequisite, one MPL handoff email despite retries, carrier-specific copy/URL and duplicate-vendor-email suppression. Provider and inbox results remain external tests, not implied by these assertions.
+
+TEST browser checkout/point selection and cleanup evidence are recorded separately in the private prelaunch evidence directory. MPL provider proof is pending legitimate Posta Sandbox access and supported label licence. No legal documents were changed.

@@ -103,6 +103,12 @@ final class OrderDocuments
                 : null;
         }
 
+        if ($document === 'mpl_label' && MplCarrier::matches($order)) {
+            $file = $this->scalarMeta($order, '_vp_woo_pont_parcel_pdf');
+            $base = wp_upload_dir(null, false)['basedir'] . '/vp-woo-pont-labels';
+            return $file !== '' ? $this->localPdf($base . '/' . $file, $base) : null;
+        }
+
         if ($document === 'gls_label' && $this->glsActive() && defined('GLS_LABELS_DIR')) {
             $filename = $this->scalarMeta($order, '_gls_print_label');
             // Current GLS metadata stores a filename. Legacy URLs are not fetched.
@@ -119,6 +125,7 @@ final class OrderDocuments
     /** @return list<array{code:string,url:string}> */
     public function trackingLinks(WC_Order $order): array
     {
+        if (MplCarrier::matches($order)) { return MplCarrier::tracking($order); }
         if (! $this->glsActive() || ! class_exists('GLS_Shipping_Account_Helper')) {
             return [];
         }

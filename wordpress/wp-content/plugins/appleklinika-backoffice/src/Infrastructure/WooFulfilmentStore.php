@@ -12,8 +12,9 @@ final class WooFulfilmentStore implements FulfilmentStore
     {
         $order = $this->order($id);
         return ['state' => $this->orders->state($order), 'mode' => $this->orders->deliveryMode($order),
-            'blocked' => $this->orders->fulfilmentBlockReason($order), 'label' => $this->orders->hasGlsLabel($order),
+            'blocked' => $this->orders->fulfilmentBlockReason($order), 'label' => MplCarrier::matches($order) ? MplCarrier::hasLabel($order) : $this->orders->hasGlsLabel($order),
             'tracking' => (new OrderDocuments())->trackingLinks($order) !== [],
+            'manifest' => !MplCarrier::matches($order) || $order->get_meta('_vp_woo_pont_mpl_closed', true) === 'yes',
             'cash' => CashPickup::matches($order) && LifecycleConfiguration::submitted($order),
             'cash_accepted' => CashPickup::matches($order) && CashPickup::accepted($order)];
     }
@@ -30,6 +31,7 @@ final class WooFulfilmentStore implements FulfilmentStore
 
     public function createLabel(int $id): void
     {
+        if (MplCarrier::matches($this->order($id))) { MplCarrier::createLabel($this->order($id)); return; }
         if (! LifecycleConfiguration::isTestEnvironment() || ! class_exists('GLS_Shipping_Account_Helper')
             || (\GLS_Shipping_Account_Helper::get_active_account()['mode'] ?? '') !== 'sandbox') {
             throw new \InvalidArgumentException('Ebben a folyamatban kizárólag TEST / GLS Sandbox címke készíthető.');

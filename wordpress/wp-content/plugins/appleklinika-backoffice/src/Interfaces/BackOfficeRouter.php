@@ -27,6 +27,7 @@ final class BackOfficeRouter
         add_filter('query_vars', [$this, 'queryVars']);
         add_action('template_redirect', [$this, 'render']);
         add_action('admin_post_appleklinika_backoffice_action', [$this, 'handleAction']);
+        add_action('admin_post_appleklinika_backoffice_download_mpl_label', [$this, 'handleMplLabelDownload']);
         add_action('admin_post_appleklinika_backoffice_download_label', [$this, 'handleLabelDownload']);
         add_action('admin_post_appleklinika_backoffice_download_invoice', [$this, 'handleInvoiceDownload']);
         add_action('woocommerce_checkout_create_order_line_item', [$this->orders, 'captureDeviceIdentifierSnapshot'], 10, 4);
@@ -114,6 +115,11 @@ final class BackOfficeRouter
     public function handleLabelDownload(): void
     {
         $this->downloadDocument('gls_label', 'label');
+    }
+
+    public function handleMplLabelDownload(): void
+    {
+        $this->downloadDocument('mpl_label', 'mpl_label');
     }
 
     public function handleInvoiceDownload(): void
@@ -222,7 +228,7 @@ final class BackOfficeRouter
             $mode = $this->orders->deliveryMode($order);
             $block = $this->orders->fulfilmentBlockReason($order);
             $next = $this->orders->primaryAction($order);
-            $closed = $order->has_status('completed') || in_array($state, [FulfilmentWorkflow::HANDED_TO_GLS, FulfilmentWorkflow::PICKED_UP], true);
+            $closed = $order->has_status('completed') || in_array($state, [FulfilmentWorkflow::HANDED_TO_GLS, FulfilmentWorkflow::HANDED_TO_CARRIER, FulfilmentWorkflow::PICKED_UP], true);
             $attention = $closed ? '' : $this->attention($order, $state);
             $nextLabel = $closed ? 'Feldolgozás lezárva' : ($block !== null ? ($attention ?: 'Átvételi mód ellenőrzése') : ($next !== null ? FulfilmentWorkflow::actions()[$next] : 'Rendelés ellenőrzése'));
             if (! $closed && $block === null && $next === 'create_label' && ! $this->orders->canCreateGlsLabel()) {
@@ -379,7 +385,9 @@ final class BackOfficeRouter
 
         $hasGlsLabel = $deliveryMode === DeliveryMode::GLS && $this->orders->hasGlsLabel($order);
         $primaryAction = $this->orders->primaryAction($order);
-        if ($primaryAction === 'create_label' && ! $this->orders->canCreateGlsLabel()) {
+        if ($primaryAction === 'create_mpl_label' && \Appleklinika\BackOffice\Infrastructure\MplCarrier::readiness() !== null) {
+            echo '<p class="akbo-action-block">' . esc_html(\Appleklinika\BackOffice\Infrastructure\MplCarrier::readiness()) . '</p>';
+        } elseif ($primaryAction === 'create_label' && ! $this->orders->canCreateGlsLabel()) {
             echo '<p class="akbo-action-block">' . esc_html($this->orders->glsReadinessMessage() ?? 'GLS kapcsolat nincs konfigurálva ebben a környezetben.') . ' A rendelés szállításra előkészítve marad.</p>';
         } elseif ($primaryAction !== null) {
             echo '<p class="akbo-help">' . esc_html(match ($primaryAction) {
@@ -391,7 +399,7 @@ final class BackOfficeRouter
                 'prepare_pickup' => 'Készítsd elő a rendelést a személyes átvételre.',
                 'picked_up' => 'Csak a vásárlónak történő tényleges átadás után rögzítsd az átvételt.',
                 'delivered' => 'Csak a kézbesítés visszaigazolása után zárd le a teljesítést.',
-                'handed_to_gls' => 'Csak a futárnak történő tényleges átadás után rögzítsd az átadást.',
+                'handed_to_carrier', 'handed_to_gls' => 'Csak a futárnak történő tényleges átadás után rögzítsd az átadást.',
                 'resume' => 'A probléma rendezése után a rendelés visszakerül az előkészítéshez.',
                 default => 'A következő művelet a rendelés aktuális állapotához kapcsolódik.',
             }) . '</p>';
@@ -400,7 +408,7 @@ final class BackOfficeRouter
             echo '<p class="akbo-help">Ehhez a rendeléshez jelenleg nincs további normál teljesítési lépés.</p>';
         }
 
-        if ($primaryAction !== null && $state !== FulfilmentWorkflow::PROBLEM && ! in_array($state, [FulfilmentWorkflow::HANDED_TO_GLS, FulfilmentWorkflow::PICKED_UP], true)) {
+        if ($primaryAction !== null && $state !== FulfilmentWorkflow::PROBLEM && ! in_array($state, [FulfilmentWorkflow::HANDED_TO_GLS, FulfilmentWorkflow::HANDED_TO_CARRIER, FulfilmentWorkflow::PICKED_UP], true)) {
             echo '<div class="akbo-actions akbo-actions--secondary">' . $this->actionForm($order, 'problem', FulfilmentWorkflow::actions()['problem'], 'akbo-button akbo-button--danger', $worklistContext) . '</div>';
         }
         if ($deliveryMode === DeliveryMode::GLS) {
@@ -503,6 +511,14 @@ final class BackOfficeRouter
             echo '<p class="akbo-help">A korábbi feldolgozási állapot önmagában nem azonosítja a szállítót.</p>';
         } elseif ($mode === DeliveryMode::PICKUP) {
             echo '<p>Személyes átvétel az üzletben. Futárcímke és csomagkövetés nem szükséges.</p>';
+        } elseif ($mode === DeliveryMode::MPL) {
+            echo '<h3>MPL címke és követés</h3><p>' . esc_html(\Appleklinika\BackOffice\Infrastructure\MplCarrier::hasLabel($order) ? 'Címke rögzítve. Átadás előtt zárd le a feladójegyzéket a WooCommerce MPL szállítólevelek felületén.' : (\Appleklinika\BackOffice\Infrastructure\MplCarrier::readiness() ?? 'Még nincs elkészült címke.')) . '</p>';
+            if ((new OrderDocuments())->filePath($order, 'mpl_label') !== null) {
+                $url = wp_nonce_url(add_query_arg(['action'=>'appleklinika_backoffice_download_mpl_label','order_id'=>$order->get_id()],admin_url('admin-post.php')), 'appleklinika_backoffice_download_mpl_label_'.$order->get_id());
+                echo '<p><a class="akbo-button" target="_blank" rel="noopener" href="'.esc_url($url).'">MPL címke megnyitása / nyomtatása</a></p>';
+            }
+            foreach ((new OrderDocuments())->trackingLinks($order) as $link) { echo '<p><a target="_blank" rel="noopener" href="'.esc_url($link['url']).'">MPL: '.esc_html($link['code']).'</a></p>'; }
+            echo '<p class="akbo-help">A címke és a feladójegyzék elkészítése nem jelenti a tényleges postai átadást.</p>';
         } else {
             $this->renderGls($order);
         }

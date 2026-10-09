@@ -104,7 +104,7 @@ final class LifecycleHooks
     public function transitioned(int $id, string $action): void
     {
         if ($action === 'accept_cash_pickup') { $this->queue($id, CustomerNotification::PAID); }
-        if ($action === 'handed_to_gls') {
+        if (in_array($action, ['handed_to_gls','handed_to_carrier'], true)) {
             $this->queue($id, CustomerNotification::SHIPPED);
         }
     }

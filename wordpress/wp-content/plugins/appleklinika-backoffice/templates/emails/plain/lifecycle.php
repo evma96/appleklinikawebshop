@@ -20,7 +20,7 @@ if ($view['accepted'] || $view['received']) {
     }
 } else {
     echo "\nCsomagkövetés\n";
-    foreach ($view['tracking'] as $link) { echo 'GLS csomagszám: ' . $link['code'] . "\n" . $link['url'] . "\n\n"; }
+    foreach ($view['tracking'] as $link) { echo $view['carrier'] . ' csomagszám: ' . $link['code'] . "\n" . $link['url'] . "\n\n"; }
 }
 echo "\n" . $view['delivery_title'] . "\n" . Text::plain($view['shipping']) . "\n";
 if ($view['delivery_address'] !== '') { echo Text::plain($view['delivery_address']) . "\n"; }

@@ -15,6 +15,7 @@ final class FulfilmentWorkflow
     public const PACKING = 'packing';
     public const READY_FOR_SHIPPING = 'ready_for_shipping';
     public const HANDED_TO_GLS = 'handed_to_gls';
+    public const HANDED_TO_CARRIER = 'handed_to_carrier';
     public const DELIVERED = 'delivered';
     public const READY_FOR_PICKUP = 'ready_for_pickup';
     public const PICKED_UP = 'picked_up';
@@ -37,6 +38,7 @@ final class FulfilmentWorkflow
             self::PACKING => 'Csomagolás alatt',
             self::READY_FOR_SHIPPING => 'Szállításra előkészítve',
             self::HANDED_TO_GLS => 'Átadva a GLS-nek',
+            self::HANDED_TO_CARRIER => 'Átadva az MPL-nek',
             self::DELIVERED => 'Teljesítve',
             self::READY_FOR_PICKUP => 'Átvételre előkészítve',
             self::PICKED_UP => 'Átvéve',
@@ -56,6 +58,7 @@ final class FulfilmentWorkflow
         return self::actions() + [
             'open_invoice' => 'Számla PDF megnyitása',
             'open_gls_label' => 'GLS címke PDF megnyitása',
+            'open_mpl_label' => 'MPL címke PDF megnyitása',
         ];
     }
 
@@ -69,6 +72,8 @@ final class FulfilmentWorkflow
             'start_packing' => 'Csomagolás megkezdése',
             'packing_completed' => 'Csomagolás kész',
             'create_label' => 'GLS címke létrehozása',
+            'create_mpl_label' => 'MPL címke létrehozása',
+            'handed_to_carrier' => 'Átadva az MPL-nek',
             'handed_to_gls' => 'Átadva a GLS-nek',
             'delivered' => 'Kézbesítés visszaigazolva – teljesítve',
             'correct' => 'Operatív állapot javítása',
@@ -107,6 +112,11 @@ final class FulfilmentWorkflow
             self::PROBLEM => ['accept_cash_pickup' => self::PREPARATION, 'resume' => self::PREPARATION],
         ];
         $transitions = $deliveryMode === DeliveryMode::PICKUP ? $pickupTransitions : $glsTransitions;
+        if ($deliveryMode === DeliveryMode::MPL) {
+            unset($transitions[self::HANDED_TO_GLS]);
+            $transitions[self::READY_FOR_SHIPPING] = ['create_mpl_label'=>self::READY_FOR_SHIPPING, 'handed_to_carrier'=>self::HANDED_TO_CARRIER, 'problem'=>self::PROBLEM];
+            $transitions[self::HANDED_TO_CARRIER] = ['delivered'=>self::DELIVERED];
+        }
 
         if (! isset($transitions[$currentState][$action])) {
             throw new InvalidArgumentException('Ez a művelet a jelenlegi teljesítési állapotból nem végezhető el.');
@@ -148,7 +158,7 @@ final class FulfilmentWorkflow
     /** @return list<string> */
     public static function terminalStates(): array
     {
-        return [self::HANDED_TO_GLS, self::COMPLETED, self::DELIVERED, self::PICKED_UP];
+        return [self::HANDED_TO_GLS, self::HANDED_TO_CARRIER, self::COMPLETED, self::DELIVERED, self::PICKED_UP];
     }
 
     /** @return array<string, string> */
@@ -168,7 +178,7 @@ final class FulfilmentWorkflow
             self::PREPARATION => 'Előkészítés alatt',
             self::PACKING => 'Csomagolás alatt',
             self::READY_FOR_SHIPPING => 'Szállításra előkészítve',
-            self::HANDED_TO_GLS => 'Átadva a futárszolgálatnak',
+            ($deliveryMode === DeliveryMode::MPL ? self::HANDED_TO_CARRIER : self::HANDED_TO_GLS) => 'Átadva a futárszolgálatnak',
             self::DELIVERED => 'Teljesítve',
         ];
     }
@@ -204,7 +214,7 @@ final class FulfilmentWorkflow
             };
         }
 
-        if ($deliveryMode !== DeliveryMode::GLS) {
+        if (!in_array($deliveryMode, [DeliveryMode::GLS, DeliveryMode::MPL], true)) {
             return null;
         }
 
@@ -212,7 +222,8 @@ final class FulfilmentWorkflow
             self::NEW => 'start',
             self::PREPARATION => 'start_packing',
             self::PACKING => 'packing_completed',
-            self::READY_FOR_SHIPPING => $hasGlsLabel ? 'handed_to_gls' : 'create_label',
+            self::READY_FOR_SHIPPING => $deliveryMode === DeliveryMode::MPL ? ($hasGlsLabel ? 'handed_to_carrier' : 'create_mpl_label') : ($hasGlsLabel ? 'handed_to_gls' : 'create_label'),
+            self::HANDED_TO_CARRIER => 'delivered',
             self::HANDED_TO_GLS => 'delivered',
             self::PROBLEM => 'resume',
             default => null,

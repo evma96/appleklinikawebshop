@@ -7,6 +7,7 @@ if (PHP_SAPI !== 'cli') {
     exit;
 }
 
+require_once dirname(__DIR__) . '/src/Infrastructure/MplCarrier.php';
 require_once dirname(__DIR__) . '/src/Domain/DeliveryMode.php';
 require_once dirname(__DIR__) . '/src/Domain/FulfilmentWorkflow.php';
 require_once dirname(__DIR__) . '/src/Domain/OrderQueueQuery.php';

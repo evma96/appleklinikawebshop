@@ -114,7 +114,7 @@ final class WooOrderBackOfficeRepository
     {
         // A stale display snapshot cannot authorize carrier operations after
         // WooCommerce shipping items have been removed or changed to pickup.
-        return DeliveryMode::fromShippingMethodIds($this->shippingMethodIds($order));
+        return MplCarrier::matches($order) ? DeliveryMode::MPL : DeliveryMode::fromShippingMethodIds($this->shippingMethodIds($order));
     }
 
     public function shippingMethods(WC_Order $order): array
@@ -213,7 +213,7 @@ final class WooOrderBackOfficeRepository
 
     public function primaryAction(WC_Order $order): ?string
     {
-        $next = FulfilmentWorkflow::primaryAction($this->state($order), $this->deliveryMode($order), $this->hasGlsLabel($order));
+        $next = FulfilmentWorkflow::primaryAction($this->state($order), $this->deliveryMode($order), MplCarrier::matches($order) ? MplCarrier::hasLabel($order) : $this->hasGlsLabel($order));
         if (CashPickup::matches($order) && LifecycleConfiguration::submitted($order)) {
             if (in_array($next, ['start', 'resume'], true) && !CashPickup::accepted($order)) { return 'accept_cash_pickup'; }
             if ($next === 'picked_up') { return 'record_cash_pickup'; }
@@ -312,6 +312,7 @@ final class WooOrderBackOfficeRepository
         $action = match ($document) {
             'invoice' => 'open_invoice',
             'gls_label' => 'open_gls_label',
+            'mpl_label' => 'open_mpl_label',
             default => throw new InvalidArgumentException('Ismeretlen dokumentumtípus.'),
         };
         $userId = get_current_user_id();

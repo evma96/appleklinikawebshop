@@ -50,7 +50,7 @@ final class FulfilmentAdmin
             $targets = FulfilmentWorkflow::customerProgressLabels($this->orders->deliveryMode($order));
             $targets[FulfilmentWorkflow::PROBLEM] = 'Probléma';
             foreach ($targets as $target => $label) {
-                if (in_array($target, ['handed_to_gls', 'delivered', 'picked_up'], true)) { continue; }
+                if (in_array($target, ['handed_to_gls', 'handed_to_carrier', 'delivered', 'picked_up'], true)) { continue; }
                 echo '<option value="' . esc_attr($target) . '">' . esc_html($label) . '</option>';
             }
             echo '</select></p><p><label>Javítás indoka <input form="' . esc_attr($form) . '" name="reason" maxlength="500"></label></p>';
