@@ -387,3 +387,5 @@ The E2E found a successful GLS sandbox parcel whose PDF was not saved: WordPress
 ## 2026-10-09 cash/personal-pickup candidate
 
 The previous missing operational acceptance decision is now supplied by the owner: explicit staff stock verification/acceptance, then cash payment at actual pickup. The LOCAL candidate implements this using shared state/history and existing invoice/notification idempotency. Real TEST provider verification remains a deployment gate; no overall non-legal launch PASS is claimed. VirtualJog wording is untouched. See `docs/cash-personal-pickup.md`.
+
+The cash TEST run generated `E-APP-2026-4` once but exposed a missing customer invoice link. The scoped correction adds an owner/nonce-protected cash-pickup download; public upload protection is retained. Provider generation and email behavior are unchanged.

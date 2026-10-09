@@ -418,3 +418,4 @@ is recorded separately from LOCAL fixture results.
 The owner-defined cash-at-pickup branch shares the existing Woo/Back Office lifecycle.
 See [cash personal-pickup workflow](docs/cash-personal-pickup.md) for explicit staff
 acceptance, actual cash collection, TEST-only enablement and verification limits.
+The cash-pickup invoice is available through an authenticated owner-only download on the order page.
