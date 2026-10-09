@@ -15,6 +15,12 @@ WC()->initialize_session();WC()->initialize_cart();WC()->customer->set_shipping_
 $p=new WC_Product_Simple();$p->set_name('MPL LOCAL fixture');$p->set_regular_price('1000');$p->set_weight('1');$p->set_length('20');$p->set_width('15');$p->set_height('5');$p->save();
 $order=null;
 try {
+    $hooks=new \Appleklinika\BackOffice\Interfaces\MplHooks();
+    $block=parse_blocks('<!-- wp:woocommerce/checkout-pickup-options-block --><div class="wp-block-woocommerce-checkout-pickup-options-block"></div><!-- /wp:woocommerce/checkout-pickup-options-block -->')[0];
+    $mounted=$hooks->checkoutBlock($block);
+    $check(count($mounted['innerBlocks'])===1 && str_contains(serialize_block($mounted),'vp-woo-pont/pont-picker-block'),'Supported vendor picker mounted without editing stored checkout');
+    $check($hooks->checkoutBlock($mounted)===$mounted,'Picker mount is idempotent');
+    $check($hooks->checkoutBlock(['blockName'=>'woocommerce/checkout-contact-information-block'])===['blockName'=>'woocommerce/checkout-contact-information-block'],'Other checkout fields untouched');
     WC()->cart->add_to_cart($p->get_id(),1);
     $package=['contents'=>WC()->cart->get_cart(),'destination'=>['country'=>'HU']];
     $shipping=new MplHomeShipping(9942);$rates=$shipping->get_rates_for_package($package);

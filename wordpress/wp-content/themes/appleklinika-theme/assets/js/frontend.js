@@ -808,7 +808,7 @@
         return selected.join(', ');
       }
 
-      var selectedInput = document.querySelector('#shipping-option input:checked');
+      var selectedInput = document.querySelector('#pickup-options input:checked:not([name="vp-woo-pont-provider"]), #shipping-option input:checked');
       var selectedOption = selectedInput
         ? selectedInput.closest('.wc-block-components-radio-control__option, label')
         : null;
@@ -1034,7 +1034,7 @@
     }
 
     function currentShippingReview() {
-      var selected = document.querySelector('#shipping-option input:checked');
+      var selected = document.querySelector('#pickup-options input:checked:not([name="vp-woo-pont-provider"]), #shipping-option input:checked');
       var option = selected ? selected.closest('.wc-block-components-radio-control__option, label') : null;
       var title = option && option.querySelector('.wc-block-components-radio-control__label');
       var price = option && option.querySelector('.wc-block-components-radio-control__secondary-label, .wc-block-components-radio-control__description');
@@ -1217,6 +1217,8 @@
           closestCheckoutStep('.wc-block-checkout__add-note')
         ]),
         3: uniqueElements([
+          closestCheckoutStep('#shipping-method'),
+          closestCheckoutStep('#pickup-options'),
           closestCheckoutStep('#shipping-option'),
           closestCheckoutStep('#payment-method')
         ]),
