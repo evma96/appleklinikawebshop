@@ -17,3 +17,5 @@ Root-only `/etc/appleklinika-ops/alert-smtp.json` holds `host`, `port`, `usernam
 Delivery state is root-private under `/var/lib/appleklinika-ops/alert-delivery.json`. `--exercise` uses separate QA state and does not mask real incidents. SMTP acceptance is recorded separately from the owner's confirmation of actual Inbox delivery. The independent GitHub surface remains available if both the server and its SMTP path fail.
 
 Offline checks: `python3 scripts/operations/external-monitor.py --self-test` and `python3 scripts/operations/monitor-alert.py --self-test`.
+
+The monitor carries returned issue state through each run so delayed GitHub lists cannot duplicate the rapid failure/recovery drill. Existing exact-marker duplicate incidents are closed. Offline stale-list regression checks cover this behavior.

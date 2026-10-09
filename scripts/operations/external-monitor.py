@@ -27,38 +27,45 @@ def transition(old, issues):
     if previous == issues and old['state'] == ('open' if issues else 'closed'): return 'none'
     return 'update'
 
-def sync(issues, call=api):
+def synchronize(cases, call=api):
+    # Read once: GitHub list endpoints can lag immediately after an issue mutation.
     matches=[]
     for page in range(1,11):
         entries=call('GET',f'/issues?state=all&per_page=100&page={page}')
         matches += [e for e in entries if not e.get('pull_request') and MARKER in (e.get('body') or '')]
         if len(entries)<100: break
     else: raise RuntimeError('Issue search limit; refusing duplicate incident')
-    if len(matches)>1: raise RuntimeError('Duplicate incident markers; manual review required')
+    matches.sort(key=lambda e:e['number'])
     old=matches[0] if matches else None
-    action=transition(old,issues)
-    if action=='none': return 'unchanged'
-    body=MARKER+'\n'+('TEST availability incident.' if issues else 'Recovered: both TEST HTTPS endpoints respond successfully.')+'\n\n'+'\n'.join('- '+i for i in issues)+'\n\nUpdated: '+datetime.datetime.now(datetime.timezone.utc).isoformat()+'\nNo server credentials or customer data are included. `qa_monitor_failure` is a controlled alert/recovery drill.'
-    if action=='create': call('POST','/issues',{'title':TITLE,'body':body})
-    else: call('PATCH','/issues/'+str(old['number']),{'body':body,'state':'open' if issues else 'closed'})
-    return action
+    # Retire only duplicate incidents carrying our exact machine marker.
+    for duplicate in matches[1:]:
+        if duplicate['state']=='open':
+            call('PATCH','/issues/'+str(duplicate['number']),{'state':'closed','body':'Superseded by #'+str(old['number'])+'. '+MARKER})
+    results=[]
+    for issues in cases:
+        action=transition(old,issues)
+        if action=='none': results.append('unchanged');continue
+        body=MARKER+'\n'+('TEST availability incident.' if issues else 'Recovered: both TEST HTTPS endpoints respond successfully.')+'\n\n'+'\n'.join('- '+i for i in issues)+'\n\nUpdated: '+datetime.datetime.now(datetime.timezone.utc).isoformat()+'\nNo server credentials or customer data are included. `qa_monitor_failure` is a controlled alert/recovery drill.'
+        if action=='create': old=call('POST','/issues',{'title':TITLE,'body':body})
+        else: old=call('PATCH','/issues/'+str(old['number']),{'body':body,'state':'open' if issues else 'closed'})
+        results.append(action)
+    return results
 
 def self_test():
-    state=[];mutations=[]
+    state=[];mutations=[];reads=[]
     def fake(method,path,data=None):
-        if method=='GET': return state
+        if method=='GET': reads.append(path);return []  # Deliberately stale list.
         mutations.append((method,data))
         if method=='POST': state.append(dict(data,number=1,state='open'))
         else: state[0].update(data)
-        return state[0]
-    assert sync([],fake)=='unchanged'
-    assert sync(['qa_monitor_failure'],fake)=='create'
-    assert sync(['qa_monitor_failure'],fake)=='unchanged'
-    assert sync([],fake)=='update'
-    assert sync([],fake)=='unchanged'
-    assert sync(['https_unavailable'],fake)=='update'
-    assert len(state)==1 and len(mutations)==3
-    print('7 external-monitor failure/dedup/recovery checks passed; no network.')
+        return dict(state[0])
+    cases=[[],['qa_monitor_failure'],['qa_monitor_failure'],[],[],['https_unavailable']]
+    assert synchronize(cases,fake)==['unchanged','create','unchanged','update','unchanged','update']
+    assert len(state)==1 and len(mutations)==3 and len(reads)==1
+    assert state[0]['state']=='open'
+    assert transition({'state':'closed','body':MARKER},[])=='none'
+    assert transition({'state':'open','body':MARKER+'\n- http'},['http'])=='none'
+    print('5 external-monitor stale-list/failure/dedup/recovery assertions passed; no network.')
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--self-test',action='store_true');p.add_argument('--exercise',action='store_true');a=p.parse_args()
@@ -70,8 +77,9 @@ def main():
         if not issues: break
         if attempt<2: time.sleep(30)
     if a.exercise and not issues:
-        sync(['qa_monitor_failure']);sync(['qa_monitor_failure']);sync([])
+        result=synchronize([['qa_monitor_failure'],['qa_monitor_failure'],[]])
         print('Controlled external failure/recovery drill completed.')
-    print(json.dumps({'status':'alert' if issues else 'ok','issues':issues,'incident':sync(issues)}))
+    else: result=synchronize([issues])
+    print(json.dumps({'status':'alert' if issues else 'ok','issues':issues,'incident':result}))
     if issues: raise SystemExit(1)
 if __name__=='__main__': main()
