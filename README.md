@@ -240,3 +240,5 @@ http://localhost:8080/wp-admin/admin.php?appleklinika_seed_selector_demo=confirm
 ```
 
 The seeder is idempotent by SKU, so rerunning it updates the same local selector demo products instead of creating endless duplicates.
+
+Independent TEST availability monitoring is documented in [docs/test-monitoring.md](docs/test-monitoring.md). This default feature branch carries only the public monitoring workflow; application deployment continues from `develop/post-deploy`.
