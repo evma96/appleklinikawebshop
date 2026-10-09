@@ -54,6 +54,7 @@ add_action('plugins_loaded', static function (): void {
     $router->register();
     if (Appleklinika\BackOffice\Infrastructure\LifecycleConfiguration::isTestEnvironment()) {
         (new Appleklinika\BackOffice\Interfaces\FulfilmentAdmin($change, $orders))->register();
+        (new Appleklinika\BackOffice\Interfaces\CashPickupHooks())->register();
         $store = new Appleklinika\BackOffice\Infrastructure\WooOrderLifecycleStore();
         $lifecycle = new Appleklinika\BackOffice\Application\OrderLifecycle($store, $mutex,
             new Appleklinika\BackOffice\Infrastructure\SzamlazzAutomation(), new Appleklinika\BackOffice\Infrastructure\WooCustomerMailer());

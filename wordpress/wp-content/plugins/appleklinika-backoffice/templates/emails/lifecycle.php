@@ -16,9 +16,9 @@ if (! defined('ABSPATH')) { exit; }
 <h1 class="ak-email-title" style="margin:0 0 24px;font-family:Arial,Helvetica,sans-serif;font-size:34px;line-height:1.16;font-weight:bold;letter-spacing:-0.7px;text-align:left;color:#202124;"><?php echo esc_html($heading); ?></h1>
 <p style="margin:0 0 12px;font-size:16px;line-height:1.6;"><?php echo esc_html($view['greeting']); ?></p>
 <p style="margin:0 0 22px;font-size:16px;line-height:1.6;"><?php echo esc_html($view['intro']); ?></p>
-<?php if ($view['paid'] || $view['received']): ?>
+<?php if ($view['accepted'] || $view['received']): ?>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;background:#f7f8fa;"><tr><td style="padding:16px 18px;font-size:14px;line-height:1.7;">
-<strong style="color:#202124;"><?php echo $view['paid'] ? 'Fizetve' : 'Választott fizetési mód'; ?></strong><?php if ($view['payment'] !== ''): ?> · <?php echo esc_html($view['payment']); ?><?php endif; ?><br>
+<strong style="color:#202124;"><?php echo $view['paid'] ? 'Fizetve' : ($view['cash'] ? 'Fizetés készpénzben, átvételkor' : 'Választott fizetési mód'); ?></strong><?php if ($view['payment'] !== ''): ?> · <?php echo esc_html($view['payment']); ?><?php endif; ?><br>
 <?php if ($view['date'] !== ''): ?>Rendelés dátuma: <?php echo esc_html($view['date']); ?><?php endif; ?>
 </td></tr></table>
 <?php if ($view['expected_fulfilment'] !== ''): ?><p style="margin:16px 0;font-size:14px;line-height:1.7;"><?php echo esc_html($view['expected_fulfilment']); ?></p><?php endif; ?>

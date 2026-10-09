@@ -13,7 +13,19 @@ final class WooFulfilmentStore implements FulfilmentStore
         $order = $this->order($id);
         return ['state' => $this->orders->state($order), 'mode' => $this->orders->deliveryMode($order),
             'blocked' => $this->orders->fulfilmentBlockReason($order), 'label' => $this->orders->hasGlsLabel($order),
-            'tracking' => (new OrderDocuments())->trackingLinks($order) !== []];
+            'tracking' => (new OrderDocuments())->trackingLinks($order) !== [],
+            'cash' => CashPickup::matches($order) && LifecycleConfiguration::submitted($order),
+            'cash_accepted' => CashPickup::matches($order) && CashPickup::accepted($order)];
+    }
+
+    public function verifyCashReservation(int $id): void
+    {
+        (new CashPickup())->verifyReservation($this->order($id));
+    }
+
+    public function recordCashPayment(int $id, int $actor): void
+    {
+        (new CashPickup())->recordPayment($this->order($id), $actor);
     }
 
     public function createLabel(int $id): void

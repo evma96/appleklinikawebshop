@@ -221,7 +221,7 @@ final class BackOfficeRouter
             $state = $this->orders->state($order);
             $mode = $this->orders->deliveryMode($order);
             $block = $this->orders->fulfilmentBlockReason($order);
-            $next = FulfilmentWorkflow::primaryAction($state, $mode, $this->orders->hasGlsLabel($order));
+            $next = $this->orders->primaryAction($order);
             $closed = $order->has_status('completed') || in_array($state, [FulfilmentWorkflow::HANDED_TO_GLS, FulfilmentWorkflow::PICKED_UP], true);
             $attention = $closed ? '' : $this->attention($order, $state);
             $nextLabel = $closed ? 'Feldolgozás lezárva' : ($block !== null ? ($attention ?: 'Átvételi mód ellenőrzése') : ($next !== null ? FulfilmentWorkflow::actions()[$next] : 'Rendelés ellenőrzése'));
@@ -378,11 +378,13 @@ final class BackOfficeRouter
         }
 
         $hasGlsLabel = $deliveryMode === DeliveryMode::GLS && $this->orders->hasGlsLabel($order);
-        $primaryAction = FulfilmentWorkflow::primaryAction($state, $deliveryMode, $hasGlsLabel);
+        $primaryAction = $this->orders->primaryAction($order);
         if ($primaryAction === 'create_label' && ! $this->orders->canCreateGlsLabel()) {
             echo '<p class="akbo-action-block">' . esc_html($this->orders->glsReadinessMessage() ?? 'GLS kapcsolat nincs konfigurálva ebben a környezetben.') . ' A rendelés szállításra előkészítve marad.</p>';
         } elseif ($primaryAction !== null) {
             echo '<p class="akbo-help">' . esc_html(match ($primaryAction) {
+                'accept_cash_pickup' => 'Ellenőrizd és tedd félre a rendelés készülékeit. Ez a művelet elküldi a rendelés elfogadását; a fizetés továbbra is átvételkor esedékes.',
+                'record_cash_pickup' => 'Csak a tényleges készpénzfizetés és személyes átadás után rögzítsd. A fizetéshez egyszer készül számla.',
                 'start' => 'Vedd munkába a rendelést, és ellenőrizd a megrendelt készüléket.',
                 'start_packing' => 'Az ellenőrzött készülék és a tartozékok csomagolása következik.',
                 'packing_completed' => 'A csomag lezárása után jelöld szállításra késznek.',
@@ -690,6 +692,9 @@ final class BackOfficeRouter
 
     private function paymentLabel(WC_Order $order): string
     {
+        if (\Appleklinika\BackOffice\Infrastructure\CashPickup::matches($order)) {
+            return $order->is_paid() ? 'Készpénzfizetés rögzítve' : 'Fizetés készpénzben, személyes átvételkor';
+        }
         if ($order->is_paid()) {
             // WooCommerce marks COD as processing before cash collection.
             return $order->get_payment_method() === 'cod' ? 'Utánvét' : 'Fizetés rendben';

@@ -11,10 +11,11 @@ use Appleklinika\BackOffice\Domain\{LifecycleOrder, CustomerNotification as Even
 
 final class MemoryOrders implements OrderLifecycleStore
 {
+    public bool $cash = false, $cashAccepted = false;
     public bool $managed = true, $paid = true, $handoff = false, $submitted = false, $submissionEligible = false;
     public string $status = 'processing', $number = '', $pdf = '';
     public array $tracking = [], $emails = [], $invoice = [], $issues = [];
-    public function order(int $id): ?LifecycleOrder { return new LifecycleOrder($id, $this->managed, $this->paid, $this->status, $this->number, $this->pdf, $this->handoff, $this->tracking, $this->submitted, $this->submissionEligible); }
+    public function order(int $id): ?LifecycleOrder { return new LifecycleOrder($id, $this->managed, $this->paid, $this->status, $this->number, $this->pdf, $this->handoff, $this->tracking, $this->submitted, $this->submissionEligible, $this->cash, $this->cashAccepted); }
     public function recordSubmission(int $id): void { $this->submitted = true; }
     public function notification(int $id, string $event): array { return $this->emails[$event] ?? []; }
     public function recordNotification(int $id, string $event, array $record): void { $this->emails[$event] = $record; }
@@ -131,8 +132,11 @@ final class FulfilmentFixture implements FulfilmentStore
     public array $order = ['state' => 'new', 'mode' => 'gls', 'blocked' => null, 'label' => false, 'tracking' => false];
     public array $events = []; public int $labels = 0;
     public function snapshot(int $id): array { return $this->order; }
+    public int $cashChecks = 0, $cashPayments = 0;
+    public function verifyCashReservation(int $id): void { ++$this->cashChecks; }
+    public function recordCashPayment(int $id, int $actor): void { ++$this->cashPayments; }
     public function createLabel(int $id): void { ++$this->labels; $this->order['label'] = $this->order['tracking'] = true; }
-    public function record(int $id, string $action, string $to, int $actor, string $reason): void { $this->order['state'] = $to; $this->events[] = compact('action', 'to', 'actor', 'reason'); }
+    public function record(int $id, string $action, string $to, int $actor, string $reason): void { $this->order['state'] = $to; if ($action === 'accept_cash_pickup') { $this->order['cash_accepted'] = true; } $this->events[] = compact('action', 'to', 'actor', 'reason'); }
 }
 $ful = new FulfilmentFixture(); $change = new ChangeFulfilment($ful, new FixtureMutex());
 foreach (['start', 'start_packing', 'packing_completed'] as $action) { $change->execute(1, $action, 7, $ful->order['state']); }
@@ -148,4 +152,33 @@ $assert(end($ful->events)['reason'] === 'Recorded too early' && end($ful->events
 try { $change->execute(1, 'correct', 8, 'packing', 'handed_to_gls', 'Skip'); $assert(false, 'Correction cannot fake actual handoff.'); } catch (InvalidArgumentException) { $assert(true, 'Only handoff action records carrier handoff.'); }
 $ful->order['blocked'] = 'Unpaid';
 try { $change->execute(1, 'packing_completed', 7, 'packing'); $assert(false, 'Unpaid must reject.'); } catch (InvalidArgumentException) { $assert(true, 'Unpaid operation rejected.'); }
+// Cash has the same notification ledger but staff acceptance precedes payment.
+[$store, $invoice, $mailer, $service] = $new();
+$store->cash = true; $store->paid = false; $store->status = 'on-hold'; $store->submissionEligible = true;
+$service->orderSubmitted(1); $service->notify(1, Event::RECEIVED);
+$assert($service->notify(1, Event::PAID) === 'ineligible', 'Cash cannot self-accept at submission.');
+$store->cashAccepted = true;
+$assert($service->notify(1, Event::PAID) === 'accepted', 'Staff cash acceptance does not require payment or an invoice.');
+$service->paymentConfirmed(1);
+$assert($invoice->calls === 0 && $mailer->sent === [Event::RECEIVED, Event::PAID], 'Unpaid pickup never invoices.');
+$store->paid = true; $store->status = 'processing';
+for ($i=0; $i<4; ++$i) { $service->paymentConfirmed(1); $service->notify(1, Event::PAID); }
+$assert($invoice->calls === 1 && $mailer->sent === [Event::RECEIVED, Event::PAID], 'Real pickup payment invoices once without another acceptance email.');
+$store->handoff = true; $store->tracking = [['code'=>'123','url'=>'fixture']];
+$assert($service->notify(1, Event::SHIPPED) === 'ineligible', 'Pickup never sends carrier email even with stray tracking metadata.');
+$ful = new FulfilmentFixture();
+$ful->order['mode']='pickup'; $ful->order['cash']=true; $ful->order['cash_accepted']=false;
+$change = new ChangeFulfilment($ful, new FixtureMutex());
+foreach (['start', 'prepare_pickup', 'record_cash_pickup'] as $action) {
+    try { $change->execute(1,$action,7,'new'); $assert(false,'Unaccepted cash cannot progress.'); } catch (InvalidArgumentException) { $assert(true,'Unaccepted cash rejected.'); }
+}
+try { $change->execute(1,'correct',7,'new','ready_for_pickup','skip'); $assert(false,'Correction cannot accept cash.'); } catch (InvalidArgumentException) { $assert(true,'Correction cannot accept cash.'); }
+$change->execute(1,'accept_cash_pickup',7,'new');
+$assert($ful->cashChecks===1 && $ful->order['state']==='preparation', 'Staff verifies reserved stock through shared service.');
+$change->execute(1,'prepare_pickup',7,'preparation');
+try { $change->execute(1,'picked_up',7,'ready_for_pickup'); $assert(false,'Generic pickup cannot skip payment.'); } catch (InvalidArgumentException) { $assert(true,'Generic pickup rejected for cash.'); }
+$change->execute(1,'record_cash_pickup',7,'ready_for_pickup');
+try { $change->execute(1,'record_cash_pickup',7,'ready_for_pickup'); $assert(false,'Retry cannot repeat payment.'); } catch (InvalidArgumentException) { $assert(true,'Duplicate cash handoff rejected.'); }
+$assert($ful->cashPayments===1 && $ful->order['state']==='picked_up', 'One pickup payment and shared terminal state.');
+$assert(count($ful->events)===3 && $ful->events[0]['actor']===7, 'Acceptance, preparation and cash handoff are audited once.');
 echo "Order lifecycle: $n assertions passed; no database, email, or provider calls.\n";

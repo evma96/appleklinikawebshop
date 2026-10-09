@@ -383,3 +383,7 @@ The E2E found a successful GLS sandbox parcel whose PDF was not saved: WordPress
   business/legal decision. It was not silently enabled or given a new rule.
 - Current TEST legal pages are still sample documents. Exact comparison against
   current VirtualJog wording requires that document; no authoritative copy is invented.
+
+## 2026-10-09 cash/personal-pickup candidate
+
+The previous missing operational acceptance decision is now supplied by the owner: explicit staff stock verification/acceptance, then cash payment at actual pickup. The LOCAL candidate implements this using shared state/history and existing invoice/notification idempotency. Real TEST provider verification remains a deployment gate; no overall non-legal launch PASS is claimed. VirtualJog wording is untouched. See `docs/cash-personal-pickup.md`.

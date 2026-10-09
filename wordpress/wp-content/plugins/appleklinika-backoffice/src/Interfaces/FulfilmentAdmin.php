@@ -41,7 +41,7 @@ final class FulfilmentAdmin
             // Avoid nested forms inside the Woo order editor.
             $form = 'akbo-fulfilment-' . $order->get_id();
             echo '<p><select form="' . esc_attr($form) . '" name="operation">';
-            $next = FulfilmentWorkflow::primaryAction($state, $this->orders->deliveryMode($order), $this->orders->hasGlsLabel($order));
+            $next = $this->orders->primaryAction($order);
             if ($next !== null) {
                 echo '<option value="' . esc_attr($next) . '">' . esc_html(FulfilmentWorkflow::actions()[$next]) . '</option>';
             }
