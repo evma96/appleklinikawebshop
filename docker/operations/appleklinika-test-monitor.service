@@ -4,5 +4,5 @@ After=docker.service
 [Service]
 Type=oneshot
 ExecStart=/usr/local/lib/appleklinika-ops/test-monitor.py
-TimeoutStartSec=90
+TimeoutStartSec=150
 UMask=0077
