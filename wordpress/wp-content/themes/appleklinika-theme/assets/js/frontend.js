@@ -1012,6 +1012,12 @@
     }
 
     function addressReview(prefix) {
+      // Read the maintained pickup widget's selected address; never fabricate one.
+      var pickup = document.querySelector('#pickup-options input:checked[value^="vp_pont:"]');
+      var point = pickup && document.querySelector('.vp-woo-pont-block-selected-info');
+      if (prefix === 'shipping' && point) {
+        return Array.prototype.map.call(point.children, function (line) { return line.textContent.trim(); }).filter(Boolean);
+      }
       var addressPrefix = checkoutAddressFieldPrefix(prefix);
       var companyPurchase = prefix === 'billing'
         && document.getElementById('order-appleklinika-company_purchase')
