@@ -43,6 +43,10 @@ try {
     $order->update_meta_data('_appleklinika_lifecycle_email_order_received',['state'=>'accepted']);
     $order->update_meta_data('_appleklinika_lifecycle_email_paid_invoice',['state'=>'accepted']);$order->save();$id=$order->get_id();$mail=[];
     $repo=new WooOrderBackOfficeRepository();$store=new WooFulfilmentStore($repo);$change=new ChangeFulfilment($store,new WooOrderMutex());
+    $order->update_meta_data('_wc_shipping/appleklinika/house_number','99');
+    $order->update_meta_data('_wc_billing/appleklinika/house_number','99');
+    MplCarrier::usePointAddress($order);
+    $check($order->get_meta('_wc_shipping/appleklinika/house_number',true)==='' && $order->get_meta('_wc_billing/appleklinika/house_number',true)==='99','Postal point cannot inherit customer house number; billing preserved');
     $check($repo->deliveryMode($order)===M::MPL,'Point metadata selects MPL');
     $check($repo->deliveryModeLabel($order)==='MPL kézbesítés','MPL in Back Office');
     $check($repo->primaryAction($order)==='start','Shared workflow starts normally');
