@@ -410,3 +410,7 @@ The owner confirmed receipt of both operations QA messages. Inbox display/arriva
 ## Production backup readiness gates
 
 The reusable encrypted backup candidate and Storage Box transfer adapter are disabled. Actual always-on independent storage, restricted credentials/host pin, remote retention/snapshots and off-Mac recovery-key custody need owner provisioning/approval. A real remote transfer and isolated restore are required before production backup acceptance. Existing proven TEST backups remain active and unchanged.
+
+## Conservative LOW follow-up
+
+LOCAL private-config permissions, unused XML-RPC, trivial public user enumeration and compatible TEST headers are addressed in the scoped candidate. Obsolete inactive defaults are removed while active integrations and a fallback theme remain. Legacy cloud SSH /32 removal still needs the expired Hetzner session restored; WireGuard is healthy. See `docs/security-low-followup.md`.

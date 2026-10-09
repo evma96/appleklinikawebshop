@@ -53,6 +53,7 @@ add_action('plugins_loaded', static function (): void {
     $router = new Appleklinika\BackOffice\Interfaces\BackOfficeRouter($orders, $change);
     $router->register();
     if (Appleklinika\BackOffice\Infrastructure\LifecycleConfiguration::isTestEnvironment()) {
+        (new Appleklinika\BackOffice\Infrastructure\PublicSurfaceSecurity())->register();
         (new Appleklinika\BackOffice\Interfaces\FulfilmentAdmin($change, $orders))->register();
         (new Appleklinika\BackOffice\Interfaces\CashPickupHooks())->register();
         if (get_option('appleklinika_mpl_enabled','no') === 'yes') { (new Appleklinika\BackOffice\Interfaces\MplHooks())->register(); }

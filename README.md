@@ -433,3 +433,5 @@ External monitor follow-up: GitHub issue-list eventual consistency during the fi
 The owner confirmed receipt of both operations QA messages. Inbox display/arrival ordering is clarified separately; alerts include explicit RFC Date, unique Message-ID and UTC event time. These presentation headers do not change incident deduplication.
 
 Disabled production backup preparation and encrypted off-server transfer: [backup readiness](docs/production-backup-readiness.md). Active TEST backups are unchanged; no production timer or paid target is enabled.
+
+Conservative TEST surface restrictions, compatible headers and inactive dependency removal: [LOW security follow-up](docs/security-low-followup.md). No CSP redesign or active provider update.
