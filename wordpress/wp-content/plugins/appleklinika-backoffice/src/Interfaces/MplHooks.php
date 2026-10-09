@@ -11,6 +11,7 @@ final class MplHooks
     {
         add_filter('render_block_data', [$this,'checkoutBlock']);
         add_action('wp_enqueue_scripts', [$this,'checkoutStyles'], 100);
+        add_action('woocommerce_store_api_checkout_update_order_from_request', [MplCarrier::class,'usePointAddress'], 100);
         add_filter('pre_http_request', [$this,'providerGuard'], 90, 3);
         add_filter('vp_woo_pont_import_database_providers', static fn() => ['postapont']);
         add_filter('vp_woo_pont_shipping_cost_based_on_gross_total', '__return_true');

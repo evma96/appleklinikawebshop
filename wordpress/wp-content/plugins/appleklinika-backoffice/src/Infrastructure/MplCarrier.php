@@ -13,6 +13,16 @@ final class MplCarrier
         return $ids === ['ak_mpl_home'] || ($ids === ['vp_pont'] && in_array($order->get_meta('_vp_woo_pont_provider', true), self::POINTS, true));
     }
 
+    public static function usePointAddress(\WC_Order $order): void
+    {
+        if (!self::matches($order) || !in_array($order->get_meta('_vp_woo_pont_provider',true),self::POINTS,true)) { return; }
+        // The vendor owns the complete point address. Customer apartment/house
+        // additions belong to the billing/home address, never the postal point.
+        foreach (['house_number','floor','staircase','door'] as $field) {
+            $order->delete_meta_data('_wc_shipping/appleklinika/'.$field);
+        }
+    }
+
     public static function hasLabel(\WC_Order $order): bool
     {
         return self::matches($order) && (string)$order->get_meta('_vp_woo_pont_parcel_id', true) !== ''
