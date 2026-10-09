@@ -104,3 +104,5 @@
 - Which Apple product family should be added after iPad, MacBook, and Apple Watch: AirPods, accessories, or another device line?
 - Should production catalog deletion become archive-only after real products depend on catalog values?
 - Who owns the final legal text for ÁSZF, privacy, warranty, shipping, and returns pages?
+
+Independent TEST availability monitoring is documented in [docs/test-monitoring.md](docs/test-monitoring.md). This default feature branch carries only the public monitoring workflow; application deployment continues from `develop/post-deploy`.
