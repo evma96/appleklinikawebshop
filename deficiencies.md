@@ -106,3 +106,5 @@
 - Who owns the final legal text for ÁSZF, privacy, warranty, shipping, and returns pages?
 
 Independent TEST availability monitoring is documented in [docs/test-monitoring.md](docs/test-monitoring.md). This default feature branch carries only the public monitoring workflow; application deployment continues from `develop/post-deploy`.
+
+The monitor carries returned issue state through each run so delayed GitHub lists cannot duplicate the rapid failure/recovery drill. Existing exact-marker duplicate incidents are closed. Offline stale-list regression checks cover this behavior.
