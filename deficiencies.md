@@ -404,3 +404,5 @@ MPL 4.2.8 map compatibility: the upstream markercluster bundle reads mutable glo
 Independent GitHub availability and standalone authenticated internal SMTP alerting are implemented in `docs/test-monitoring.md`. Actual workflow execution and controlled failure/recovery delivery must be verified separately; SMTP acceptance alone does not prove Inbox receipt. GitHub schedules are best-effort and require repository/issue notification subscription for human notification.
 
 External monitor follow-up: GitHub issue-list eventual consistency during the first rapid drill produced duplicate surfaces. The monitor now reads once per run and carries mutation responses through the sequence, with an offline stale-list regression check. Exact-marker duplicates are closed while the oldest incident is retained.
+
+The owner confirmed receipt of both operations QA messages. Inbox display/arrival ordering is clarified separately; alerts include explicit RFC Date, unique Message-ID and UTC event time. These presentation headers do not change incident deduplication.

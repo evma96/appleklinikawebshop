@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Standalone TEST SMTP alerts; independent of WordPress/container availability."""
-import argparse, email.message, json, os, pathlib, smtplib, socket, ssl, time
+import argparse, email.message, email.utils, datetime, json, os, pathlib, smtplib, socket, ssl, time
 
 ROOT = pathlib.Path('/var/lib/appleklinika-ops')
 CONFIG = pathlib.Path('/etc/appleklinika-ops/alert-smtp.json')
@@ -12,11 +12,14 @@ def notify(config, issues):
     if config['from'] != 'info@appleklinika.hu' or config['username'] != config['from']:
         raise ValueError('Unexpected approved sender')
     message = email.message.EmailMessage()
+    message['Date'] = email.utils.formatdate(localtime=False, usegmt=True)
+    message['Message-ID'] = email.utils.make_msgid(domain='appleklinika.hu')
+    event_time = datetime.datetime.now(datetime.timezone.utc).isoformat()
     message['From'] = 'Apple Klinika <'+config['from']+'>'
     message['Reply-To'] = config['from']
     message['To'] = config['recipient']
     message['Subject'] = '[Apple Klinika TEST] '+('Üzemeltetési riasztás' if issues else 'Helyreállt a működés')
-    message.set_content('TEST környezet. '+('Ellenőrzést igényel: '+', '.join(issues) if issues else 'A korábban jelzett eltérés megszűnt.')+'\n\nAzonos állapotról nem küldünk ismétlődő levelet. A qa_monitor_failure ellenőrzött értesítési próba.\n')
+    message.set_content('Esemény ideje (UTC): '+event_time+'\nTEST környezet. '+('Ellenőrzést igényel: '+', '.join(issues) if issues else 'A korábban jelzett eltérés megszűnt.')+'\n\nAzonos állapotról nem küldünk ismétlődő levelet. A qa_monitor_failure ellenőrzött értesítési próba.\n')
     # No SMTP debug mode or unauthenticated sendmail fallback.
     with smtplib.SMTP(config['host'], config['port'], timeout=20) as smtp:
         smtp.ehlo(); smtp.starttls(context=ssl.create_default_context()); smtp.ehlo()
