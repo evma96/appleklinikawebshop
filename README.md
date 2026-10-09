@@ -427,3 +427,5 @@ MPL Blocks integration uses Woo's native pickup feature and the maintained selec
 MPL 4.2.8 map compatibility: the upstream markercluster bundle reads mutable global `L`, allowing another map widget to break initialization. A checksum-guarded, one-line Browserify module binding (`scripts/mpl-selector-compat.py`) uses the same bundled Leaflet instance. No provider, licensing, GLS or legal behavior is changed. Re-review this patch when updating the pinned dependency.
 
 Independent public TEST availability and authenticated human operations alerts: [monitoring](docs/test-monitoring.md). Credentials remain root-private, and one incident/state transition suppresses repeated alerts.
+
+External monitor follow-up: GitHub issue-list eventual consistency during the first rapid drill produced duplicate surfaces. The monitor now reads once per run and carries mutation responses through the sequence, with an offline stale-list regression check. Exact-marker duplicates are closed while the oldest incident is retained.
