@@ -16,6 +16,8 @@ $p=new WC_Product_Simple();$p->set_name('MPL LOCAL fixture');$p->set_regular_pri
 $order=null;
 try {
     $hooks=new \Appleklinika\BackOffice\Interfaces\MplHooks();
+    $labels=$hooks->checkoutBlock(['blockName'=>'woocommerce/checkout-shipping-method-block']);
+    $check($labels['attrs']['shippingText']==='Kiszállítás' && $labels['attrs']['localPickupText']==='Átvételi pont vagy üzlet','Native delivery choice uses clear Hungarian labels');
     $block=parse_blocks('<!-- wp:woocommerce/checkout-pickup-options-block --><div class="wp-block-woocommerce-checkout-pickup-options-block"></div><!-- /wp:woocommerce/checkout-pickup-options-block -->')[0];
     $mounted=$hooks->checkoutBlock($block);
     $check(count($mounted['innerBlocks'])===1 && str_contains(serialize_block($mounted),'vp-woo-pont/pont-picker-block'),'Supported vendor picker mounted without editing stored checkout');

@@ -29,11 +29,15 @@ final class MplHooks
         if (!is_checkout()) { return; }
         // Vendor assumes only its own pickup method when no new-style locations exist.
         // Keep the already configured legacy in-store pickup visible beside MPL.
-        wp_add_inline_style('vp-woo-pont-picker-block', '#pickup-options .wc-block-components-local-pickup-rates-control{display:block!important} #shipping-method .wc-block-checkout__shipping-method-option-price{font-size:inherit!important} #shipping-method .wc-block-checkout__shipping-method-option-price:after{content:none!important}');
+        wp_add_inline_style('vp-woo-pont-picker-block', '#pickup-options .wc-block-components-local-pickup-rates-control{display:block!important} #pickup-options .wc-block-components-radio-control__secondary-label[id*="vp_pont"]:after{content:none!important} #pickup-options .wc-block-components-radio-control__secondary-label[id*="vp_pont"] .wc-block-formatted-money-amount{font-size:inherit!important} #shipping-method .wc-block-checkout__shipping-method-option-price{font-size:inherit!important} #shipping-method .wc-block-checkout__shipping-method-option-price:after{content:none!important}');
     }
     /** Mount the maintained vendor block in its supported native pickup parent. */
     public function checkoutBlock(array $block): array
     {
+        if (($block['blockName'] ?? '') === 'woocommerce/checkout-shipping-method-block') {
+            $block['attrs']['shippingText']='Kiszállítás';
+            $block['attrs']['localPickupText']='Átvételi pont vagy üzlet';
+        }
         if (($block['blockName'] ?? '') !== 'woocommerce/checkout-pickup-options-block') { return $block; }
         foreach ($block['innerBlocks'] ?? [] as $child) {
             if (($child['blockName'] ?? '') === 'vp-woo-pont/pont-picker-block') { return $block; }
