@@ -73,3 +73,18 @@ Execute `tests/prelaunch-presentation.php` in the local WordPress PHP environmen
 Run the browser gate with Node/Playwright and `BASE_URL=http://localhost:8080`.
 Optional paths: `PLAYWRIGHT_MODULE`, `CHROME_EXECUTABLE`, `EVIDENCE_DIR`.
 The browser gate refuses non-local hosts and uses fresh isolated contexts.
+
+
+## Final TEST audit: active filter chips (2026-10-14)
+
+On TEST release `eb5dbddef633c04043adb1a1292ff9b4d41d7022`, applying the
+MacBook Air 13-inch M2 and price filters at 390 px left active chips at x=384 px,
+producing a 500 px document and an unnecessary blank area above the results.
+The responsive stylesheet already removes the desktop sidebar offset from results
+and pagination at <=900 px; the same rule now includes `.ak-active-filter-chips`.
+No selector, product-card, header, or checkout behavior changes.
+
+The actual stylesheet was checked in a LOCAL browser fixture at 390, 768 and
+1280 px: document width equals viewport width and all chips remain inside it;
+left margin is 0, 0 and 348 px respectively. Actual TEST screenshots and the
+post-deployment acceptance belong to the private final non-legal audit evidence.

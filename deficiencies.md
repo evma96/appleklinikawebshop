@@ -10,6 +10,12 @@
 - Define how separate products should be grouped in production so color/storage/grade cards switch only between the intended inventory items.
 - Confirm whether the current same-model grouping is enough for production, or whether a dedicated model group / SKU group meta field is needed.
 
+## Closed during final TEST visual audit (2026-10-14)
+
+- Active catalogue filter chips retained a 348 px desktop offset on mobile, pushing
+  the controls outside a 390 px viewport. The existing <=900 px margin reset now
+  includes the chips. Desktop alignment and filter behavior are unchanged.
+
 ## Known Limitations
 
 - The publication-safety repair sanitizes 40 images from their first unpublished

@@ -29,6 +29,8 @@ of two obsolete LOCAL Additional CSS rules (a data-only cleanup, not deployment)
 The focused LOCAL pre-launch presentation acceptance (category navigation, compact
 mobile filters, existing Hungarian Woo translations and real-photo gallery) is
 documented in [`docs/qa/prelaunch-visible-polish.md`](docs/qa/prelaunch-visible-polish.md).
+The final TEST audit found active filter chips retaining the desktop sidebar offset
+on narrow screens; they now follow the existing one-column layout below 901 px.
 
 Checkout partial-update validation and its local browser regression are documented in
 [`docs/testing-strategy.md`](docs/testing-strategy.md#checkout-partial-update-runtime-contract).
