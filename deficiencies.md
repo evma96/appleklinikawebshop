@@ -1,5 +1,32 @@
 # Deficiencies
 
+## Current disposition — history migration and catalog decision, 2026-10-14
+
+This section supersedes the older dated readiness counts below. **C0 / H0 / M2 / L0**
+for the current non-legal scope. TEST remains usable; production is not approved.
+
+- Public-history rewrite completed: 216 commits, 50 branches and one annotated
+  checkpoint tag; a new public clone passes the 486-image scan. Only three
+  historical JPEG blobs changed, with identical pixels/orientation/ICC. Active
+  media cleanup is also closed: all 321 served assets match verified clean bytes.
+- MEDIUM / PRIVACY: GitHub still serves the three old images by direct old-SHA
+  URLs despite their absence from current branch/tag history. Owner GitHub Support
+  follow-up is required for retained objects/caches; third-party copies cannot be
+  recalled. This residual exposure is not falsely reported as erased.
+- MEDIUM / OPERATIONS: BX11 is not provisioned. Always-on independent encrypted
+  upload/round-trip restore and the owner's offline recovery-key custody remain
+  open. Existing TEST backups, Mac copies and the restored Git safety package pass.
+- Catalog mismatches are **not a production launch blocker**: Martin explicitly
+  supersedes curation with an empty production catalog. Preserve demo products
+  only on TEST; do not fix the 46 mismatches or review the other 76. Enforce the
+  [empty-catalog launch gate](docs/production-empty-catalog-launch.md).
+- Cash order #753 retains its technical PASS; owner Inbox/mobile confirmation is
+  an evidence-only checkbox, not an application defect. No email is resent.
+
+SHA mappings, worktree quarantine, verification and remaining actions:
+[migration record](docs/qa/history-privacy-migration-20261014.md).
+Legal content remains outside this task and is unchanged.
+
 ## Open Decisions
 
 - Confirm the exact public wording and visual examples for grade explanations.

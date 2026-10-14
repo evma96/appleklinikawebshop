@@ -2,6 +2,16 @@
 
 Production-oriented WooCommerce webshop foundation for selling used Apple devices.
 
+Current repository/deployment identities follow the authorized 2026-10-14
+[history migration](docs/qa/history-privacy-migration-20261014.md). Do not merge
+pre-rewrite ancestry back into this repository. Older dated reports retain their
+original evidence SHAs; use the migration table when recovering or deploying.
+
+Production will start with an **empty product catalog**. Existing TEST/demo
+products must not be migrated; Martin will enter real devices with fresh photos.
+The [production catalog gate](docs/production-empty-catalog-launch.md) records
+this decision without deleting useful TEST fixtures or authorizing deployment.
+
 The read-only Számlázz.hu/GLS order-field adapters and their isolated preview
 regression are documented in [`docs/order-provider-mapping.md`](docs/order-provider-mapping.md).
 
