@@ -178,3 +178,7 @@ docker exec ak-homepage-preview php /var/www/html/wp-content/themes/appleklinika
 
 Real SMTP delivery and publication of final public email/hours remain owner-approved
 follow-ups, not prerequisites silently fabricated by this visual pass.
+
+## Final owner-confirmed physical store address — 2026-10-14
+
+Use **6722 Szeged, Jósika utca 4.** for the store and personal pickup, separately from the registered company seat. The owner confirmed this explicitly after the read-only address matrix. Google embed and Apple Maps/Waze coordinates remain unchanged. Slides 1, 2 and 4 now use corrected address artwork and generated responsive sizes; the first slide alt and media-library alt match. Dated recovery snapshots are historical: after any restoration, reapply this canonical address and the corrected current assets. Do not rewrite VirtualJog documents as part of store-content maintenance. See `qa/store-address-consistency.md`.

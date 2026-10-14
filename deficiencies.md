@@ -426,4 +426,13 @@ The previous fail-closed weight requirement hid MPL for the real catalog. The ow
 
 ## Targeted checkout follow-up — 2026-10-14
 
-Generic free courier shipping is removed through the TEST Woo zone setting. The pickup missing-address label and Contact/navigation postcode mismatch are fixed without order/provider changes. Bank transfer intentionally remains enabled but needs approved company bank details before launch. Cash order #753 still needs only the owner’s Inbox/mobile confirmation; do not resend. Independent backup/key custody, historical public-image metadata and demo catalogue content remain open; legal documents are untouched. See `docs/qa/checkout-configuration-closure.md`.
+Generic free courier shipping is removed through the TEST Woo zone setting. The pickup missing-address label and Contact/navigation postcode mismatch are fixed without order/provider changes. The owner subsequently removed bank transfer from the business model: BACS is disabled on TEST, customer transfer copy is cleared, and the missing-bank-data HIGH is resolved. Cash order #753 still needs only the owner’s Inbox/mobile confirmation; do not resend. Independent backup/key custody, historical public-image metadata and demo catalogue content remain open; legal documents are untouched. See `docs/qa/checkout-configuration-closure.md`.
+
+BACS removal verification originally left C0 / H0 / M2 / L2; the subsequent owner-confirmed store-address correction closes the address LOW, leaving C0 / H0 / M2 / L1. The existing two MEDIUM findings (independent backup/key custody and historical public image metadata) remain. LOW: known catalogue mismatches. Store-address metadata, three banner graphics and LOCAL defaults now use the owner-confirmed 6722 Szeged, Jósika utca 4.; the earlier BACS task itself did not alter the address. NON-LEGAL CONDITIONAL GO describes the tested checkout, not unconditional production readiness.
+
+Store-address follow-up: no checkout/order lifecycle operation or delivered email was needed. Read-only rendering confirms the pickup-email address. Historical dated snapshots retain their original text as evidence; use the canonical-address override when restoring them. See `docs/qa/store-address-consistency.md`.
+
+
+## Final non-legal readiness follow-up — 2026-10-14
+
+The canonical-address LOCAL checkpoint is protected, and BACS remains intentionally disabled. Backup target provisioning and offline key custody require the owner steps; no service is purchased. The historical three-image privacy rewrite is recommendation B, not executed. A fresh public-asset check found 12 active iPhone gallery uploads with private capture metadata, correcting the earlier overbroad clean-assets statement. Catalogue review is broad (122 entries / 16 image groups), so no stock or imagery is guessed. Current C0 / H0 / M3 / L1, conditional TEST readiness only. See [final factual record](docs/qa/final-nonlegal-readiness-20261014.md).
