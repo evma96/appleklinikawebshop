@@ -72,6 +72,17 @@ JS
         true
     );
 
+    if (function_exists('is_checkout') && is_checkout()) {
+        $store = appleklinika_contact_content();
+        wp_localize_script('appleklinika-theme', 'appleklinikaCheckout', [
+            'pickupAddressLines' => [
+                $store['store_name'],
+                trim($store['postcode'] . ' ' . $store['city']),
+                $store['address'],
+            ],
+        ]);
+    }
+
     wp_localize_script('appleklinika-theme', 'appleklinikaWishlist', [
         'ajaxUrl' => admin_url('admin-ajax.php'),
         'nonce' => wp_create_nonce('appleklinika_wishlist'),

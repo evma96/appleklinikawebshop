@@ -10,9 +10,9 @@ function appleklinika_contact_defaults(): array
         'intro' => 'Kérdésed van egy készülékről, rendelésről vagy javításról? Írj nekünk, vagy keress fel személyesen Szegeden.',
         'store_name' => 'Apple Klinika',
         'city' => 'Szeged',
-        'postcode' => '6720',
-        'address' => 'Jósika utca 2–4.',
-        // Verified store pin; avoids navigation providers reading the house-number range as 24.
+        'postcode' => '6722',
+        'address' => 'Jósika utca 4.',
+        // Address and pin match the verified Apple Klinika Google place used by navigation.
         'navigation_coordinates' => '46.2544892,20.1426876',
         // Existing owner-supplied assets/images/home-service.jpg; confirmed on the store map.
         'phone' => '+36 30 970 6700',

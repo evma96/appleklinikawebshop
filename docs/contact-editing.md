@@ -32,7 +32,7 @@ render. A notice in that page's editor points to the settings screen. Public pag
 content is separate from the technical form recipient, which remains WordPress's
 existing **Settings → General → Administration Email Address**.
 
-The default address comes from Martin's request. The phone comes from the existing
+The current default address follows the verified Google store place used by navigation (2026-10-14 correction authorized by Martin). The phone comes from the existing
 owner-supplied `assets/images/home-service.jpg` artwork; it was also confirmed on
 the public Apple Klinika store map. No public email or opening hours were assumed.
 
@@ -81,8 +81,7 @@ directions button remains. No provider preference or user location is stored.
 Native links and disclosure work without JavaScript; Escape, outside click, link
 selection and switching to desktop dismiss the enhanced chooser.
 
-Destination: **Apple Klinika, 6720 Szeged, Jósika utca 2–4.** The postcode follows
-Martin's supplied address. Google Maps receives that full name/address. Apple Maps
+Destination: **Apple Klinika, 6722 Szeged, Jósika utca 4.** The displayed address now matches the verified Google business listing already used by the navigation integration. Google Maps receives that full name/address. Apple Maps
 and Waze receive the already-verified store pin **46.2544892,20.1426876**: Apple's
 address-only lookup interpreted `2-4.` as `24.`, so it is deliberately not used for
 that provider. The precise pin is editable in **Navigációs célpont koordinátái**;
@@ -105,8 +104,7 @@ retains the direct Google button, mobile shows the three-provider disclosure, an
 neither has horizontal overflow. Escape restores focus to the disclosure button;
 outside click and selecting a provider close it. Selecting Google opened directions
 to the actual Apple Klinika store. Google identifies the
-same store as Jósika u. 4, 6722; the public address remains Martin's supplied
-6720 Szeged, Jósika utca 2–4.
+same store as Jósika u. 4, 6722. The earlier owner-supplied 6720 / 2–4 text was superseded by the authorized 2026-10-14 consistency correction. Coordinates and embed remain unchanged.
 
 References: [Apple unified Maps URLs](https://developer.apple.com/documentation/mapkit/unified-map-urls),
 [Waze deep links](https://developers.google.com/waze/deeplinks?hl=en).

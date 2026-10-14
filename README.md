@@ -440,3 +440,7 @@ Conservative TEST surface restrictions, compatible headers and inactive dependen
 
 ### Manual MPL minimum availability
 The owner-approved manual MPL mode preserves the supported point selector and offers fixed editable customer charges without fabricated catalog weights. See [MPL checkout/fulfilment](docs/mpl-checkout-fulfilment.md). GLS remains the primary automated carrier; no MPL API/PRO licence is required for this manual checkout mode.
+
+## Targeted checkout configuration closure — 2026-10-14
+
+Personal-pickup checkout review and sidebar use the editable Contact store address; customer billing data and cash/order transitions are unchanged. Contact defaults and TEST public content are aligned with the existing verified navigation place: 6722 Szeged, Jósika utca 4. Disable the unrelated native `free_shipping:1` in TEST zone 1 through the supported Woo API; retain zero-cost personal pickup and all GLS/MPL rates. BACS remains enabled and is still blocked for launch solely by missing owner-approved beneficiary/bank/account data; no guessed LOCAL invoice fixture values are copied. See [targeted verification](docs/qa/checkout-configuration-closure.md).

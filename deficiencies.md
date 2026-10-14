@@ -423,3 +423,7 @@ LOCAL private-config permissions, unused XML-RPC, trivial public user enumeratio
 
 ## Final non-legal closure — manual MPL scope correction
 The previous fail-closed weight requirement hid MPL for the real catalog. The owner now authorizes manual dispatch at fixed customer charges (point HUF 1,040; home HUF 2,090), absorbing any carrier-cost difference. The targeted correction permits unknown measurements in manual mode while retaining known service/value limits, editable fees and the supported point selector. No product weight is fabricated, no API project or licence bypass is introduced. Earlier missing advanced MPL automation is no longer classified as a High launch finding by itself.
+
+## Targeted checkout follow-up — 2026-10-14
+
+Generic free courier shipping is removed through the TEST Woo zone setting. The pickup missing-address label and Contact/navigation postcode mismatch are fixed without order/provider changes. Bank transfer intentionally remains enabled but needs approved company bank details before launch. Cash order #753 still needs only the owner’s Inbox/mobile confirmation; do not resend. Independent backup/key custody, historical public-image metadata and demo catalogue content remain open; legal documents are untouched. See `docs/qa/checkout-configuration-closure.md`.

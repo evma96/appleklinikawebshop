@@ -881,9 +881,12 @@
       if (!shipping || !shipping.address_1) {
         shipping = checkoutFormAddress('shipping');
       }
+      var pickupAddress = (window.appleklinikaCheckout || {}).pickupAddressLines;
+      var selectedRate = document.querySelector('#pickup-options input:checked:not([name="vp-woo-pont-provider"]), #shipping-option input:checked');
+      var isPickup = selectedRate && String(selectedRate.value || '').split(':')[0] === 'local_pickup' && Array.isArray(pickupAddress);
       var detailRows = [
         ['Számlázási cím', addressSummary(billing)],
-        ['Szállítási cím', addressSummary(shipping)],
+        [isPickup ? 'Átvétel helye' : 'Szállítási cím', isPickup ? pickupAddress.join(', ') : addressSummary(shipping)],
         ['Szállítási mód', selectedShippingMethod(cart), true],
         ['Fizetési mód', selectedPaymentMethod(), true]
       ].map(function (row) {
@@ -1046,6 +1049,7 @@
       var price = option && option.querySelector('.wc-block-components-radio-control__secondary-label, .wc-block-components-radio-control__description');
 
       return {
+        methodId: selected ? String(selected.value || '').split(':')[0] : '',
         title: title ? title.textContent.trim() : (option ? option.textContent.trim() : 'Még nincs kiválasztva'),
         price: price ? price.textContent.trim() : ''
       };
@@ -1122,6 +1126,12 @@
         shipping.push('Telefon: ' + shippingPhone);
       }
       var shippingMethod = currentShippingReview();
+      var isPickup = shippingMethod.methodId === 'local_pickup';
+      var pickupAddress = (window.appleklinikaCheckout || {}).pickupAddressLines;
+      var delivery = isPickup && Array.isArray(pickupAddress) ? pickupAddress : shipping;
+      var deliveryActions = isPickup
+        ? [{ label: 'Átvételi mód módosítása', step: 3 }]
+        : [{ label: 'Cím módosítása', step: 2 }, { label: 'Szállítás módosítása', step: 3 }];
       var fulfilment = shippingReviewLines(shippingMethod);
       var payment = [currentPaymentReview()];
       var note = document.querySelector('#order-notes textarea');
@@ -1133,10 +1143,10 @@
         + '<div class="ak-checkout-final-review__intro"><h2 id="ak-checkout-final-review-title">Rendelés áttekintése</h2><p>Ellenőrizd az adatokat a véglegesítés előtt.</p></div>'
         + '<div class="ak-checkout-final-review__timeline">'
         + finalReviewTimelineItem('contact', 'Kapcsolattartás', finalReviewValues(contact), [{ label: 'Módosítás', step: 2 }])
-        + finalReviewTimelineItem('delivery', 'Kézbesítés',
-          finalReviewValues(shipping)
+        + finalReviewTimelineItem('delivery', isPickup ? 'Személyes átvétel' : 'Kézbesítés',
+          finalReviewValues(delivery)
           + '<div class="ak-checkout-final-review__delivery-method"><p>Szállítási mód</p>' + finalReviewValues(fulfilment) + '</div>',
-          [{ label: 'Cím módosítása', step: 2 }, { label: 'Szállítás módosítása', step: 3 }])
+          deliveryActions)
         + finalReviewTimelineItem('billing', 'Számlázási adatok', finalReviewValues(billing.length ? billing : shipping), [{ label: 'Módosítás', step: 2 }])
         + finalReviewTimelineItem('payment', 'Fizetési mód', finalReviewValues(payment), [{ label: 'Módosítás', step: 3 }])
         + noteHtml
