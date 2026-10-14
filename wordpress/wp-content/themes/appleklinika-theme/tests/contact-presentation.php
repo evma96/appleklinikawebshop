@@ -86,8 +86,8 @@ try {
     $assert(! str_contains($html, 'minta üzletcím') && ! str_contains($html, '+36 30 000 0000') && ! str_contains($html, 'info@appleklinika.hu'), 'Old sample public data is absent.');
     $assert(! str_contains($html, 'Ingyenes szállítás'), 'Contact does not repeat an unverified shipping promise.');
     $map = appleklinika_contact_map_urls($content);
-    $assert(str_contains(rawurldecode($map['embed']), '0x474489111d25d185:0xf8dc8aa6ed1595e7') && str_contains(rawurldecode($map['embed']), 'Apple Klinika Szeged') && str_contains(rawurldecode($map['directions']), 'Jósika utca 2-4.'), 'Map and directions target the verified Google store place and supplied address.');
-    $assert(str_contains(rawurldecode($map['directions']), 'Apple Klinika, 6720 Szeged, Jósika utca 2-4.'), 'Google receives the full requested destination including postcode.');
+    $assert(str_contains(rawurldecode($map['embed']), '0x474489111d25d185:0xf8dc8aa6ed1595e7') && str_contains(rawurldecode($map['embed']), 'Apple Klinika Szeged') && str_contains(rawurldecode($map['directions']), 'Jósika utca 4.'), 'Map and directions target the verified Google store place and supplied address.');
+    $assert(str_contains(rawurldecode($map['directions']), 'Apple Klinika, 6722 Szeged, Jósika utca 4.'), 'Google receives the full requested destination including postcode.');
     $assert($map['apple_directions'] === 'https://maps.apple.com/directions?destination=46.2544892%2C20.1426876' && $map['waze_directions'] === 'https://www.waze.com/ul?ll=46.2544892%2C20.1426876&navigate=yes', 'Apple Maps and Waze receive the exact store pin through HTTPS universal links with web fallback.');
     $editedNavigation = appleklinika_contact_map_urls(appleklinika_sanitize_contact_content(['navigation_coordinates' => '47.5,19.0']));
     $assert(str_contains($editedNavigation['apple_directions'], '47.5%2C19') && str_contains($editedNavigation['waze_directions'], '47.5%2C19'), 'Both coordinate-based providers follow edited navigation settings.');

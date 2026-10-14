@@ -388,3 +388,7 @@ recorded in [Security remediation](docs/security-remediation-round1.md). Run
 `make test-security` for the isolated order/tax and GLS authorization checks.
 The accepted invoice-dependent lifecycle remains separate from this security
 rollout; no production deployment or public history rewrite is included.
+
+## Owner-confirmed store address — 2026-10-14
+
+Physical store and pickup: **6722 Szeged, Jósika utca 4.**, separate from the registered seat. The two LOCAL Contact defaults and existing address-test expectations are corrected; explicit Contact settings, the first hero alt/media alt and address artwork in slides 1, 2 and 4 match. Verified map coordinates and all payment/provider lifecycle behavior are unchanged. LOCAL Contact checks pass (44 assertions). This small source/test/documentation follow-up is protected by the canonical-address LOCAL checkpoint; no main, production or legal-document changes.

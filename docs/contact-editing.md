@@ -180,3 +180,7 @@ docker exec ak-homepage-preview php /var/www/html/wp-content/themes/appleklinika
 
 Real SMTP delivery and publication of final public email/hours remain owner-approved
 follow-ups, not prerequisites silently fabricated by this visual pass.
+
+## Owner-confirmed store address — 2026-10-14
+
+Physical store and pickup: **6722 Szeged, Jósika utca 4.**, separate from the registered seat. The two LOCAL Contact defaults and existing address-test expectations are corrected; explicit Contact settings, the first hero alt/media alt and address artwork in slides 1, 2 and 4 match. Verified map coordinates and all payment/provider lifecycle behavior are unchanged. LOCAL Contact checks pass (44 assertions). This small source/test/documentation follow-up is protected by the canonical-address LOCAL checkpoint; no main, production or legal-document changes.

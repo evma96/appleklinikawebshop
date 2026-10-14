@@ -342,3 +342,7 @@ Medium 3 / Low 5. Medium: historical image exposure, recovery rehearsal/automati
 and monitoring. All five low findings remain scoped follow-up work. The separate
 legal-content and PRO/full invoice-lifecycle gates remain; no launch sign-off is
 implied. No restore rehearsal, monitoring or header work was started.
+
+## Owner-confirmed store address — 2026-10-14
+
+Physical store and pickup: **6722 Szeged, Jósika utca 4.**, separate from the registered seat. The two LOCAL Contact defaults and existing address-test expectations are corrected; explicit Contact settings, the first hero alt/media alt and address artwork in slides 1, 2 and 4 match. Verified map coordinates and all payment/provider lifecycle behavior are unchanged. LOCAL Contact checks pass (44 assertions). This small source/test/documentation follow-up is protected by the canonical-address LOCAL checkpoint; no main, production or legal-document changes.
