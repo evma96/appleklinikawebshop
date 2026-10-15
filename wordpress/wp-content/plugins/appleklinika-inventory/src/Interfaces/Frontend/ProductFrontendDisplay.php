@@ -118,9 +118,9 @@ final class ProductFrontendDisplay
             .appleklinika-product-assurance{padding:0}
             .appleklinika-product-assurance .appleklinika-trust-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
             .appleklinika-buy-panel > p:empty{display:none!important;margin:0!important}
-            .appleklinika-product-below-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(280px,.84fr);gap:22px;align-items:start}
-            .appleklinika-below-panel{display:grid;align-content:start;gap:24px;min-width:0;padding:24px;border:1px solid #e6ebf2;border-radius:22px;background:#fff;box-shadow:0 6px 20px rgba(15,23,42,.025)}
-            .appleklinika-below-panel__heading{display:grid;gap:5px}
+            .appleklinika-product-below-hero{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;align-items:stretch}
+            .appleklinika-below-panel{display:flex;flex-direction:column;gap:24px;min-width:0;padding:24px;border:1px solid #e6ebf2;border-radius:22px;background:#fff;box-shadow:0 6px 20px rgba(15,23,42,.025)}
+            .appleklinika-below-panel__heading{display:grid;align-content:start;gap:5px}
             .appleklinika-below-panel__heading h2{margin:0;color:#111820;font-size:21px;line-height:1.25;font-weight:750}
             .appleklinika-below-panel__heading p{margin:0;color:#667085;font-size:13px;line-height:1.5;font-weight:450}
             .appleklinika-below-panel .appleklinika-section-kicker{font-size:11px}
@@ -129,7 +129,7 @@ final class ProductFrontendDisplay
             .appleklinika-below-panel .appleklinika-color-swatch-grid{grid-template-columns:repeat(auto-fit,minmax(72px,1fr));max-width:none}
             .appleklinika-below-panel .appleklinika-config-card{min-height:72px;padding:12px 28px 12px 12px;border-radius:14px;box-shadow:none}
             .appleklinika-below-panel .appleklinika-config-card__label{display:block;overflow:visible;min-height:auto;font-size:13px;line-height:1.35;font-weight:650;-webkit-line-clamp:unset}
-            .appleklinika-below-panel .appleklinika-config-card__meta{font-size:12px;line-height:1.4}
+            .appleklinika-below-panel .appleklinika-config-card__meta{font-size:12px;line-height:1.4;white-space:normal;overflow:visible;text-overflow:clip}
             .appleklinika-below-panel .appleklinika-config-card:disabled{opacity:1;color:#7b8491;background:#f7f8fa;border-style:dashed}
             .appleklinika-below-panel .appleklinika-config-card:disabled .appleklinika-config-card__label{color:#7b8491}
             .appleklinika-below-panel .appleklinika-config-card--color{min-height:76px;padding:9px 7px 8px}
@@ -139,6 +139,7 @@ final class ProductFrontendDisplay
             .appleklinika-below-panel .appleklinika-config-info{grid-template-columns:1fr;gap:8px}
             .appleklinika-below-panel--support .appleklinika-trust-grid{grid-template-columns:1fr;gap:0}
             .appleklinika-below-panel--support .appleklinika-trust-card strong{font-size:14px;line-height:1.45;font-weight:650}
+            @media(min-width:1101px){.appleklinika-below-panel__heading{min-height:104px}.appleklinika-below-panel--device>.appleklinika-config-group:last-child,.appleklinika-below-panel--technical>.appleklinika-quick-facts{margin-top:auto}.appleklinika-below-panel--support .appleklinika-trust-grid{flex:1;align-content:space-between}}
             .appleklinika-quick-facts{display:grid;gap:14px;padding-top:20px;border-top:1px solid #edf0f4}
             .appleklinika-quick-facts h3{margin:0;font-size:14px;font-weight:700}
             .appleklinika-quick-facts p{margin:0;font-size:14px;line-height:1.5;color:#313b49}
@@ -1138,7 +1139,6 @@ final class ProductFrontendDisplay
         );
         $storage = $this->storageLabel($this->conditionRepository->get($productId, 'storage_capacity'));
         $condition = $this->gradeLabel($this->conditionRepository->get($productId, 'overall_grade'));
-        $battery = $this->conditionRepository->get($productId, 'battery_health');
 
         echo '<section class="ak-single-product__below-hero appleklinika-product-below-hero" aria-label="Készülék opciók és termékinformációk">';
 
@@ -1146,11 +1146,10 @@ final class ProductFrontendDisplay
         echo '<div class="appleklinika-below-panel__heading">';
         echo '<span class="appleklinika-section-kicker">Állapot és megjelenés</span>';
         echo '<h2>Készülék kiválasztása</h2>';
-        echo '<p>Válassz állapotot, színt és akkumulátort.</p>';
+        echo '<p>Válassz állapotot és színt.</p>';
         echo '</div>';
         $this->renderConditionSelector($product, $relatedProducts, $currentPrice, $condition);
         $this->renderColorSelector($product, $relatedProducts, $modelKey, $color, $fallbackImage);
-        $this->renderBatterySelector($battery);
         echo '</div>';
 
         echo '<div class="appleklinika-below-panel appleklinika-below-panel--technical">';
@@ -1295,38 +1294,6 @@ final class ProductFrontendDisplay
         $displayOrder = array_flip(array_keys(Grade::options()));
         uksort($items, static fn (string $a, string $b): int => ($displayOrder[$a] ?? 99) <=> ($displayOrder[$b] ?? 99));
         $this->renderSelectorGroup('condition', 'Esztétikai állapot', $selectedLabel, $items, 'appleklinika-config-grid', false);
-    }
-
-    private function renderBatterySelector(string $batteryHealth): void
-    {
-        $items = [
-            'standard' => [
-                'value' => 'standard',
-                'label' => 'Jelenlegi akkumulátor',
-                'url' => '',
-                'selected' => true,
-                'meta' => $batteryHealth !== '' ? $batteryHealth . '%' : 'Jelenlegi akkumulátor',
-                'extra_price' => 0,
-            ],
-            'aftermarket_new' => [
-                'value' => 'aftermarket_new',
-                'label' => 'Új utángyártott akkumulátor',
-                'url' => '',
-                'selected' => false,
-                'meta' => '+15 000 Ft',
-                'extra_price' => 15000,
-            ],
-            'factory_new' => [
-                'value' => 'factory_new',
-                'label' => 'Új gyári akkumulátor',
-                'url' => '',
-                'selected' => false,
-                'meta' => '+30 000 Ft',
-                'extra_price' => 30000,
-            ],
-        ];
-
-        $this->renderSelectorGroup('battery', 'Akkumulátor', 'Jelenlegi akkumulátor', $items, 'appleklinika-config-grid', false, 'appleklinika-config-card--wide');
     }
 
     private function renderProductFactGroups(\WC_Product $product, int $productId): void

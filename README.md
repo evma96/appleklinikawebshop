@@ -461,3 +461,7 @@ Focused store-address inventory, content changes and preservation proof: [canoni
 ## Final non-legal readiness follow-up — 2026-10-14
 
 The canonical-address LOCAL checkpoint is protected, and BACS remains intentionally disabled. Backup target provisioning and offline key custody require the owner steps; no service is purchased. The historical three-image privacy rewrite is recommendation B, not executed. A fresh public-asset check found 12 active iPhone gallery uploads with private capture metadata, correcting the earlier overbroad clean-assets statement. Catalogue review is broad (122 entries / 16 image groups), so no stock or imagery is guessed. Current C0 / H0 / M3 / L1, conditional TEST readiness only. See [final factual record](docs/qa/final-nonlegal-readiness-20261014.md).
+
+## LOCAL product selector cleanup — 2026-10-15
+
+The lower product selector no longer offers battery upgrades. Condition, color, storage and equipment facts retain their existing behavior; desktop panels have equal widths and aligned heights, with natural stacked cards on mobile. See [LOCAL verification](docs/qa/product-information-presentation.md#local-selector-cleanup--2026-10-15).

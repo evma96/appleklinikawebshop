@@ -56,3 +56,32 @@ All 16 listing cards per viewport retain identical x/y/width/height, text, links
 The isolated cart round-trip ended empty, with no order created. No product/image assignments, TEST SERVER or production data were changed. This is LOCAL Chromium acceptance, not a deployment or physical Safari sign-off.
 
 Final focused regression: 141 PHP assertions (18 storefront + 45 catalogue/search + 3 frontend structure + 26 gallery render + 49 information), 507 product-information browser assertions and 237 gallery browser checks: 885 total. PHP/JavaScript syntax and `git diff --check` pass. Required `make test` / `make quality` commands exit successfully but still report unconfigured generic tools. The pre-existing isolated favicon 404 is the only recorded browser warning; no new page/console error was found.
+
+## LOCAL selector cleanup — 2026-10-15
+
+This owner-requested UI update supersedes the historical battery-choice presentation
+above. Remove the battery selector markup and its unused private renderer; correct
+only the directly related instruction to “Válassz állapotot és színt.” Battery health
+remains a factual device property in the existing product details. No product data,
+price hooks or order logic changes.
+
+The three lower cards use equal desktop columns and stretch to the same row height.
+Shared heading space aligns their content; the final selector/equipment section uses
+available space and assurance rows distribute naturally. At <=1100px cards retain
+the existing single-column layout with natural heights. No fixed card height, empty
+battery placeholder, hidden selectable battery UI or unrelated redesign is added.
+
+Existing browser regressions now expect no battery choice and the normal product
+price. Other selector, equipment, trust-copy and purchase-state checks are retained.
+LOCAL browser verification: 1440px and 1280px desktop cards have identical top,
+bottom and width (1440px baseline: each 358.66px wide and 588px high). At 390px and
+320px the cards stack naturally without horizontal overflow. Long price-difference
+labels wrap rather than truncate. Native condition/color/storage clicks update the
+selected device, price, equipment and unchanged assurance content correctly at
+desktop and mobile widths. Battery selector count is zero, including after switches.
+Console errors: none. Existing PHP checks pass: structure 3, information rendering
+49, purchase rendering 68 (120 total), plus PHP syntax. Tests persist no products.
+The broader historical cart/gallery browser suite was updated for the intentional
+battery-choice removal but was not rerun; no cart, order or provider flow was needed.
+Screenshots: private `selector-ui-local-20261015` evidence directory outside Git.
+No commit, push, merge, TEST access or deployment.

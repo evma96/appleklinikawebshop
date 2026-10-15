@@ -463,3 +463,7 @@ Store-address follow-up: no checkout/order lifecycle operation or delivered emai
 ## Final non-legal readiness follow-up — 2026-10-14
 
 The canonical-address LOCAL checkpoint is protected, and BACS remains intentionally disabled. Backup target provisioning and offline key custody require the owner steps; no service is purchased. The historical three-image privacy rewrite is recommendation B, not executed. A fresh public-asset check found 12 active iPhone gallery uploads with private capture metadata, correcting the earlier overbroad clean-assets statement. Catalogue review is broad (122 entries / 16 image groups), so no stock or imagery is guessed. Current C0 / H0 / M3 / L1, conditional TEST readiness only. See [final factual record](docs/qa/final-nonlegal-readiness-20261014.md).
+
+## LOCAL selector cleanup — 2026-10-15
+
+The product selector battery-choice presentation and uneven desktop card heights are addressed locally. No catalog, cart pricing hooks, checkout/provider behavior, TEST or production configuration changes. This UI candidate is uncommitted; deployment readiness findings are unchanged.

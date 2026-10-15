@@ -82,10 +82,9 @@ const state = page => page.locator('.appleklinika-cart-area').evaluate(area => {
                 check(JSON.stringify(await state(page)) === JSON.stringify(expected.get(366)), width + ': initially stocked form is removed');
                 await page.locator('[data-selector-group=color] [data-option-value=silver]').click();
                 check(JSON.stringify(await state(page)) === JSON.stringify(expected.get(318)), width + ': removed form is recreated once');
-                await page.locator('[data-selector-group=battery] [data-option-value=aftermarket_new]').click();
+                check(await page.locator('[data-selector-group=battery]').count() === 0, width + ': no selectable battery extra');
                 await page.locator('[data-selector-group=color] [data-option-value=gold]').click();
-                check((await state(page)).battery === 'aftermarket_new', width + ': selected battery option survives form replacement');
-                await page.locator('[data-selector-group=battery] [data-option-value=standard]').click();
+                check((await state(page)).battery === 'standard', width + ': standard purchase state survives form replacement');
                 check(JSON.stringify(await state(page)) === JSON.stringify(expected.get(334)), width + ': standard purchase state restored');
 
                 // No cart mutation at all on a failing baseline. After green transitions,

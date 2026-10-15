@@ -84,7 +84,7 @@ const norm=text=>text.replace(/\s+/g,' ').trim();
   }
   // All enabled choices on a stocked representative; use the unchanged payload as pricing oracle.
   await page.goto(base+'/?post_type=product&p=288');
-  for(const group of ['color','storage','condition','battery']){
+  for(const group of ['color','storage','condition']){
    const options=await page.locator('[data-selector-group="'+group+'"] [data-selector-option]').evaluateAll(nodes=>nodes.map(n=>n.dataset.optionValue));
    for(const key of options){
     const option=page.locator('[data-selector-group="'+group+'"] [data-option-value="'+key+'"]');
@@ -93,20 +93,19 @@ const norm=text=>text.replace(/\s+/g,' ').trim();
     const state=await page.evaluate(()=>{
      const values=Object.fromEntries([...document.querySelectorAll('[data-selector-group]')].map(g=>[g.dataset.selectorGroup,g.querySelector('.is-selected')?.dataset.optionValue]));
      const product=JSON.parse(document.querySelector('#appleklinika-product-selector-data').textContent).find(p=>['color','storage','condition'].every(k=>p.values[k]===values[k]));
-     const extra=Number(document.querySelector('[data-selector-group=battery] .is-selected').dataset.extraPrice||0);
-     return {product,extra};
+     return {product};
     });
     check(!!state.product,'Native selector chooses a matching real product');
     check(await page.locator('[data-selector-group="'+group+'"] .is-selected').count()===1,'Single selected state');
     check(norm(await page.locator('[data-appleklinika-product-title]').innerText())===norm(state.product.title),'Current product title');
     const actualPrice=Number((await page.locator('.appleklinika-price-stack__current').innerText()).replace(/\D/g,''));
-    check(actualPrice===state.product.salePrice+state.extra,'Price and existing battery surcharge unchanged');
+    check(actualPrice===state.product.salePrice,'Selected product price without a selectable battery surcharge');
     check(norm(await page.locator('[data-appleklinika-stock-badge]').innerText())===norm(state.product.stockLabel),'Dynamic stock label');
     for(const [selector,field] of [['.ak-single-product__description','descriptionHtml'],['[data-appleklinika-product-facts]','factsHtml'],['[data-appleklinika-quick-facts]','quickFactsHtml'],['[data-appleklinika-product-lead]','leadHtml'],['[data-appleklinika-trust]','trustHtml']]){
      const expected=await page.evaluate(html=>new DOMParser().parseFromString(html,'text/html').body.textContent,state.product[field]);
      check(norm(await page.locator(selector).textContent())===norm(expected),'Latest selected facts: '+field);
     }
-    check(await page.locator('[data-selector-group=battery] [data-option-value=standard] .appleklinika-config-card__meta').textContent()===state.product.batteryHealthLabel,'Latest physical battery health');
+    check(await page.locator('[data-selector-group=battery]').count()===0,'Battery is not a selectable option');
    }
   }
   if(width===390){
