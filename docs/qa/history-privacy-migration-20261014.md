@@ -68,7 +68,8 @@ contaminated historical blobs; new clones do not automatically inherit local hoo
 Annotated tag `prelaunch-checkpoint-2026-09`: object `d5c332e13a4b18f461064bd12bfe5388fc835f61` → `e9670e6706a91510927f0abbad22afca06f4ec99`; peeled target is listed above. Tag name/message/tagger preserved.
 
 The documentation-only follow-up descends normally from the mapped develop head;
-its final deployed SHA is recorded in the task's final verification report. The
+its final published/deployed SHA is `1d6af15bd116adb66cdd66fd72ab75b7dba39e56`.
+See the [active operational reference](../current-operational-baseline.md). The
 full exact ref map and verification evidence live outside Git in the owner's
 `history-privacy-migration-evidence-20261014` directory. Old private recovery bundles
 are never a source for a routine public push.

@@ -6,6 +6,9 @@
         X-Frame-Options "SAMEORIGIN"
         Permissions-Policy "camera=(), microphone=(), geolocation=(self)"
     }
+    @robots path /robots.txt /robots.txt/
+    header @robots Content-Type "text/plain; charset=utf-8"
+    respond @robots "User-agent: *\nDisallow: /\n" 200
     @xmlrpc path /xmlrpc.php
     respond @xmlrpc "XML-RPC is disabled." 403
 }

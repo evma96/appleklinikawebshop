@@ -181,7 +181,7 @@ html { margin-top: 0 !important; }
   .akbo-order-table td { display: block; width: auto !important; padding: 0; border: 0; overflow-wrap: anywhere; }
   .akbo-order-table td::before { content: attr(data-label); display: block; color: var(--akbo-muted); font-size: 10px; margin-bottom: 5px; }
   .akbo-order-table td:nth-child(3) { grid-column: 1/-1; }
-  .akbo-order-table td.akbo-empty { grid-column: 1/-1; padding: 16px; }
+  .akbo-order-table td.akbo-empty { grid-column: 1/-1; padding: 16px; white-space: normal; }
   .akbo-status-line { gap: 10px; margin-top: 0; }
   .akbo-status-line > strong { margin-left: 0; }
   .akbo-details { gap: 14px; }

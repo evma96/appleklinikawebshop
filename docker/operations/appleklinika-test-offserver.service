@@ -1,0 +1,12 @@
+[Unit]
+Description=Apple Klinika TEST encrypted off-server backup (opt-in)
+After=network-online.target appleklinika-test-backup.service
+Wants=network-online.target
+ConditionHost=appleklinika-staging-01
+ConditionPathExists=/etc/appleklinika-ops/offserver-sync.json
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /usr/local/lib/appleklinika-ops/offserver-sync.py /etc/appleklinika-ops/offserver-sync.json --apply
+TimeoutStartSec=4h
+UMask=0077
+Nice=10

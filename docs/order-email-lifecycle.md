@@ -1,5 +1,11 @@
 # Order and transactional-email lifecycle — implementation record
 
+Operational identity note (2026-10-15): this dated implementation/acceptance record
+retains original evidence SHAs and phase-specific status. For a new checkout,
+deployment or recovery use [current operational baseline](current-operational-baseline.md):
+the current accepted integrated source. Do not deploy old
+ancestry or treat an earlier blocked phase as the current acceptance status.
+
 Date: 2026-09-16. Branch: `feature/order-email-lifecycle`.
 
 ## Current follow-up — 2026-10-01

@@ -465,3 +465,20 @@ The canonical-address LOCAL checkpoint is protected, and BACS remains intentiona
 ## LOCAL product selector cleanup — 2026-10-15
 
 The lower product selector no longer offers battery upgrades. Condition, color, storage and equipment facts retain their existing behavior; desktop panels have equal widths and aligned heights, with natural stacked cards on mobile. See [LOCAL verification](docs/qa/product-information-presentation.md#local-selector-cleanup--2026-10-15).
+
+
+## Pre-production engineering — 2026-10-15
+
+The approved battery-free product selector is checkpointed and integrated. The isolated
+empty-catalog rehearsal found and fixed version-inappropriate Buyback migration
+validation and clipped mobile Back Office empty-state text. TEST robots/visibility
+are being aligned with its existing noindex response header. No production, main,
+legal text or provider transaction is changed.
+
+See [engineering evidence](docs/qa/preproduction-engineering-20261015.md),
+[launch runbook](docs/production-engineering-launch.md), and
+[current baseline](docs/current-operational-baseline.md). A **HIGH engineering gate**
+remains: lifecycle/fulfilment activation deliberately rejects production, so copying
+TEST credentials/options is not a production rollout. GitHub old-object purge and
+independent backup/key custody remain external gates. Demo catalog mismatches are
+not a launch blocker.

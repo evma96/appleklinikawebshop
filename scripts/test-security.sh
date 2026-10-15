@@ -7,3 +7,5 @@ done
 php -l "$root/themes/appleklinika-theme/functions.php" >/dev/null
 php -l "$root/plugins/gls-shipping-for-woocommerce/includes/admin/class-gls-shipping-order.php" >/dev/null
 echo 'Security PHP syntax checks passed.'
+
+php "$root/plugins/appleklinika-buyback/tests/schema-version-validation.php"

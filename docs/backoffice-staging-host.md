@@ -16,13 +16,22 @@ No request-supplied origin or return URL is used as configuration. Forwarded hos
 
 Do not modify global `home`, `siteurl`, `permalink_structure`, `COOKIE_DOMAIN` or employee permissions. The proxy must serve login, static assets and admin-post on the dedicated host as well as forwarding the existing Back Office query route. WordPress must recognize HTTPS behind the trusted proxy. No new installation, database or provider configuration is involved.
 
-## Plugin-only staging deployment
+## Current staging deployment boundary
 
-The staging runtime directory is named `/opt/appleklinika/production`, but the verified server is `appleklinika-staging-01`, Compose project `appleklinika-staging`, and WordPress environment type `staging`. Verify these and the canonical staging URL before any write; the directory name alone is not an environment proof.
+The former baseline was `1d6af15bd116adb66cdd66fd72ab75b7dba39e56`; use the current operational reference below for the latest approved release.
+The former instruction to pin the storefront at `067d63c...` and export a separate
+Back Office-only feature build is obsolete. Do not execute that split deployment
+procedure or restore its old ancestry. The lifecycle and Back Office were reconciled
+and accepted together; deploy only a future explicitly approved integrated source.
 
-Keep `/opt/appleklinika/repo` at storefront SHA `067d63cbbdd38dc52a95d14fb3bd6ec309088d2d`. After local tests, quality command, PHP syntax and diff checks, commit and push only the relevant feature changes. Export `wordpress/wp-content/plugins/appleklinika-backoffice` from the exact resulting commit SHA. Stage that export separately, verify its file hashes and PHP syntax, preserve the current plugin in a timestamped backup, then replace only `/opt/appleklinika/production/plugins/appleklinika-backoffice`. Record both source SHA and backup path outside the plugin. Do not checkout the feature branch in the storefront repository.
-
-Record the previous dedicated-origin option before configuring it. Rollback restores the backed-up plugin and that previous option (delete the option if previously absent). Retain the existing Caddyfile; if future work requires a proxy change, back it up first, validate it, and reload only on successful validation. No storefront checkout, deployment or provider write is part of this procedure.
+Use `appleklinika-test`. Verify host `appleklinika-staging-01`, Compose project
+`appleklinika-staging`, WordPress environment `staging` and canonical TEST URL.
+The runtime directory `/opt/appleklinika/production` is TEST despite its name.
+Follow the [current baseline](current-operational-baseline.md) and
+[recovery runbook](disaster-recovery.md); record exact repository and mounted
+plugin source hashes after an authorized deployment. Preserve private plugin
+overlays, settings and dedicated origin. No configuration, proxy or deployment
+change is performed in this documentation update.
 
 ## Verification
 

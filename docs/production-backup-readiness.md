@@ -1,5 +1,12 @@
 # Disabled production backup readiness
 
+Current 2026-10-15 preparation is detailed in [BX11 TEST setup](storagebox-test-preparation.md)
+and the [consolidated DR runbook](disaster-recovery.md). Upload defaults to dry-run;
+private enablement and `--apply` are both required. Remote retention is a verified
+keep/expiry **plan**, with no automatic deletion; downloads and decrypt-only
+verification are prepared. The TEST monitor hook is opt-in and not deployed.
+BX11, real round-trip restore and off-Mac key custody are still pending.
+
 No production configuration, account, container or timer is changed. The proven TEST `test-backup.sh` and its active timer remain byte-for-byte unchanged. `reusable-backup.sh` is a parameterized candidate, disabled unless an explicitly approved root-private configuration sets `AK_BACKUP_ENABLED=yes` and matches the host guard.
 
 ## Coverage and consistency

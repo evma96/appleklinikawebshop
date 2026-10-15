@@ -1,6 +1,19 @@
 #!/usr/bin/env python3
 """Bounded, read-only TEST monitor. Status contains counts, never log bodies/secrets."""
-import argparse,datetime,json,os,pathlib,re,shutil,socket,ssl,subprocess,time
+import argparse,datetime,importlib.util,json,os,pathlib,re,shutil,socket,ssl,subprocess,time
+
+def offserver_status(config_path, now, service_failed=False):
+ # Opt-in only: absence/disabled template leaves the proven monitor unchanged.
+ path=pathlib.Path(config_path)
+ if not path.exists(): return False
+ try:
+  config=json.loads(path.read_text())
+  if config.get('enabled') is not True: return False
+  spec=importlib.util.spec_from_file_location('offserver',pathlib.Path(__file__).with_name('offserver-sync.py'))
+  module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+  state=json.loads(pathlib.Path(config['state_file']).read_text())
+  return service_failed or module.health(state,now) is not None
+ except Exception: return True
 
 def run(args,timeout=25):
  p=subprocess.run(args,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,timeout=timeout)
@@ -14,6 +27,7 @@ def classify(f):
  if f.get('php_errors',0): issues.append('php_application_errors')
  if f.get('smtp_errors',0): issues.append('smtp_failures')
  if f.get('backup_status')=='failed' or f.get('backup_age_hours',999)>30: issues.append('backup_failure_or_stale')
+ if f.get('offserver_problem'): issues.append('remote_backup_failure_or_stale')
  if f.get('certificate_days',0)<14: issues.append('certificate_expiry')
  return sorted(issues)
 
@@ -35,6 +49,10 @@ def collect():
  backup=json.loads(state.read_text()) if state.exists() else {}
  f['backup_status']=backup.get('status','missing')
  f['backup_age_hours']=round((now-backup.get('last_success_epoch',0))/3600,2)
+ remote_config=pathlib.Path('/etc/appleklinika-ops/offserver-sync.json')
+ if remote_config.exists():
+  rc,_,_=run(['systemctl','is-failed','--quiet','appleklinika-test-offserver.service'])
+  f['offserver_problem']=offserver_status(remote_config,now,rc==0)
  # A bounded, active backup can briefly pause HTTP; this is intentional maintenance.
  f['backup_maintenance']=backup.get('status')=='running' and now-backup.get('started_epoch',0)<1800
  if f['backup_maintenance']:

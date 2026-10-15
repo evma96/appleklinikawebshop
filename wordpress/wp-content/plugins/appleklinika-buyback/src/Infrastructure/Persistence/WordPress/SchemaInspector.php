@@ -40,6 +40,19 @@ final class SchemaInspector implements SchemaDiagnosticsReader
         $tableNames = Schema::tableNames($this->database);
         $requiredColumns = Schema::requiredColumns();
         $requiredIndexes = Schema::requiredIndexes();
+        // Intermediate migrations must validate their own schema, not columns
+        // introduced by a later migration. Runtime checks use the current version.
+        if (version_compare($this->codeSchemaVersion, '1.2.0', '<')) {
+            $requiredColumns[Schema::REQUESTS] = array_diff($requiredColumns[Schema::REQUESTS], [
+                'submission_token_hash', 'customer_name', 'customer_email', 'customer_phone', 'customer_note',
+            ]);
+            $requiredIndexes[Schema::REQUESTS] = array_diff($requiredIndexes[Schema::REQUESTS], [
+                'submission_token_hash', 'public_contact',
+            ]);
+        }
+        if (version_compare($this->codeSchemaVersion, '1.5.0', '<')) {
+            $requiredColumns[Schema::PRICE_RULES] = array_diff($requiredColumns[Schema::PRICE_RULES], ['affected_component_key']);
+        }
 
         foreach ($tableNames as $key => $tableName) {
             $exists = $this->tableExists($tableName);

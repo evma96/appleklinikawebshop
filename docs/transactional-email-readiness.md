@@ -1,5 +1,11 @@
 # Transactional email presentation and transport readiness
 
+Operational identity note (2026-10-15): this dated implementation/acceptance record
+retains original evidence SHAs and phase-specific status. For a new checkout,
+deployment or recovery use [current operational baseline](current-operational-baseline.md):
+the current accepted integrated source. Do not deploy old
+ancestry or treat an earlier blocked phase as the current acceptance status.
+
 Date: 2026-10-01. Branch: `feature/local-fulfillment-backoffice-integration`.
 Base checkpoint: `79be7f7e3de1f855929ff143ab8453f6c77072f9` (preserved).
 

@@ -5,7 +5,10 @@
 The sections below this one preserve the original recovery record. Since the
 separately authorized reconciliation, **both running WordPress containers bind
 source from `/Users/apple/Desktop/appleklinika-integration-active`**, branch
-`feature/local-fulfillment-backoffice-integration`. The storefront and Back Office
+`feature/product-selector-ui-cleanup`, approved LOCAL HEAD
+`923b8e81556bcd73b1355ceed62974ce6d6db7b9`. See the
+[current operational baseline](current-operational-baseline.md) for published TEST
+and protected recovery identities. The storefront and Back Office
 protected source worktrees/branches remain unchanged; they are not the current
 runtime source. Databases and WordPress/core volumes remain separate and unchanged.
 
