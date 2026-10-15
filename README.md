@@ -472,7 +472,7 @@ The lower product selector no longer offers battery upgrades. Condition, color, 
 The approved battery-free product selector is checkpointed and integrated. The isolated
 empty-catalog rehearsal found and fixed version-inappropriate Buyback migration
 validation and clipped mobile Back Office empty-state text. TEST robots/visibility
-are being aligned with its existing noindex response header. No production, main,
+are aligned with its existing noindex response header. No production, main,
 legal text or provider transaction is changed.
 
 See [engineering evidence](docs/qa/preproduction-engineering-20261015.md),

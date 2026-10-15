@@ -3,7 +3,10 @@
 Initial develop and TEST: `1d6af15bd116adb66cdd66fd72ab75b7dba39e56`.
 Approved LOCAL selector checkpoint: `923b8e81556bcd73b1355ceed62974ce6d6db7b9`.
 Normal integration and TEST selector deployment: `9184126f7ea22572cca3ad0f3f00221ad146e9de`.
-The final engineering deployment verification is recorded below after release.
+Application/operations checkpoint: `0cc97ce32b1df00c38d511ea0edcae379cae9a96`.
+This follow-up corrects the TEST robots multiline body and records verification.
+The exact final remote/deployed SHA is pinned in the private release manifest
+and owner report; do not infer it from an older historical SHA or a moving branch.
 
 ## Scope and evidence
 
@@ -77,8 +80,8 @@ choices; form labels and named navigation controls are present. No provider/cust
 submission was made. TEST PHP logs over the inspection window: 0 fatal, 0 warning,
 0 HTTP 5xx. Embedded Google Maps rendered during this run.
 
-Reachable-history high-confidence credential scan: 15,039 objects / 10,642 blobs /
-10,005 text blobs, zero candidates and zero tracked credential/backup artifacts.
+Reachable-history high-confidence credential scan: 15,090 objects / 10,673 blobs /
+10,036 text blobs, zero candidates and zero tracked credential/backup artifacts.
 It is a bounded pattern/manual review, not proof against every possible encoded
 secret. Images were not modified; prior comprehensive EXIF rewrite evidence stands.
 Runtime/secrets/recovery keys/backups/screenshots stay outside Git. Main and the
@@ -93,6 +96,29 @@ No provider was called. `make quality` exits successfully, but currently only re
 that no linter/static analyzer is configured; it is not a substantive lint pass.
 PHP syntax and `git diff --check` pass. All 31 changed/untracked intended files
 received the high-confidence secret-pattern review with zero candidates.
+
+## TEST release verification
+
+Normal fast-forward integration/push only. Main stays
+`66943bad0307ca029f46f0cf1e43bd8ff13bfbe7`. Runtime backup before the application
+update: `/opt/appleklinika/backups/deploy-engineering-20261015T144657Z`. The two
+changed live plugin files match the exact repository sources; PHP/Caddy validation
+passes. The runtime directory contains TEST despite its `production` name.
+
+The existing server clone fetched only main by default; a stale develop tracking
+ref caused the deployment guard to stop **before** application replacement. Fetching
+the explicit develop ref resolved this without force or any main change. A separate
+HTTP probe caught literal newline escapes in the first robots response; the follow-up
+uses a Caddy multiline body, verified against the actual Caddy parser before release.
+
+TEST visibility is now `blog_public=0`, with noindex/nofollow metadata and the existing
+noindex/nofollow/noarchive header. Both TEST origins serve a plain-text disallow robots
+response. Core sitemap query returns 404; the legacy pretty sitemap route returns
+noindex HTML rather than an XML sitemap. Canonical links remain on TEST.
+Home/Contact/account and protected Back Office login are healthy. BACS remains off,
+its instructions empty, free shipping disabled and pickup zero. No provider setting,
+transaction, account permission or order state was changed. Off-server scripts are
+prepared repository code only; no BX11 timer/service/monitor hook was activated.
 
 ## External gates and classification
 

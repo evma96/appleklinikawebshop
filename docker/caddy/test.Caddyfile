@@ -8,7 +8,10 @@
     }
     @robots path /robots.txt /robots.txt/
     header @robots Content-Type "text/plain; charset=utf-8"
-    respond @robots "User-agent: *\nDisallow: /\n" 200
+    respond @robots <<ROBOTS
+User-agent: *
+Disallow: /
+ROBOTS
     @xmlrpc path /xmlrpc.php
     respond @xmlrpc "XML-RPC is disabled." 403
 }
