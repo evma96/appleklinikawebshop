@@ -500,3 +500,9 @@ See [activation/guard map](docs/production-lifecycle-activation.md),
 GitHub retained old-object removal and independent backup/key custody remain external
 Medium prerequisites; legal/business acceptance and eventual human production
 activation remain separate. The earlier 2026-10-15 HIGH entry is historical.
+
+### Final VirtualJog PDFs
+
+The owner-supplied v2 terms/privacy PDFs are served unchanged through the existing legal
+registry, with `/aszf/` compatibility and native privacy links. See
+[installation, hashes and rollback](docs/legal-documents-final.md).

@@ -508,3 +508,13 @@ activation remain separate. The earlier 2026-10-15 HIGH entry is historical.
 configuration and production OFF. Engineering C0/H0/M0/L0; combined non-legal
 C0/H0/M2/L0 (external backup/key custody and retained-public-object removal).
 Production activation is still a future explicit owner-authorized procedure.
+
+## Final VirtualJog terms and privacy PDFs — 2026-10-16
+
+The two authoritative v2 binaries replace active terms/privacy sample content without
+legal editing. Existing page IDs remain, `/aszf/` is canonical, and privacy retains its
+native route. Legacy #36/#37 also show the final documents; history is preserved.
+The other six sample legal document types are outside this two-document installation
+and must not be mistaken for finalized text. Embedded PDF preview is unavailable in
+Codex; original/downloading hashes and independent PDF rendering provide separate proof.
+See [exact files, scope and verification](docs/legal-documents-final.md).

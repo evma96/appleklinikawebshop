@@ -161,3 +161,5 @@ function appleklinika_save_registration_marketing_consent(int $customerId): void
     update_user_meta($customerId, 'appleklinika_marketing_consent', isset($_POST['appleklinika_marketing_consent']) ? '1' : '0');
 }
 add_action('woocommerce_created_customer', 'appleklinika_save_registration_marketing_consent');
+
+require_once __DIR__ . "/legal-pdfs.php";

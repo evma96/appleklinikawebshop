@@ -171,3 +171,8 @@ preview-order-emails:
 .PHONY: test-security
 test-security:
 	docker run --rm --network none -v "$(CURDIR)/wordpress/wp-content:/usr/src/wordpress/wp-content:ro" -v "$(CURDIR)/scripts/test-security.sh:/test-security.sh:ro" --entrypoint sh wordpress:7.0.2-php8.2-apache /test-security.sh
+
+.PHONY: test-legal-pdfs
+test: test-legal-pdfs
+test-legal-pdfs:
+	docker run --rm --network none -v "$(CURDIR)/wordpress/wp-content:/usr/src/wordpress/wp-content:ro" --entrypoint php wordpress:7.0.2-php8.2-apache /usr/src/wordpress/wp-content/themes/appleklinika-theme/tests/legal-pdfs.php
