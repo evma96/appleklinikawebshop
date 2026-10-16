@@ -70,7 +70,13 @@ class GLS_Shipping_API_Service
 	public function send_order($post_fields, $is_multi = false)
 	{
 		$params = $this->generate_post_request($post_fields);
-		$response = wp_remote_post($this->api_url, $params);
+		if (wp_get_environment_type() === 'production') {
+            if (!class_exists('Appleklinika\BackOffice\Infrastructure\ProductionTransportGuard')) {
+                throw new \RuntimeException('Apple Klinika production guard is unavailable.');
+            }
+            \Appleklinika\BackOffice\Infrastructure\ProductionTransportGuard::gls($this->api_url);
+        }
+        $response = wp_remote_post($this->api_url, $params);
 
 		if (is_wp_error($response)) {
 			$error_message = esc_html($response->get_error_message());
@@ -168,7 +174,13 @@ class GLS_Shipping_API_Service
 			'data_format' => 'body',
 		);
 
-		$response = wp_remote_post($this->api_url, $params);
+		if (wp_get_environment_type() === 'production') {
+            if (!class_exists('Appleklinika\BackOffice\Infrastructure\ProductionTransportGuard')) {
+                throw new \RuntimeException('Apple Klinika production guard is unavailable.');
+            }
+            \Appleklinika\BackOffice\Infrastructure\ProductionTransportGuard::gls($this->api_url);
+        }
+        $response = wp_remote_post($this->api_url, $params);
 
 		if (is_wp_error($response)) {
 			$error_message = esc_html($response->get_error_message());

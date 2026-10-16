@@ -1,0 +1,23 @@
+<?php
+if(PHP_SAPI!=='cli')exit(1);
+define('WP_INSTALLING',true);
+require '/var/www/html/wp-load.php';
+if(DB_NAME!=='ak_production_fixture' || !AK_PRODUCTION_SIMULATION || !WP_HTTP_BLOCK_EXTERNAL)exit(2);
+require_once ABSPATH.'wp-admin/includes/upgrade.php';
+wp_install('Offline production simulation','offline_operator','fixture@example.invalid',false,'',wp_generate_password(48));
+require_once ABSPATH.'wp-admin/includes/plugin.php';
+activate_plugin('woocommerce/woocommerce.php');
+WC_Install::install();
+update_option('woocommerce_custom_orders_table_enabled','yes');
+update_option('woocommerce_auto_flip_authoritative_table_roles','no');
+activate_plugin('appleklinika-backoffice/appleklinika-backoffice.php');
+update_option('appleklinika_backoffice_origin','https://staff.example.invalid');
+update_option('woocommerce_barion_settings',['enabled'=>'yes','environment'=>'live','poskey'=>'fixture-live-key','payee'=>'merchant@example.invalid']);
+update_option('_wc_szamlazz_pro_enabled',true);update_option('_wc_szamlazz_pro_key','fixture-license');
+update_option('wc_szamlazz_automations',[['trigger'=>'payment_complete','document'=>'invoice','paid'=>true]]);
+update_option('appleklinika_cash_pickup_enabled','yes');update_option('woocommerce_bacs_settings',['enabled'=>'no']);
+update_option('woocommerce_cod_settings',['enabled'=>'yes','enable_for_methods'=>['local_pickup']]);
+update_option('appleklinika_mpl_enabled','yes');update_option('appleklinika_mpl_api_enabled','no');
+update_option('woocommerce_manage_stock','yes');update_option('woocommerce_currency','HUF');
+update_option('woocommerce_calc_taxes','no');
+echo "Disposable Woo/HPOS installed; no imported data.\n";

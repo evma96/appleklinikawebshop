@@ -7,6 +7,7 @@ if (PHP_SAPI !== 'cli') {
     exit;
 }
 
+require_once dirname(__DIR__) . '/src/Infrastructure/ProductionReadiness.php';
 require_once dirname(__DIR__) . '/src/Infrastructure/MplCarrier.php';
 require_once dirname(__DIR__) . '/src/Domain/DeliveryMode.php';
 require_once dirname(__DIR__) . '/src/Domain/FulfilmentWorkflow.php';
@@ -227,7 +228,7 @@ final class RepositoryOperationsTest
         GLS_Shipping_Account_Helper::$account['mode'] = 'production';
         $this->assert(str_contains((string) $repository->glsReadinessMessage(), 'Sandbox'), 'Local operation rejects production GLS mode.');
         $GLOBALS['environment'] = 'production';
-        $this->assert(str_contains((string) $repository->glsReadinessMessage(), 'Sandbox'), 'A localhost clone remains protected even if WordPress reports production.');
+        $this->assert($repository->glsReadinessMessage() !== null, 'A localhost clone remains protected even if WordPress reports production.');
         $GLOBALS['environment'] = 'staging';
         $GLOBALS['site_home'] = 'https://staging.example.invalid/';
         $this->assert(str_contains((string) $repository->glsReadinessMessage(), 'Sandbox'), 'Non-production environments require sandbox independently of hostname.');

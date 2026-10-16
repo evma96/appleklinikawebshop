@@ -35,7 +35,7 @@ final class SzamlazzAutomation implements InvoiceAutomation
     public function run(int $id): void
     {
         if (! $this->ready()) {
-            throw new \RuntimeException('Licensed TEST invoice automation is not ready.');
+            throw new \RuntimeException('Licensed environment-specific invoice automation is not ready.');
         }
         self::$activeOrder = $id;
         try {
@@ -52,6 +52,9 @@ final class SzamlazzAutomation implements InvoiceAutomation
 
     public static function verifiedAgentKey(string $key): bool
     {
+        if (wp_get_environment_type() === 'production') {
+            return ProductionReadiness::allowed() && $key !== '' && ProductionReadiness::pinned('szamlazz', [$key]);
+        }
         $verified = (string) get_option('appleklinika_szamlazz_test_agent_sha256', '');
         return $key !== '' && strlen($verified) === 64 && hash_equals($verified, hash('sha256', $key));
     }

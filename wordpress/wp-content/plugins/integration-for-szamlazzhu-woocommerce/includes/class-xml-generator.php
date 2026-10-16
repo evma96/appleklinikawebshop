@@ -14,6 +14,14 @@ if ( ! class_exists( 'WC_Szamlazz_Xml_Generator', false ) ) :
 		//Init notices
 		public function generate($xml, $orderId, $field) {
 
+            // Apple Klinika: reject before debug XML/files/cURL; licensing remains unchanged.
+            if (wp_get_environment_type() === 'production') {
+                if (!class_exists('Appleklinika\BackOffice\Infrastructure\ProductionTransportGuard')) {
+                    throw new \RuntimeException('Apple Klinika production guard is unavailable.');
+                }
+                \Appleklinika\BackOffice\Infrastructure\ProductionTransportGuard::invoice((string)$xml);
+            }
+
 			//Log request in debug mode
 			WC_Szamlazz()->log_debug_messages($xml, $field.'-'.$orderId);
 

@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+function wp_get_environment_type() { return 'local'; }
 
 if (PHP_SAPI !== 'cli') {
     http_response_code(404);

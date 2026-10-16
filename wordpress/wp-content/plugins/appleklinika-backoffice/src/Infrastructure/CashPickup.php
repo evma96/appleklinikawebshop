@@ -48,6 +48,7 @@ final class CashPickup
 
     public function recordPayment(\WC_Order $order, int $actor): void
     {
+        ProductionReadiness::assertAllowed('cash_payment');
         if ($actor <= 0 || !self::matches($order) || !self::accepted($order)) {
             throw new \InvalidArgumentException('Készpénzfizetés csak elfogadott személyes átvételhez rögzíthető.');
         }

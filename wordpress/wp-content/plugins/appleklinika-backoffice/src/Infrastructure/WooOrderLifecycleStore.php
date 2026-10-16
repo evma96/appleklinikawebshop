@@ -14,6 +14,7 @@ final class WooOrderLifecycleStore implements OrderLifecycleStore
 
     public function order(int $id): ?LifecycleOrder
     {
+        ProductionReadiness::assertAllowed('lifecycle');
         $order = wc_get_order($id);
         if (! $order instanceof \WC_Order) {
             return null;

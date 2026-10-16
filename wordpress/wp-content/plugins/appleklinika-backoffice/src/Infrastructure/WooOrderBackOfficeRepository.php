@@ -245,6 +245,9 @@ final class WooOrderBackOfficeRepository
 
     public function glsReadinessMessage(): ?string
     {
+        if (wp_get_environment_type() === 'production' && !ProductionReadiness::allowed()) {
+            return 'Az éles működés nincs engedélyezve vagy hiányos a konfiguráció. Futtasd a production-readiness ellenőrzést.';
+        }
         if (! defined('GLS_SHIPPING_ABSPATH') || ! class_exists('GLS_Shipping_For_Woo') || ! class_exists('GLS_Shipping_Account_Helper') || ! class_exists('GLS_Shipping_Sender_Address_Helper')) {
             return 'GLS kapcsolat nincs konfigurálva ebben a környezetben: a bővítmény vagy a szükséges szolgáltatói osztályok nem aktívak.';
         }

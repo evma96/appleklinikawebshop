@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "environment": "production",
+  "enabled": false,
+  "activated_at": 0,
+  "storefront": "https://appleklinika.com",
+  "backoffice": "https://backoffice.appleklinika.com",
+  "approved_staff_ids": [],
+  "approved_fingerprints": { "barion": "", "szamlazz": "", "gls": "", "smtp": "" },
+  "szamlazz_live_account_and_site_license_verified": false,
+  "smtp_sender_authorized": false,
+  "operations": {
+    "environment": "production",
+    "storefront": "https://appleklinika.com",
+    "backup_destination": "",
+    "monitor_target": "",
+    "monitor_recipient": "",
+    "recovery_key_independent": false,
+    "cron_verified": false,
+    "backup_verified_at": 0,
+    "restore_verified_at": 0,
+    "monitor_verified_at": 0
+  },
+  "launch_evidence": {}
+}

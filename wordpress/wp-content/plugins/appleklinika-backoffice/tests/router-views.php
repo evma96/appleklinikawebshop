@@ -10,6 +10,7 @@ if (PHP_SAPI !== 'cli') {
 // Isolated rendering stubs; use the installed WordPress HTML sanitizer, but do
 // not bootstrap WordPress, its database, plugins, credentials, or network.
 function apply_filters(string $name, mixed $value, mixed ...$args): mixed { return $value; }
+function wp_get_environment_type(): string { return 'local'; }
 function wp_allowed_protocols(): array { return ['http', 'https']; }
 function is_account_page(): bool { return $GLOBALS['view_test_account']; }
 function is_user_logged_in(): bool { return $GLOBALS['view_test_user'] > 0; }

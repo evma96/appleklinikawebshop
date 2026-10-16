@@ -484,3 +484,21 @@ remains: lifecycle/fulfilment activation deliberately rejects production, so cop
 TEST credentials/options is not a production rollout. GitHub old-object purge and
 independent backup/key custody remain external gates. Demo catalog mismatches are
 not a launch blocker.
+
+
+## Production activation engineering — 2026-10-16
+
+The previous HIGH production-lifecycle engineering gap is addressed by an explicit,
+default-OFF private activation manifest, mandatory MU safety bootstrap, per-capability
+readiness report, provider transport gates and signed empty-launch evidence. Existing
+TEST enrolment and provider behavior remain separate. A real Woo/HPOS offline fixture
+exercises the native Barion callback handler, three-email flow, invoice/GLS adapters,
+stock/idempotency, staff correction and cash-at-pickup with fake provider boundaries.
+No production account or provider is activated. Legal documents remain untouched.
+
+See [activation/guard map](docs/production-lifecycle-activation.md),
+[engineering acceptance](docs/qa/production-activation-engineering-20261016.md), and
+[disabled manifest example](docs/examples/production-activation.example.json).
+GitHub retained old-object removal and independent backup/key custody remain external
+Medium prerequisites; legal/business acceptance and eventual human production
+activation remain separate. The earlier 2026-10-15 HIGH entry is historical.

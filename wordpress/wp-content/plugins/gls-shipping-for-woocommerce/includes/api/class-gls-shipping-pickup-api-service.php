@@ -137,6 +137,12 @@ private function convert_date_to_dotnet_format($date_string)
             'data_format' => 'body',
         );
 
+        if (wp_get_environment_type() === 'production') {
+            if (!class_exists('Appleklinika\BackOffice\Infrastructure\ProductionTransportGuard')) {
+                throw new \RuntimeException('Apple Klinika production guard is unavailable.');
+            }
+            \Appleklinika\BackOffice\Infrastructure\ProductionTransportGuard::gls($api_url);
+        }
         $response = wp_remote_post($api_url, $params);
 
         if (is_wp_error($response)) {

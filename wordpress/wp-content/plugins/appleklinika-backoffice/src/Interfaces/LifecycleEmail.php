@@ -23,6 +23,7 @@ abstract class LifecycleEmail extends \WC_Email
 
     public function deliver(int $id): bool
     {
+        \Appleklinika\BackOffice\Infrastructure\ProductionReadiness::assertAllowed('customer_email');
         $this->object = wc_get_order($id);
         if (! $this->object instanceof \WC_Order || ! $this->is_enabled()) {
             return false;

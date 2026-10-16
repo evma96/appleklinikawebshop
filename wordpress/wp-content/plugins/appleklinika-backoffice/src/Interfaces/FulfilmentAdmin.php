@@ -8,14 +8,14 @@ use Appleklinika\BackOffice\Infrastructure\LifecycleConfiguration;
 use Appleklinika\BackOffice\Infrastructure\WooOrderBackOfficeRepository;
 use Appleklinika\BackOffice\Infrastructure\WooOrderLifecycleStore;
 
-/** TEST-only UI; all mutations also pass the guarded shared application path. */
+/** Environment-guarded UI; all mutations also pass the guarded shared application path. */
 final class FulfilmentAdmin
 {
     public function __construct(private readonly ChangeFulfilment $change, private readonly WooOrderBackOfficeRepository $orders) {}
 
     public function register(): void
     {
-        if (! LifecycleConfiguration::isTestEnvironment()) { return; }
+        if (! LifecycleConfiguration::supportsEnvironment()) { return; }
         add_action('woocommerce_admin_order_data_after_order_details', [$this, 'render']);
         add_action('admin_post_appleklinika_fulfilment', [$this, 'handle']);
         add_action('admin_notices', [$this, 'notice']);
@@ -23,11 +23,11 @@ final class FulfilmentAdmin
 
     public function render(\WC_Order $order): void
     {
-        if (! LifecycleConfiguration::isTestEnvironment() || ! current_user_can('manage_woocommerce') || ! current_user_can('edit_shop_order', $order->get_id())) {
+        if (! LifecycleConfiguration::supportsEnvironment() || ! current_user_can('manage_woocommerce') || ! current_user_can('edit_shop_order', $order->get_id())) {
             return;
         }
         $state = $this->orders->state($order);
-        echo '<div class="order_data_column" style="width:100%;clear:both"><h3>Apple Klinika teljesítés – TEST</h3><p>' . esc_html(FulfilmentWorkflow::labels()[$state]) . '</p>';
+        echo '<div class="order_data_column" style="width:100%;clear:both"><h3>Apple Klinika teljesítés' . (LifecycleConfiguration::isTestEnvironment() ? ' – TEST' : '') . '</h3><p>' . esc_html(FulfilmentWorkflow::labels()[$state]) . '</p>';
         $invoice = (array) $order->get_meta(WooOrderLifecycleStore::INVOICE, true);
         if (! empty($invoice['state'])) {
             echo '<p>Számla-folyamat: <strong>' . esc_html((string) $invoice['state']) . '</strong>. Hiba vagy bizonytalan eredmény esetén előbb Számlázz.hu-egyeztetés szükséges; automatikus újraszámlázás nincs.</p>';
@@ -70,7 +70,7 @@ final class FulfilmentAdmin
     public function handle(): void
     {
         $id = absint($_POST['order_id'] ?? 0);
-        if (! LifecycleConfiguration::isTestEnvironment() || ! current_user_can('manage_woocommerce') || ! current_user_can('edit_shop_order', $id)) {
+        if (! LifecycleConfiguration::supportsEnvironment() || ! current_user_can('manage_woocommerce') || ! current_user_can('edit_shop_order', $id)) {
             wp_die('Ez a TEST művelet nem engedélyezett.', '', ['response' => 403]);
         }
         check_admin_referer('appleklinika_fulfilment_' . $id);

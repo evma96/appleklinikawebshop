@@ -157,7 +157,7 @@ final class LifecycleHooks
             // Inspect the resolved account too, including provider account-routing
             // rules, before the XML reaches the network. Never log this key.
             if (! SzamlazzAutomation::verifiedAgentKey((string) $xml->beallitasok->szamlaagentkulcs)) {
-                throw new \RuntimeException('The resolved Agent account has not been verified as TEST.');
+                throw new \RuntimeException('The resolved Agent account has not been verified for this environment.');
             }
             $xml->vevo->sendEmail = 'false';
         }
@@ -168,7 +168,7 @@ final class LifecycleHooks
     {
         // Provider debug XML contains Agent keys and addresses. Never enable that
         // logger during this TEST rollout; our own diagnostics contain only IDs/codes.
-        return LifecycleConfiguration::enabled() && $key === 'debug' ? 'no' : $value;
+        return $key === 'debug' && (wp_get_environment_type() === 'production' || LifecycleConfiguration::enabled()) ? 'no' : $value;
     }
 
     private function queue(int $id, string $event, int $delay = 10, int $deferrals = 0): void

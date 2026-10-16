@@ -26,6 +26,13 @@ spl_autoload_register(static function (string $className): void {
     }
 });
 
+if (!defined('APPLEKLINIKA_PRODUCTION_SAFETY_LOADED')) {
+    (new Appleklinika\BackOffice\Interfaces\ProductionHooks())->register();
+}
+if (defined('WP_CLI') && WP_CLI) {
+    WP_CLI::add_command('appleklinika production-readiness', new Appleklinika\BackOffice\Interfaces\ProductionReadinessCommand());
+}
+
 register_activation_hook(__FILE__, static function (): void {
     $administrator = get_role('administrator');
     if ($administrator !== null) {
@@ -52,7 +59,7 @@ add_action('plugins_loaded', static function (): void {
     $change = new Appleklinika\BackOffice\Application\ChangeFulfilment(new Appleklinika\BackOffice\Infrastructure\WooFulfilmentStore($orders), $mutex);
     $router = new Appleklinika\BackOffice\Interfaces\BackOfficeRouter($orders, $change);
     $router->register();
-    if (Appleklinika\BackOffice\Infrastructure\LifecycleConfiguration::isTestEnvironment()) {
+    if (Appleklinika\BackOffice\Infrastructure\LifecycleConfiguration::supportsEnvironment()) {
         (new Appleklinika\BackOffice\Infrastructure\PublicSurfaceSecurity())->register();
         (new Appleklinika\BackOffice\Interfaces\FulfilmentAdmin($change, $orders))->register();
         (new Appleklinika\BackOffice\Interfaces\CashPickupHooks())->register();

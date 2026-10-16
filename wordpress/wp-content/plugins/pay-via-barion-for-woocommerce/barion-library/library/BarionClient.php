@@ -253,6 +253,13 @@ class BarionClient
      */
     private function PostToBarion($url, $data)
     {
+        // Apple Klinika: guard direct cURL before any provider side effect.
+        if (function_exists('wp_get_environment_type') && wp_get_environment_type() === 'production') {
+            if (!class_exists('Appleklinika\BackOffice\Infrastructure\ProductionTransportGuard')) {
+                throw new \RuntimeException('Apple Klinika production guard is unavailable.');
+            }
+            \Appleklinika\BackOffice\Infrastructure\ProductionTransportGuard::barion($url, (string)$this->POSKey);
+        }
         $ch = curl_init();
         
         $userAgent = $_SERVER['HTTP_USER_AGENT'];
@@ -307,6 +314,13 @@ class BarionClient
      */
     private function GetFromBarion($url, $data)
     {
+        // Apple Klinika: guard direct cURL before any provider side effect.
+        if (function_exists('wp_get_environment_type') && wp_get_environment_type() === 'production') {
+            if (!class_exists('Appleklinika\BackOffice\Infrastructure\ProductionTransportGuard')) {
+                throw new \RuntimeException('Apple Klinika production guard is unavailable.');
+            }
+            \Appleklinika\BackOffice\Infrastructure\ProductionTransportGuard::barion($url, (string)$this->POSKey);
+        }
         $ch = curl_init();
 
         $getData = http_build_query($data);

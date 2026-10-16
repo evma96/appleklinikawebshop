@@ -32,9 +32,9 @@ final class WooFulfilmentStore implements FulfilmentStore
     public function createLabel(int $id): void
     {
         if (MplCarrier::matches($this->order($id))) { MplCarrier::createLabel($this->order($id)); return; }
-        if (! LifecycleConfiguration::isTestEnvironment() || ! class_exists('GLS_Shipping_Account_Helper')
-            || (\GLS_Shipping_Account_Helper::get_active_account()['mode'] ?? '') !== 'sandbox') {
-            throw new \InvalidArgumentException('Ebben a folyamatban kizárólag TEST / GLS Sandbox címke készíthető.');
+        if (! class_exists('GLS_Shipping_Account_Helper')
+            || (\GLS_Shipping_Account_Helper::get_active_account()['mode'] ?? '') !== (wp_get_environment_type() === 'production' ? 'production' : 'sandbox')) {
+            throw new \InvalidArgumentException('A GLS környezet beállítása nem egyezik az engedélyezett működéssel.');
         }
         $this->orders->createGlsLabel($this->order($id));
     }
@@ -47,8 +47,9 @@ final class WooFulfilmentStore implements FulfilmentStore
 
     private function order(int $id): \WC_Order
     {
-        if (! LifecycleConfiguration::isTestEnvironment()) {
-            throw new \InvalidArgumentException('Az új teljesítési folyamat csak TEST környezetben érhető el.');
+        ProductionReadiness::assertAllowed('fulfilment');
+        if (! LifecycleConfiguration::supportsEnvironment()) {
+            throw new \InvalidArgumentException('A teljesítési folyamat ebben a környezetben nem érhető el.');
         }
         $order = wc_get_order($id);
         if (! $order instanceof \WC_Order) {

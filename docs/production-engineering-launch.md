@@ -10,12 +10,10 @@ from the reviewed clean public history, never from an old recovery bundle.
 
 1. Obtain explicit production authorization, approved target hostname/domain,
    release SHA, maintenance window, named operator and rollback decision owner.
-2. Resolve the HIGH engineering gate: `LifecycleConfiguration::isTestEnvironment`
-   deliberately excludes production. Woo-admin corrections and invoice/GLS readiness
-   also use that guard. An explicit production rollout must be implemented/reviewed
-   and tested offline with private production configuration **before** enabling it;
-   do not spoof staging, reuse TEST options, remove a guard ad hoc, or assume changing
-   credentials is sufficient. The proven TEST lifecycle remains accepted.
+2. Use the [default-OFF production lifecycle activation procedure](production-lifecycle-activation.md).
+   Its offline engineering proof closes the earlier HIGH code-readiness gap; actual
+   production account provisioning, zero-data evidence and human activation remain
+   separate required steps. Never spoof staging or copy TEST credentials/options.
 3. Require approved legal pages/cookie inventory and owner decisions as separate
    prerequisites. Do not author legal wording in deployment code. Keep registered
    company seat separate from store/pickup: 6722 Szeged, Jósika utca 4.

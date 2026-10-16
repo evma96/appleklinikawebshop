@@ -64,6 +64,10 @@ final class OrderDocuments
             return 'Kiállítás nem indítható: ehhez a rendeléshez nincs beállított Számla Agent-kulcs. Igazolt TEST-fiók szükséges.';
         }
 
+        if (function_exists('wp_get_environment_type') && wp_get_environment_type() === 'production') {
+            return 'A számlázást a jóváhagyott fizetési folyamat kezeli; innen kézi kiállítás nem indul.';
+        }
+
         // A shared Agent endpoint and the presence of a key do not prove that
         // the selected account is a TEST account. Inspection never generates.
         return 'A Számlázz.hu közös szolgáltatói végpontot használ; az Agent-kulcs megléte nem igazolja a TEST-fiókot. A kulcshoz tartozó számlázási fiók TEST állapotát ellenőrizni kell; innen kiállítás nem indul.';
