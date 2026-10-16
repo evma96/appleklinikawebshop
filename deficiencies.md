@@ -502,3 +502,9 @@ See [activation/guard map](docs/production-lifecycle-activation.md),
 GitHub retained old-object removal and independent backup/key custody remain external
 Medium prerequisites; legal/business acceptance and eventual human production
 activation remain separate. The earlier 2026-10-15 HIGH entry is historical.
+
+2026-10-16 closeout: 750 offline/regression checks pass; exact application release
+`40d590ce90359cfe8be8b60abeb0e64c912ae15f` is verified on TEST with unchanged provider
+configuration and production OFF. Engineering C0/H0/M0/L0; combined non-legal
+C0/H0/M2/L0 (external backup/key custody and retained-public-object removal).
+Production activation is still a future explicit owner-authorized procedure.

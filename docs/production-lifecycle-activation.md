@@ -96,7 +96,9 @@ binding; TEST mode/key cannot silently become live. Fresh production salts are r
    deleted. No application/test data may change between this check and activation.
 6. With final owner approval, atomically set `activated_at` to the current Unix UTC
    timestamp (within one hour after evidence) and `enabled=true`. Do not alter the
-   signed evidence. Confirm the runtime policy reports ON. The evidence records that
+   signed evidence. If an emergency OFF constant was used during preparation, clear
+   it only within this same authorized activation step. Confirm the runtime policy
+   reports ON. The evidence records that
    launch was empty; legitimate products/orders added **after** activation do not
    disable the shop. The default command remains a fresh *prelaunch* empty-data audit,
    so a legitimately populated live shop is not expected to pass it later.

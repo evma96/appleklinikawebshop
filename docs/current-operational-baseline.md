@@ -4,7 +4,9 @@ Initial 2026-10-15 baseline: **`1d6af15bd116adb66cdd66fd72ab75b7dba39e56`**.
 The approved selector was subsequently deployed as **`9184126f7ea22572cca3ad0f3f00221ad146e9de`**.
 For the 2026-10-15 release evidence, use
 [its acceptance record](qa/preproduction-engineering-20261015.md). The next default-OFF
-production activation engineering release starts at `e56fd9f521e5e72b77827a7eebc7b0ced6bc8d7c`;
+production activation engineering release starts at `e56fd9f521e5e72b77827a7eebc7b0ced6bc8d7c`
+and its application code is verified on TEST at `40d590ce90359cfe8be8b60abeb0e64c912ae15f`.
+The following documentation-only closeout retains that application source;
 see [current engineering acceptance](qa/production-activation-engineering-20261016.md).
 This is the normal documentation follow-up after the authorized history rewrite,
 not the intermediate rewritten develop head `7940b8c71443e9a6a68c1f6fcc9b090601784418`.

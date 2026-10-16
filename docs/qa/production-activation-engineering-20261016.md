@@ -57,17 +57,61 @@ claim that it serves this new engineering code; the new code ran in isolated LOC
 
 ## TEST release verification
 
-Pending authorized normal integration/deployment of this reviewed checkpoint.
-The final delivery record will add exact source identity, read-only configuration
-comparison, HTTP/WordPress/Back Office health and production OFF evidence. No TEST
-order/provider E2E is repeated: live behavior is guarded by the unchanged TEST branch
-and the focused offline regressions. No new QA account/order/email/provider record.
+Implementation checkpoint and normal fast-forward develop/public push:
+`40d590ce90359cfe8be8b60abeb0e64c912ae15f`.
+That exact application release was deployed through `appleklinika-test`; 20 changed
+plugin PHP files and the mandatory MU bootstrap were compared against repository
+source. The detached TEST release checkout advanced normally, without force/reset.
+The following documentation-only closeout does not change those application files.
+
+- Post-maintenance WordPress load: environment `staging`, expected TEST home,
+  WordPress 6.8.10 / WooCommerce 10.7.0, lifecycle enabled, production activation OFF.
+- Before/after keyed configuration digest: identical. Barion TEST, GLS sandbox,
+  BACS OFF, cash pickup enabled, manual MPL enabled/API disabled, shipping methods
+  and prices unchanged. Generic free shipping remains disabled; pickup remains free.
+- Existing order/user counts unchanged: 73 orders / 16 users. No QA account, order,
+  invoice, parcel or email was created by this task. TEST data is not cleaned or
+  mistaken for a production launch seed.
+- Read-only readiness result: production environment/providers/launch data NOT READY;
+  customer email/payment policy/manual MPL READY; MPL API NOT APPLICABLE. OFF is the
+  expected safe result on TEST, not an application failure.
+- Inventory reports 123 products, 0 variations, 73 orders, 16 unapproved user IDs,
+  13 customer/subscriber roles, 1 QA-named user, 2 sessions, 4 persistent carts,
+  1 stock reservation and 0 pending provider jobs. These are existing TEST artifacts;
+  the production preflight detects them and would refuse launch. The isolated fresh
+  production fixture passed with zero forbidden data.
+- Homepage, Contact, My Account and protected Back Office login: HTTP 200, no fatal
+  output. The Back Office endpoint correctly redirects anonymous visitors to login;
+  authenticated workflows were covered by the isolated shared-state regression,
+  not claimed as a new authenticated TEST browser test.
+- Browser: homepage/carousel renders; selector checked at 1440 desktop and 390 mobile,
+  battery choice absent, aligned desktop cards, mobile scroll width equals 390,
+  no captured console errors. Canonical store address remains 6722 Szeged, Jósika utca 4.
+- Post-deploy container log inspection: zero PHP fatal/warning/parse/uncaught matches.
+- No TEST provider E2E repeated; no new provider transaction or customer email.
+  Outbound provider adapters were fake/blocked in the offline scenarios; the existing
+  TEST provider configuration was inspected read-only.
+
+Private evidence directory:
+`~/.codex/visualizations/2026/09/11/01a08fcb-a363-7761-acb7-46d99e2bde2c/production-activation-engineering-20261016/`.
+It contains regression/deployment logs, redacted configuration facts and desktop/mobile
+screenshots; it is not part of Git. No provider credentials are recorded.
+
+The production readiness CLI is implemented for WP-CLI-capable installations. This
+TEST container does not have the WP-CLI executable: the same read-only report was
+invoked through PHP; its underlying readiness policy is covered offline. This is tooling
+availability, not a production-readiness failure.
 
 ## Classification
 
-Engineering: previous HIGH activation-path gap can close after the focused TEST
-release check; production activation itself is deliberately pending, not a new defect.
+Engineering: **Critical 0 / High 0 / Medium 0 / Low 0**. The previous HIGH
+activation-path gap is closed after offline proof and the focused TEST release check.
+Actual production activation is deliberately pending, not a new engineering defect.
+**ENGINEERING PRE-PRODUCTION GO** does not authorize or claim production-live.
 External: **Medium 2** — independent BX11/restore/key custody; GitHub retained old-object
 removal. Neither was rechecked or altered in this task. Legal/VirtualJog approval and
 remaining owner business/customer-side evidence stay separate; no new legal opinion.
 Demo catalog image mismatches remain disposable TEST data, not production blockers.
+
+Current combined non-legal finding totals: **Critical 0 / High 0 / Medium 2 / Low 0**.
+The two Medium items above are external prerequisites, not reopened engineering gaps.
