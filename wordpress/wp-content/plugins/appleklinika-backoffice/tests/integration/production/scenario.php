@@ -44,10 +44,11 @@ $ok(count($mail())===2&&$mail()[1]['subject']==='Rendelésed visszaigazoltuk'&&c
 $ok(wc_get_product($p->get_id())->get_stock_quantity()===4,'C: actual Woo stock deducted exactly once');
 $native=new GLS_Shipping_Order();$early=$native->generate_single_order_label($id);
 $ok(!$early['success']&&(int)get_option('fixture_gls_calls',0)===0,'Paid/invoiced order alone cannot generate GLS label, including native action');
+wp_set_current_user(1); // Authenticated staff context required by the existing packing event adapter.
 $repo=new WooOrderBackOfficeRepository();$change=new ChangeFulfilment(new WooFulfilmentStore($repo),new WooOrderMutex());
 foreach(['new'=>'start','preparation'=>'start_packing','packing'=>'packing_completed']as$state=>$action)$change->execute($id,$action,1,$state);
 $ok((int)get_option('fixture_gls_calls',0)===1,'Packing completion automatically creates one GLS label');
-$fresh=wc_get_order($id);$attempt=$fresh->get_meta('_appleklinika_gls_label_attempt',true);
+$fresh=wc_get_order($id);$attempt=$fresh->get_meta('_appleklinika_gls_attempt',true);
 $ok(($attempt['state']??'')==='ready' && is_file(GLS_LABELS_DIR.'/'.$fresh->get_meta('_gls_print_label',true)),'Real provider adapter saves PDF, tracking and durable attempt');
 $native->generate_single_order_label($id);
 $ok((int)get_option('fixture_gls_calls',0)===1,'Native Woo retry shares exact same ledger and mutex');

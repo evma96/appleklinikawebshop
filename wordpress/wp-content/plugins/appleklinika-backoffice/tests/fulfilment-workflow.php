@@ -114,6 +114,7 @@ final class FulfilmentWorkflowTest
             'queue_page' => '3',
         ]);
         $this->assert($worklistContext === ['queue' => 'packing', 's' => 'Kovács', 'search_type' => 'customer', 'queue_page' => 3], 'Order links and PRG flows preserve the validated queue, search, search type, and page context.');
+        $this->assert(BackOfficeRouter::normalizeWorklistContext(['queue' => 'all', 's' => '#737', 'search_type' => 'order', 'queue_page' => '2']) === ['queue' => 'all', 's' => '#737', 'search_type' => 'order', 'queue_page' => 2], 'The all-order view survives validated list/detail, search, pagination and PRG context.');
         $invalidContext = BackOfficeRouter::normalizeWorklistContext([
             'queue' => 'not_a_queue',
             's' => '<b>Kovács</b>',
@@ -134,7 +135,7 @@ final class FulfilmentWorkflowTest
         $this->assert(is_string($router) && str_contains($router, 'orderUrl($order->get_id(), $worklistContext)') && str_contains($router, 'renderWorklistContextInputs($worklistContext)') && str_contains($router, 'worklistContext($_POST)'), 'List-to-detail links, state-change PRG, and internal-note PRG all carry the validated worklist context.');
         $this->assert(is_string($router) && str_contains($router, 'name="queue" onchange="this.form.submit()"'), 'Changing the worklist filter submits its existing GET form instead of leaving the rendered list stale.');
         $this->assert(is_string($repository) && str_contains($repository, 'MANUAL_NOTE_MARKER') && str_contains($router, 'isManualInternalNote($content)'), 'Manual internal notes have a dedicated marker, so workflow system notes remain out of the notes section.');
-        $this->assert(is_string($router) && str_contains($router, 'if ($deliveryMode === DeliveryMode::GLS)') && str_contains($router, 'Rendelési lap nyomtatása') && str_contains($router, 'GLS kapcsolat nincs konfigurálva ebben a környezetben.'), 'Pickup details omit the GLS panel, printing is delivery-neutral, and unavailable GLS readiness is explicit.');
+        $this->assert(is_string($router) && str_contains($router, 'if ($deliveryMode === DeliveryMode::GLS)') && str_contains($router, "renderDocumentLinks('Rendelési lap'") && str_contains($router, 'glsReadinessMessage()'), 'Pickup details omit the GLS panel, printing is delivery-neutral, and unavailable GLS readiness is explicit.');
         $change = file_get_contents(dirname(__DIR__) . '/src/Application/ChangeFulfilment.php');
         $this->assert(str_contains($router, '$this->fulfilment->execute') && str_contains($change, "! \$order['label'] || ! \$order['tracking']"), 'Back Office delegates handoff to the shared service, which requires both label and tracking.');
         $this->assert(is_string($router) && str_contains($router, 'rawurlencode((string) $value)') && ! str_contains($router, "'notice' => rawurlencode"), 'Worklist context values, including #order searches, are encoded safely through PRG URLs.');

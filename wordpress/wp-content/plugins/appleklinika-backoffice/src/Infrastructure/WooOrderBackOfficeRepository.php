@@ -29,13 +29,20 @@ final class WooOrderBackOfficeRepository
     /** @return object{orders:list<WC_Order>,total:int,max_num_pages:int} */
     public function queuePage(string $queue, int $page, string $term, string $searchType): object
     {
-        return wc_get_orders($this->queueQuery->arguments(
+        $hposEnabled = $this->usesHpos();
+        $arguments = $this->queueQuery->arguments(
             $queue,
             $page,
             $term,
             $searchType,
-            $this->usesHpos()
-        ));
+            $hposEnabled
+        );
+        if ($arguments['status'] === ['all'] && ! $hposEnabled) {
+            // Legacy WP_Query has no HPOS 'all' sentinel; enumerate registered
+            // statuses explicitly so drafts, trash and custom states are not hidden.
+            $arguments['status'] = array_values(get_post_stati());
+        }
+        return wc_get_orders($arguments);
     }
 
     public function queuePageNumber(int $page): int
@@ -314,7 +321,9 @@ final class WooOrderBackOfficeRepository
     {
         $action = match ($document) {
             'invoice' => 'open_invoice',
+            'invoice_generation', 'invoice_generated', 'invoice_generation_failed' => $document,
             'gls_label' => 'open_gls_label',
+            'gls_label_generated', 'gls_automation_failed' => $document,
             'mpl_label' => 'open_mpl_label',
             default => throw new InvalidArgumentException('Ismeretlen dokumentumtípus.'),
         };
@@ -466,10 +475,10 @@ final class WooOrderBackOfficeRepository
 
     public function glsLabelAttemptMessage(WC_Order $order): string
     {
-        $record = $order->get_meta('_appleklinika_gls_label_attempt', true);
+        $record = $order->get_meta('_appleklinika_gls_attempt', true);
         return match (is_array($record) ? ($record['state'] ?? '') : '') {
             'retryable' => 'A GLS címkekérés sikertelen. Az adatok/beállítások javítása után a címkekészítés újrapróbálható.',
-            'attempting', 'uncertain' => 'A GLS címkekérés eredménye bizonytalan. Szolgáltatói egyeztetés vagy a meglévő címke helyreállítása szükséges; új csomagkérés nem indítható.',
+            'generating', 'attempting', 'failed', 'uncertain' => 'A GLS címkekérés eredménye bizonytalan. Szolgáltatói egyeztetés vagy a meglévő címke helyreállítása szükséges; új csomagkérés nem indítható.',
             default => '',
         };
     }
@@ -491,7 +500,34 @@ final class WooOrderBackOfficeRepository
         return $legacy === '' ? [] : [$legacy];
     }
 
+    /** Fail closed for incomplete provider evidence or an interrupted previous request. */
+    public function glsRecoveryBlock(WC_Order $order): ?string
+    {
+        if ($this->deliveryMode($order) !== DeliveryMode::GLS) {
+            return 'GLS helyreállítás csak igazolt GLS rendeléshez érhető el.';
+        }
+        foreach (['_gls_print_label', '_gls_parcel_ids', '_gls_tracking_codes', '_gls_tracking_code'] as $key) {
+            if ($order->get_meta($key, true)) {
+                return 'Már van GLS dokumentum- vagy csomagazonosító. Új címke nem készülhet; a meglévő dokumentumot kell ellenőrizni.';
+            }
+        }
+        $attempt = $order->get_meta('_appleklinika_gls_attempt', true);
+        if (is_array($attempt) && in_array($attempt['state'] ?? '', ['generating', 'attempting', 'uncertain', 'failed', 'ready'], true)) {
+            return 'A korábbi GLS kérés eredményét egyeztetni kell. Bizonytalan vagy sikertelen válasz után nem készül újabb címke.';
+        }
+        return $this->fulfilmentBlockReason($order) ?? $this->glsReadinessMessage();
+    }
+
     public function createGlsLabel(WC_Order $order): void
+    {
+        (new WooOrderMutex())->synchronized($order->get_id(), function () use ($order): void {
+            $current = wc_get_order($order->get_id());
+            if (!$current instanceof WC_Order) { throw new InvalidArgumentException('A rendelés nem található.'); }
+            $this->createGlsLabelLocked($current);
+        });
+    }
+
+    private function createGlsLabelLocked(WC_Order $order): void
     {
         // Reject an ineligible workflow before loading or invoking the provider.
         FulfilmentWorkflow::transition($this->state($order), 'create_label', $this->deliveryMode($order));
@@ -502,7 +538,7 @@ final class WooOrderBackOfficeRepository
         if ($this->hasGlsLabel($order)) {
             throw new InvalidArgumentException('Ehhez a rendeléshez már létezik GLS címke; új címke nem készült.');
         }
-        $readiness = $this->glsReadinessMessage();
+        $readiness = $this->glsRecoveryBlock($order);
         if ($readiness !== null) {
             throw new InvalidArgumentException($readiness);
         }

@@ -6,7 +6,7 @@ use Appleklinika\BackOffice\Application\Port\GlsLabelStore;
 
 final class WooGlsLabelStore implements GlsLabelStore
 {
-    public const META = '_appleklinika_gls_label_attempt';
+    public const META = '_appleklinika_gls_attempt';
 
     public function snapshot(int $id): array
     {

@@ -27,6 +27,8 @@ final class OrderQueueQuery
             'order' => 'DESC',
             'return' => 'objects',
             'status' => match ($queue) {
+                // HPOS's explicit 'all' also includes drafts, trash and custom statuses.
+                'all' => ['all'],
                 'payment_pending' => ['pending'],
                 'payment_on_hold' => ['on-hold'],
                 'handed_to_gls' => [...FulfilmentWorkflow::operationalOrderStatuses(), 'completed'],
@@ -144,7 +146,7 @@ final class OrderQueueQuery
     {
         // WooCommerce completion and physical handover are separate facts. This
         // status-only view also finds completed orders without Back Office metadata.
-        if ($queue === 'wc_completed') {
+        if (in_array($queue, ['all', 'wc_completed'], true)) {
             return [];
         }
 

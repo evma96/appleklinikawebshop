@@ -21,7 +21,7 @@ final class CreateGlsLabel
             if ($order['recorded'] || $order['attempt'] === 'ready') {
                 return ['success' => false, 'error' => 'Már van GLS csomag vagy címke. A meglévő dokumentumot kell használni vagy helyreállítani; új csomag nem készült.'];
             }
-            if (!in_array($order['attempt'], ['', 'retryable'], true)) {
+            if (!in_array($order['attempt'], ['', 'blocked', 'retryable'], true)) {
                 return ['success' => false, 'error' => 'A korábbi GLS kérés eredménye bizonytalan. Előbb egyeztesd a meglévő csomagot a GLS-sel; új kérés nem indult.'];
             }
             // Durable before the request: a crash/timeout must never cause a blind duplicate.

@@ -1,7 +1,6 @@
 <?php
 
 declare(strict_types=1);
-function wp_get_environment_type() { return 'local'; }
 
 if (PHP_SAPI !== 'cli') {
     http_response_code(404);
@@ -31,6 +30,7 @@ final class InvoiceTransportProbe
 }
 
 function WC_Szamlazz(): InvoiceTransportProbe { return $GLOBALS['transportProbe']; }
+function wp_get_environment_type(): string { return 'staging'; }
 function wp_upload_dir(): array { return ['basedir' => $GLOBALS['transportDirectory']]; }
 function get_option(string $key): string { return 'isolated-cookie'; }
 function sanitize_title(mixed $value): string { return strtolower((string) $value); }

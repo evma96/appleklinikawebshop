@@ -57,7 +57,12 @@ final class FulfilmentWorkflow
     {
         return self::actions() + [
             'open_invoice' => 'Számla PDF megnyitása',
+            'invoice_generation' => 'Számlázás helyreállításának indítása',
+            'invoice_generated' => 'Számla kiállítva',
+            'invoice_generation_failed' => 'Számlakiállítás — egyeztetés szükséges',
             'open_gls_label' => 'GLS címke PDF megnyitása',
+            'gls_label_generated' => 'GLS címke automatikusan elkészült',
+            'gls_automation_failed' => 'Automatikus GLS feldolgozás — ellenőrzés szükséges',
             'open_mpl_label' => 'MPL címke PDF megnyitása',
         ];
     }
@@ -71,8 +76,7 @@ final class FulfilmentWorkflow
             'record_cash_pickup' => 'Készpénz átvéve – személyes átadás rögzítése',
             'start_packing' => 'Csomagolás megkezdése',
             'packing_completed' => 'Csomagolás kész',
-            'create_label' => 'GLS címke létrehozása',
-            'label_failed' => 'GLS címkekészítés sikertelen',
+            'create_label' => 'GLS feldolgozás helyreállítása',
             'create_mpl_label' => 'MPL címke létrehozása',
             'handed_to_carrier' => 'Átadva az MPL-nek',
             'handed_to_gls' => 'Átadva a GLS-nek',
@@ -144,6 +148,7 @@ final class FulfilmentWorkflow
     {
         return [
             '' => 'Összes nyitott',
+            'all' => 'Összes rendelés',
             'new' => 'Feldolgozásra vár',
             'preparation' => 'Előkészítés alatt',
             'packing' => 'Csomagolás alatt',

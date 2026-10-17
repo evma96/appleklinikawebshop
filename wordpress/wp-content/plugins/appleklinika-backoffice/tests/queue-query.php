@@ -44,12 +44,24 @@ final class QueueQueryTest
         $this->fixture(26, 'checkout-draft', null);
         $this->fixture(27, 'pending', 'handed_to_gls');
         $this->fixture(28, 'on-hold', 'picked_up');
+        $this->fixture(29, 'trash', 'new');
+        $this->fixture(30, 'auto-draft', null);
+        $this->fixture(31, 'custom-order-status', 'unrecognised_legacy_value');
         $this->orders[9]['meta'][OrderQueueQuery::DEVICE_IDENTIFIER_META_KEY] = 'QA-GLS-IMEI-001';
         $this->orders[19]['meta'][OrderQueueQuery::DEVICE_IDENTIFIER_META_KEY] = 'QA-CLOSED-IMEI-001';
 
         $query = new OrderQueueQuery();
         $ids = fn (string $queue, string $term = '', string $type = ''): array => $this->matchingIds($query->arguments($queue, 1, $term, $type, true));
         $open = [...range(1, 14), 21, 22];
+
+        $this->assert(FulfilmentWorkflow::queueLabels()['all'] === 'Összes rendelés', 'The all-order queue is an explicit option, distinct from the unchanged open default.');
+        $this->assert($ids('all') === range(1, 31), 'All includes every order status and every fulfilment state, including drafts, trash and custom statuses.');
+        $all = $query->arguments('all', 2, '', '', true);
+        $this->assert($all['status'] === ['all'] && ! isset($all['meta_query']), 'All removes both status and fulfilment restrictions, not just the open-state filter.');
+        $this->assert($all['type'] === 'shop_order' && $all['limit'] === 25 && $all['page'] === 2 && $all['paginate'] === true && $all['orderby'] === 'date ID', 'All still queries orders only with bounded deterministic pagination.');
+        $this->assert($ids('all', '#24', '') === [24] && $ids('all', '26', '') === [26] && $ids('all', '999999', '') === [], 'Automatic exact-ID search works for cancelled orders and drafts without broadening unknown matches.');
+        $this->assert($ids('all', 'QA-CLOSED-IMEI-001', 'device') === [19], 'Exact device search remains active in the all-order scope.');
+        $this->assert(isset($query->arguments('all', 1, 'Teszt Elek', 'customer', true)['field_query']) && $query->arguments('all', 1, 'qa@example.test', 'email', true)['billing_email'] === 'qa@example.test', 'All retains customer and email search constraints.');
 
         $this->assert($ids('') === $open, 'The open worklist excludes physical handover, pickup, legacy completion and terminal WooCommerce statuses.');
         $this->assert($ids('new') === [1, 2, 3, 4, 21], 'Missing, empty and unknown stored states appear in the same NEW queue as their rendered normalized state.');
@@ -88,7 +100,7 @@ final class QueueQueryTest
     {
         $ids = [];
         foreach ($this->orders as $id => $order) {
-            if (! in_array($order['status'], $arguments['status'], true)
+            if ((! in_array('all', $arguments['status'], true) && ! in_array($order['status'], $arguments['status'], true))
                 || (isset($arguments['id']) && $arguments['id'] !== $id)
                 || (isset($arguments['meta_query']) && ! $this->matchesMeta($arguments['meta_query'], $order['meta']))) {
                 continue;

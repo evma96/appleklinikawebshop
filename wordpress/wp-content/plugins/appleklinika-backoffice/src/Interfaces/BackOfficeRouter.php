@@ -9,6 +9,9 @@ use Appleklinika\BackOffice\Domain\FulfilmentWorkflow;
 use Appleklinika\BackOffice\Domain\OrderQueueQuery;
 use Appleklinika\BackOffice\Infrastructure\WooOrderBackOfficeRepository;
 use Appleklinika\BackOffice\Infrastructure\OrderDocuments;
+use Appleklinika\BackOffice\Application\GenerateInvoice;
+use Appleklinika\BackOffice\Infrastructure\SzamlazzInvoice;
+use Appleklinika\BackOffice\Infrastructure\WooOrderMutex;
 use InvalidArgumentException;
 use WC_Order;
 
@@ -67,6 +70,9 @@ final class BackOfficeRouter
                 wp_die('A rendelés nem található.', 'Rendelés nem található', ['response' => 404]);
             }
 
+            if ($print && ($_GET['autoprint'] ?? null) === '1') {
+                check_admin_referer('appleklinika_backoffice_print_sheet_' . $orderId);
+            }
             $print ? $this->renderPackingSheet($order) : $this->renderOrder($order, $this->worklistContext($_GET));
             exit;
         }
@@ -90,6 +96,17 @@ final class BackOfficeRouter
         check_admin_referer('appleklinika_backoffice_' . $action . '_' . $orderId);
 
         try {
+            if (in_array($action, ['generate_invoice', 'create_label'], true) && ($_POST['confirm_recovery'] ?? null) !== '1') {
+                throw new InvalidArgumentException('A kivételes szolgáltatói művelethez nyisd meg a helyreállítási lehetőségeket és erősítsd meg az ellenőrzést.');
+            }
+            // Invoice eligibility is independent of the fulfilment command gate.
+            if ($action === 'generate_invoice') {
+                if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+                    throw new InvalidArgumentException('Számlakiállítás csak POST kéréssel indítható.');
+                }
+                (new GenerateInvoice(new SzamlazzInvoice(), new WooOrderMutex()))->execute($orderId);
+                $this->redirect($orderId, 'A számla elkészült; a Dokumentumok résznél megnyitható és nyomtatható.', false, $worklistContext);
+            }
             if ($action === 'note') {
                 $note = isset($_POST['note']) ? sanitize_textarea_field(wp_unslash($_POST['note'])) : '';
                 $this->orders->addInternalNote($order, $note);
@@ -143,6 +160,13 @@ final class BackOfficeRouter
         $path = (new OrderDocuments())->filePath($order, $document);
         if ($path === null) {
             wp_die('A dokumentum nem érhető el.', 'Dokumentum nem található', ['response' => 404]);
+        }
+
+        if (($_GET['print'] ?? null) === '1' && in_array($document, ['invoice', 'gls_label'], true)) {
+            // The wrapper has the same access/nonce/file checks as the PDF.
+            // Only the subsequent PDF retrieval records document access.
+            $this->renderDocumentPrint($order, $document);
+            exit;
         }
 
         $this->orders->recordDocumentAccess($order, $document);
@@ -231,8 +255,8 @@ final class BackOfficeRouter
             $closed = $order->has_status('completed') || in_array($state, [FulfilmentWorkflow::HANDED_TO_GLS, FulfilmentWorkflow::HANDED_TO_CARRIER, FulfilmentWorkflow::PICKED_UP], true);
             $attention = $closed ? '' : $this->attention($order, $state);
             $nextLabel = $closed ? 'Feldolgozás lezárva' : ($block !== null ? ($attention ?: 'Átvételi mód ellenőrzése') : ($next !== null ? FulfilmentWorkflow::actions()[$next] : 'Rendelés ellenőrzése'));
-            if (! $closed && $block === null && $next === 'create_label' && ! $this->orders->canCreateGlsLabel()) {
-                $nextLabel = 'GLS kapcsolat ellenőrzése';
+            if (! $closed && $block === null && $next === 'create_label') {
+                $nextLabel = 'GLS feldolgozás ellenőrzése';
             }
             echo '<tr>';
             echo '<td data-label="Rendelés"><a href="' . esc_url($this->orderUrl($order->get_id(), $worklistContext)) . '">#' . esc_html($order->get_order_number()) . '</a><small>' . esc_html(wc_format_datetime($order->get_date_created())) . '</small></td>';
@@ -332,9 +356,7 @@ final class BackOfficeRouter
         $this->documentStart('Rendelés #' . $order->get_order_number());
         echo '<main class="akbo-shell">';
         echo '<a class="akbo-back" href="' . esc_url($this->url($worklistContext)) . '">← Vissza a rendelésekhez</a>';
-        $printHelp = $deliveryMode === DeliveryMode::GLS ? 'Belső rendelési összesítő, nem GLS szállítási címke.' : 'Belső rendelési összesítő.';
-        $printLink = '<div class="akbo-print-action"><a class="akbo-print-link" target="_blank" href="' . esc_url($this->url(['order' => $order->get_id(), 'print' => 1])) . '">Rendelési lap nyomtatása</a><small>' . esc_html($printHelp) . '</small></div>';
-        $this->renderApplicationHeader('Rendelés #' . $order->get_order_number(), $printLink);
+        $this->renderApplicationHeader('Rendelés #' . $order->get_order_number());
         $this->notice();
         echo '<div class="akbo-status-line"><span class="akbo-badge akbo-state--' . esc_attr($state) . '">' . esc_html($order->has_status('completed') ? 'Lezárt rendelés' : FulfilmentWorkflow::labels()[$state]) . '</span><span>' . esc_html($this->paymentLabel($order)) . '</span><span>' . esc_html($this->orders->deliveryModeLabel($order)) . '</span><strong>' . wp_kses_post($order->get_formatted_order_total()) . '</strong></div>';
         $this->renderProgress($order, $state, $deliveryMode);
@@ -345,7 +367,7 @@ final class BackOfficeRouter
         $this->renderInternalNotes($order, $worklistContext);
         echo '</div><aside class="akbo-side">';
         $this->renderActions($order, $state, $deliveryMode, $worklistContext);
-        $this->renderInvoice($order);
+        $this->renderDocuments($order);
         $this->renderShipping($order);
         $this->renderHistory($order);
         echo '</aside></div></main>';
@@ -383,14 +405,12 @@ final class BackOfficeRouter
             return;
         }
 
-        $labelMessage = $this->orders->glsLabelAttemptMessage($order);
-        if ($labelMessage !== '') { echo '<p class="akbo-action-block">' . esc_html($labelMessage) . '</p>'; }
         $hasGlsLabel = $deliveryMode === DeliveryMode::GLS && $this->orders->hasGlsLabel($order);
         $primaryAction = $this->orders->primaryAction($order);
         if ($primaryAction === 'create_mpl_label' && \Appleklinika\BackOffice\Infrastructure\MplCarrier::readiness() !== null) {
             echo '<p class="akbo-action-block">' . esc_html(\Appleklinika\BackOffice\Infrastructure\MplCarrier::readiness()) . '</p>';
-        } elseif ($primaryAction === 'create_label' && ! $this->orders->canCreateGlsLabel()) {
-            echo '<p class="akbo-action-block">' . esc_html($this->orders->glsReadinessMessage() ?? 'GLS kapcsolat nincs konfigurálva ebben a környezetben.') . ' A rendelés szállításra előkészítve marad.</p>';
+        } elseif ($primaryAction === 'create_label') {
+            echo '<p class="akbo-help">A csomag előkészítve. A GLS feldolgozás állapotát a Szállítás / átvétel rész mutatja; a címkekészítés nem normál kézi munkalépés.</p>';
         } elseif ($primaryAction !== null) {
             echo '<p class="akbo-help">' . esc_html(match ($primaryAction) {
                 'accept_cash_pickup' => 'Ellenőrizd és tedd félre a rendelés készülékeit. Ez a művelet elküldi a rendelés elfogadását; a fizetés továbbra is átvételkor esedékes.',
@@ -466,11 +486,44 @@ final class BackOfficeRouter
         return trim($address) === '' ? '—' : wp_kses($address, ['br' => []]);
     }
 
+    private function renderDocuments(WC_Order $order): void
+    {
+        $sheet = $this->url(['order' => $order->get_id(), 'print' => 1]);
+        $sheetPrint = wp_nonce_url(add_query_arg(['autoprint' => 1], $sheet), 'appleklinika_backoffice_print_sheet_' . $order->get_id());
+        echo '<section class="akbo-card akbo-documents" aria-labelledby="akbo-documents-title"><h2 id="akbo-documents-title">Dokumentumok</h2>';
+        echo '<div class="akbo-document"><h3>Rendelési lap</h3><p class="akbo-help">Elérhető · Belső rendelési összesítő, nem számla vagy futárcímke.</p>';
+        $this->renderDocumentLinks('Rendelési lap', $sheet, $sheetPrint);
+        echo '</div>';
+        $this->renderInvoice($order);
+        if ($this->orders->deliveryMode($order) === DeliveryMode::GLS) {
+            $label = (new OrderDocuments())->glsLabel($order);
+            echo '<div class="akbo-document"><h3>GLS címke</h3><p>' . esc_html($label['available'] ? 'Elérhető · PDF megnyitható és nyomtatható.' : ($label['recorded'] ? 'Címke rögzítve, de a PDF jelenleg nem érhető el.' : 'Még nincs elkészült GLS címke.')) . '</p>';
+            if ($label['tracking_codes'] !== []) {
+                echo '<p class="akbo-document-number">Csomagszám: ' . esc_html(implode(', ', $label['tracking_codes'])) . '</p>';
+            }
+            if ($label['available']) {
+                $url = $this->labelDownloadUrl($order);
+                $this->renderDocumentLinks('GLS címke', $url, $this->labelDownloadUrl($order, true));
+            }
+            echo '</div>';
+        }
+        echo '</section>';
+    }
+
+    private function renderDocumentLinks(string $label, string $openUrl, string $printUrl): void
+    {
+        echo '<div class="akbo-document-actions"><a class="akbo-button akbo-button--secondary" target="_blank" rel="noopener" aria-label="' . esc_attr($label . ' megnyitása') . '" href="' . esc_url($openUrl) . '">Megnyitás</a>';
+        echo '<a class="akbo-button" target="_blank" rel="noopener" aria-label="' . esc_attr($label . ' nyomtatása') . '" href="' . esc_url($printUrl) . '">Nyomtatás</a></div>';
+    }
+
     private function renderInvoice(WC_Order $order): void
     {
         $invoice = (new OrderDocuments())->invoice($order);
-        echo '<section class="akbo-card"><h2>Számla</h2>';
+        echo '<div class="akbo-document"><h3>Számlázz.hu számla</h3>';
         echo '<p><strong>' . esc_html($invoice['state_label']) . '</strong></p>';
+        if ($invoice['automation_reason'] !== '') {
+            echo '<p class="akbo-help">' . esc_html($invoice['automation_reason']) . '</p>';
+        }
         if ($invoice['number'] !== '') {
             echo '<p class="akbo-document-number">' . esc_html($invoice['number']) . '</p>';
         }
@@ -488,14 +541,24 @@ final class BackOfficeRouter
             }
         }
         if ($invoice['available']) {
-            $url = wp_nonce_url(add_query_arg(['action' => 'appleklinika_backoffice_download_invoice', 'order_id' => $order->get_id()], admin_url('admin-post.php')), 'appleklinika_backoffice_download_invoice_' . $order->get_id());
-            echo '<a class="akbo-button akbo-button--secondary" target="_blank" rel="noopener" href="' . esc_url($url) . '">Számla megnyitása / nyomtatása</a>';
+            $url = $this->invoiceDownloadUrl($order);
+            $this->renderDocumentLinks('Számla', $url, $this->invoiceDownloadUrl($order, true));
         } else {
             if (! $invoice['provider_active'] || $invoice['recorded']) {
                 echo '<p class="akbo-empty">' . esc_html(! $invoice['provider_active'] ? 'A Számlázz.hu kapcsolat jelenleg nem aktív.' : 'A számla rögzítve van, de a PDF-fájl nem érhető el.') . '</p>';
             }
         }
-        echo '<p class="akbo-help">' . esc_html($invoice['generation_block']) . '</p></section>';
+        if (!$invoice['recorded']) {
+            echo '<details class="akbo-recovery"><summary>További lehetőségek — számlázás helyreállítása</summary>';
+            echo '<p class="akbo-help">Kivételes művelet, nem a normál feldolgozás része. Előbb ellenőrizd az automatikus folyamatot és hogy nem készült már bizonylat a szolgáltatónál.</p>';
+            if ($invoice['generation_block'] === null) {
+                echo $this->actionForm($order, 'generate_invoice', 'Számlázás helyreállítása', 'akbo-button akbo-button--secondary', $this->worklistContext($_GET));
+            } else {
+                echo '<p class="akbo-help">' . esc_html($invoice['generation_block']) . '</p>';
+            }
+            echo '</details>';
+        }
+        echo '</div>';
     }
 
     private function renderShipping(WC_Order $order): void
@@ -531,17 +594,26 @@ final class BackOfficeRouter
     {
         $document = (new OrderDocuments())->glsLabel($order);
         $hasLabel = $document['available'];
-        $labelUrl = $this->labelDownloadUrl($order);
         $tracking = $document['tracking_codes'];
         echo '<h3>GLS címke és követés</h3><p>' . esc_html($hasLabel ? 'A címke nyomtatásra kész.' : ($document['recorded'] ? 'Címke rögzítve, de a PDF nem érhető el.' : 'Még nincs elkészült címke.')) . '</p>';
-        if ($hasLabel) {
-            echo '<p><a class="akbo-button" target="_blank" rel="noopener" href="' . esc_url($labelUrl) . '">GLS címke megnyitása / nyomtatása</a></p>';
-        } elseif (! $hasLabel) {
+        if (! $hasLabel) {
+            if ($document['failure'] !== '') {
+                echo '<p class="akbo-action-block">' . esc_html($document['failure']) . '</p>';
+            }
             $readiness = $this->orders->glsReadinessMessage();
             if ($readiness !== null) {
                 echo '<p class="akbo-action-block">' . esc_html($readiness) . '</p>';
             } else {
-                echo '<p class="akbo-help">' . esc_html($document['recorded'] ? 'Már rögzített címke esetén nem készül automatikusan új címke. A szolgáltatói PDF-et ellenőrizni kell.' : 'A címke csak a fenti, sorrendben elérhető művelettel készülhet el. A címke létrehozása nem jelenti a fizikai GLS-átadást.') . '</p>';
+                echo '<p class="akbo-help">' . esc_html($document['recorded'] || $document['parcel_ids'] !== [] || $tracking !== [] ? 'Már van szolgáltatói adat; új címke helyett a meglévő PDF-et kell helyreállítani.' : (new \Appleklinika\BackOffice\Infrastructure\GlsAutomation($this->orders))->status($order)) . '</p>';
+            }
+            $recoveryBlock = $this->orders->glsRecoveryBlock($order);
+            if ($this->orders->state($order) === FulfilmentWorkflow::READY_FOR_SHIPPING) {
+                echo '<details class="akbo-recovery"><summary>További lehetőségek — GLS helyreállítása</summary>';
+                echo '<p class="akbo-help">Csak ellenőrzött kivételhez. A címke nem jelenti a csomag fizikai átadását.</p>';
+                echo $recoveryBlock === null
+                    ? $this->actionForm($order, 'create_label', 'GLS feldolgozás helyreállítása', 'akbo-button akbo-button--secondary', $this->worklistContext($_GET))
+                    : '<p class="akbo-action-block">' . esc_html($recoveryBlock) . '</p>';
+                echo '</details>';
             }
         }
         if ($tracking !== []) {
@@ -615,8 +687,44 @@ final class BackOfficeRouter
             }
             echo '</dl>';
         }
-        echo '</section><p class="akbo-print-controls"><button onclick="window.print()">Nyomtatás</button></p></main>';
+        echo '</section><p class="akbo-print-controls"><button class="akbo-button" onclick="window.print()">Nyomtatás</button></p></main>';
+        if (($_GET['autoprint'] ?? null) === '1') {
+            echo '<div data-akbo-print="sheet"></div>';
+            $this->documentPrintScript();
+        }
         $this->documentEnd();
+    }
+
+    private function renderDocumentPrint(WC_Order $order, string $document): void
+    {
+        nocache_headers();
+        header('X-Content-Type-Options: nosniff');
+        header('Referrer-Policy: same-origin');
+        $label = $document === 'invoice' ? 'Számla' : 'GLS címke';
+        $url = $document === 'invoice' ? $this->invoiceDownloadUrl($order) : $this->labelDownloadUrl($order);
+        $this->documentStart($label . ' nyomtatása — #' . $order->get_order_number());
+        echo '<main class="akbo-shell akbo-document-print" data-akbo-print="pdf" data-document-url="' . esc_url($url) . '">';
+        echo '<div class="akbo-print-controls"><a class="akbo-back" href="' . esc_url($this->orderUrl($order->get_id(), $this->worklistContext($_GET))) . '">← Vissza a rendeléshez</a>';
+        echo '<h1>' . esc_html($label) . ' · #' . esc_html($order->get_order_number()) . '</h1><div class="akbo-document-actions"><button class="akbo-button" data-document-print-button disabled>Nyomtatás</button>';
+        echo '<a class="akbo-button akbo-button--secondary" target="_blank" rel="noopener" href="' . esc_url($url) . '">PDF megnyitása</a></div>';
+        echo '<p role="status" data-document-print-status>Dokumentum betöltése…</p><p class="akbo-help">Ha a böngésző nem nyitja meg automatikusan a nyomtatást, kattints a Nyomtatás gombra. Ha a beágyazott PDF nyomtatása nem támogatott, válaszd a PDF megnyitása műveletet, majd a PDF-megjelenítő nyomtatóikonját vagy a Ctrl/Cmd+P billentyűket.</p>';
+        echo '<noscript>A nyomtatási nézethez JavaScript szükséges. A PDF megnyitása hivatkozás JavaScript nélkül is használható.</noscript></div>';
+        echo '<iframe class="akbo-document-frame" title="' . esc_attr($label . ' PDF') . '" data-document-frame hidden></iframe></main>';
+        $this->documentPrintScript();
+        $this->documentEnd();
+    }
+
+    private function documentPrintScript(): void
+    {
+        $url = add_query_arg('ver', (string) filemtime(dirname(__DIR__, 2) . '/assets/document-print.js'), plugins_url('assets/document-print.js', dirname(__DIR__, 2) . '/appleklinika-backoffice.php'));
+        echo '<script defer src="' . esc_url($url) . '"></script>';
+    }
+
+    private function invoiceDownloadUrl(WC_Order $order, bool $print = false): string
+    {
+        $args = ['action' => 'appleklinika_backoffice_download_invoice', 'order_id' => $order->get_id()];
+        if ($print) { $args['print'] = 1; }
+        return wp_nonce_url(add_query_arg($args, admin_url('admin-post.php')), 'appleklinika_backoffice_download_invoice_' . $order->get_id());
     }
 
     /** @param array<string, scalar> $worklistContext */
@@ -631,6 +739,9 @@ final class BackOfficeRouter
             <input type="hidden" name="expected_state" value="<?php echo esc_attr($this->orders->state($order)); ?>">
             <?php $this->renderWorklistContextInputs($worklistContext); ?>
             <?php wp_nonce_field('appleklinika_backoffice_' . $action . '_' . $order->get_id()); ?>
+            <?php if (in_array($action, ['generate_invoice', 'create_label'], true)): ?>
+                <label class="akbo-help"><input type="checkbox" name="confirm_recovery" value="1" required> Ellenőriztem: nincs már kiállított vagy folyamatban lévő szolgáltatói dokumentum.</label>
+            <?php endif; ?>
             <button class="<?php echo esc_attr($class); ?>" type="submit"><?php echo esc_html($label); ?></button>
         </form>
         <?php
@@ -737,13 +848,12 @@ final class BackOfficeRouter
         return implode(', ', array_map(static fn ($method): string => $method->get_name(), $methods));
     }
 
-    private function labelDownloadUrl(WC_Order $order): string
+    private function labelDownloadUrl(WC_Order $order, bool $print = false): string
     {
+        $args = ['action' => 'appleklinika_backoffice_download_label', 'order_id' => $order->get_id()];
+        if ($print) { $args['print'] = 1; }
         return wp_nonce_url(
-            add_query_arg([
-                'action' => 'appleklinika_backoffice_download_label',
-                'order_id' => $order->get_id(),
-            ], admin_url('admin-post.php')),
+            add_query_arg($args, admin_url('admin-post.php')),
             'appleklinika_backoffice_download_label_' . $order->get_id()
         );
     }

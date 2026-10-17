@@ -20,7 +20,9 @@ final class OrderDocuments
         $disabled = $this->scalarMeta($order, '_wc_szamlazz_own');
         $void = $this->scalarMeta($order, '_wc_szamlazz_void');
         $receipt = $this->scalarMeta($order, '_wc_szamlazz_receipt');
-        $state = $recorded ? 'issued' : ($void !== '' ? 'voided' : ($receipt !== '' ? 'receipt' : ($disabled !== '' ? 'disabled' : 'missing')));
+        $receiptMode = (bool) $order->get_meta('_wc_szamlazz_type_receipt', true);
+        $state = $recorded ? 'issued' : ($receipt !== '' ? 'receipt' : ($disabled !== '' ? 'disabled' : ($receiptMode ? 'receipt_mode' : ($void !== '' ? 'voided' : 'missing'))));
+        $automation = $state === 'missing' ? (new SzamlazzInvoice())->automationStatus($order) : null;
 
         return [
             'provider_active' => $this->invoiceActive(),
@@ -32,56 +34,34 @@ final class OrderDocuments
                 'issued' => 'Számla rögzítve',
                 'voided' => 'A korábbi számla sztornózva',
                 'receipt' => 'Nyugta rögzítve, nem számla',
+                'receipt_mode' => 'Nyugta mód — még nincs elkészült nyugta',
                 'disabled' => 'Számlázás letiltva ennél a rendelésnél',
-                default => 'Még nincs elkészült számla',
+                default => $automation['label'] ?? 'Még nincs elkészült számla',
             },
+            'automation_state' => $automation['state'] ?? '',
+            'automation_reason' => $automation['reason'] ?? '',
             'manual' => (bool) $order->get_meta('_wc_szamlazz_invoice_manual', true),
             // This is the provider's paid marker, NOT invoice issue/completion date.
             'paid' => $recorded ? $this->scalarMeta($order, '_wc_szamlazz_completed') : '',
             'void_number' => $void,
             'receipt_number' => $receipt,
             'disabled_reason' => $disabled,
-            'generation_block' => $this->invoiceGenerationBlock($order, $recorded, $disabled),
+            'generation_block' => (new SzamlazzInvoice())->generationBlock($order),
         ];
-    }
-
-    private function invoiceGenerationBlock(WC_Order $order, bool $recorded, string $disabled): string
-    {
-        if ($disabled !== '') {
-            return 'A Számlázz.hu bővítményben a rendelés számlázása le van tiltva; ezt a Back Office nem kapcsolja vissza.';
-        }
-        if ($recorded) {
-            return 'Már van rögzített számla; új példány kiállítása nem indítható.';
-        }
-        if (! $this->invoiceActive()) {
-            return 'Kiállítás nem indítható: a Számlázz.hu bővítmény nem aktív.';
-        }
-        $provider = \WC_Szamlazz();
-        if (! is_callable([$provider, 'generate_invoice']) || ! is_callable([$provider, 'get_szamlazz_agent_key'])) {
-            return 'A telepített Számlázz.hu bővítmény szükséges kiállítási művelete nem érhető el.';
-        }
-        if (trim((string) $provider->get_szamlazz_agent_key($order)) === '') {
-            return 'Kiállítás nem indítható: ehhez a rendeléshez nincs beállított Számla Agent-kulcs. Igazolt TEST-fiók szükséges.';
-        }
-
-        if (function_exists('wp_get_environment_type') && wp_get_environment_type() === 'production') {
-            return 'A számlázást a jóváhagyott fizetési folyamat kezeli; innen kézi kiállítás nem indul.';
-        }
-
-        // A shared Agent endpoint and the presence of a key do not prove that
-        // the selected account is a TEST account. Inspection never generates.
-        return 'A Számlázz.hu közös szolgáltatói végpontot használ; az Agent-kulcs megléte nem igazolja a TEST-fiókot. A kulcshoz tartozó számlázási fiók TEST állapotát ellenőrizni kell; innen kiállítás nem indul.';
     }
 
     /** Read-only label and parcel evidence; parcel IDs are not tracking numbers. */
     public function glsLabel(WC_Order $order): array
     {
+        $attempt = $order->get_meta('_appleklinika_gls_attempt', true);
+        $unresolved = is_array($attempt) && in_array($attempt['state'] ?? '', ['generating', 'uncertain', 'failed'], true);
         return [
             'provider_active' => $this->glsActive(),
             'recorded' => $this->scalarMeta($order, '_gls_print_label') !== '',
             'available' => $this->filePath($order, 'gls_label') !== null,
             'tracking_codes' => $this->numericMetaList($order, '_gls_tracking_codes', '_gls_tracking_code'),
             'parcel_ids' => $this->numericMetaList($order, '_gls_parcel_ids'),
+            'failure' => $unresolved ? 'A korábbi GLS kérésnek nincs igazolt sikeres eredménye. Egyeztetés szükséges; új címke nem indulhat.' : '',
         ];
     }
 
@@ -173,6 +153,11 @@ final class OrderDocuments
     }
 
     private function invoiceActive(): bool
+    {
+        return $this->invoiceProviderActive();
+    }
+
+    public function invoiceProviderActive(): bool
     {
         return $this->pluginActive(self::INVOICE_PLUGIN) && function_exists('WC_Szamlazz');
     }

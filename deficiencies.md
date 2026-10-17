@@ -527,3 +527,8 @@ unknown outcomes require provider reconciliation. Label creation never represent
 carrier handoff or sends shipping mail. Cash/pickup and MPL are unchanged.
 The legacy bulk-print generation bypass is disabled; existing PDF downloads remain.
 See [verification and operational limits](docs/gls-label-after-packing.md).
+
+2026-10-17: deployment preflight detected concurrent approved Back Office changes
+outside TEST Git. The release now preserves those document/queue/recovery changes and
+uses the existing packing-event adapter and attempt metadata. The earlier candidate
+was not installed over them. See the GLS integration document for scope and evidence.
