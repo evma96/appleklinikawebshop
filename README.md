@@ -506,3 +506,10 @@ activation remain separate. The earlier 2026-10-15 HIGH entry is historical.
 The owner-supplied v2 terms/privacy PDFs are served unchanged through the existing legal
 registry, with `/aszf/` compatibility and native privacy links. See
 [installation, hashes and rollback](docs/legal-documents-final.md).
+
+### GLS labels after packing
+
+GLS labels are created automatically only when staff completes packing for an order
+with recorded payment. Shared locking and a durable request journal protect retries;
+carrier handoff remains a separate action and email trigger. See
+[trigger, failure handling and verification](docs/gls-label-after-packing.md).

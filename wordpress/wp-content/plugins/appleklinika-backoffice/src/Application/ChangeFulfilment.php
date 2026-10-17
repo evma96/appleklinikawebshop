@@ -5,6 +5,7 @@ namespace Appleklinika\BackOffice\Application;
 use Appleklinika\BackOffice\Application\Port\FulfilmentStore;
 use Appleklinika\BackOffice\Application\Port\OrderMutex;
 use Appleklinika\BackOffice\Domain\FulfilmentWorkflow;
+use Appleklinika\BackOffice\Domain\DeliveryMode;
 
 final class ChangeFulfilment
 {
@@ -19,6 +20,10 @@ final class ChangeFulfilment
             }
             if ($expected !== $order['state']) {
                 throw new \InvalidArgumentException('A rendelés állapota közben megváltozott. Frissítsd az oldalt.');
+            }
+            $autoLabel = $action === 'packing_completed' && $order['mode'] === DeliveryMode::GLS;
+            if ($autoLabel && empty($order['paid'])) {
+                throw new \InvalidArgumentException('A csomagolás lezárásához rögzített sikeres fizetés szükséges.');
             }
             $cash = !empty($order['cash']);
             $accepted = !empty($order['cash_accepted']);
@@ -61,6 +66,15 @@ final class ChangeFulfilment
                 }
             }
             $this->orders->record($id, $action, $to, $actor, $reason);
+            if ($autoLabel && !$order['label']) {
+                try {
+                    $this->orders->createLabel($id);
+                } catch (\Throwable $error) {
+                    $this->orders->record($id, 'label_failed', $to, $actor, 'A csomagolás kész; a GLS címke ellenőrzése/újrapróbálása szükséges.');
+                    throw new \InvalidArgumentException('A csomagolás lezárva, de a GLS címke nem készült el. ' . ($error instanceof \InvalidArgumentException ? $error->getMessage() : 'Ellenőrizd a GLS címkekészítés naplóját.'), 0, $error);
+                }
+                $this->orders->record($id, 'create_label', $to, $actor, 'Automatikusan a csomagolás lezárásakor.');
+            }
             return $to;
         });
     }

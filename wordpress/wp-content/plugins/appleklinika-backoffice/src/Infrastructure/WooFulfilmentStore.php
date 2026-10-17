@@ -11,7 +11,7 @@ final class WooFulfilmentStore implements FulfilmentStore
     public function snapshot(int $id): array
     {
         $order = $this->order($id);
-        return ['state' => $this->orders->state($order), 'mode' => $this->orders->deliveryMode($order),
+        return ['paid' => $order->is_paid() && $order->get_date_paid() !== null, 'state' => $this->orders->state($order), 'mode' => $this->orders->deliveryMode($order),
             'blocked' => $this->orders->fulfilmentBlockReason($order), 'label' => MplCarrier::matches($order) ? MplCarrier::hasLabel($order) : $this->orders->hasGlsLabel($order),
             'tracking' => (new OrderDocuments())->trackingLinks($order) !== [],
             'manifest' => !MplCarrier::matches($order) || $order->get_meta('_vp_woo_pont_mpl_closed', true) === 'yes',

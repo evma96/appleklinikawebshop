@@ -518,3 +518,12 @@ The other six sample legal document types are outside this two-document installa
 and must not be mistaken for finalized text. Embedded PDF preview is unavailable in
 Codex; original/downloading hashes and independent PDF rendering provide separate proof.
 See [exact files, scope and verification](docs/legal-documents-final.md).
+
+## GLS packing-completion automation — 2026-10-16
+
+The owner-approved trigger is implemented: verified payment plus completed packing
+creates one GLS label; payment/invoice alone do not. Known rejection can be retried;
+unknown outcomes require provider reconciliation. Label creation never represents
+carrier handoff or sends shipping mail. Cash/pickup and MPL are unchanged.
+The legacy bulk-print generation bypass is disabled; existing PDF downloads remain.
+See [verification and operational limits](docs/gls-label-after-packing.md).

@@ -28,6 +28,7 @@ class GLS_Shipping_API_Data {
     public function generate_post_fields(...$args) { return []; }
 }
 class GLS_Shipping_API_Service {
+    public function safe_to_retry() { return false; }
     public function send_order($args) { ++$GLOBALS['provider_calls']; return ['body'=>$GLOBALS['body']]; }
 }
 require dirname(__DIR__,3).'/gls-shipping-for-woocommerce/includes/admin/class-gls-shipping-order.php';

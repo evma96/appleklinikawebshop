@@ -464,6 +464,16 @@ final class WooOrderBackOfficeRepository
         return (string) preg_replace('/^Back Office belső megjegyzés(?: \([^)]*\))?:\s*/u', '', $content);
     }
 
+    public function glsLabelAttemptMessage(WC_Order $order): string
+    {
+        $record = $order->get_meta('_appleklinika_gls_label_attempt', true);
+        return match (is_array($record) ? ($record['state'] ?? '') : '') {
+            'retryable' => 'A GLS címkekérés sikertelen. Az adatok/beállítások javítása után a címkekészítés újrapróbálható.',
+            'attempting', 'uncertain' => 'A GLS címkekérés eredménye bizonytalan. Szolgáltatói egyeztetés vagy a meglévő címke helyreállítása szükséges; új csomagkérés nem indítható.',
+            default => '',
+        };
+    }
+
     public function hasGlsLabel(WC_Order $order): bool
     {
         return (string) $order->get_meta('_gls_print_label', true) !== '';

@@ -383,6 +383,8 @@ final class BackOfficeRouter
             return;
         }
 
+        $labelMessage = $this->orders->glsLabelAttemptMessage($order);
+        if ($labelMessage !== '') { echo '<p class="akbo-action-block">' . esc_html($labelMessage) . '</p>'; }
         $hasGlsLabel = $deliveryMode === DeliveryMode::GLS && $this->orders->hasGlsLabel($order);
         $primaryAction = $this->orders->primaryAction($order);
         if ($primaryAction === 'create_mpl_label' && \Appleklinika\BackOffice\Infrastructure\MplCarrier::readiness() !== null) {
@@ -395,7 +397,7 @@ final class BackOfficeRouter
                 'record_cash_pickup' => 'Csak a tényleges készpénzfizetés és személyes átadás után rögzítsd. A fizetéshez egyszer készül számla.',
                 'start' => 'Vedd munkába a rendelést, és ellenőrizd a megrendelt készüléket.',
                 'start_packing' => 'Az ellenőrzött készülék és a tartozékok csomagolása következik.',
-                'packing_completed' => 'A csomag lezárása után jelöld szállításra késznek.',
+                'packing_completed' => $deliveryMode === DeliveryMode::GLS ? 'A csomag lezárásával, igazolt fizetés mellett automatikusan elkészül a GLS címke. Futárátadás még nem történik.' : 'A csomag lezárása után jelöld szállításra késznek.',
                 'prepare_pickup' => 'Készítsd elő a rendelést a személyes átvételre.',
                 'picked_up' => 'Csak a vásárlónak történő tényleges átadás után rögzítsd az átvételt.',
                 'delivered' => 'Csak a kézbesítés visszaigazolása után zárd le a teljesítést.',

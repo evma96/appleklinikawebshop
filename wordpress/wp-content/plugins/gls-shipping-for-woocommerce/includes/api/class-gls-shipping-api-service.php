@@ -16,6 +16,10 @@ class GLS_Shipping_API_Service
 
 	private $service_settings;
 
+    // True only before dispatch or after an explicit rejection without any parcel evidence.
+    private $retry_safe = true;
+    public function safe_to_retry() { return $this->retry_safe; }
+
 	/**
 	 * Constructor.
 	 *
@@ -76,6 +80,7 @@ class GLS_Shipping_API_Service
             }
             \Appleklinika\BackOffice\Infrastructure\ProductionTransportGuard::gls($this->api_url);
         }
+        $this->retry_safe = false;
         $response = wp_remote_post($this->api_url, $params);
 
 		if (is_wp_error($response)) {
@@ -86,6 +91,10 @@ class GLS_Shipping_API_Service
 
 		$response_code = wp_remote_retrieve_response_code($response);
 		$body = json_decode(wp_remote_retrieve_body($response), true);
+        $has_parcel = is_array($body) && (!empty($body['PrintLabelsInfoList']) || !empty($body['Labels']));
+        $explicit_rejection = is_array($body) && ((!empty($body['ErrorCode'])) || !empty($body['PrintLabelsErrorList']));
+        $this->retry_safe = !$has_parcel && (in_array($response_code, array(401, 403), true)
+            || ($response_code >= 200 && $response_code < 300 && $explicit_rejection));
 
 		// Check for HTTP errors (like 401 Unauthorized, 403 Forbidden, etc.)
 		if ($response_code >= 400) {

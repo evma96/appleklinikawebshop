@@ -28,6 +28,8 @@ final class FulfilmentAdmin
         }
         $state = $this->orders->state($order);
         echo '<div class="order_data_column" style="width:100%;clear:both"><h3>Apple Klinika teljesítés' . (LifecycleConfiguration::isTestEnvironment() ? ' – TEST' : '') . '</h3><p>' . esc_html(FulfilmentWorkflow::labels()[$state]) . '</p>';
+        $labelMessage = $this->orders->glsLabelAttemptMessage($order);
+        if ($labelMessage !== '') { echo '<p><strong>' . esc_html($labelMessage) . '</strong></p>'; }
         $invoice = (array) $order->get_meta(WooOrderLifecycleStore::INVOICE, true);
         if (! empty($invoice['state'])) {
             echo '<p>Számla-folyamat: <strong>' . esc_html((string) $invoice['state']) . '</strong>. Hiba vagy bizonytalan eredmény esetén előbb Számlázz.hu-egyeztetés szükséges; automatikus újraszámlázás nincs.</p>';

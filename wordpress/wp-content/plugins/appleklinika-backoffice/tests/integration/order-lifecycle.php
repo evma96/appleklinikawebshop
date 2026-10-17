@@ -71,7 +71,9 @@ $assert($stock === 4, 'Repeated payment hooks reduce stock once.');
 
 $repository = new WooOrderBackOfficeRepository();
 $change = new ChangeFulfilment(new WooFulfilmentStore($repository), new WooOrderMutex());
-foreach (['new'=>'start', 'preparation'=>'start_packing', 'packing'=>'packing_completed'] as $state=>$action) { $change->execute($id, $action, 1, $state); }
+foreach (['new'=>'start', 'preparation'=>'start_packing'] as $state=>$action) { $change->execute($id, $action, 1, $state); }
+try { $change->execute($id, 'packing_completed', 1, 'packing'); } catch (InvalidArgumentException) { /* Provider intentionally unavailable in this fixture. */ }
+$assert($repository->state(wc_get_order($id)) === 'ready_for_shipping', 'Packing remains complete even when fixture label setup is unavailable.');
 $assert(count($customerMail()) === 1, 'Intermediate operational states send no mail.');
 $fresh = wc_get_order($id); $fresh->update_meta_data('_gls_print_label', 'fixture-label.pdf'); $fresh->update_meta_data('_gls_tracking_codes', ['11111111','22222222']); $fresh->save_meta_data();
 do_action('appleklinika_lifecycle_dispatch', $id, 'carrier_handoff');

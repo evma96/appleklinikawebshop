@@ -78,7 +78,9 @@ class GLS_Shipping_Bulk
     // Register GLS bulk action
     public function register_gls_bulk_actions($bulk_actions) {
         $bulk_actions['generate_gls_labels'] = __('Bulk Generate GLS Labels', 'gls-shipping-for-woocommerce');
-        $bulk_actions['print_gls_labels'] = __('Bulk Print GLS Labels', 'gls-shipping-for-woocommerce');
+        if (!class_exists('Appleklinika\\BackOffice\\Application\\CreateGlsLabel')) {
+            $bulk_actions['print_gls_labels'] = __('Bulk Print GLS Labels', 'gls-shipping-for-woocommerce');
+        }
         return $bulk_actions;
     }
     
@@ -113,6 +115,9 @@ class GLS_Shipping_Bulk
         }
         // Bulk print labels, dont generate for each but just print in single PDF
         if ('print_gls_labels' === $doaction) {
+            if (class_exists('Appleklinika\\BackOffice\\Application\\CreateGlsLabel')) {
+                wp_die('A meglévő GLS címkéket a rendeléseknél nyisd meg. Ez a régi tömeges nyomtatás új csomagokat hozna létre, ezért nem engedélyezett.', '', array('response' => 409));
+            }
             try {
                 $prepare_data = new GLS_Shipping_API_Data($order_ids);
                 $data = $prepare_data->generate_post_fields_multi();

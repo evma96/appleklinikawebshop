@@ -129,19 +129,21 @@ foreach (['checkout-draft','cancelled','refunded','trash','auto-draft'] as $stat
 
 final class FulfilmentFixture implements FulfilmentStore
 {
-    public array $order = ['state' => 'new', 'mode' => 'gls', 'blocked' => null, 'label' => false, 'tracking' => false];
-    public array $events = []; public int $labels = 0;
+    public array $order = ['state' => 'new', 'mode' => 'gls', 'paid' => true, 'blocked' => null, 'label' => false, 'tracking' => false];
+    public array $events = []; public int $labels = 0; public bool $labelFails = false;
     public function snapshot(int $id): array { return $this->order; }
     public int $cashChecks = 0, $cashPayments = 0;
     public function verifyCashReservation(int $id): void { ++$this->cashChecks; }
     public function recordCashPayment(int $id, int $actor): void { ++$this->cashPayments; }
-    public function createLabel(int $id): void { ++$this->labels; $this->order['label'] = $this->order['tracking'] = true; }
+    public function createLabel(int $id): void { ++$this->labels; if ($this->labelFails) { throw new InvalidArgumentException('Fixture provider rejection'); } $this->order['label'] = $this->order['tracking'] = true; }
     public function record(int $id, string $action, string $to, int $actor, string $reason): void { $this->order['state'] = $to; if ($action === 'accept_cash_pickup') { $this->order['cash_accepted'] = true; } $this->events[] = compact('action', 'to', 'actor', 'reason'); }
 }
 $ful = new FulfilmentFixture(); $change = new ChangeFulfilment($ful, new FixtureMutex());
 foreach (['start', 'start_packing', 'packing_completed'] as $action) { $change->execute(1, $action, 7, $ful->order['state']); }
-try { $change->execute(1, 'handed_to_gls', 7, $ful->order['state']); $assert(false, 'Missing label must reject.'); } catch (InvalidArgumentException) { $assert(true, 'Missing label rejected.'); }
-$change->execute(1, 'create_label', 7, 'ready_for_shipping');
+$assert($ful->labels === 1 && array_column($ful->events, 'action') === ['start','start_packing','packing_completed','create_label'], 'Packing completion creates one audited label automatically.');
+foreach (['packing_completed', 'create_label'] as $repeat) {
+    try { $change->execute(1, $repeat, 7, $repeat === 'packing_completed' ? 'packing' : 'ready_for_shipping'); $assert(false, 'Duplicate must reject.'); } catch (InvalidArgumentException) { $assert($ful->labels === 1, 'Duplicate action never regenerates label.'); }
+}
 $assert($ful->order['state'] === 'ready_for_shipping' && !in_array('handed_to_gls', array_column($ful->events, 'action'), true), 'Label creation stays operationally silent.');
 $change->execute(1, 'handed_to_gls', 7, 'ready_for_shipping');
 try { $change->execute(1, 'handed_to_gls', 7, 'ready_for_shipping'); $assert(false, 'Stale request must reject.'); } catch (InvalidArgumentException) { $assert(true, 'Stale handoff rejected.'); }
@@ -152,6 +154,20 @@ $assert(end($ful->events)['reason'] === 'Recorded too early' && end($ful->events
 try { $change->execute(1, 'correct', 8, 'packing', 'handed_to_gls', 'Skip'); $assert(false, 'Correction cannot fake actual handoff.'); } catch (InvalidArgumentException) { $assert(true, 'Only handoff action records carrier handoff.'); }
 $ful->order['blocked'] = 'Unpaid';
 try { $change->execute(1, 'packing_completed', 7, 'packing'); $assert(false, 'Unpaid must reject.'); } catch (InvalidArgumentException) { $assert(true, 'Unpaid operation rejected.'); }
+$ful->order['blocked'] = null; $ful->order['paid'] = false;
+try { $change->execute(1,'packing_completed',7,'packing'); $assert(false,'Missing payment proof must reject.'); } catch (InvalidArgumentException) { $assert($ful->labels===1,'Payment proof is independently required.'); }
+$ful->order['paid'] = true;
+$change->execute(1,'packing_completed',7,'packing');
+$assert($ful->labels===1,'Correction back to packing preserves an existing label.');
+$ful = new FulfilmentFixture(); $ful->order['state']='packing'; $ful->labelFails=true;
+$change = new ChangeFulfilment($ful,new FixtureMutex());
+try { $change->execute(1,'packing_completed',7,'packing'); $assert(false,'Failure visible.'); } catch (InvalidArgumentException) { $assert($ful->order['state']==='ready_for_shipping' && end($ful->events)['action']==='label_failed','Packing survives a visible, audited label failure.'); }
+try { $change->execute(1,'handed_to_gls',7,'ready_for_shipping'); $assert(false,'No missing-label handoff.'); } catch (InvalidArgumentException) { $assert(true,'Failed label cannot hand off.'); }
+$ful->labelFails=false; $change->execute(1,'create_label',7,'ready_for_shipping');
+$assert($ful->labels===2 && $ful->order['label'],'Existing manual action safely retries a rejected attempt.');
+$ful = new FulfilmentFixture(); $ful->order['state']='packing'; $ful->order['mode']='mpl';
+$change = new ChangeFulfilment($ful,new FixtureMutex()); $change->execute(1,'packing_completed',7,'packing');
+$assert($ful->labels===0,'MPL packing does not auto-create a GLS or MPL label.');
 // Cash has the same notification ledger but staff acceptance precedes payment.
 [$store, $invoice, $mailer, $service] = $new();
 $store->cash = true; $store->paid = false; $store->status = 'on-hold'; $store->submissionEligible = true;

@@ -277,6 +277,22 @@ class GLS_Shipping_Order
      */
     public function generate_single_order_label($order_id, $count = null, $print_position = null, $cod_reference = null, $services = null)
     {
+        if (class_exists('Appleklinika\\BackOffice\\Application\\CreateGlsLabel')) {
+            try {
+                return (new \Appleklinika\BackOffice\Application\CreateGlsLabel(
+                    new \Appleklinika\BackOffice\Infrastructure\WooGlsLabelStore(),
+                    new \Appleklinika\BackOffice\Infrastructure\WooOrderMutex()
+                ))->execute((int) $order_id, fn() => $this->generate_single_order_label_request($order_id, $count, $print_position, $cod_reference, $services));
+            } catch (\Throwable $error) {
+                return array('success' => false, 'error' => 'A GLS művelet nem indítható biztonságosan. Ellenőrizd a rendelés és a címkekérés állapotát.');
+            }
+        }
+        return $this->generate_single_order_label_request($order_id, $count, $print_position, $cod_reference, $services);
+    }
+
+    private function generate_single_order_label_request($order_id, $count, $print_position, $cod_reference, $services)
+    {
+        $api = null;
         try {
             $order = wc_get_order($order_id);
             if (!$order) {
@@ -330,7 +346,7 @@ class GLS_Shipping_Order
         } catch (Exception $e) {
             // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional error logging for debugging
             error_log("Failed to generate GLS label for order $order_id: " . $e->getMessage());
-            return array('success' => false, 'error' => $e->getMessage());
+            return array('success' => false, 'error' => $e->getMessage(), 'retry_safe' => $api === null || $api->safe_to_retry());
         }
     }
     

@@ -72,6 +72,7 @@ final class FulfilmentWorkflow
             'start_packing' => 'Csomagolás megkezdése',
             'packing_completed' => 'Csomagolás kész',
             'create_label' => 'GLS címke létrehozása',
+            'label_failed' => 'GLS címkekészítés sikertelen',
             'create_mpl_label' => 'MPL címke létrehozása',
             'handed_to_carrier' => 'Átadva az MPL-nek',
             'handed_to_gls' => 'Átadva a GLS-nek',

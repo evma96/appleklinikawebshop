@@ -4,7 +4,7 @@ namespace Appleklinika\BackOffice\Application\Port;
 
 interface FulfilmentStore
 {
-    /** @return array{state:string,mode:string,blocked:?string,label:bool,tracking:bool} */
+    /** @return array{state:string,mode:string,paid:bool,blocked:?string,label:bool,tracking:bool} */
     public function snapshot(int $id): array;
     public function createLabel(int $id): void;
     public function verifyCashReservation(int $id): void;

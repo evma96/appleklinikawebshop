@@ -134,6 +134,12 @@ $order->meta['_appleklinika_backoffice_delivery_mode'] = 'gls';
 $order->meta[FulfilmentWorkflow::META_KEY] = 'ready_for_shipping';
 $actions = $render('renderActions', $order, 'ready_for_shipping', 'gls', []);
 $assert(str_contains($actions, 'GLS kapcsolat nincs konfigurálva') && ! str_contains($actions, 'value="create_label"'), 'Unavailable provider does not appear as a functional label button.');
+foreach (['retryable'=>'újrapróbálható','uncertain'=>'egyeztetés'] as $attempt=>$message) {
+    $order->meta['_appleklinika_gls_label_attempt']=['state'=>$attempt];
+    $actions=$render('renderActions',$order,'ready_for_shipping','gls',[]);
+    $assert(str_contains($actions,$message),'Persisted GLS failure remains visible after reload: '.$attempt);
+}
+unset($order->meta['_appleklinika_gls_label_attempt']);
 $order->payment = 'cod';
 $payment = new ReflectionMethod($router, 'paymentLabel');
 $assert($payment->invoke($router, $order) === 'Utánvét', 'COD processing never claims that cash was collected.');
