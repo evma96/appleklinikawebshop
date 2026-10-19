@@ -8,6 +8,7 @@ require_once get_template_directory() . '/inc/checkout-presentation.php';
 require_once get_template_directory() . '/inc/homepage-settings.php';
 require_once get_template_directory() . '/inc/homepage-presentation.php';
 require_once get_template_directory() . '/inc/contact-page.php';
+require_once get_template_directory() . '/inc/google-reviews.php';
 
 add_filter('render_block_data', 'appleklinika_checkout_billing_block_order');
 

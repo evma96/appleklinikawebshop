@@ -176,3 +176,8 @@ test-security:
 test: test-legal-pdfs
 test-legal-pdfs:
 	docker run --rm --network none -v "$(CURDIR)/wordpress/wp-content:/usr/src/wordpress/wp-content:ro" --entrypoint php wordpress:7.0.2-php8.2-apache /usr/src/wordpress/wp-content/themes/appleklinika-theme/tests/legal-pdfs.php
+
+.PHONY: test-google-reviews
+test-google-reviews:
+	$(COMPOSE) exec -T wordpress php /var/www/html/wp-content/plugins/appleklinika-inventory/tests/google-reviews.php
+	$(COMPOSE) exec -T wordpress php /var/www/html/wp-content/plugins/appleklinika-inventory/tests/google-reviews-transport.php

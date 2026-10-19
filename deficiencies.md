@@ -532,3 +532,7 @@ See [verification and operational limits](docs/gls-label-after-packing.md).
 outside TEST Git. The release now preserves those document/queue/recovery changes and
 uses the existing packing-event adapter and attempt metadata. The earlier candidate
 was not installed over them. See the GLS integration document for scope and evidence.
+
+## LOCAL Google Reviews connection — 2026-10-19
+
+**OPEN — live Google authorization:** no usable owner-authorized Business Profile API/OAuth connection or Places key/Place ID is available in the accessible LOCAL configuration. No genuine review, live score or total has been retrieved. This is a connection blocker, not an empty-card implementation: actual LOCAL homepage, category and product pages now render the owner-authorized, clearly labeled QA cards. The obsolete link-only fallback is removed. The fixture is ignored, outside webroot, uncacheable and guarded against TEST/production display. The official live adapter and UI are covered by focused mocked/local checks. [Evidence and exact owner setup](docs/google-reviews-local.md). Approved TEST deployment must keep reviews hidden until real Google data is configured; the provider strip remains independent.

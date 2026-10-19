@@ -12,6 +12,7 @@ services:
       WORDPRESS_DB_USER: ${MYSQL_USER}
       WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD}
       WORDPRESS_DEBUG: ${WORDPRESS_DEBUG:-1}
+      AK_GOOGLE_REVIEWS_CONFIG_FILE: ${AK_GOOGLE_REVIEWS_CONFIG_FILE:-}
     volumes:
       - wordpress_data:/var/www/html
       - ./wordpress/wp-content:/var/www/html/wp-content

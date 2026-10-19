@@ -1,0 +1,13 @@
+# Opt-in LOCAL visual review only; excluded from TEST/production compose commands.
+# The ignored fixture is not a Google response and is never stored in the database.
+services:
+  wordpress:
+    environment:
+      AK_GOOGLE_REVIEWS_QA_FIXTURE_FILE: /run/appleklinika/reviews-qa.json
+    volumes:
+      - type: bind
+        source: ${AK_GOOGLE_REVIEWS_QA_HOST_FILE:?Set an ignored LOCAL QA fixture file}
+        target: /run/appleklinika/reviews-qa.json
+        read_only: true
+        bind:
+          create_host_path: false

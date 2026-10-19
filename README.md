@@ -513,3 +513,9 @@ GLS labels are created automatically only when staff completes packing for an or
 with recorded payment. Shared locking and a durable request journal protect retries;
 carrier handoff remains a separate action and email trigger. See
 [trigger, failure handling and verification](docs/gls-label-after-packing.md).
+
+## LOCAL Google Reviews trust candidate
+
+Native Google Business Profile review cards replace product-specific Woo reviews. The homepage displays three cards at once from a six-review horizontal carousel; appropriate public pages show two compact cards. Mobile uses native horizontal scrolling with a next-card hint. Author avatars, dates, untouched review text and aggregate values use the authenticated feed when configured. Without valid live data the section is omitted, never replaced by a link-only panel. Original Barion / GLS / MPL / Számlázz.hu logos remain below it.
+
+The owner's latest instruction explicitly permits a visibly labeled QA fixture **on actual LOCAL storefront pages**. The opt-in `docker-compose.reviews-qa.yml` mounts an ignored, non-public fixture read-only. It requires the local environment, loopback site/request and existing LOCAL isolation guard; no fixture is imported into WordPress or live review cache. TEST/production rendering is denied independently. Live Google authorization is still missing. See [connection, isolation, changed files and actual-page screenshots](docs/google-reviews-local.md). The owner-approved release keeps this QA fixture strictly LOCAL; TEST hides reviews until the live connection is configured.

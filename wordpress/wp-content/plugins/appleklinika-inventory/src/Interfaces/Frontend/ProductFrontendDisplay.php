@@ -220,11 +220,6 @@ final class ProductFrontendDisplay
             .appleklinika-spec-source{margin:0;color:#667085;font-size:13px;line-height:1.6}
             .appleklinika-spec-source a{color:inherit;text-underline-offset:3px}
             @media(max-width:640px){.appleklinika-spec-highlights,.appleklinika-technical-group dl{grid-template-columns:1fr;gap:18px}}
-            .ak-single-product__reviews .appleklinika-review-list{display:grid;gap:12px}
-            .ak-single-product__reviews .appleklinika-review-card{padding:15px;border:1px solid #edf1f6;border-radius:16px;background:#fbfcfd}
-            .ak-single-product__reviews .appleklinika-review-card strong{display:block;margin-bottom:6px;color:#111820;font-size:14px;line-height:1.25;font-weight:850}
-            .ak-single-product__reviews .appleklinika-review-card p{margin:0;color:#4b5563;font-size:14px;line-height:1.5}
-            .ak-single-product__reviews .appleklinika-empty-note{margin:0;padding:14px 15px;border:1px solid #edf1f6;border-radius:16px;background:#fbfcfd;color:#667085;font-size:14px;line-height:1.55;font-weight:650}
             .ak-single-product__related.appleklinika-related-panel{position:sticky;top:24px;padding:22px;border-radius:22px}
             .admin-bar .ak-single-product__related.appleklinika-related-panel{top:56px}
             .ak-single-product__related .appleklinika-related-list{display:grid;gap:10px}
@@ -597,7 +592,6 @@ final class ProductFrontendDisplay
         echo '<div class="ak-single-product__details-main appleklinika-product-main-info">';
         $this->renderProductDescriptionPanel($product);
         $this->renderProductSpecsPanel($product, $productId);
-        $this->renderReviewsPanel($product);
         echo '</div>';
         echo '<div class="ak-single-product__details-side appleklinika-product-side-info">';
         $this->renderSimilarProductsPanel($product, $relatedProducts);
@@ -1073,37 +1067,6 @@ final class ProductFrontendDisplay
         }
 
         return array_slice(array_values($items), 0, 4);
-    }
-
-    private function renderReviewsPanel(\WC_Product $product): void
-    {
-        $comments = get_comments([
-            'post_id' => $product->get_id(),
-            'status' => 'approve',
-            'type' => 'review',
-            'number' => 3,
-        ]);
-
-        echo '<section class="ak-single-product__reviews appleklinika-product-panel" aria-label="Vásárlói értékelések">';
-        echo '<h2>Vásárlói értékelések</h2>';
-
-        if ($comments === []) {
-            echo '<p class="appleklinika-empty-note">Ehhez a termékhez még nincsenek publikus vásárlói értékelések.</p>';
-            echo '</section>';
-            return;
-        }
-
-        echo '<div class="appleklinika-review-list">';
-
-        foreach ($comments as $comment) {
-            echo '<article class="appleklinika-review-card">';
-            echo '<strong>' . esc_html($comment->comment_author) . '</strong>';
-            echo '<p>' . esc_html(wp_trim_words(wp_strip_all_tags($comment->comment_content), 32)) . '</p>';
-            echo '</article>';
-        }
-
-        echo '</div>';
-        echo '</section>';
     }
 
     public function renderSingleProductShortcode(): string
