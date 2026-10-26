@@ -861,7 +861,10 @@
         return '<article class="ak-checkout-summary__item">'
           + '<div class="ak-checkout-summary__thumb">'
           + (image ? '<img class="ak-checkout-summary__image" src="' + escapeHtml(image) + '" alt="">' : '') + '</div>'
-          + '<div class="ak-checkout-summary__item-body"><h3 class="ak-checkout-summary__item-title">' + escapeHtml(decodeHtmlEntities(item.name)) + '</h3></div>'
+          + '<div class="ak-checkout-summary__item-body"><h3 class="ak-checkout-summary__item-title">' + escapeHtml(decodeHtmlEntities(item.name)) + '</h3>'
+          + (item.item_data || []).filter(function (detail) { return detail.key === 'Készülék'; }).map(function (detail) {
+            return '<small>' + escapeHtml(detail.key) + ': ' + escapeHtml(decodeHtmlEntities(detail.value)) + '</small>';
+          }).join('') + '</div>'
           + '<span class="ak-checkout-summary__qty" aria-label="Mennyiség">' + escapeHtml(quantity) + '</span>'
           + '<div class="ak-checkout-summary__item-aside"><div class="ak-checkout-summary__item-price">' + escapeHtml(formatStoreMoney(lineTotal, totals)) + '</div></div>'
           + '</article>';

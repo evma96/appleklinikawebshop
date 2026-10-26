@@ -93,6 +93,17 @@ function appleklinika_render_homepage(): void
         </section>
         <?php endif; ?>
 
+        <ul class="ak-home-benefit-strip" aria-label="Vásárlási előnyök">
+            <?php foreach ([
+                'shield' => '12 hónap garancia',
+                'tools' => 'Teljes körű diagnosztika',
+                'return' => '20 napos ingyenes visszaküldés',
+                'truck' => 'Gyors szállítás',
+            ] as $icon => $label) : ?>
+                <li><?php echo appleklinika_home_icon($icon); ?><span><?php echo esc_html($label); ?></span></li>
+            <?php endforeach; ?>
+        </ul>
+
         <section class="ak-home-categories" aria-labelledby="ak-home-categories-title">
             <div class="ak-home-heading"><h2 id="ak-home-categories-title"><?php echo esc_html($content['category_title']); ?></h2><a href="<?php echo esc_url(appleklinika_shop_url()); ?>"><?php echo esc_html($content['category_link_label']); ?> <span aria-hidden="true">→</span></a></div>
             <div class="ak-home-categories__grid">

@@ -448,6 +448,7 @@ final class BackOfficeRouter
         }
         foreach ($items as $item) {
             echo '<article class="akbo-device"><h3>' . esc_html($item['name']) . ' <small>× ' . esc_html((string) $item['quantity']) . '</small></h3>';
+            echo '<p class="akbo-line-total">' . wp_kses_post($item['total_html']) . '</p>';
             if ($item['details'] === []) {
                 echo '<p class="akbo-empty">Nincs további Apple Klinika készülékadat.</p>';
             } else {

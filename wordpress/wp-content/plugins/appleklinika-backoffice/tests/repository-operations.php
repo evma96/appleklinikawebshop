@@ -100,6 +100,7 @@ class WC_Order extends RepositoryMetaDouble
     public function __construct(private int $id = 1376) {}
     public function get_id(): int { return $this->id; }
     public function get_items(string $type): array { return $this->items; }
+    public function get_formatted_line_subtotal(WC_Order_Item_Product $item): string { return "4 000 Ft"; }
     public function get_status(): string { return $this->status; }
     public function is_paid(): bool { return $this->paid; }
     public function get_date_paid(): ?string { return $this->paid ? "2026-10-16" : null; }

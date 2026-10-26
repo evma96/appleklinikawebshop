@@ -138,7 +138,7 @@ final class WooOrderBackOfficeRepository
         return DeliveryMode::label($this->deliveryMode($order));
     }
 
-    /** @return list<array{product_id:int,name:string,quantity:int,details:array<string,string>,detail_sources:array<string,string>}> */
+    /** @return list<array{product_id:int,name:string,quantity:int,total_html:string,details:array<string,string>,detail_sources:array<string,string>}> */
     public function deviceItems(WC_Order $order): array
     {
         $items = [];
@@ -180,10 +180,17 @@ final class WooOrderBackOfficeRepository
                 }
             }
 
+            $parentDevice = trim((string) $item->get_meta('Készülék', true));
+            if ($item->get_meta('_ak_protection_parent_key', true) !== '' && $parentDevice !== '') {
+                $details['Készülék'] = $parentDevice;
+                $sources['Készülék'] = 'order';
+            }
+
             $items[] = [
                 'product_id' => $productId,
                 'name' => $item->get_name(),
                 'quantity' => $item->get_quantity(),
+                'total_html' => $order->get_formatted_line_subtotal($item),
                 'details' => $details,
                 'detail_sources' => $sources,
             ];

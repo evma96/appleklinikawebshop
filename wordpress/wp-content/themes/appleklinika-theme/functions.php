@@ -766,6 +766,10 @@ function appleklinika_render_cart_item(string $cartItemKey, array $cartItem): vo
                     <p class="ak-cart-item__meta"><?php echo esc_html(implode(' · ', $meta)); ?></p>
                 <?php endif; ?>
 
+                <?php if (isset($cartItem['_ak_protection_parent_key'])) : ?>
+                    <p class="ak-cart-item__meta"><?php echo wp_kses_post(wc_get_formatted_cart_item_data($cartItem, true)); ?></p>
+                <?php endif; ?>
+
                 <div class="ak-cart-item__controls">
                     <label class="screen-reader-text" for="ak-cart-qty-<?php echo esc_attr($cartItemKey); ?>">
                         <?php echo esc_html($product->get_name()); ?> mennyisége
@@ -983,6 +987,9 @@ function appleklinika_render_checkout_summary_item(array $cartItem, WC_Cart $car
                     <?php echo esc_html($product->get_name()); ?>
                 <?php endif; ?>
             </h3>
+            <?php if (isset($cartItem['_ak_protection_parent_key'])) : ?>
+                <small><?php echo wp_kses_post(wc_get_formatted_cart_item_data($cartItem, true)); ?></small>
+            <?php endif; ?>
         </div>
 
         <div class="ak-checkout-summary__item-aside">
@@ -1567,6 +1574,7 @@ function appleklinika_homepage_selected_products(int $limit): array
 
     return wc_get_products([
         'status' => 'publish',
+        'visibility' => 'catalog',
         'limit' => $limit,
         'include' => $selectedIds,
         'orderby' => 'include',
@@ -1584,6 +1592,7 @@ function appleklinika_homepage_featured_products(int $limit): array
 
     return wc_get_products([
         'status' => 'publish',
+        'visibility' => 'catalog',
         'limit' => $limit,
         'featured' => true,
         'orderby' => 'date',
@@ -1608,6 +1617,7 @@ function appleklinika_homepage_sale_products(int $limit, array $excludeIds = [])
 
     $saleProducts = wc_get_products([
         'status' => 'publish',
+        'visibility' => 'catalog',
         'limit' => $limit,
         'include' => array_slice($saleIds, 0, $limit),
         'orderby' => 'include',
@@ -1643,6 +1653,7 @@ function appleklinika_homepage_latest_products(int $limit, array $excludeIds = [
 
     return wc_get_products([
         'status' => 'publish',
+        'visibility' => 'catalog',
         'limit' => $limit,
         'exclude' => $excludeIds,
         'orderby' => 'date',
@@ -3285,6 +3296,7 @@ function appleklinika_model_label(string $model): string
 function appleklinika_storage_label(string $storage): string
 {
     return [
+        '32_gb' => '32 GB',
         '64_gb' => '64 GB',
         '128_gb' => '128 GB',
         '256_gb' => '256 GB',

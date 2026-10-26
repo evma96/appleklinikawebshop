@@ -2026,6 +2026,7 @@ final class ProductFrontendDisplay
     private function storageLabel(string $storage): string
     {
         return [
+            '32_gb' => '32 GB',
             '64_gb' => '64 GB',
             '128_gb' => '128 GB',
             '256_gb' => '256 GB',

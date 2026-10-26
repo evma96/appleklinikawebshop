@@ -49,6 +49,12 @@ add_action('init', static function (): void {
     $photoGuidance = new Appleklinika\Inventory\Interfaces\Admin\ProductPhotoGuidance();
     $photoGuidance->register();
 
+    $protectionCatalog = new Appleklinika\Inventory\Infrastructure\WordPress\WooProtectionCatalog();
+    $protectionSelection = new Appleklinika\Inventory\Application\Protection\SelectProtection($protectionCatalog);
+    $protectionCart = new Appleklinika\Inventory\Infrastructure\WordPress\WooProtectionCart($protectionSelection);
+    (new Appleklinika\Inventory\Interfaces\Frontend\ProductProtection($protectionCatalog, $protectionCart, new Appleklinika\Inventory\Infrastructure\WordPress\WooProtectionAssociation()))->register();
+    (new Appleklinika\Inventory\Interfaces\Admin\ProductProtectionFields())->register();
+
     $frontendDisplay = new Appleklinika\Inventory\Interfaces\Frontend\ProductFrontendDisplay($repository, $deviceCatalogRepository);
     $frontendDisplay->register();
 });

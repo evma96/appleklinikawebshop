@@ -536,3 +536,47 @@ was not installed over them. See the GLS integration document for scope and evid
 ## LOCAL Google Reviews connection — 2026-10-19
 
 **OPEN — live Google authorization:** no usable owner-authorized Business Profile API/OAuth connection or Places key/Place ID is available in the accessible LOCAL configuration. No genuine review, live score or total has been retrieved. This is a connection blocker, not an empty-card implementation: actual LOCAL homepage, category and product pages now render the owner-authorized, clearly labeled QA cards. The obsolete link-only fallback is removed. The fixture is ignored, outside webroot, uncacheable and guarded against TEST/production display. The official live adapter and UI are covered by focused mocked/local checks. [Evidence and exact owner setup](docs/google-reviews-local.md). Approved TEST deployment must keep reviews hidden until real Google data is configured; the provider strip remains independent.
+
+
+### 2026-10-26 — LOCAL trust / Watch / protection candidate
+
+- Watch `32_gb` display leakage is corrected in the two customer-facing formatters;
+  stored metadata is unchanged. The homepage uses the four owner-supplied claims verbatim.
+- Optional protection uses native hidden Woo products and separate normal cart/order
+  lines. LOCAL checks cover quantity/removal, server validation, stock failure rollback,
+  Woo price edits, account/email/Back Office rendering and the installed invoice
+  plugin's product-line mapping without invoking its invoice/transport entrypoint.
+- SAFE PRE-LAUNCH implementation candidate, pending Martin's LOCAL visual approval.
+  No integration, push, TEST access or deployment was performed.
+- 20 W adapter price remains unset/unavailable. LOCAL compatibility is explicitly
+  configured for iPhone; actual stock/model coverage must be configured in Woo before
+  later activation. No model compatibility table was invented. Other device types
+  currently have no protection options. New accessory photos were not supplied;
+  native cart placeholders remain until images are configured in Woo.
+- Provider/lifecycle E2E and real invoices/emails were intentionally not run. Existing
+  payment, invoice, stock, GLS and customer-notification lifecycle source is unchanged.
+  The active LOCAL base is `eecad886bcdcb7b6187af715bc2ff18371167f44`; this work does
+  not reconcile or replace the newer develop/TEST history.
+- Details and evidence: `docs/local-trust-watch-protection.md`.
+
+### 2026-10-26 — Protection parent association closed, LOCAL only
+
+- RESOLVED: identical accessory products could previously merge across different
+  devices. Native parent cart keys now distinguish lines and persist on Woo order
+  items, with a public device-name snapshot. No parallel order database.
+- Device removal cascades only to its own extras. Session restoration and accessory
+  undo cannot introduce an orphan; checkout item creation also rejects missing parents.
+- Native quantities, stock aggregation and failure rollback remain in use. Replaying
+  a consumed add handler adds nothing; a deliberate new purchase increments only the
+  matching device/accessory group using normal Woo quantities.
+- Existing invoice notes include the association without invoice/plugin changes.
+  LOCAL direct verification passed; status: APPROVED FOR INTEGRATION. This status
+  does not authorize a push/deploy. Adapter remains unpriced/unavailable.
+
+### 2026-10-26 — Approved protection release preparation
+
+The owner authorized normal checkpoint/integration/push and TEST deployment of the
+complete trust/Watch/protection package. Explicit guarded provisioning resolves the
+existing `ak-protection-*` SKU identities independently in each environment, preserves
+existing admin prices, and stops on conflicting/duplicate identities. Adapter price
+remains a business input; production/main and provider transactions stay excluded.

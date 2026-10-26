@@ -174,3 +174,15 @@ Scope: My Account V1 functional structure.
 | Apple Watch upload shows only Watch-specific option fields | PASS | Browser selected Apple Watch; connectivity, case size, case material, and strap remained visible while iPhone/iPad/MacBook-only fields were hidden. Connectivity options are limited to GPS and GPS + Cellular. Case size options include 42 mm and 46 mm. |
 | Apple Watch model options stay paired | PASS | Browser selected Apple Watch Ultra 2 and verified only GPS + Cellular, 49 mm, Titán, and Ultra titanium colors are selectable; Series 10 correctly switches between aluminium and titanium color sets. |
 | Apple model dropdown follows device type | PASS | Browser checked that iPad has 2019+ models, MacBook has Apple Silicon M-series models, Apple Watch has SE 2 / Series 8+ models, and old duplicate catalog labels were removed. |
+
+
+## 2026-10-26 — Trust / Watch / protection release preparation
+
+- PASS — LOCAL hero benefits: 1440/1280 desktop row, 390/320 mobile 2x2.
+- PASS — LOCAL Watch card/detail/category/search renders 32 GB.
+- PASS — LOCAL optional protection and parent-device cart association/removal.
+- PASS — LOCAL cart/checkout association labels at desktop and 390 mobile.
+- NOT TESTED — this new package on TEST before its authorized deployment.
+
+See `docs/local-trust-watch-protection.md` for evidence and the release receipt
+for the subsequent TEST results. This section does not supersede older scope-specific checks.

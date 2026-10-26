@@ -181,3 +181,14 @@ test-legal-pdfs:
 test-google-reviews:
 	$(COMPOSE) exec -T wordpress php /var/www/html/wp-content/plugins/appleklinika-inventory/tests/google-reviews.php
 	$(COMPOSE) exec -T wordpress php /var/www/html/wp-content/plugins/appleklinika-inventory/tests/google-reviews-transport.php
+
+# Explicit LOCAL verification; external providers/mail are blocked by the LOCAL runtime.
+.PHONY: test-local-protection test-local-protection-association test-local-trust-watch
+test-local-protection:
+	$(COMPOSE) exec -T wordpress php /var/www/html/wp-content/plugins/appleklinika-inventory/tests/protection-local.php
+
+test-local-trust-watch:
+	$(COMPOSE) exec -T wordpress php /var/www/html/wp-content/plugins/appleklinika-inventory/tests/trust-watch-local.php
+
+test-local-protection-association:
+	$(COMPOSE) exec -T wordpress php /var/www/html/wp-content/plugins/appleklinika-inventory/tests/protection-association-local.php

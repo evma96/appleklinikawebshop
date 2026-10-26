@@ -519,3 +519,28 @@ carrier handoff remains a separate action and email trigger. See
 Native Google Business Profile review cards replace product-specific Woo reviews. The homepage displays three cards at once from a six-review horizontal carousel; appropriate public pages show two compact cards. Mobile uses native horizontal scrolling with a next-card hint. Author avatars, dates, untouched review text and aggregate values use the authenticated feed when configured. Without valid live data the section is omitted, never replaced by a link-only panel. Original Barion / GLS / MPL / Számlázz.hu logos remain below it.
 
 The owner's latest instruction explicitly permits a visibly labeled QA fixture **on actual LOCAL storefront pages**. The opt-in `docker-compose.reviews-qa.yml` mounts an ignored, non-public fixture read-only. It requires the local environment, loopback site/request and existing LOCAL isolation guard; no fixture is imported into WordPress or live review cache. TEST/production rendering is denied independently. Live Google authorization is still missing. See [connection, isolation, changed files and actual-page screenshots](docs/google-reviews-local.md). The owner-approved release keeps this QA fixture strictly LOCAL; TEST hides reviews until the live connection is configured.
+
+
+
+### LOCAL trust strip, Watch formatting and optional protection
+
+The current LOCAL candidate adds the four supplied trust benefits below the hero,
+formats existing `32_gb` Watch metadata as `32 GB`, and offers optional protection
+as hidden, ordinary WooCommerce products. Prices/stock stay in Woo, not source.
+The 20 W adapter has no assumed price and is unavailable until configured.
+See [LOCAL protection implementation and verification](docs/local-trust-watch-protection.md)
+for setup, eligibility, offline invoice evidence, limitations and exact changes.
+LOCAL checkpoint: `0841b1ff7eab5d0f81ac17cdddd84d1708fe0fe6`. The owner authorized
+normal integration and TEST deployment; production/main remain excluded.
+
+Optional protection items now retain their parent device's native cart key in Woo
+cart/order item metadata. Identical accessories for different devices stay separate;
+removing a device removes only its linked extras. Cart, order and Back Office views
+show the device name; existing invoice item notes include it without provider changes.
+The LOCAL association edge case is verified and approved for integration. See the same LOCAL report above.
+
+The owner has now approved this package for checkpoint/integration and TEST only.
+Explicit product setup uses `scripts/provision-protection.php --target=test --apply`
+in the guarded TEST container (or `--target=local` locally). Omitting `--apply`
+prints the creation plan. Stable `ak-protection-*` SKUs prevent environment-ID
+assumptions; existing administrator configuration is never reset by deployment.
