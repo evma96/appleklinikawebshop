@@ -237,6 +237,10 @@ final class WooOrderBackOfficeRepository
 
     public function fulfilmentBlockReason(WC_Order $order): ?string
     {
+        $review = $order->get_meta('_appleklinika_shipping_review_operation', true);
+        if (is_array($review) && !empty($review['id']) && ($review['stage'] ?? '') !== 'complete') {
+            return 'Az átvételimód-javítás mentése / naplózása még nincs lezárva. Előbb használd a mentés és napló egyeztetését.';
+        }
         $status = $order->get_status();
         if ($status === 'checkout-draft') {
             return 'Ez még befejezetlen pénztári piszkozat, nem beadott rendelés.';
@@ -347,6 +351,59 @@ final class WooOrderBackOfficeRepository
         $order->update_meta_data(self::HISTORY_META_KEY, $history);
         $order->save();
         $this->recordTodayActivity($activity);
+    }
+
+    /** Internal-only structured correction history; no customer notes or provider payload. */
+    public function recordReview(WC_Order $order, string $action, array $before, array $after, string $reason, string $result): void
+    {
+        $userId = get_current_user_id();
+        if ($userId < 1 || (!current_user_can('manage_appleklinika_backoffice') && !current_user_can('manage_options'))
+            || !in_array($action, ['resolve_shipping','confirm_manual_payment','recheck_barion'],true)) {
+            throw new InvalidArgumentException('Nincs jogosultság a rendezés rögzítéséhez.');
+        }
+        $user = get_userdata($userId);
+        $state = $this->state($order);
+        $activity = ['order_id'=>$order->get_id(),'action'=>$action,'from'=>$state,'to'=>$state,'user_id'=>$userId,
+            'user'=>$user ? $user->display_name : 'Ismeretlen felhasználó','at'=>current_time('mysql'),
+            'review'=>['before'=>$before,'after'=>$after,'reason'=>$reason,'result'=>$result,'source'=>'backoffice_staff_review']];
+        $history = $this->history($order);
+        $history[] = $activity;
+        $order->update_meta_data(self::HISTORY_META_KEY, $history);
+        $order->save_meta_data();
+        $order->add_order_note('Back Office rendezés: '.(FulfilmentWorkflow::activityLabels()[$action] ?? $action).'. '.$result.' Indok/forrás: '.$reason.'. Munkatárs: '.$activity['user'], false, true);
+        $this->recordTodayActivity($activity);
+    }
+
+    /** Idempotent projections from a verified shipping write-ahead record. Caller holds the order mutex. */
+    public function recordShippingReview(WC_Order $order, array $journal, array $after): void
+    {
+        if (get_current_user_id() < 1 || (!current_user_can('manage_appleklinika_backoffice') && !current_user_can('manage_options'))
+            || !preg_match('/^[a-f0-9]{64}$/D', (string)($journal['id'] ?? '')) || (int)($journal['user_id'] ?? 0) < 1) {
+            throw new InvalidArgumentException('Nincs jogosultság a javítás naplózásához.');
+        }
+        $history = $this->history($order);
+        $entry = null;
+        foreach ($history as $row) { if (($row['review_operation'] ?? '') === $journal['id']) { $entry = $row; break; } }
+        if ($entry === null) {
+            $entry = ['order_id'=>$order->get_id(),'action'=>'resolve_shipping','from'=>$journal['before']['state'],'to'=>$after['state'],
+                'user_id'=>$journal['user_id'],'user'=>$journal['user'],'at'=>current_time('mysql'),'review_operation'=>$journal['id'],
+                'review'=>['before'=>$journal['before'],'after'=>$after,'reason'=>$journal['reason'],'source'=>'backoffice_staff_review',
+                    'requested_at'=>$journal['at'],'finalized_by'=>get_current_user_id(),
+                    'result'=>'Az átvételi mód javítása rögzült a WooCommerce rendelésen; a díjak és a végösszeg változatlanok.']];
+            $history[] = $entry;
+            $order->update_meta_data(self::HISTORY_META_KEY, $history);
+            $order->save_meta_data();
+            $order->read_meta_data(true);
+            if (!in_array($entry, $this->history($order), true)) { throw new \RuntimeException('Shipping audit persistence not verified.'); }
+        }
+        $marker = '[akbo-review:'.$journal['id'].']';
+        // Use Woo's API: raw get_comments() excludes order notes on frontend requests.
+        $notes = wc_get_order_notes(['order_id'=>$order->get_id(),'type'=>'internal','search'=>$marker,'limit'=>1,'cache_results'=>false]);
+        if ($notes === []) {
+            $note = $order->add_order_note($marker.' Back Office átvételimód-javítás. '.$entry['review']['result'].' Belső indoklás: '.$journal['reason'].'. Munkatárs: '.$journal['user'].'. Döntés időpontja: '.$journal['at'], false, true);
+            if (!$note) { throw new \RuntimeException('Internal correction note was not saved.'); }
+        }
+        $this->recordTodayActivity($entry);
     }
 
     /** Persistence adapter; callers validate through ChangeFulfilment. */
@@ -652,11 +709,21 @@ final class WooOrderBackOfficeRepository
     /** @param array{order_id:int,action:string,from:string,to:string,user_id:int,user:string,at:string} $activity */
     private function recordTodayActivity(array $activity): void
     {
-        $key = $this->dailyActivityTransientKey();
-        $entries = get_transient($key);
-        $entries = is_array($entries) ? $entries : [];
-        $entries[] = $activity;
-        set_transient($key, $entries, $this->secondsUntilTomorrow());
+        if (!str_starts_with((string)$activity['at'], current_time('Y-m-d'))) { return; }
+        // A short shared lock prevents lost updates in the existing per-day transient.
+        (new WooOrderMutex())->synchronized(0, function () use ($activity): void {
+            $key = $this->dailyActivityTransientKey();
+            $entries = get_transient($key);
+            $entries = is_array($entries) ? $entries : [];
+            $operation = $activity['review_operation'] ?? '';
+            if ($operation !== '' && in_array($operation, array_column($entries, 'review_operation'), true)) { return; }
+            $entries[] = $activity;
+            set_transient($key, $entries, $this->secondsUntilTomorrow());
+            if ($operation !== '') {
+                $saved = get_transient($key);
+                if (!is_array($saved) || !in_array($operation, array_column($saved, 'review_operation'), true)) { throw new \RuntimeException('Daily correction activity was not saved.'); }
+            }
+        });
     }
 
     private function dailyActivityTransientKey(): string

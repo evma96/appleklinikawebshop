@@ -34,6 +34,8 @@ function bloginfo(string $key): void { echo 'UTF-8'; }
 function wp_head(): void {}
 function wp_footer(): void {}
 function nocache_headers(): void {}
+function wp_json_encode($value): string { return json_encode($value); }
+function wc_format_decimal($value, $dp = 2): string { return number_format((float)$value, $dp, '.', ''); }
 function wc_format_datetime(mixed $date): string { return (string) $date; }
 function wp_upload_dir(mixed $time = null, bool $create = true): array { return ['basedir' => $GLOBALS['view_test_documents']]; }
 function WC_Szamlazz(): object { return new class {
@@ -59,6 +61,9 @@ require_once dirname(__DIR__) . '/src/Domain/DeliveryMode.php';
 require_once dirname(__DIR__) . '/src/Domain/FulfilmentWorkflow.php';
 require_once dirname(__DIR__) . '/src/Domain/OrderQueueQuery.php';
 require_once dirname(__DIR__) . '/src/Infrastructure/WooOrderBackOfficeRepository.php';
+require_once dirname(__DIR__) . '/src/Application/Port/OrderReviewStore.php';
+require_once dirname(__DIR__) . '/src/Domain/OrderReview.php';
+require_once dirname(__DIR__) . '/src/Infrastructure/WooOrderReview.php';
 require_once dirname(__DIR__) . '/src/Infrastructure/CashPickup.php';
 require_once dirname(__DIR__) . '/src/Infrastructure/OrderDocuments.php';
 require_once dirname(__DIR__) . '/src/Infrastructure/GlsAutomation.php';
@@ -72,6 +77,7 @@ use Appleklinika\BackOffice\Interfaces\BackOfficeRouter;
 
 final class WC_Order
 {
+    public function read_meta_data(bool $force = false): void {}
     public string $status = 'processing';
     public string $payment = 'bacs';
     public ?array $shipping = null;
@@ -96,12 +102,22 @@ final class WC_Order
     public function get_status(): string { return $this->status; }
     public function has_status(string $status): bool { return $this->status === $status; }
     public function is_paid(): bool { return in_array($this->status, ['processing', 'completed'], true); }
+    public function get_total(): string { return '1000'; }
+    public function get_currency(): string { return 'HUF'; }
+    public function get_shipping_total(): string { return '0'; }
+    public function get_shipping_tax(): string { return '0'; }
+    public function get_date_paid(): mixed { return null; }
+    public function get_transaction_id(): string { return ''; }
+    public function get_address(string $type): array { return []; }
     public function get_payment_method(): string { return $this->payment; }
     public function get_shipping_methods(): array
     {
         $ids = $this->shipping ?? [($this->meta['_appleklinika_backoffice_delivery_mode'] ?? '') === 'gls' ? 'gls_shipping_method' : 'local_pickup'];
         return array_map(static fn ($id) => new class($id) {
             public function __construct(private string $id) {}
+            public function get_id(): int { return 96; }
+            public function get_total(): string { return '0'; }
+            public function get_total_tax(): string { return '0'; }
             public function get_method_id(): string { return $this->id; }
             public function get_instance_id(): int { return 1; }
             public function get_name(): string { return 'Actual WooCommerce shipping'; }
@@ -157,6 +173,8 @@ $order->status = 'completed';
 $actions = $render('renderActions', $order, 'new', 'pickup', []);
 $assert(str_contains($actions, 'lezárult') && ! str_contains($actions, '<form'), 'A WooCommerce-completed order is not presented as actionable NEW.');
 $order->status = 'pending';
+$GLOBALS['view_test_capability'] = true;
+$GLOBALS['view_test_order'] = $order;
 $actions = $render('renderActions', $order, 'new', 'pickup', []);
 $assert(str_contains($actions, 'fizetés ellenőrzése') && ! str_contains($actions, '<form'), 'Unpaid orders display the actual block without an enabled mutation.');
 $order->status = 'processing';

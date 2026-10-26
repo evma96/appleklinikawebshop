@@ -544,3 +544,5 @@ Explicit product setup uses `scripts/provision-protection.php --target=test --ap
 in the guarded TEST container (or `--target=local` locally). Omitting `--apply`
 prints the creation plan. Stable `ak-protection-*` SKUs prevent environment-ID
 assumptions; existing administrator configuration is never reset by deployment.
+
+The existing TEST staff-review recovery package is now tracked alongside Extra protection. It preserves canonical Woo shipping repair, explicit payment-method-specific review, and recoverable correction history without changing normal provider automation. See [Back Office review reconciliation](docs/backoffice-review-reconciliation.md).

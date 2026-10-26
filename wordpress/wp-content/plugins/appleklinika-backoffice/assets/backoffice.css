@@ -1,3 +1,5 @@
+:is(.akbo-review-form) { display: grid; gap: 10px; margin-block: 12px 20px; }
+.akbo-review-form :is(select, textarea) { width: 100%; max-width: 100%; box-sizing: border-box; }
 :root { color-scheme: light; --akbo-ink: #202938; --akbo-muted: #667181; --akbo-line: #e2e6eb; --akbo-accent: #b62435; }
 html { margin-top: 0 !important; }
 #wpadminbar { display: none !important; }
@@ -178,6 +180,8 @@ html { margin-top: 0 !important; }
   .akbo-layout { grid-template-columns: minmax(0, 1fr); }
   .akbo-side { display: contents; }
   .akbo-next-action { grid-row: 1; }
+  .akbo-review-result { grid-row: 2; }
+  .akbo-layout:has(.akbo-review-result) .akbo-main { grid-row: 3; }
   .akbo-main { grid-row: 2; width: 100%; }
   .akbo-card { padding: 18px; }
   .akbo-worklist { padding: 0; }

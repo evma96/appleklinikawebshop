@@ -56,6 +56,9 @@ final class FulfilmentWorkflow
     public static function activityLabels(): array
     {
         return self::actions() + [
+            'resolve_shipping' => 'Átvételi mód rendezése',
+            'confirm_manual_payment' => 'Kézi fizetés beérkezése igazolva',
+            'recheck_barion' => 'Barion fizetés újraellenőrzése',
             'open_invoice' => 'Számla PDF megnyitása',
             'invoice_generation' => 'Számlázás helyreállításának indítása',
             'invoice_generated' => 'Számla kiállítva',

@@ -22,6 +22,7 @@ final class WC_Order
 {
     public function __construct(private string $status) {}
     public function get_status(): string { return $this->status; }
+    public function get_meta(string $key, bool $single = true): mixed { return ''; }
 }
 
 $count = 0;

@@ -96,6 +96,16 @@ final class BackOfficeRouter
         check_admin_referer('appleklinika_backoffice_' . $action . '_' . $orderId);
 
         try {
+            if (in_array($action, ['resolve_shipping','reconcile_shipping','confirm_manual_payment','recheck_barion'], true)) {
+                if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') { throw new InvalidArgumentException('A rendezés csak POST kéréssel végezhető.'); }
+                $field = static fn(string $key): string => is_string($_POST[$key] ?? null) ? sanitize_textarea_field(wp_unslash($_POST[$key])) : '';
+                $command = new \Appleklinika\BackOffice\Application\ResolveOrderReview(new \Appleklinika\BackOffice\Infrastructure\WooOrderReview($this->orders), new WooOrderMutex());
+                $result = $command->execute($orderId, $action, $field('review_expected'), $field('shipping_choice'), $field('review_reason'), ($_POST['confirm_review'] ?? null) === '1', $field('review_operation'));
+                $this->redirect($orderId, $result, false, $worklistContext);
+            }
+            if ($action === 'record_cash_pickup' && (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST' || ($_POST['confirm_cash_payment'] ?? null) !== '1')) {
+                throw new InvalidArgumentException('A készpénzfizetés és személyes átadás rögzítéséhez kifejezett megerősítés szükséges.');
+            }
             if (in_array($action, ['generate_invoice', 'create_label'], true) && ($_POST['confirm_recovery'] ?? null) !== '1') {
                 throw new InvalidArgumentException('A kivételes szolgáltatói művelethez nyisd meg a helyreállítási lehetőségeket és erősítsd meg az ellenőrzést.');
             }
@@ -367,6 +377,7 @@ final class BackOfficeRouter
         $this->renderInternalNotes($order, $worklistContext);
         echo '</div><aside class="akbo-side">';
         $this->renderActions($order, $state, $deliveryMode, $worklistContext);
+        $this->renderLastReview($order);
         $this->renderDocuments($order);
         $this->renderShipping($order);
         $this->renderHistory($order);
@@ -395,13 +406,22 @@ final class BackOfficeRouter
     {
         echo '<section class="akbo-card akbo-next-action"><p class="akbo-eyebrow">Feldolgozás</p><h2>Következő lépés</h2>';
         echo '<p><strong>Jelenlegi állapot:</strong> ' . esc_html(FulfilmentWorkflow::labels()[$state]) . '</p>';
+        $pending = $order->get_meta('_appleklinika_shipping_review_operation', true);
+        if (is_array($pending) && !empty($pending['id']) && ($pending['stage'] ?? '') !== 'complete') {
+            $this->renderReview($order, $worklistContext);
+            echo '</section>';
+            return;
+        }
+        $this->renderManualShippingReview($order, $worklistContext);
         if ($order->has_status('completed') || in_array($state, [FulfilmentWorkflow::DELIVERED, FulfilmentWorkflow::PICKED_UP], true)) {
             echo '<p class="akbo-completion">A rendelés feldolgozása lezárult.</p></section>';
             return;
         }
         $blockReason = $this->orders->fulfilmentBlockReason($order);
         if ($blockReason !== null) {
-            echo '<p class="akbo-action-block">' . esc_html($blockReason) . '</p></section>';
+            echo '<p class="akbo-action-block">' . esc_html($blockReason) . '</p>';
+            $this->renderReview($order, $worklistContext);
+            echo '</section>';
             return;
         }
 
@@ -437,6 +457,90 @@ final class BackOfficeRouter
             echo '<p class="akbo-help">A GLS címke létrehozása nem jelenti a csomag fizikai átadását.</p>';
         }
         echo '</section>';
+    }
+
+    /** Read model only; rendering never starts a provider operation. */
+    private function renderReview(WC_Order $order, array $context): void
+    {
+        $review = (new \Appleklinika\BackOffice\Infrastructure\WooOrderReview($this->orders))->review($order->get_id());
+        if ($review['pending'] !== null) { $this->renderPendingShippingReview($order, $review, $context); return; }
+        if ($review['facts']['mode'] === DeliveryMode::UNKNOWN) {
+            echo '<h3>Hiányzó / hibás átvételi mód javítása</h3>';
+            if ($review['shipping_block'] !== null) { echo '<p class="akbo-help">'.esc_html($review['shipping_block']).'</p>'; }
+            else {
+                echo '<p class="akbo-help">A WooCommerce szállítási tételét javítja. A szállítási díj, az adók és a végösszeg változatlan marad; különböző díjazást előbb egyeztetni kell.</p>';
+                $this->reviewForm($order, 'resolve_shipping', 'Átvételi mód mentése', $review, $context);
+            }
+        }
+        if (!$review['facts']['paid'] || $review['facts']['payment'] === 'cod') {
+            echo '<h3>Fizetés rendezése</h3><p class="akbo-help">'.esc_html($review['payment_message']).'</p>';
+            if ($review['payment_action'] !== '') { $this->reviewForm($order, $review['payment_action'], $review['payment_action'] === 'recheck_barion' ? 'Barion állapot újraellenőrzése' : 'Fizetés beérkezésének igazolása', $review, $context); }
+        }
+    }
+
+    private function renderManualShippingReview(WC_Order $order, array $context): void
+    {
+        if (!array_filter($this->orders->history($order), static fn(array $entry): bool => ($entry['action'] ?? '') === 'resolve_shipping')) { return; }
+        $review = (new \Appleklinika\BackOffice\Infrastructure\WooOrderReview($this->orders))->review($order->get_id());
+        if ($review['pending'] !== null || $review['facts']['mode'] === DeliveryMode::UNKNOWN || !$review['facts']['manual_shipping']) { return; }
+        echo '<details><summary>Korábbi kézi átvételi mód javítása</summary>';
+        if ($review['shipping_block'] !== null) { echo '<p class="akbo-help">'.esc_html($review['shipping_block']).'</p>'; }
+        else { $this->reviewForm($order, 'resolve_shipping', 'Új, indokolt javítás mentése', $review, $context); }
+        echo '</details>';
+    }
+
+    private function renderPendingShippingReview(WC_Order $order, array $review, array $context): void
+    {
+        $pending = $review['pending'];
+        echo '<h3>Félbemaradt javítás egyeztetése</h3><p class="akbo-action-block">A döntés előzetesen rögzítve van, de a teljes mentés és naplózás nincs lezárva. A szállítási adat már megváltozhatott. Új döntés helyett ugyanennek a műveletnek az eredményét ellenőrizzük.</p>';
+        echo '<p>Jelenlegi adat: '.esc_html(\Appleklinika\BackOffice\Infrastructure\WooOrderReview::describeFacts($review['facts'], 'resolve_shipping')).'</p><p>Tervezett mód: '.esc_html($pending['target']['label']).'</p><p>'.esc_html($pending['user'].' · '.$pending['at']).'</p><p>Belső indoklás: '.esc_html($pending['reason']).'</p>';
+        echo '<form method="post" action="'.esc_url(admin_url('admin-post.php')).'" class="akbo-review-form"><input type="hidden" name="action" value="appleklinika_backoffice_action"><input type="hidden" name="order_id" value="'.esc_attr((string)$order->get_id()).'"><input type="hidden" name="backoffice_action" value="reconcile_shipping"><input type="hidden" name="review_operation" value="'.esc_attr($pending['id']).'">';
+        $this->renderWorklistContextInputs($context);
+        wp_nonce_field('appleklinika_backoffice_reconcile_shipping_'.$order->get_id());
+        echo '<label><input type="checkbox" name="confirm_review" value="1" required> A fenti, korábban rögzített döntés egyeztetését kérem. Ha az adat még érintetlen és a feltételek változatlanok, a javítás befejezhető; ha már módosult, csak a hiányzó naplózás készül el. Eltérésnél nincs felülírás.</label><button type="submit" class="akbo-button">Mentés és napló egyeztetése</button></form>';
+    }
+
+    private function reviewForm(WC_Order $order, string $action, string $label, array $review, array $context): void
+    {
+        echo '<form method="post" action="'.esc_url(admin_url('admin-post.php')).'" class="akbo-review-form">';
+        echo '<input type="hidden" name="action" value="appleklinika_backoffice_action"><input type="hidden" name="order_id" value="'.esc_attr((string)$order->get_id()).'"><input type="hidden" name="backoffice_action" value="'.esc_attr($action).'"><input type="hidden" name="review_expected" value="'.esc_attr($review['fingerprint']).'">';
+        $this->renderWorklistContextInputs($context);
+        wp_nonce_field('appleklinika_backoffice_'.$action.'_'.$order->get_id());
+        if ($action === 'resolve_shipping') {
+            echo '<label for="akbo-review-method">Ellenőrzött átvételi mód</label><select id="akbo-review-method" name="shipping_choice" required><option value="">Válassz az ellenőrzés alapján…</option>';
+            foreach ($review['choices'] as $key=>$choice) { echo '<option value="'.esc_attr($key).'">'.esc_html($choice['label']).'</option>'; }
+            echo '</select>';
+            echo '<div id="akbo-review-preview" aria-live="polite"><p class="akbo-help" data-review-hint>Válassz ellenőrzött módot. Az alábbi előnézetek az aktuális rendelésből és az engedélyezett módokból készülnek.</p>';
+            foreach ($review['shipping_previews'] as $key => $lines) {
+                echo '<div data-review-choice="'.esc_attr($key).'"><strong>Mentés után:</strong><ul>';
+                foreach ($lines as $line) { echo '<li>'.esc_html($line).'</li>'; }
+                echo '</ul></div>';
+            }
+            echo '</div><p class="akbo-help">Ez új, indokolt javítás, nem visszavonás: minden korábbi döntés megmarad az előzményekben. Csak az ügyféllel egyeztetett módot válaszd. Meglévő küldemény, átadás vagy előrehaladott előkészítés esetén külön rendelésadminisztrációs egyeztetés szükséges; ez a művelet nem von vissza számlát vagy küldeményt.</p>';
+        } else {
+            echo '<p class="akbo-help"><strong>A művelet hatása:</strong> '.esc_html($action === 'recheck_barion'
+                ? 'A meglévő Barion-fizetés állapotát kérdezzük le; új terhelés nem indul. Csak egyező, sikeres szolgáltatói fizetés esetén folytatódhat a normál fizetésrögzítés. Egyébként az eredmény az előzményekben marad, a fizetés nem lesz igazolt.'
+                : 'A teljes jóváírt összeget ehhez a rendeléshez kell egyeztetned. Ez nem banki ellenőrzés: a megerősítésed rögzíti a fizetést a WooCommerce-ben.').'</p>';
+            echo '<p class="akbo-help">Sikeres fizetésrögzítéskor a rendelés állapota, fizetési időpontja és készletkezelése változhat; a meglévő automatikus számlázás és ügyfélértesítés elindulhat. Az átvételi mód nem változik, GLS-címke ettől nem készül. Nincs egykattintásos visszavonás: téves igazolást külön kell egyeztetni.</p>';
+        }
+        echo '<label for="akbo-review-'.$action.'">Belső indoklás (csak munkatársaknak)</label><textarea id="akbo-review-'.$action.'" name="review_reason" rows="2" minlength="5" maxlength="500" aria-describedby="akbo-review-help-'.$action.'" required></textarea>';
+        echo '<p class="akbo-help" id="akbo-review-help-'.$action.'">A Back Office előzményeibe és a WooCommerce belső megjegyzésébe kerül. Nem ügyfélüzenet, nem küldjük a GLS-nek, Barionnak vagy a számlázónak. Írd le, mit és miből ellenőriztél: például telefonos ügyfélmegerősítés, eredeti rendelési e-mail vagy belső rendelési nyilvántartás. Ne adj meg jelszót vagy bankkártyaadatot.</p>';
+        echo '<label><input type="checkbox" name="confirm_review" value="1" required> '.esc_html($action === 'confirm_manual_payment' ? 'A teljes összeg tényleges beérkezését ellenőriztem. Ez fizetést rögzít és elindíthatja a meglévő számlázási automatizmust.' : ($action === 'resolve_shipping' ? 'Az átvételi módot és a változatlan díjakat ellenőriztem; a WooCommerce rendelés javítását megerősítem.' : 'A valódi Barion-állapot újraellenőrzését kérem; sikeres fizetésnél a meglévő fizetési folyamat folytatódhat.')).'</label><button type="submit" class="akbo-button">'.esc_html($label).'</button></form>';
+    }
+
+    private function renderLastReview(WC_Order $order): void
+    {
+        foreach (array_reverse($this->orders->history($order)) as $entry) {
+            if (!is_array($entry['review'] ?? null)) { continue; }
+            $review = $entry['review'];
+            $reader = new \Appleklinika\BackOffice\Infrastructure\WooOrderReview($this->orders);
+            echo '<section class="akbo-card akbo-review-result"><h2>Legutóbbi ellenőrzés eredménye</h2><p>'.esc_html((string)($review['result'] ?? '')).'</p><dl class="akbo-details">';
+            foreach (['before'=>'Előtte','after'=>'Utána'] as $key => $label) {
+                echo '<div><dt>'.esc_html($label).'</dt><dd>'.esc_html($reader::describeFacts($review[$key] ?? [], $entry['action'])).'</dd></div>';
+            }
+            echo '<div><dt>Munkatárs / időpont</dt><dd>'.esc_html($entry['user'].' · '.$entry['at']).'</dd></div><div><dt>Belső indoklás</dt><dd>'.esc_html((string)($review['reason'] ?? '')).'</dd></div></dl><p><strong>Jelenlegi következő lépés:</strong> '.esc_html($reader->nextStep($order)).'</p><p class="akbo-help">A mentett esemény a Műveleti előzményekben később is visszanézhető. A következő lépés a rendelés jelenlegi állapotát mutatja.</p></section>';
+            return;
+        }
     }
 
     private function renderDevices(WC_Order $order): void
@@ -667,7 +771,14 @@ final class BackOfficeRouter
         foreach ($history as $entry) {
             $from = FulfilmentWorkflow::labels()[$entry['from']] ?? $entry['from'];
             $to = FulfilmentWorkflow::labels()[$entry['to']] ?? $entry['to'];
-            echo '<li><strong>' . esc_html(FulfilmentWorkflow::activityLabels()[$entry['action']] ?? $entry['action']) . '</strong><span>' . esc_html($from === $to ? $to : $from . ' → ' . $to) . '</span><small>' . esc_html($entry['user'] . ' · ' . $entry['at']) . '</small></li>';
+            echo '<li><strong>' . esc_html(FulfilmentWorkflow::activityLabels()[$entry['action']] ?? $entry['action']) . '</strong><span>' . esc_html($from === $to ? $to : $from . ' → ' . $to) . '</span><small>' . esc_html($entry['user'] . ' · ' . $entry['at']) . '</small>';
+            if (is_array($entry['review'] ?? null)) {
+                $review = $entry['review'];
+                echo '<p>'.esc_html((string)($review['result'] ?? '')).'</p><p>Belső indoklás: '.esc_html((string)($review['reason'] ?? '')).'</p>';
+                echo '<p>'.esc_html(\Appleklinika\BackOffice\Infrastructure\WooOrderReview::describeFacts($review['before'] ?? [], $entry['action']).' → '.\Appleklinika\BackOffice\Infrastructure\WooOrderReview::describeFacts($review['after'] ?? [], $entry['action'])).'</p>';
+                if (isset($review['requested_at'])) { echo '<small>Döntés: '.esc_html($review['requested_at']).' · Naplóbejegyzést rögzítő munkatárs azonosítója: '.esc_html((string)$review['finalized_by']).'</small>'; }
+            }
+            echo '</li>';
         }
         echo '</ol></section>';
     }
@@ -740,6 +851,9 @@ final class BackOfficeRouter
             <input type="hidden" name="expected_state" value="<?php echo esc_attr($this->orders->state($order)); ?>">
             <?php $this->renderWorklistContextInputs($worklistContext); ?>
             <?php wp_nonce_field('appleklinika_backoffice_' . $action . '_' . $order->get_id()); ?>
+            <?php if ($action === 'record_cash_pickup'): ?>
+                <label class="akbo-help"><input type="checkbox" name="confirm_cash_payment" value="1" required> A teljes összeget készpénzben átvettem, és a rendelést személyesen átadtam.</label>
+            <?php endif; ?>
             <?php if (in_array($action, ['generate_invoice', 'create_label'], true)): ?>
                 <label class="akbo-help"><input type="checkbox" name="confirm_recovery" value="1" required> Ellenőriztem: nincs már kiállított vagy folyamatban lévő szolgáltatói dokumentum.</label>
             <?php endif; ?>
@@ -955,6 +1069,8 @@ final class BackOfficeRouter
     private function documentEnd(): void
     {
         wp_footer();
+        $script = add_query_arg('ver', (string)filemtime(dirname(__DIR__, 2).'/assets/review-preview.js'), plugins_url('assets/review-preview.js', dirname(__DIR__, 2).'/appleklinika-backoffice.php'));
+        echo '<script src="'.esc_url($script).'" defer></script>';
         echo '<script>document.querySelectorAll(".akbo-actions form, .akbo-note-form").forEach(function(form){form.addEventListener("submit",function(){var button=form.querySelector("button[type=submit]");if(button){button.disabled=true;button.textContent="Feldolgozás…";}});});</script></body></html>';
     }
 }

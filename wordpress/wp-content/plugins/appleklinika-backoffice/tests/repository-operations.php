@@ -55,7 +55,8 @@ function remove_filter(string $hook, callable $callback, int $priority): void { 
 function apply_filters(string $hook, array $data, array $context): array { foreach ($GLOBALS['filters'][$hook] ?? [] as $callback) { $data = $callback($data, $context); } return $data; }
 function current_time(string $type): string|int { return match ($type) { 'mysql' => '2026-09-10 10:15:00', 'Y-m-d' => '2026-09-10', 'Ymd' => '20260910', 'timestamp' => strtotime('2026-09-10 10:15:00'), default => throw new RuntimeException('Unexpected date format.') }; }
 function get_transient(string $key): mixed { return $GLOBALS['transients'][$key] ?? false; }
-function set_transient(string $key, mixed $value, int $expiry): bool { ++$GLOBALS['transient_writes']; $GLOBALS['transients'][$key] = $value; return true; }
+function set_transient(string $key, mixed $value, int $expiry): bool { ++$GLOBALS['transient_writes']; if (!empty($GLOBALS['fail_activity'])) { return false; } $GLOBALS['transients'][$key] = $value; return true; }
+function wc_get_order_notes(array $args): array { if ($args['type'] !== 'internal' || $args['limit'] !== 1 || $args['cache_results'] !== false) { throw new RuntimeException('Unbounded or public correction-note lookup.'); } return array_values(array_filter(($GLOBALS['orders'][$args['order_id']]->notes ?? []), static fn(array $note): bool => str_contains($note['content'], $args['search']))); }
 function wp_get_environment_type(): string { return $GLOBALS['environment']; }
 function home_url(string $path): string { return $GLOBALS['site_home']; }
 function wp_parse_url(string $url, int $component): mixed { return parse_url($url, $component); }
@@ -128,6 +129,7 @@ class WC_Order extends RepositoryMetaDouble
     }
     public function save(): int { ++$this->saves; return $this->id; }
     public function save_meta_data(): void { ++$this->saves; }
+    public function read_meta_data(bool $force = false): void {}
 }
 
 class GLS_Shipping_For_Woo {}
@@ -240,6 +242,46 @@ final class RepositoryOperationsTest
         $this->assert(count($repository->history($order)) === 2 && $GLOBALS['transient_writes'] === 2, 'Rejected/failed notes do not create activity.');
         $GLOBALS['transients']['appleklinika_backoffice_activity_20260910'][] = ['at' => '2026-09-09 23:59:59'];
         $this->assert(count($repository->todayActivity()) === 2, 'Today activity excludes entries from another day.');
+
+        $reviewOrder = new WC_Order(529);
+        $before = ['shipping' => [], 'payment' => 'bacs', 'paid' => false];
+        $after = ['shipping' => [['method'=>'local_pickup','instance'=>27]], 'payment'=>'bacs','paid'=>false];
+        $repository->recordReview($reviewOrder, 'resolve_shipping', $before, $after, 'Verified customer pickup request', 'Shipping repaired');
+        $event = $repository->history($reviewOrder)[0];
+        $this->assert($event['user_id'] === 81 && $event['user'] === 'QA Employee' && $event['order_id'] === 529 && $event['at'] === '2026-09-10 10:15:00', 'Recovery audit persists actual employee/order/time.');
+        $this->assert($event['review'] === ['before'=>$before,'after'=>$after,'reason'=>'Verified customer pickup request','result'=>'Shipping repaired','source'=>'backoffice_staff_review'], 'Recovery audit preserves authoritative old/new data and evidence source.');
+        $this->assert($event['from'] === $event['to'] && count($repository->todayActivity()) === 3, 'Review adds daily activity without changing fulfilment.');
+        $this->assert($reviewOrder->notes[0]['customer'] === false, 'Recovery reason and employee never become a customer note.');
+        $GLOBALS['backoffice_capability'] = false;
+        $this->rejects(fn () => $repository->recordReview($reviewOrder, 'resolve_shipping', [], [], 'Denied', 'Denied'), 'Unauthorized recovery audit rejected.');
+        $GLOBALS['backoffice_capability'] = true;
+        $this->assert(count($repository->history($reviewOrder)) === 1, 'Rejected audit does not append history.');
+
+        // Exercise the actual audit adapter, not just the command/store double.
+        $correction = new WC_Order(9001); $GLOBALS['orders'][9001] = $correction;
+        $journal = ['id'=>str_repeat('a',64),'before'=>['state'=>'new','shipping'=>[]],'user_id'=>81,'user'=>'QA Employee','at'=>'2026-09-10 10:10:00','reason'=>'Verified original customer instruction'];
+        $afterCorrection = ['state'=>'new','shipping'=>[['method'=>'local_pickup','instance'=>2]]];
+        $activityBefore = count($repository->todayActivity());
+        $correction->noteSucceeds = false;
+        try { $repository->recordShippingReview($correction, $journal, $afterCorrection); $this->assert(false, 'Failed correction note must not report completion.'); }
+        catch (RuntimeException) { $this->assert(count($repository->history($correction)) === 1 && count($correction->notes) === 0, 'A note failure leaves the durable history intact for reconciliation.'); }
+        $this->assert(count($repository->todayActivity()) === $activityBefore, 'Failed projection is not falsely published as completed daily activity.');
+        $correction->noteSucceeds = true;
+        $GLOBALS['fail_activity'] = true;
+        try { $repository->recordShippingReview($correction, $journal, $afterCorrection); $this->assert(false, 'Failed activity storage must be explicit.'); }
+        catch (RuntimeException) { $this->assert(count($repository->history($correction)) === 1 && count($correction->notes) === 1, 'Activity failure preserves the single history event and single internal note.'); }
+        $GLOBALS['fail_activity'] = false;
+        $repository->recordShippingReview($correction, $journal, $afterCorrection);
+        $repository->recordShippingReview($correction, $journal, $afterCorrection);
+        $this->assert(count($repository->history($correction)) === 1 && count($correction->notes) === 1 && count($repository->todayActivity()) === $activityBefore + 1, 'Repeated reconciliation creates exactly one history, one note and one daily activity.');
+        $entry = $repository->history($correction)[0];
+        $this->assert($entry['review_operation'] === $journal['id'] && $entry['user_id'] === 81 && $entry['review']['requested_at'] === $journal['at'] && $entry['review']['finalized_by'] === 81, 'Stable operation identity preserves the original actor and decision time separately from finalization.');
+        $this->assert($correction->notes[0]['customer'] === false && str_contains($correction->notes[0]['content'], '[akbo-review:'.$journal['id'].']'), 'Correction notes are private and carry the durable duplicate-detection marker.');
+        $correction->update_meta_data('_appleklinika_shipping_review_operation', ['id'=>$journal['id'],'stage'=>'prepared']);
+        $this->assert(str_contains((string)$repository->fulfilmentBlockReason($correction), 'napló'), 'Unfinished shipping audit blocks ordinary fulfilment.');
+        $GLOBALS['backoffice_capability'] = false;
+        $this->rejects(fn () => $repository->recordShippingReview($correction, $journal, $afterCorrection), 'Correction projections require Back Office capability even when the operation is known.');
+        $GLOBALS['backoffice_capability'] = true;
 
         $this->assert(! class_exists('GLS_Shipping_Order') && $repository->glsReadinessMessage() === null, 'Configured frontend GLS readiness does not depend on the admin-only operation class.');
         GLS_Shipping_Account_Helper::$account['password'] = '';

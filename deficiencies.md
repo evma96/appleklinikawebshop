@@ -580,3 +580,7 @@ complete trust/Watch/protection package. Explicit guarded provisioning resolves 
 existing `ak-protection-*` SKU identities independently in each environment, preserves
 existing admin prices, and stops on conflicting/duplicate identities. Adapter price
 remains a business input; production/main and provider transactions stay excluded.
+
+## 2026-10-26 — TEST Back Office source drift reconciliation
+
+The already accepted TEST staff-review runtime package was missing from Git. Its exact source is now preserved with the approved protection presentation additions. Shipping correction remains recoverable rather than cross-store atomic; incomplete writes block ordinary progression until the existing explicit reconciliation completes. No payment, invoice or carrier E2E is repeated by this source-preservation task. TEST acceptance of the combined release is recorded separately after deployment.

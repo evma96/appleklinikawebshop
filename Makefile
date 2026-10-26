@@ -192,3 +192,9 @@ test-local-trust-watch:
 
 test-local-protection-association:
 	$(COMPOSE) exec -T wordpress php /var/www/html/wp-content/plugins/appleklinika-inventory/tests/protection-association-local.php
+
+# Existing TEST staff-review preview; isolated JS doubles, no network or database.
+.PHONY: test-backoffice-review-preview
+test: test-backoffice-review-preview
+test-backoffice-review-preview:
+	node wordpress/wp-content/plugins/appleklinika-backoffice/tests/review-preview.cjs
