@@ -26,7 +26,7 @@ final class ProductConditionFields
     public function register(): void
     {
         add_action('woocommerce_product_options_general_product_data', [$this, 'render']);
-        add_action('woocommerce_process_product_meta', [$this, 'save']);
+        // DeviceProductEditor writes the shared validated plan before native Woo save.
     }
 
     public function render(): void
@@ -290,7 +290,7 @@ final class ProductConditionFields
 
         woocommerce_wp_text_input([
             'id' => 'appleklinika_internal_identifier',
-            'label' => 'Belső azonosító / IMEI',
+            'label' => 'Korábbi belső azonosító (örökölt)',
             'description' => 'Csak admin használatra. Frontenden nem jelenhet meg.',
             'value' => $this->repository->get($post->ID, 'internal_identifier'),
         ]);

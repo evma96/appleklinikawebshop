@@ -262,3 +262,55 @@ twice locally, reusing all six SKUs with no configuration changes. TEST verifica
 of the association script requires an explicit CLI target, named staging host,
 external HTTP block and disabled direct socket/cURL functions. It does not modify
 existing TEST accessory stock; QA devices/orders are cleaned through Woo CRUD.
+
+## 2026-10-26 — Extra protection visual revision, LOCAL only
+
+Branch: `feature/local-protection-visual-layout`; baseline HEAD
+`0841b1ff7eab5d0f81ac17cdddd84d1708fe0fe6`. The functional implementation is retained;
+the previous narrow three-column protection UI was rejected. This revision awaits
+Martin's screenshot-based visual approval and is not committed or deployed.
+
+The purchase panel now uses full-width option rows with a consistent border/radius,
+left-aligned names, right-aligned Woo price increments and a restrained red selected
+state. The extra nested outer box is removed. `Nincs` remains the quiet default for
+glass/case; no paid accessory is preselected. Native labeled inputs remain keyboard
+operable with a visible focus outline, and the whole label is clickable. Touch targets
+are at least 44 px high; option text stays 15 px and prices 14 px on mobile. At 320 px,
+long glass names wrap naturally while prices remain aligned. The unpriced adapter
+remains a disabled input, displayed as a calm unavailable row without a misleading
+checkbox. The block remains immediately before Add to Cart.
+
+Only products rendering this block receive a desktop purchase-column increase from
+410 to 450 px and modest panel spacing adjustments. The existing stacked breakpoint
+is preserved. The image, configuration selectors and other product content are not
+reimplemented. The Google Reviews source/styles/tests/documentation/private fixture
+were fingerprinted before this task and remain byte-identical afterward. Its earlier
+uncommitted work is retained separately.
+
+Application code changes are limited to:
+- `assets/product-protection.css`
+- `src/Interfaces/Frontend/ProductProtection.php`: render/option markup only.
+
+Registration, validation, nonce, input names/values, disabled flags, Woo prices, cart
+commands, device association, removal, stock and provider/email lifecycle code are
+unchanged. README and deficiencies record this presentation status.
+
+Verification: **153 existing LOCAL checks PASS** (101 protection + 52 association).
+They cover native prices/stock, exclusive groups, independent camera protection,
+unavailable adapter, multiple-device relationships, removal/orphans, Back Office,
+My Account/email output and offline invoice-line mapping. The scripts report no
+provider or email attempts and successful cleanup of their QA devices/draft/order
+items. Browser interaction changes only unsaved selector state, with no cart/order
+submission.
+
+Actual full product-page/hero screenshots were personally inspected at
+1440, 1280, 390 and 320 px. No document horizontal overflow or captured browser
+console warning/error. Whole-row clicks switch the exclusive choices correctly;
+keyboard Space independently toggles camera protection and exposes the focus ring.
+The browser was returned to `Nincs`/`Nincs`, camera unchecked, adapter disabled.
+PHP syntax and diff whitespace checks pass.
+
+Evidence outside Git:
+`/Users/apple/.codex/visualizations/2026/09/11/01a08fcb-a363-7761-acb7-46d99e2bde2c/local-protection-visual-20261026/`
+
+No commit, push, merge, TEST access, deployment, production or main change.

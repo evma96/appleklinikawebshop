@@ -58,13 +58,13 @@ final class ProductProtection
         if (!$product instanceof \WC_Product) return;
         $options = $this->catalog->forDevice($product->get_id());
         if ($options === []) return;
-        echo '<section class="ak-protection" aria-label="Extra védelem"><h2>Extra védelem</h2>';
+        echo '<section class="ak-protection" aria-label="Extra védelem"><h2>Extra védelem</h2><p class="ak-protection__intro">Tedd teljessé a készüléked.</p>';
         wp_nonce_field('ak_protection_' . $product->get_id(), 'ak_protection_nonce', false);
         foreach (['glass' => 'Üvegfólia', 'case' => 'Tok'] as $group => $title) {
             $items = array_filter($options, static fn(array $item): bool => $item['group'] === $group);
             if ($items === []) continue;
             echo '<fieldset><legend>' . esc_html($title) . '</legend><div class="ak-protection__choices ak-protection__choices--radio">';
-            echo '<label><input type="radio" name="ak_protection[' . esc_attr($group) . ']" value="0" checked><span>Nincs</span></label>';
+            echo '<label class="ak-protection__option is-none"><input type="radio" name="ak_protection[' . esc_attr($group) . ']" value="0" checked><span class="ak-protection__indicator" aria-hidden="true"></span><span class="ak-protection__content"><span class="ak-protection__name">Nincs</span></span></label>';
             foreach ($items as $item) $this->option($item, 'radio');
             echo '</div></fieldset>';
         }
@@ -79,6 +79,6 @@ final class ProductProtection
 
     private function option(array $item, string $type): void
     {
-        echo '<label' . (!$item['available'] ? ' class="is-unavailable"' : '') . '><input type="' . esc_attr($type) . '" name="ak_protection[' . esc_attr($item['group']) . ']" value="' . esc_attr((string) $item['id']) . '"' . disabled(!$item['available'], true, false) . '><span>' . esc_html($item['name']) . '<small>' . ($item['available'] ? '+ ' . wp_kses_post($item['price_html']) : 'Jelenleg nem elérhető') . '</small></span></label>';
+        echo '<label class="ak-protection__option' . (!$item['available'] ? ' is-unavailable' : '') . '"><input type="' . esc_attr($type) . '" name="ak_protection[' . esc_attr($item['group']) . ']" value="' . esc_attr((string) $item['id']) . '"' . disabled(!$item['available'], true, false) . '><span class="ak-protection__indicator" aria-hidden="true"></span><span class="ak-protection__content"><span class="ak-protection__name">' . esc_html($item['name']) . '</span><small class="ak-protection__price">' . ($item['available'] ? '+ ' . wp_kses_post($item['price_html']) : 'Jelenleg nem elérhető') . '</small></span></label>';
     }
 }

@@ -272,6 +272,8 @@ Product cards intentionally stay compact: non-iPhone archive cards only show sto
 - Custom single product information panels render real WooCommerce descriptions, product attributes/meta, reviews, and related products while default WooCommerce tabs/related output are removed to avoid duplicate product content.
 - A `Termékek` navigation item is injected into the active WordPress navigation block and links to the WooCommerce shop page.
 - Color/storage/grade selection is modeled as separate unique WooCommerce products instead of WooCommerce variations.
+- The LOCAL product hero groups the existing gallery and two stacked configuration cards in the left desktop column, and the unchanged purchase card plus guarantees in the right. Mobile keeps the gallery → purchase → configuration → guarantees visual sequence, with one instance of each component. The lower description/data and similar-products columns reuse the same desktop column widths and gap. See `docs/qa/product-information-presentation.md` for the 2026-10-26 composition and alignment reviews.
+- LOCAL model selectors keep configured valid colors/capacities visible and disable unavailable combinations. Sparse iPad/Mac/Watch controls wrap compactly; Watch omits the storage/equipment selector card. The approved iPhone layout is preserved. Exact data sources, model-data gaps and checks are recorded in `docs/qa/product-information-presentation.md`.
 - Single product galleries use a direct image link with stable contain geometry, centered thumbnails and no redundant stage wrapper. An unpainted native full-viewport dialog sits over one dark backdrop, owned by the Inventory plugin's focused `assets/product-gallery.js` and `.css`. Single-image navigation is hidden; multiple images have selected thumbnails, previous/next controls and a counter. The viewer supports 2x/4x zoom, bounded pointer pan, fit reset, keyboard navigation, ESC, focus return and background scroll locking. Only the selected opened image loads its full-size source. See [product gallery QA and test instructions](docs/qa/product-gallery-ux.md).
 - Product selector changes use the same WooCommerce purchase-area renderer as a fresh product page, including form presence and quantity limits. Replaced forms retain one delegated cart handler; inventory/cart rules are unchanged. See [purchase lifecycle regression](docs/qa/product-purchase-lifecycle.md).
 - Product information separates purchase choices, equipment facts and guarantees from grouped reference details. Four technical highlights precede an expandable, topic-grouped specification; import dates stay off the storefront and the source link remains secondary. Gallery/viewer surfaces are unframed, with selected red states preserved. Hungarian display labels preserve canonical keys, and selected-product facts refresh with the existing selector. Recognized LOCAL selector-demo iPhones use data-derived presentation instead of QA prose; stored business descriptions remain untouched. See [product information presentation QA](docs/qa/product-information-presentation.md).
@@ -518,8 +520,7 @@ carrier handoff remains a separate action and email trigger. See
 
 Native Google Business Profile review cards replace product-specific Woo reviews. The homepage displays three cards at once from a six-review horizontal carousel; appropriate public pages show two compact cards. Mobile uses native horizontal scrolling with a next-card hint. Author avatars, dates, untouched review text and aggregate values use the authenticated feed when configured. Without valid live data the section is omitted, never replaced by a link-only panel. Original Barion / GLS / MPL / Számlázz.hu logos remain below it.
 
-The owner's latest instruction explicitly permits a visibly labeled QA fixture **on actual LOCAL storefront pages**. The opt-in `docker-compose.reviews-qa.yml` mounts an ignored, non-public fixture read-only. It requires the local environment, loopback site/request and existing LOCAL isolation guard; no fixture is imported into WordPress or live review cache. TEST/production rendering is denied independently. Live Google authorization is still missing. See [connection, isolation, changed files and actual-page screenshots](docs/google-reviews-local.md). The owner-approved release keeps this QA fixture strictly LOCAL; TEST hides reviews until the live connection is configured.
-
+The owner permits a labeled QA fixture **on actual LOCAL storefront pages**. The 2026-10-26 visual revision uses a small corner badge, one summary/cards composition and a narrower product/category grid; its QA fixture remains LOCAL-only; the visual implementation was approved for integration on 2026-10-27. The opt-in `docker-compose.reviews-qa.yml` mounts an ignored, non-public fixture read-only. It requires the local environment, loopback site/request and existing LOCAL isolation guard; no fixture is imported into WordPress or live review cache. TEST/production rendering is denied independently. Live Google authorization is still missing. See [connection, isolation, changed files and actual-page screenshots](docs/google-reviews-local.md). TEST hides reviews until the live connection is configured.
 
 
 ### LOCAL trust strip, Watch formatting and optional protection
@@ -546,3 +547,18 @@ prints the creation plan. Stable `ak-protection-*` SKUs prevent environment-ID
 assumptions; existing administrator configuration is never reset by deployment.
 
 The existing TEST staff-review recovery package is now tracked alongside Extra protection. It preserves canonical Woo shipping repair, explicit payment-method-specific review, and recoverable correction history without changing normal provider automation. See [Back Office review reconciliation](docs/backoffice-review-reconciliation.md).
+
+
+The 2026-10-26 LOCAL Extra protection visual revision replaces the narrow button
+grid with full-width option rows, readable aligned price increments and an explicit
+unavailable adapter row. Native Woo behavior is unchanged. This visual
+revision was approved for integration on 2026-10-27; see the final section of
+[the protection report](docs/local-trust-watch-protection.md).
+
+LOCAL manual product entry and HEIC recovery: [diagnosis and workflow](docs/qa/manual-product-entry-local.md).
+
+### Physical-device entry foundation (LOCAL candidate)
+
+The shared Woo-backed device-entry service, private SKU/IMEI/serial order snapshots, automatic titles, native ordered photos and safe single-unit stock behavior are documented in [the LOCAL rehearsal report](docs/qa/physical-device-foundation-local.md). Run `make test-local-device-foundation` only in the isolated LOCAL runtime. The future Back Office entry UI is not implemented. COD remains deferred; no payment/provider lifecycle is changed.
+
+The physical-device foundation and current LOCAL product-page work were approved for checkpoint/integration on 2026-10-27. TEST requires the reproducible media overlay and a one-device acceptance rehearsal; see [integration/runtime contract](docs/qa/physical-device-foundation-test.md). No Back Office entry UI or COD activation is included.

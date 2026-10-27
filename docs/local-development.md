@@ -135,3 +135,21 @@ The obsolete standalone `ak-homepage-preview` (8082) and `ak-homepage-baseline` 
 - Before browsing and again after checkout-draft cleanup: storefront 197 products, 73 attachments, 162 orders and 6 users; Back Office 197 products, 50 attachments, 88 orders and 6 users. Active-plugin settings and the existing storefront Barion configuration were preserved. No TEST/production/main access, deployment, push, merge or shared-file reconciliation is part of this recovery.
 
 This section records the initial restoration checks, before the final authenticated Back Office and map-classification verification. The LOCAL recovery configuration and this guide are protected together in the recovery checkpoint. Continue code reconciliation only as a separately authorized task.
+
+## Optional LOCAL iPhone HEIC compatibility
+
+The storefront LOCAL environment now appends `docker-compose.local-media.yml` to
+its existing private `COMPOSE_FILE`. Run `docker compose build wordpress` before
+starting on a fresh Docker host; normal `make up` then reuses the corrected image.
+The overlay extends the existing WordPress/PHP base with the official Debian
+Bookworm backports HEIC decoder only. The build deliberately stops on a different
+Debian base instead of installing packages from an incompatible release.
+
+Do not include this LOCAL overlay in TEST or production commands. Core/database
+volumes, private upload mounts and the LOCAL provider/mail guards are retained.
+New HEIC media use the native WordPress JPEG/subsize pipeline without a custom
+converter or upload plugin. See [manual product entry](qa/manual-product-entry-local.md).
+
+### Physical-device photo privacy processor
+
+The opt-in `docker-compose.local-media.yml` image also installs ExifTool from Debian and passes `AK_PHOTO_METADATA_TOOL` (default `/usr/bin/exiftool`). Product photo processing retains native Woo featured/gallery storage and WordPress-generated sizes, strips private metadata, preserves ICC/orientation and caches processed file hashes. The shared device service refuses publication when required image processing is unavailable. Install and verify these runtime dependencies separately before any later TEST deployment; this LOCAL change does not provision TEST. See [the entry rehearsal](qa/physical-device-foundation-local.md).

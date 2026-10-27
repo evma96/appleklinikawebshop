@@ -81,7 +81,7 @@ final class WooOrderBackOfficeRepository
             $order->update_meta_data(OrderQueueQuery::PRIMARY_ITEM_NAME_META_KEY, $item->get_name());
         }
 
-        foreach (['_appleklinika_internal_identifier', '_appleklinika_serial_number'] as $metaKey) {
+        foreach (['_appleklinika_internal_identifier', '_appleklinika_imei', '_appleklinika_serial_number', '_sku'] as $metaKey) {
             $identifier = trim(sanitize_text_field((string) get_post_meta($productId, $metaKey, true)));
             if ($identifier === '') {
                 continue;
@@ -153,6 +153,9 @@ final class WooOrderBackOfficeRepository
             $details = [];
             $sources = [];
             foreach ($this->deviceMetaLabels() as $key => $label) {
+                if ($key === 'internal_identifier' && $item->get_meta('_appleklinika_device_identity_captured', true) === 'yes') {
+                    continue; // Typed snapshots below replace the legacy mixed identifier label.
+                }
                 $value = trim((string) $item->get_meta('_appleklinika_' . $key, true));
                 if ($key === 'internal_identifier') {
                     $snapshots = $this->deviceIdentifierSnapshots($item);
@@ -170,8 +173,8 @@ final class WooOrderBackOfficeRepository
                     $value = implode(' / ', $snapshots);
                 }
                 $source = 'order';
-                if ($value === '' && $productId > 0) {
-                    $value = (string) get_post_meta($productId, '_appleklinika_' . $key, true);
+                if ($value === '' && $productId > 0 && !($item->get_meta('_appleklinika_device_identity_captured', true) === 'yes' && in_array($key, ['sku','imei','serial_number'], true))) {
+                    $value = (string) get_post_meta($productId, $key === 'sku' ? '_sku' : '_appleklinika_' . $key, true);
                     $source = 'product';
                 }
                 if ($value !== '') {
@@ -661,6 +664,9 @@ final class WooOrderBackOfficeRepository
             'sim_config' => 'SIM konfiguráció',
             'connectivity' => 'Kapcsolat',
             'battery_health' => 'Akkumulátor állapota',
+            'sku' => 'Cikkszám',
+            'imei' => 'IMEI',
+            'serial_number' => 'Sorozatszám',
             'internal_identifier' => 'Belső azonosító / IMEI',
         ];
     }

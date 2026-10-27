@@ -1,33 +1,53 @@
-.appleklinika-cart-area .ak-protection { grid-column: 1 / -1; min-width: 0; padding: 18px; border: 1px solid #e2e5e9; border-radius: 16px; background: #fafafa; }
-.appleklinika-cart-area .ak-protection h2 { margin: 0 0 16px; font-size: 18px; line-height: 1.3; letter-spacing: -.02em; }
+/* Optional Woo products: presentation only, native radio/checkbox behavior retained. */
+.appleklinika-cart-area .ak-protection {
+  grid-column: 1 / -1; min-width: 0; padding: 22px 0 0; margin: 6px 0 10px;
+  border: 0; border-top: 1px solid #e9ebef; background: transparent;
+}
+.appleklinika-cart-area .ak-protection h2 { margin: 0; font-size: 20px; line-height: 1.3; font-weight: 750; letter-spacing: -.025em; }
+.ak-protection .ak-protection__intro { margin: 6px 0 22px; color: #69717c; font-size: 14px; line-height: 1.5; }
+.ak-protection > p:has(> input[type="hidden"]) { display: none; }
 .ak-protection fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
-.ak-protection fieldset + fieldset { margin-top: 14px; }
-.ak-protection legend { padding: 0; margin-bottom: 7px; font-size: 13px; font-weight: 700; }
-.ak-protection__choices { display: flex; flex-wrap: wrap; gap: 7px; }
-.ak-protection__choices label { display: flex; align-items: center; gap: 8px; min-height: 44px; max-width: 100%; margin: 0; padding: 9px 11px; border: 1px solid #dfe2e6; border-radius: 9px; background: #fff; font-size: 13px; line-height: 1.4; cursor: pointer; box-sizing: border-box; }
-.ak-protection__choices label:has(input:checked) { border-color: #bd1730; background: #fff5f6; }
-.ak-protection__choices label:focus-within { outline: 2px solid #bd1730; outline-offset: 2px; }
-.ak-protection__choices input { accent-color: #b80b24; flex: 0 0 16px; width: 16px; height: 16px; margin: 0; }
-.ak-protection__choices span { min-width: 0; overflow-wrap: anywhere; }
-.ak-protection__choices small { display: block; margin-top: 2px; color: #616770; font-size: 12px; }
-.ak-protection__choices label.is-unavailable { color: #737982; cursor: default; background: #f4f5f6; }
-@media (max-width: 400px) { .appleklinika-cart-area .ak-protection { padding: 14px; } .ak-protection__choices { gap: 6px; } }
-
-.ak-protection__choices--radio { display: grid; grid-template-columns: minmax(48px,.6fr) repeat(2,minmax(0,1fr)); }
-.ak-protection__choices--radio label { padding: 9px 7px; gap: 5px; }
-.ak-protection__choices--radio input { flex-basis: 14px; width: 14px; height: 14px; }
-.ak-protection__choices--radio small { white-space: nowrap; }
-.ak-protection__choices--independent { display: grid; grid-template-columns: minmax(0,1fr); }
-.ak-protection__choices--independent label > span { display: flex; justify-content: space-between; align-items: center; flex: 1; gap: 10px; }
-.ak-protection__choices--independent small { margin: 0; text-align: right; flex-shrink: 0; }
+.ak-protection fieldset + fieldset { margin-top: 16px; }
+.ak-protection legend { padding: 0; margin-bottom: 8px; color: #242c37; font-size: 14px; line-height: 1.4; font-weight: 700; }
+.ak-protection__choices { display: grid; grid-template-columns: minmax(0,1fr); gap: 7px; }
+.ak-protection .ak-protection__option {
+  position: relative; display: grid; grid-template-columns: 20px minmax(0,1fr); align-items: center; gap: 11px;
+  width: 100%; min-width: 0; min-height: 48px; margin: 0; padding: 11px 13px;
+  border: 1px solid #e1e5ea; border-radius: 11px; background: #fff; color: #28313c;
+  font-size: 15px; line-height: 1.4; cursor: pointer; box-sizing: border-box;
+}
+.ak-protection__option input { position: absolute; width: 1px; height: 1px; margin: 0; padding: 0; opacity: 0; }
+.ak-protection__option:has(input:focus-visible) { outline: 2px solid #b91c32; outline-offset: 3px; }
+.ak-protection__indicator { display: grid; place-items: center; width: 20px; height: 20px; border: 1px solid #cbd1d9; border-radius: 50%; background: #fff; }
+.ak-protection__choices--independent .ak-protection__indicator { border-radius: 6px; }
+.ak-protection__option:has(input:checked) { border-color: #b91c32; background: #fff6f7; }
+.ak-protection__option:has(input:checked) .ak-protection__indicator { border-color: #b91c32; background: #b91c32; }
+.ak-protection__option:has(input:checked) .ak-protection__indicator::after { content: ""; width: 8px; height: 5px; border-left: 2px solid #fff; border-bottom: 2px solid #fff; transform: translateY(-1px) rotate(-45deg); }
+.ak-protection__content { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 12px; min-width: 0; }
+.ak-protection__name { min-width: 0; overflow-wrap: break-word; font-weight: 500; }
+.ak-protection__price { margin: 0; color: #525d6b; font-size: 14px; line-height: 1.4; font-weight: 600; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ak-protection__option:has(input:checked):not(.is-none) .ak-protection__price { color: #a41d30; }
+/* The default means no paid extra: keep it quiet, full-width and keyboard/touch accessible. */
+.ak-protection__option.is-none, .ak-protection__option.is-none:has(input:checked) { min-height: 44px; padding-block: 9px; color: #707884; border-color: transparent; background: transparent; font-size: 14px; }
+.ak-protection__option.is-none:has(input:checked) .ak-protection__indicator { border-color: #8b939e; background: #8b939e; }
+.ak-protection__option.is-unavailable { grid-template-columns: minmax(0,1fr); min-height: 62px; color: #77808a; border-color: transparent; background: #f5f6f8; cursor: default; }
+.ak-protection__option.is-unavailable .ak-protection__indicator { display: none; }
+.ak-protection__option.is-unavailable .ak-protection__content { grid-template-columns: minmax(0,1fr); gap: 3px; }
+.ak-protection__option.is-unavailable .ak-protection__price { text-align: left; white-space: normal; color: #818894; font-size: 12px; font-weight: 400; }
 /* A single stocked device has a hidden native quantity input: do not reserve an empty row. */
 .appleklinika-cart-area form.cart:has(> .ak-protection) > .quantity:has(input[type="hidden"]) { display: none; }
 .appleklinika-cart-area form.cart:has(> .ak-protection) > p:has(> .single_add_to_cart_button) { margin: 0; }
 .appleklinika-cart-area form.cart:has(> .ak-protection):has(> .quantity input[type="hidden"]) > p:has(> .single_add_to_cart_button) { grid-column: 1 / -1; }
-.ak-protection__choices--radio label:first-child span { white-space: nowrap; }
-@media (max-width:700px) {
-  .ak-protection__choices--radio { grid-template-columns: repeat(2,minmax(0,1fr)); }
-  .ak-protection__choices--radio label:first-child { grid-column: 1 / -1; justify-self: start; }
-  .ak-protection__choices--independent label > span { display: block; }
-  .ak-protection__choices--independent small { text-align: left; margin-top: 2px; }
+.appleklinika-buy-panel:has(.ak-protection) { gap: 16px; }
+.appleklinika-buy-panel:has(.ak-protection) .appleklinika-cart-area { gap: 16px; }
+@media (min-width:1101px) {
+  .appleklinika-product-shell:has(.ak-protection) { --ak-product-columns: minmax(0,1fr) minmax(410px,450px); }
+}
+@media (max-width:400px) {
+  .appleklinika-buy-panel:has(.ak-protection) { padding-inline: 16px; }
+  .ak-protection .ak-protection__option { padding-inline: 10px; gap: 9px; }
+  .ak-protection__content { gap: 8px; }
+}
+@media (hover:hover) {
+  .ak-protection__option:not(.is-unavailable):not(:has(input:checked)):hover { border-color: #bfc6cf; background: #fafbfc; }
 }

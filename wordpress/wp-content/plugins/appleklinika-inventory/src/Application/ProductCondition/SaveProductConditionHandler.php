@@ -20,6 +20,11 @@ final class SaveProductConditionHandler
 
     public function handle(SaveProductConditionCommand $command): void
     {
+        $this->repository->save($command->productId, $this->prepare($command));
+    }
+
+    public function prepare(SaveProductConditionCommand $command): array
+    {
         $deviceType = $this->choiceValue($command->input, 'device_type', ['iphone', 'ipad', 'macbook', 'apple_watch'], '');
         $deviceModel = $this->normalizedDeviceModel($command, $deviceType);
         $storageCapacity = $this->normalizedStorageCapacity($command, $deviceType, $deviceModel);
@@ -32,7 +37,7 @@ final class SaveProductConditionHandler
         $displayGrade = $this->gradeValue($command->input, 'display_grade');
         $overallGrade = $this->gradeValue($command->input, 'overall_grade');
 
-        $this->repository->save($command->productId, [
+        return [
             'device_type' => $deviceType,
             'device_model' => $deviceModel,
             'battery_health' => $this->intRangeValue($command->input, 'battery_health', 0, 100),
@@ -56,7 +61,7 @@ final class SaveProductConditionHandler
             'camera_island_grade' => $cameraIslandGrade->value(),
             'display_grade' => $displayGrade->value(),
             'overall_grade' => $overallGrade->value(),
-        ]);
+        ];
     }
 
     /**
@@ -154,7 +159,7 @@ final class SaveProductConditionHandler
         }
 
         foreach ($this->deviceCatalogRepository->all() as $device) {
-            if (($device['key'] ?? '') === $value && ($device['type'] ?? '') === $deviceType) {
+            if (($device['key'] ?? '') === $value && \Appleklinika\Inventory\Domain\DeviceProduct\PhysicalDevice::type((string) ($device['type'] ?? '')) === $deviceType) {
                 return $value;
             }
         }

@@ -90,7 +90,15 @@ function appleklinika_test_native_category_ids(string $slug): array
         'order' => 'ASC',
     ]);
 
-    return array_map('intval', $query->posts);
+    // Expected catalog membership is based on native stored visibility/stock,
+    // independently of the application query constraint. Sold device records
+    // intentionally remain published but no longer belong to available stock.
+    return array_values(array_filter(array_map('intval', $query->posts), static function(int $id): bool {
+        $product = wc_get_product($id);
+        if (!$product || !in_array($product->get_catalog_visibility(), ['visible','catalog'], true)) return false;
+        if ($product->get_meta('_appleklinika_device_model') === '') return true;
+        return $product->is_in_stock() && (!$product->get_manage_stock() || $product->get_stock_quantity() > 0);
+    }));
 }
 
 /** @return list<int> */
@@ -147,8 +155,8 @@ foreach ($families as $category => $type) {
     sort($actualIds);
 
     $test->assert($expectedIds !== [], "The native {$category} category has published fixture products.");
-    $test->assert($actualIds === $expectedIds, "The native {$category} category query returns every matching published product without a hidden iPhone filter.");
-    $test->assert($actual['found'] === count($expectedIds), "The native {$category} category result count matches its published product count.");
+    $test->assert($actualIds === $expectedIds, "The native {$category} category query returns every matching available product without a hidden iPhone filter.");
+    $test->assert($actual['found'] === count($expectedIds), "The native {$category} category result count matches its available product count.");
 }
 
 $decisionCases = [
@@ -246,10 +254,10 @@ $test->assert($nonsense['found'] === 0 && $nonsense['ids'] === [], 'A genuine ze
 
 $emptyCategory = appleklinika_test_discovery_query([
     'post_type' => 'product',
-    'product_cat' => 'egyeb',
+    'product_cat' => 'ak-qa-empty-category-never-created', // Independent of user-entered catalog data.
     'posts_per_page' => -1,
 ]);
-$test->assert($emptyCategory['found'] === 0 && $emptyCategory['ids'] === [], 'The genuinely empty Egyéb category remains empty.');
+$test->assert($emptyCategory['found'] === 0 && $emptyCategory['ids'] === [], 'An explicitly empty category collection remains empty without fallback products.');
 
 $ipadPageOne = appleklinika_test_discovery_query([
     'post_type' => 'product',

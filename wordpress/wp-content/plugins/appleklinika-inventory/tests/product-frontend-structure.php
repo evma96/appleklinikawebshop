@@ -10,14 +10,16 @@ $assertions = [
         && str_contains($source, 'appleklinika-product-below-hero'),
     str_contains($galleryStyles, 'width: min(500px, 100%); aspect-ratio: 1')
         && str_contains($galleryStyles, 'object-fit: contain'),
-    str_contains($source, 'appleklinika-product-below-hero{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;align-items:stretch}')
+    str_contains($source, 'appleklinika-product-column--configuration')
+        && str_contains($source, 'appleklinika-product-column--purchase')
+        && str_contains($source, 'appleklinika-product-column{display:contents}')
         && ! str_contains($source, 'renderBatterySelector('),
 ];
 
 $messages = [
     'The product template retains the gallery, purchase panel, and lower information structures.',
     'The gallery uses a stable neutral canvas with non-distorting contain presentation.',
-    'Lower information cards align in three equal columns without a battery choice.',
+    'Desktop configuration and purchase columns retain single components and release their wrappers on mobile without a battery choice.',
 ];
 
 foreach ($assertions as $index => $assertion) {

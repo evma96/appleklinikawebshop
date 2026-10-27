@@ -1,0 +1,11 @@
+# LOCAL only. Append explicitly to COMPOSE_FILE; no TEST/production effect.
+services:
+  wordpress:
+    image: appleklinika-wordpress-local-media:${WORDPRESS_VERSION:-6.5.5}-php${PHP_VERSION:-8.2}
+    environment:
+      AK_PHOTO_METADATA_TOOL: ${AK_PHOTO_METADATA_TOOL:-/usr/bin/exiftool}
+    build:
+      context: ./docker/wordpress-local-media
+      args:
+        WORDPRESS_VERSION: ${WORDPRESS_VERSION:-6.5.5}
+        PHP_VERSION: ${PHP_VERSION:-8.2}

@@ -538,6 +538,8 @@ was not installed over them. See the GLS integration document for scope and evid
 **OPEN — live Google authorization:** no usable owner-authorized Business Profile API/OAuth connection or Places key/Place ID is available in the accessible LOCAL configuration. No genuine review, live score or total has been retrieved. This is a connection blocker, not an empty-card implementation: actual LOCAL homepage, category and product pages now render the owner-authorized, clearly labeled QA cards. The obsolete link-only fallback is removed. The fixture is ignored, outside webroot, uncacheable and guarded against TEST/production display. The official live adapter and UI are covered by focused mocked/local checks. [Evidence and exact owner setup](docs/google-reviews-local.md). Approved TEST deployment must keep reviews hidden until real Google data is configured; the provider strip remains independent.
 
 
+**2026-10-26 visual review pending:** the compact product/category and larger homepage review composition now replace the rejected yellow-banner presentation. A small LOCAL badge and synthetic identities preserve disclosure, with all fixture protection unchanged. This presentation-only revision is not committed or deployed; the live Google connection remains the same open item.
+
 ### 2026-10-26 — LOCAL trust / Watch / protection candidate
 
 - Watch `32_gb` display leakage is corrected in the two customer-facing formatters;
@@ -584,3 +586,74 @@ remains a business input; production/main and provider transactions stay exclude
 ## 2026-10-26 — TEST Back Office source drift reconciliation
 
 The already accepted TEST staff-review runtime package was missing from Git. Its exact source is now preserved with the approved protection presentation additions. Shipping correction remains recoverable rather than cross-store atomic; incomplete writes block ordinary progression until the existing explicit reconciliation completes. No payment, invoice or carrier E2E is repeated by this source-preservation task. TEST acceptance of the combined release is recorded separately after deployment.
+
+
+### 2026-10-26 — Extra protection visual approval pending
+
+The cramped purchase-card UI has been recomposed locally with full-width clickable
+rows, aligned Woo prices and an understated unavailable adapter. Functional checks:
+153 PASS; actual product pages inspected at 1440/1280/390/320. No paid extra is
+preselected; selection, association, removal and downstream lifecycle remain
+unchanged. Martin's screenshot-based visual approval is still required. No commit,
+push, TEST access or deployment. Previous Google Reviews work is untouched.
+
+
+### 2026-10-26 — LOCAL product hero composition review
+
+The gallery's large desktop gap is resolved by moving the two existing configuration
+cards beneath it, with purchase and guarantees aligned in the other column. No
+filler or gallery/protection redesign. Six full-page widths were visually reviewed;
+299 focused assertions and browser selector/gallery/cart checks pass. Martin's
+visual acceptance is pending. LOCAL only; no commit, push or deployment.
+Details: `docs/qa/product-information-presentation.md`.
+
+### 2026-10-26 — LOCAL product lower-grid alignment
+
+Resolved the lower description/data and similar-products width mismatch by sharing
+the approved hero's CSS column definitions and desktop gap. Six full-page viewport
+checks pass; upper geometry and mobile stacking remain unchanged. No functional
+changes. LOCAL only, uncommitted; details in `docs/qa/product-information-presentation.md`.
+
+### 2026-10-26 — LOCAL valid-model selectors and Watch storage visibility
+
+Sparse iPad/Mac color and storage controls no longer stretch; known valid model
+options remain visible disabled when unavailable. Watch omits the entire storage
+selector panel. Approved iPhone layout retained. 169 focused checks and 16 browser
+viewport inspections pass, LOCAL only and uncommitted.
+
+Data limitation: six iPad models lack an explicit capacity list in existing
+model/spec data (Pro 11/13 M5, A16, Air 11/13 M4, mini A17 Pro). Only known
+same-model product capacities are shown until verified model data is available.
+Exact keys/IDs and evidence: `docs/qa/product-information-presentation.md`.
+
+
+## LOCAL manual product entry / HEIC recovery — 2026-10-26
+
+Resolved locally: product 2513 was mistakenly classified as an Extra védelem
+case and therefore hidden; its main image/category were unassigned. Corrected
+only its normal Woo fields. The original LOCAL HEIC decoder failed on all four
+uploaded iPhone photos; an opt-in local image with Debian's compatible decoder
+now lets native WordPress generate web images using the same attachment IDs.
+Original images preserved. Fixed string/int image-ID deduplication in the gallery
+and added focused coverage. No index/cache rebuild or lifecycle change.
+
+Stock quantity tracking remains disabled as entered, without inventing a count.
+TEST/production HEIC support has not been checked or changed by this LOCAL task.
+See [full diagnosis and normal entry workflow](docs/qa/manual-product-entry-local.md).
+
+
+## 2026-10-26 — Physical-device foundation (LOCAL only)
+
+- Implemented a shared native Woo device-entry service, one-unit defaults, automatic/custom naming, unique native SKU, separate private identities and immutable order-item snapshots.
+- Added native ordered photos, HEIC/HEIF processing and private metadata stripping with an explicit runtime prerequisite; no media/inventory parallel database.
+- Prevented device/accessory conflicts and cross-device photo copying. Existing legacy #2513 remains a flagged classification conflict; its legitimate identity data is not invented or silently migrated.
+- Verified stock zero exclusion and native restock, supported offline invoice identity/note mapping, and regression compatibility. See [evidence, counts and file manifest](docs/qa/physical-device-foundation-local.md).
+- **COD deferred until after launch:** native GLS supports a COD amount, but the accepted lifecycle requires verified payment for invoice/fulfilment/label. Do not enable the gateway without a separate approved lifecycle design.
+- No commit, push, TEST access or deployment in this task. Future integration must include verification of the compatible image-processing runtime on its target environment.
+
+## 2026-10-27 — Physical-device integration acceptance
+
+- Owner approved integration of the foundation and current LOCAL visuals.
+- LOCAL #2513 classification conflict corrected using Woo APIs; existing price, stock settings and physical configuration/photos preserved, no invented identity.
+- TEST ExifTool absence addressed through the versioned TEST media Dockerfile/Compose overlay, not an undocumented live-container installation. Execution evidence follows in the release receipt.
+- COD remains deferred until after launch; it is not a blocker for the current approved payment model.

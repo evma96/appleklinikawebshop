@@ -36,6 +36,17 @@ $check = static function (bool $ok, string $message) use (&$count): void {
     if (!$ok) throw new RuntimeException($message);
 };
 $check(count($images) === 3, 'Main image is not duplicated among gallery images.');
+// Woo hydration returns the persisted main ID as a string, gallery IDs as ints.
+$stringId = static fn ($value) => (string) $value;
+add_filter('woocommerce_product_get_image_id', $stringId);
+try {
+    $storedImages = $reflection->getMethod('productImages')->invoke($display, $product);
+    $check(count($storedImages) === 3, 'Hydrated string main ID is not repeated as an integer gallery ID.');
+    $check(array_column($storedImages, 'full') === array_column($images, 'full'), 'Hydrated IDs preserve original gallery order.');
+} finally {
+    remove_filter('woocommerce_product_get_image_id', $stringId);
+}
+
 foreach ($images as $index => $image) {
     $full = wp_get_attachment_image_src($ids[$index], 'full');
     $check($image['full'] === $full[0], 'Full image URL comes from WP.');

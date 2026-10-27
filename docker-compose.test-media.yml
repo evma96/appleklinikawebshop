@@ -1,0 +1,11 @@
+# Append only to the existing private TEST compose file. Preserve all its guards,
+# secrets, read-only source mounts, volumes and HTTP routing.
+services:
+  wordpress:
+    image: ${AK_TEST_MEDIA_IMAGE:-appleklinika-wordpress-test-media:7.0.2-php8.2}
+    build:
+      context: ${AK_TEST_REPO_ROOT:-/opt/appleklinika/repo}/docker/wordpress-test-media
+      args:
+        WORDPRESS_BASE_IMAGE: ${AK_TEST_WORDPRESS_BASE_IMAGE:-wordpress:7.0.2-php8.2-apache@sha256:680df6fd52a1ec7948deb6ca5fa57f1bca0d5d062396ffd0c57b8b4f24adc23f}
+    environment:
+      AK_PHOTO_METADATA_TOOL: ${AK_PHOTO_METADATA_TOOL:-/usr/bin/exiftool}

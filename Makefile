@@ -198,3 +198,8 @@ test-local-protection-association:
 test: test-backoffice-review-preview
 test-backoffice-review-preview:
 	node wordpress/wp-content/plugins/appleklinika-backoffice/tests/review-preview.cjs
+
+# Disposable LOCAL product/order/media fixtures; all providers and mail blocked.
+.PHONY: test-local-device-foundation
+test-local-device-foundation:
+	$(COMPOSE) exec -T --user www-data wordpress php /var/www/html/wp-content/plugins/appleklinika-inventory/tests/device-product-foundation-local.php

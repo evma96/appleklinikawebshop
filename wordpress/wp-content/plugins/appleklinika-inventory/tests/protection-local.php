@@ -182,7 +182,14 @@ try {
     foreach (['checkout'=>$checkout,'account'=>$account,'backoffice'=>$backoffice,'email'=>$emailHtml,'invoice-items'=>$xml->asXML()] as $name=>$body) file_put_contents($dir.'/'.$name.($name==='invoice-items'?'.xml':'.html'),$body);
     $fixture->update_meta_data(WooProtectionCatalog::GROUP,'camera');
     $fixture->update_meta_data(WooProtectionCatalog::TYPES,['iphone']);
-    $fixture->update_meta_data(WooProtectionCatalog::MODELS,[]); $fixture->save();
+    $fixture->update_meta_data(WooProtectionCatalog::MODELS,[]);
+    try { $fixture->save(); $check(false, 'Device cannot be silently converted into an accessory'); }
+    catch (InvalidArgumentException $error) { $check(true, 'Device/accessory classification guard rejects conflicting fixture'); }
+    // Reuse this disposable fixture as a genuine accessory for the existing
+    // duplicate-camera-slot test; it must no longer contain device metadata.
+    $fixture->delete_meta_data('_appleklinika_device_model');
+    $fixture->delete_meta_data('_appleklinika_device_type');
+    $fixture->save();
     $deviceIds = get_posts(['post_type'=>'product','post_status'=>'publish','numberposts'=>1,'fields'=>'ids','meta_query'=>[['key'=>'_appleklinika_device_type','value'=>'iphone'],['key'=>WooProtectionCatalog::GROUP,'compare'=>'NOT EXISTS']]]);
     $ambiguous = $catalog->forDevice((int)$deviceIds[0]);
     $check(!$ambiguous[$ids['camera']]['available'] && !$ambiguous[$id]['available'],'Ambiguous independent slot fails closed rather than dropping a selected item');

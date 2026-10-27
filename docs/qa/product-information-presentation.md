@@ -85,3 +85,130 @@ The broader historical cart/gallery browser suite was updated for the intentiona
 battery-choice removal but was not rerun; no cart, order or provider flow was needed.
 Screenshots: private `selector-ui-local-20261015` evidence directory outside Git.
 No commit, push, merge, TEST access or deployment.
+
+
+## LOCAL two-column product hero — 2026-10-26
+
+Owner requested structural composition only, superseding the three-card desktop
+row above. No additional copy, trust block, photography enlargement or filler.
+Branch: `feature/local-product-hero-columns`; base: `0841b1ff`.
+
+`ProductFrontendDisplay.php` adds two neutral Grid column wrappers. The left contains
+the unchanged gallery followed by the existing condition/color and storage/equipment
+cards, stacked at full column width. The right contains the unchanged purchase card
+and the existing guarantee card. The guarantee renderer was extracted without any
+copy/data change. Existing classes, IDs, data attributes and hook entrypoints remain.
+Selectors use document queries and their own group containers, not the previous
+outer parent; all selector/add-to-cart JavaScript remains byte-identical.
+
+Column children have natural height and 24px spacing. The previous three-column
+heading minimum height / bottom-distribution rules were removed. At <=1100px the
+new wrappers use `display:contents` and CSS ordering keeps the existing visual
+sequence: gallery, purchase, condition/color, storage/equipment, guarantees.
+There is no duplicate component/form, fixed equal height or separate mobile form.
+Gallery size, thumbnails, zoom, Extra protection CSS/markup and all lower product
+information/reviews/partner/footer sources are unchanged.
+
+Personally inspected full-page screenshots at 1440, 1366, 1280, 1152, 390 and 320.
+No horizontal overflow at any requested width. Desktop: gallery-to-configuration
+gap reduced from 566.29px to 24px; left width 636px (620px at 1152); purchase and
+guarantee share exactly the same x-position and 450px width, with a 24px gap and
+22px radii. Purchase height remains 1133.29px. Left/right content ends naturally
+about 51px apart, without forced equal heights. Mobile cards remain 342/272px wide
+at 390/320 and keep natural heights. Final visual approval remains with Martin.
+
+Focused LOCAL checks: 299 PASS (structure 3, protection 101, association 52,
+information 49, purchase 68, gallery 26), plus PHP syntax and diff whitespace checks.
+Browser verification covers condition/color/storage updates, changed product ID,
+price, equipment, description, guarantee and photos, exactly one regenerated
+purchase form, default empty extras and disabled unpriced adapter. Thumbnail
+selection, viewer 2x zoom, fit reset, next image, close/focus return and scroll unlock
+work. Mobile selected product #310 plus premium case and desktop #288 plus the
+same case produce distinct parent-labeled lines and a native 471980 HUF total.
+Removing one device removes only its case; cleanup returns the cart to empty.
+No console warning/error or provider call was observed. Automated QA fixtures and
+order were cleaned through Woo CRUD. Browser-created unpaid draft #2512 is removed
+through guarded Woo CRUD. Existing product IDs, order IDs, accessory prices/stock
+and checked operational settings are preserved.
+
+Evidence outside Git:
+`/Users/apple/.codex/visualizations/2026/09/11/01a08fcb-a363-7761-acb7-46d99e2bde2c/local-product-hero-columns-20261026/`.
+Files: `before-1440-full.png`, `product-{1440,1366,1280,1152,390,320}-full.png`,
+`cart-regression-1440.png`, `verification.json`.
+LOCAL only. No commit, push, merge, TEST access or deployment.
+
+## LOCAL lower-grid alignment — 2026-10-26
+
+The approved hero remains unchanged. The lower description/data and similar-products
+grid now consumes the same `--ak-product-columns` and `--ak-product-column-gap`
+properties as the hero. Extra protection sets its existing 410–450px right-column
+range on the shared shell, instead of overriding only the hero. The previous
+independent lower 360px sidebar / 30px column gap is superseded. Desktop column
+gap is 34px; the existing mobile stack and 30px lower row gap are unchanged.
+
+Full-page browser inspection: 1440, 1366, 1280, 1152, 390 and 320px. Upper and
+lower desktop edges/widths match exactly: 636/450px at 1440, 1366 and 1280;
+620/450px at 1152. All measured upper geometry is unchanged from this task's
+baseline. Mobile remains 342/272px wide with identical geometry and no horizontal
+overflow. Existing structure checks: 3 PASS; PHP syntax: PASS; browser warning/error
+log: empty. No markup, copy, JavaScript, business logic or database changes.
+
+Evidence outside Git: sibling `local-product-grid-alignment-20261026/` in the
+visualizations directory above, containing six full-page PNGs and `verification.json`.
+Branch: `feature/local-product-grid-alignment`. LOCAL only; no commit, push, merge,
+TEST access or deployment.
+
+## LOCAL model selector options — 2026-10-26
+
+Branch: `feature/local-model-selector-options`. Preserve the approved iPhone
+presentation and shared desktop grid. No commit, push, TEST access or deployment.
+
+- `Application/ProductSelector/ModelSelectorOptions.php` is a read-only projection,
+  not a new product database. It uses `appleklinika_device_catalog` exact-model
+  `colors` / `storage_capacity_keys`, resolving the existing official-spec model
+  aliases in the frontend adapter. Where capacities are absent, it reads only
+  `Kapacitások` / `Tárhely` rows from the existing exact-model
+  `appleklinika_official_specs_by_model` or the already-supported `_ak_official_specs`
+  fallback. RAM and other numbers are never interpreted as disk capacity. If a
+  model has no catalog colors, explicit `Színek` rows can resolve existing catalogue
+  color names; unrelated palette colors are not appended.
+- Known same-model product values remain the fallback when no explicit source
+  exists. No capacity or color is guessed, no catalogue entry is written.
+- Product-backed options retain their existing ordering/deltas; missing valid
+  options append as disabled buttons, including native disabled attributes before
+  JavaScript. The existing color/storage/condition combination check additionally
+  requires native Woo `is_purchasable()` and `is_in_stock()` eligibility.
+- The Watch storage/equipment panel is not rendered, including its wrapper and
+  quick-facts area. Stored storage and lower product information remain intact.
+  Product matching permits the absent storage control, preserving color/condition
+  switches and one canonical purchase form.
+- Sparse iPad/Mac/Watch color controls use 104px width, storage 132px maximum,
+  wrapping with an 8px gap. Storage can shrink to fit two at 320px. Existing
+  heights, radii, swatches, red selection, disabled appearance and typography
+  remain shared. iPhone sizing is untouched and matches the measured baseline.
+
+Representative existing LOCAL products: #288 iPhone 13 Pro, #383 iPad Air 5
+(256 GB), #385 MacBook Air M2 (256 GB), #473 Watch Series 9. Each was visually
+checked at 1440, 1280, 390 and 320: 16 combinations, no horizontal overflow.
+iPad shows 64/256 GB, Mac shows 256/512 GB/1/2 TB; unavailable options are visible
+and disabled. Watch has zero storage selector panels. iPhone option structure/states
+and 1440 geometry equal the pre-task snapshot. Existing price-delta computation
+and candidate ordering are unchanged; no pricing correction is included. Browser clicks switched iPhone
+storage/color/condition (#288 -> #292 -> #308 -> #310) and Watch color
+(#473 -> #480 -> #473). Repeated Watch selection keeps one purchase form.
+No cart/order fixture or provider action was needed.
+
+Focused regression: 169 PASS (model selector 49, information 49, purchase 68,
+structure 3); syntax and diff checks pass. Browser warning/error logs are empty.
+No price calculation, inventory mutation, purchase/extra-protection, gallery,
+cart, Back Office or lifecycle implementation changed.
+
+Known source limitation, not guessed: no explicit capacity list exists in the
+current stored model/spec data for `ipad_pro_11_inch_m5` (#467),
+`ipad_pro_13_inch_m5` (#468), `ipad_a16` (#469), `ipad_air_11_inch_m4` (#470),
+`ipad_air_13_inch_m4` (#471), `ipad_mini_a17_pro` (#456). Those models show known
+exact-model product capacities only, with the same compact controls; a complete
+alternative list requires verified model data later.
+
+Screenshots / DOM measurements outside Git:
+`/Users/apple/.codex/visualizations/2026/09/11/01a08fcb-a363-7761-acb7-46d99e2bde2c/local-model-selector-options-20261026/`.

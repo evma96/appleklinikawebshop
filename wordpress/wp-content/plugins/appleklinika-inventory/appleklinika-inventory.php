@@ -43,6 +43,11 @@ add_action('init', static function (): void {
     $selectorDemoProductsSeeder->register();
 
     $saveHandler = new Appleklinika\Inventory\Application\ProductCondition\SaveProductConditionHandler($repository, $deviceCatalogRepository);
+    $deviceStore = new Appleklinika\Inventory\Infrastructure\WordPress\WooDeviceProductStore();
+    $deviceService = new Appleklinika\Inventory\Application\DeviceProduct\DeviceProductService($deviceStore, $saveHandler);
+    (new Appleklinika\Inventory\Interfaces\Admin\DeviceProductEditor($deviceService, $deviceStore))->register();
+    (new Appleklinika\Inventory\Interfaces\DeviceProductHooks())->register();
+    (new Appleklinika\Inventory\Interfaces\DeviceOrderHooks())->register();
     $adminFields = new Appleklinika\Inventory\Interfaces\Admin\ProductConditionFields($saveHandler, $repository, $deviceCatalogRepository);
     $adminFields->register();
 

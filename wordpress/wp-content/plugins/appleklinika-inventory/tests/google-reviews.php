@@ -105,7 +105,11 @@ try {
  check($qa['reviews'][0]['rating']===3,'QA allows low scores too');
  $html=appleklinika_render_google_reviews('full',$qa);
  check(substr_count($html,'class="ak-reviews__card"')===6,'Full carousel has six cards');
- check(str_contains($html,'LOCAL VIZUÁLIS TESZT') && str_contains($html,'nem valódi Google-vélemények'),'Unambiguous visible QA banner');
+ check(str_contains($html,'LOCAL · QA review data') && str_contains($html,'nem valódi Google-vélemények'),'Compact visible QA badge with explanatory title');
+ check(!str_contains($html,'LOCAL VIZUÁLIS TESZT') && !str_contains($html,'QA-minta:'),'No repeated fixture prefix or warning banner in presentation');
+ check(str_contains($html,'QA TEST 1') && str_contains($html,'Neutral UI test.'),'Synthetic identity and complete preview comment retained');
+ check(str_contains($qa['reviews'][0]['text'],'QA-minta:'),'Presentation does not mutate guarded fixture data');
+ check(!str_contains($html,'aria-disabled="true"'),'No inactive preview-only CTA in customer design');
  check(str_contains($html,'Következő vélemények') && str_contains($html,'aria-controls="ak-google-review-cards"'),'Accessible navigation targets the actual card track');
  check(str_contains($html,'ak-reviews__qa-avatar') && !str_contains($html,'https://lh3'),'Neutral LOCAL avatars without remote requests');
  check(!str_contains($html,'A Google legutóbb frissített'),'QA never claims a live Google source');

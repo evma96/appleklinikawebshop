@@ -8,7 +8,7 @@ This records the accepted LOCAL candidate and supersedes the previous link-only 
 
 The actual homepage at `http://localhost:8082/` now contains a substantial section with a summary, stars, count, avatars, names, dates, review text, attribution and navigation. Six cards are available, three visible at desktop widths. Category and product pages have a compact summary and two cards. Mobile shows one complete card plus the next-card hint, with native horizontal scrolling. Long text is preserved in full and expandable using native `details`; there is no rewriting or substring truncation. Carousel controls add no external library, request, cookie, storage or autoplay. The original approved provider strip remains below the reviews, unchanged.
 
-**All currently visible ratings, counts, identities, dates and comments are explicitly marked LOCAL QA examples, not real Google data.** The neutral comments describe UI checks, never fabricated store experiences. Each name begins with `QA`, each comment with `QA-minta:`; a prominent banner and source labels identify the fixture. Avatars are generic local SVG silhouettes, not fake portraits. The write-review action is a visibly inactive preview until Google supplies the legitimate destination. The secondary all-reviews link uses the real approved business URL.
+**All currently visible ratings, counts, identities, dates and comments are LOCAL QA examples, not real Google data.** Each stored name begins with `QA`, and each stored comment still begins with `QA-minta:` as required by the unchanged fixture reader. The current presentation uses one small `LOCAL · QA review data` badge with an explanatory title and keeps the synthetic names. It omits only the internal comment prefix in QA rendering; genuine Google comments remain untouched. The ignored LOCAL fixture uses neutral editorial text about choosing a device, not invented customer experiences or repeated technical disclaimers. Avatars remain generic local SVG silhouettes. The write-review action is omitted until Google supplies a legitimate destination; the all-reviews link retains the approved business URL.
 
 The latest owner request explicitly authorizes this LOCAL visual fixture. It is deliberately on the actual storefront, not an isolated specimen. Old `*-current.png` link-only and `*-structure-only.png` artifacts are not evidence for this candidate.
 
@@ -139,3 +139,21 @@ The deployment must use only the exact approved Git delta onto the current `deve
 Checkpoint preparation result: **362 focused assertions PASS** (154 + 27 + 20 + 112 + 49), plus `make test` **388 offline assertions** and PHP syntax checks. `make quality` ran successfully but its lint/static targets remain placeholders. LOCAL carousel, expansion and mobile native scrolling were rechecked in the browser without console errors. The 25-file publication scan found no credentials or private artifacts; the original public MPL logo metadata contains only public 2008 Photoshop/export/dimension metadata, no GPS/device/customer identifiers.
 
 Publication note: the original Barion SVG uses CRLF and the original GLS SVG has five trailing spaces in style lines. They are retained byte-for-byte; staged whitespace validation excludes these original third-party assets and passes for all application/configuration/documentation files. This is not an application or rendering defect.
+
+## 2026-10-26 — LOCAL visual composition revision
+
+Branch: `feature/local-reviews-visual-composition`; baseline `0841b1ff7eab5d0f81ac17cdddd84d1708fe0fe6`. Presentation-only, uncommitted and awaiting Martin's visual approval. No TEST access, push, deployment, legal/content registry edit or provider action.
+
+- One left-hand summary and right-hand card track replace the fragmented intro/summary layout. Product/category use two equal-height cards within a 1120 px compact grid; the product variant consumes part of the existing empty bottom gutter without changing the product template. Homepage retains its editable title/subtitle, a larger summary, three cards at 1440 and the six-card carousel.
+- A small corner badge replaces the yellow QA banner. Repeated fixture attribution and the inactive preview CTA are removed. Fixture markers, host/environment gates, no-cache behavior, live-data fallback and Google adapter are unchanged. The ignored private fixture's neutral text was refreshed for visual review; no fixture file is staged or distributed.
+- Mobile stacks summary above a native horizontal track, with one full card and a next-card hint. Long reviews still expand/collapse without rewriting genuine content. Existing JavaScript is unchanged.
+- Original provider logo assets and labels are unchanged. Only spacing separates the reviews, provider strip and footer.
+
+Verification: **185 focused assertions PASS** (158 presentation/domain/LOCAL protection + 27 mocked transport/cache). PHP syntax and diff whitespace checks pass. No real external API, customer email, order, cart or provider transaction.
+
+Personally inspected the actual LOCAL pages and saved viewport plus full-page screenshots: product 1440/1280/390/320, homepage 1440/390, category 1440/390. Each has document width equal to viewport width. Product desktop cards share top/bottom alignment; compact review width follows the 1120 px product-information grid. The homepage carousel advances `1–3 / 6` to `4–6 / 6`, disables next at the end and returns correctly. Native mobile horizontal scrolling, normal page scrolling and full-text expand/collapse work. No captured browser console warnings/errors on the inspected pages. Physical-device touch gestures were not separately tested.
+
+Evidence (outside Git):
+`/Users/apple/.codex/visualizations/2026/09/11/01a08fcb-a363-7761-acb7-46d99e2bde2c/local-reviews-visual-composition-20261026/`
+
+This is visual acceptance evidence using explicitly labeled LOCAL data; it does not establish a live Google connection.

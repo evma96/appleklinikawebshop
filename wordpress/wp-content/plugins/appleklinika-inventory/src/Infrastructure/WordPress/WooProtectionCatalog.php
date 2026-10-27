@@ -26,7 +26,7 @@ final class WooProtectionCatalog implements ProtectionCatalog
             'meta_query' => [['key' => self::GROUP, 'value' => array_keys(ProtectionSelection::GROUPS), 'compare' => 'IN']]]);
         foreach ($ids as $id) {
             $product = wc_get_product($id);
-            if (!$product || !$product->is_type('simple') || $product->get_catalog_visibility() !== 'hidden') continue;
+            if (!$product || !$product->is_type('simple') || $product->get_catalog_visibility() !== 'hidden' || $product->get_meta('_appleklinika_device_model') !== '') continue;
             $types = (array) $product->get_meta(self::TYPES);
             $models = (array) $product->get_meta(self::MODELS);
             if (!ProtectionSelection::eligible($type, $model, $types, $models)) continue;
