@@ -74,6 +74,16 @@ $photo=static function(int $parent,string $extension='jpg')use(&$media,$record,$
         $check($a->getImageSignature()===$b->getImageSignature(),'Metadata cleanup preserves HEIC decoded pixels');
         $check($a->getImageOrientation()===$b->getImageOrientation(),'HEIC orientation preserved');
         $check($a->getImageProfiles('icc',true)===$b->getImageProfiles('icc',true),'HEIC ICC preserved');$a->clear();$b->clear();
+        // Older decoders can ignore HEIC ICC entirely; compare every ICC block.
+        $profiles=static function(string $path):string {
+            $proc=proc_open(['/usr/bin/exiftool','-a','-b','-ICC_Profile',$path],[1=>['pipe','w'],2=>['pipe','w']],$pipes);
+            $bytes=stream_get_contents($pipes[1]);fclose($pipes[1]);stream_get_contents($pipes[2]);fclose($pipes[2]);
+            if(proc_close($proc)!==0)throw new RuntimeException('Cannot inspect HEIC profiles');
+            return $bytes;
+        };
+        $sourceProfiles=$profiles($source);
+        $check($sourceProfiles!=='','HEIC fixture has embedded color profiles');
+        $check($profiles($original)===$sourceProfiles,'All original HEIC ICC blocks preserved byte-for-byte');
     }
     if(!in_array($extension,['heic','heif'],true)){ $decoded=new Imagick($file);$check($decoded->getImageSignature()===$originalSignature,'Metadata stripping preserves original web-image pixels');$check($decoded->getImageProfiles('icc',true)===$originalProfiles,'Web image ICC preserved');$decoded->clear(); }
     return $id;

@@ -2,6 +2,10 @@
 
 Production-oriented WooCommerce webshop foundation for selling used Apple devices.
 
+Device-photo metadata cleanup preserves all embedded ICC profiles in place,
+including separate iPhone HEIC HDR gain-map profiles. See the
+[TEST acceptance record](docs/qa/physical-device-foundation-test.md).
+
 Current repository/deployment identities follow the authorized 2026-10-14
 [history migration](docs/qa/history-privacy-migration-20261014.md). Do not merge
 pre-rewrite ancestry back into this repository. Older dated reports retain their

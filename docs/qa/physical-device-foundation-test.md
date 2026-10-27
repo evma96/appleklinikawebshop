@@ -27,4 +27,6 @@ docker compose -f compose.yaml -f /opt/appleklinika/repo/docker-compose.test-med
 
 Rehearsal results, exact deployment identities and cleanup evidence are recorded in the release receipt after execution.
 
+The first TEST visual inspection found an iPhone HEIC color-profile defect: the metadata cleaner copied the HDR gain-map ICC over the primary Display P3 ICC. LOCAL's older decoder ignored both profiles, so decoded-pixel checks alone missed it. The cleaner now excludes every ICC block from deletion instead of copying ICC back. A binary multi-profile regression checks the original HEIC blocks byte-for-byte. The same TEST device is retained for the repeat photo upload; no second device or provider transaction is created.
+
 The LOCAL dry-run exposed a cleanup-harness ordering issue: deleting a product first detaches its media. The harness now verifies/removes its own filename-bound media before deleting the product and can recover safely from an interrupted cleanup. The original failed run's product/order/media were all removed. Two accessory timestamps changed through the separate existing protection regression; the final acceptance run is isolated from other mutating tests. No application/lifecycle change was needed for this tooling issue.

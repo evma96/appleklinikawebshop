@@ -9,7 +9,9 @@ final class ProductPhotoProcessor
         if(!$base||!$path||!str_starts_with($path,$base.DIRECTORY_SEPARATOR)||!is_file($path))throw new \RuntimeException('A fotó nem a WordPress médiatárában található.');
         $tool=getenv('AK_PHOTO_METADATA_TOOL')?:'/usr/bin/exiftool';
         if(!is_executable($tool))throw new \RuntimeException('A biztonságos fotófeldolgozó nincs telepítve. A képet ne publikáld.');
-        $process=proc_open([$tool,'-overwrite_original','-all=','-tagsFromFile','@','-ICC_Profile','-Orientation','--',$path],
+        // Keep every ICC block in place: HEIC can contain a separate HDR gain-map
+        // profile. Copying ICC_Profile back can replace the primary image profile.
+        $process=proc_open([$tool,'-overwrite_original','-all=','--ICC_Profile:all','-tagsFromFile','@','-Orientation','--',$path],
             [0=>['pipe','r'],1=>['pipe','w'],2=>['pipe','w']],$pipes);
         if(!is_resource($process))throw new \RuntimeException('A fotó privát adatainak eltávolítása nem indult el.');
         fclose($pipes[0]);stream_get_contents($pipes[1]);fclose($pipes[1]);stream_get_contents($pipes[2]);fclose($pipes[2]);

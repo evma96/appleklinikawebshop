@@ -1,5 +1,13 @@
 # Deficiencies
 
+## Physical-device TEST acceptance correction — 2026-10-27
+
+Resolved a photo-processing defect exposed by TEST visual verification: copying
+ICC metadata after stripping could replace the main HEIC Display P3 profile with
+its HDR gain-map profile. ICC blocks are now retained in place. The focused native
+regression compares every source ICC block byte-for-byte; no lifecycle or layout
+change is involved. See `docs/qa/physical-device-foundation-test.md`.
+
 ## Current disposition — history migration and catalog decision, 2026-10-14
 
 This section supersedes the older dated readiness counts below. **C0 / H0 / M2 / L0**
