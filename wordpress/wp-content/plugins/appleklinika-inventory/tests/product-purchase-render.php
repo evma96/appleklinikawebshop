@@ -39,6 +39,7 @@ $sentinel = new WC_Product_Simple();
 $GLOBALS['product'] = $sentinel;
 try {
     foreach ([
+        ['single-device', 1, 'instock', 'no', true, '100000', 1, '1'],
         ['stocked', 5, 'instock', 'no', false, '100000', 1, '5'],
         ['limited', 2, 'instock', 'no', false, '100000', 1, '2'],
         ['out', 0, 'outofstock', 'no', false, '100000', 0, null],
@@ -58,6 +59,7 @@ try {
         $fixture->set_backorders($backorders);
         $fixture->set_sold_individually($individual);
         $before = serialize($fixture->get_data());
+        $nativeStock = wc_get_stock_html($fixture);
         $rendered = $html('renderPurchaseArea', $fixture);
         $xpath = $parse($rendered);
         $check($xpath->query('//div[@class="appleklinika-cart-area"]')->length === 1, $name . ': one existing purchase owner');
@@ -80,8 +82,18 @@ try {
         $panel = $html('renderBuyPanel', $fixture, $fixture->get_id());
         $check(str_contains($normalize($panel), $normalize($rendered)), $name . ': first page uses identical canonical renderer');
         $check($GLOBALS['product'] === $sentinel && serialize($fixture->get_data()) === $before, $name . ': payload/panel restore context and preserve data');
+        $check(!preg_match('/\d+\s*(készleten|in stock)/ui', wp_strip_all_tags($panel)), $name . ': no public stock count');
+        $check(!str_contains($panel, 'Készletinformáció') && !isset($payload['deliveryHtml']), $name . ': redundant stock footer removed');
+        $check(wc_get_stock_html($fixture) === $nativeStock, $name . ': native/admin stock renderer unchanged outside purchase fragment');
+        if ($status === 'instock') {
+            $check($payload['stockLabel'] === '' && !str_contains($rendered, 'class="stock'), $name . ': no replacement in-stock label');
+        } else {
+            $check($payload['stockLabel'] !== '' && str_contains($rendered, 'class="stock'), $name . ': unavailable/backorder indication retained');
+        }
+        $check($payload['available'] === ($fixture->is_purchasable() && $fixture->is_in_stock()), $name . ': native selector availability preserved');
     }
     $throw = static function (): void { throw new RuntimeException('Expected template failure'); };
+    $filtersBefore = isset($GLOBALS['wp_filter']['woocommerce_get_stock_html']) ? serialize($GLOBALS['wp_filter']['woocommerce_get_stock_html']->callbacks) : null;
     add_action('woocommerce_simple_add_to_cart', $throw, 1);
     try {
         $html('renderPurchaseArea', $fixture);
@@ -89,6 +101,8 @@ try {
     } catch (RuntimeException $e) {
         $check($e->getMessage() === 'Expected template failure', 'Template failure is not swallowed');
         $check($GLOBALS['product'] === $sentinel, 'Global product restored even if template throws');
+        $filtersAfter = isset($GLOBALS['wp_filter']['woocommerce_get_stock_html']) ? serialize($GLOBALS['wp_filter']['woocommerce_get_stock_html']->callbacks) : null;
+        $check($filtersAfter === $filtersBefore, 'Stock presentation filter removed even if template throws');
     } finally {
         remove_action('woocommerce_simple_add_to_cart', $throw, 1);
     }

@@ -95,3 +95,11 @@ The functional UX gate is documented in:
 ```text
 docs/workflow.md
 ```
+
+## Model technical specifications
+
+`Domain/ModelSpecification/ModelIdentity` owns exact known identity aliases. `Application/ModelSpecification/ModelSpecifications` is the shared query port consumed by `DeviceProductService` and the frontend. `Infrastructure/WordPress/WordPressModelSpecifications` reads the existing `appleklinika_official_specs_by_model` registry; a versioned public bootstrap fills missing entries and applies reviewed corrections only to fingerprint-matched previous rows/source URLs. Unknown editor changes and explicit empty entries are preserved; the revision manifest is provisioning metadata, not another runtime data source. `DeviceProductService::prepare()` resolves the chosen model and returns relationship/completeness metadata; `WooDeviceProductStore` persists only that metadata. The editor exposes warnings, with no second spec implementation. Rendering uses the chosen model first and never borrows data from a stale pointer, product title or per-product JSON. See [coverage and QA](qa/model-specifications.md).
+
+## Public product query adapters
+
+`WooDeviceQueries` applies the existing device-availability predicate through correlated key probes on explicitly marked Woo/WordPress queries; native visibility, stock and sorting remain owned by Woo. Recommendation family/model scope is mapped at the supported CPT adapter rather than passed as an ignored raw Woo meta query. Search ties receive a final stable product ID without altering primary relevance/date sorting. `WooProductMetadata` primes Woo's native raw-meta cache for an existing render pool; protection candidate reuse is display-only and request-scoped, while cart validation stays fresh. `ProductDescriptionImages` resolves only legacy HEIC description markup to already processed WordPress derivatives without writing content or media. Details and equivalence evidence: `docs/qa/performance-query-fixes.md`.

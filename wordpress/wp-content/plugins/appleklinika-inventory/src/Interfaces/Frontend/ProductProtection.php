@@ -56,7 +56,7 @@ final class ProductProtection
     {
         global $product;
         if (!$product instanceof \WC_Product) return;
-        $options = $this->catalog->forDevice($product->get_id());
+        $options = $this->catalog->forDisplay($product);
         if ($options === []) return;
         echo '<section class="ak-protection" aria-label="Extra védelem"><h2>Extra védelem</h2><p class="ak-protection__intro">Tedd teljessé a készüléked.</p>';
         wp_nonce_field('ak_protection_' . $product->get_id(), 'ak_protection_nonce', false);

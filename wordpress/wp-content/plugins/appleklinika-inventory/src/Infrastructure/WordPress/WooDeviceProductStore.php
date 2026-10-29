@@ -51,6 +51,9 @@ final class WooDeviceProductStore implements DeviceProductStore
         $p->set_image_id($plan['photos'][0]??0);$p->set_gallery_image_ids(array_slice($plan['photos'],1));
         foreach($plan['inventory'] as $key=>$value)$p->update_meta_data('_appleklinika_'.$key,$value);
         foreach(['imei','serial_number'] as $key)$p->update_meta_data('_appleklinika_'.$key,$plan[$key]);
+        // Store only the canonical relationship and completeness status, never the model's rows or URL.
+        $p->update_meta_data('_ak_official_specs_model_key',$plan['technical_profile']['model_key']);
+        $p->update_meta_data('_ak_official_specs_status',$plan['technical_profile']['status']);
         $p->update_meta_data(PhysicalDevice::MARKER,'yes');$p->update_meta_data('_appleklinika_custom_name',$plan['custom_name']?'yes':'no');
     }
     public function persist(int $id,array $plan): int

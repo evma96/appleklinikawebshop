@@ -100,8 +100,9 @@ const norm=text=>text.replace(/\s+/g,' ').trim();
     check(norm(await page.locator('[data-appleklinika-product-title]').innerText())===norm(state.product.title),'Current product title');
     const actualPrice=Number((await page.locator('.appleklinika-price-stack__current').innerText()).replace(/\D/g,''));
     check(actualPrice===state.product.salePrice,'Selected product price without a selectable battery surcharge');
-    check(norm(await page.locator('[data-appleklinika-stock-badge]').innerText())===norm(state.product.stockLabel),'Dynamic stock label');
-    for(const [selector,field] of [['.ak-single-product__description','descriptionHtml'],['[data-appleklinika-product-facts]','factsHtml'],['[data-appleklinika-quick-facts]','quickFactsHtml'],['[data-appleklinika-product-lead]','leadHtml'],['[data-appleklinika-trust]','trustHtml']]){
+    check(await page.locator('[data-appleklinika-stock-badge]').isVisible()===Boolean(state.product.stockLabel),'Only unavailable stock state has a public badge');
+    check(!/\d+\s*(készleten|in stock)|Készletinformáció/i.test(await page.locator('body').innerText()),'No public stock-count copy after selector update');
+    for(const [selector,field] of [['.ak-single-product__description','descriptionHtml'],['[data-appleklinika-product-facts]','factsHtml'],['[data-appleklinika-product-lead]','leadHtml'],['[data-appleklinika-trust]','trustHtml']]){
      const expected=await page.evaluate(html=>new DOMParser().parseFromString(html,'text/html').body.textContent,state.product[field]);
      check(norm(await page.locator(selector).textContent())===norm(expected),'Latest selected facts: '+field);
     }

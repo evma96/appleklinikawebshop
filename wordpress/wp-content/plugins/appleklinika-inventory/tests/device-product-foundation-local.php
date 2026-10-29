@@ -31,7 +31,7 @@ add_filter('pre_wp_mail',static function() use (&$mail){++$mail;return false;},P
 add_filter('woocommerce_should_send_no_stock_notification','__return_false');
 add_filter('woocommerce_should_send_low_stock_notification','__return_false');
 $store=new WooDeviceProductStore();$condition=new WooProductConditionRepository();$catalog=new DeviceCatalogRepository();
-$service=new DeviceProductService($store,new SaveProductConditionHandler($condition,$catalog));
+$service=new DeviceProductService($store,new SaveProductConditionHandler($condition,$catalog),new \Appleklinika\Inventory\Infrastructure\WordPress\WordPressModelSpecifications());
 $frontend=new ProductFrontendDisplay($condition,$catalog);
 $save=static fn(int $id,array $input):int=>$service->save(new SaveDeviceProductCommand($id,$input));
 $record=static function()use(&$ids,&$media,&$orders,$manifest):void {file_put_contents($manifest,json_encode(['products'=>$ids,'media'=>$media,'orders'=>$orders],JSON_PRETTY_PRINT));chmod($manifest,0600);};

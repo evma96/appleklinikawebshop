@@ -1,5 +1,9 @@
 # Deficiencies
 
+## LOCAL performance fixes — 2026-10-28
+
+The measured availability JOIN explosion and ignored recommendation family filter are fixed locally. Six representative routes now have 64–155 ms median TTFB, with equivalent eligibility/selector/recommendation results. Search ranking/date ties now have a stable ID tie-breaker. Four unusable HEIC description references use existing JPEG derivatives. The ~1.97 MB desktop homepage image remains unchanged because its source width matches the rendered width. See `docs/qa/performance-query-fixes.md` for evidence, 1,887 assertions, cleanup and limits. Not committed or deployed.
+
 ## Physical-device TEST acceptance correction — 2026-10-27
 
 Resolved a photo-processing defect exposed by TEST visual verification: copying
@@ -147,7 +151,7 @@ Legal content remains outside this task and is unchanged.
 - The single product FAQ section is intentionally not rendered until there is an editable FAQ/content source; fake product FAQs should not be added directly to the frontend.
 - Single product trust block copy is centralized in `ProductFrontendDisplay::productTrustBlocks()` for this pass, but should move to an admin-backed editable source before production if policy wording changes often.
 - Sparse WooCommerce products may render fewer single product information panels because description, attribute, review, and related-product sections are intentionally backed by real available product data only.
-- Official manufacturer specification import now covers the current published demo catalog through model-level `appleklinika_official_specs_by_model` entries and per-product `_ak_official_specs_model_key` references. Refresh tooling, source review workflow, and an admin editing UI still need separate approval before production use.
+- Historical demo-profile coverage did not imply coverage of the model catalog. The 2026-10-28 LOCAL audit found 48 configured models without profiles and 45 catalog-mapped profiles with generic/reused source URLs. These gaps are now resolved in the LOCAL completeness candidate: 102/102 catalog models, 103 profiles with exact Apple archive URLs. See `docs/qa/model-specifications.md`; no source-review UI or runtime fetching was added.
 - Battery replacement extra prices are development defaults until final business pricing rules exist.
 - Selector demo products are local development fixtures and must not be treated as production inventory.
 - The local selector demo matrix is intentionally broad and can create many WooCommerce products for one model; production inventory needs stricter grouping and stock ownership rules.
@@ -665,3 +669,54 @@ See [full diagnosis and normal entry workflow](docs/qa/manual-product-entry-loca
 - LOCAL #2513 classification conflict corrected using Woo APIs; existing price, stock settings and physical configuration/photos preserved, no invented identity.
 - TEST ExifTool absence addressed through the versioned TEST media Dockerfile/Compose overlay, not an undocumented live-container installation. Execution evidence follows in the release receipt.
 - COD remains deferred until after launch; it is not a blocker for the current approved payment model.
+
+
+## 2026-10-27 — LOCAL compact storage and summary removal
+
+Resolved locally: redundant selected-device summary/link/divider removed; storage
+controls no longer stretch. Watch storage remains absent. Existing product data,
+selector matching/prices and other product-page components are unchanged.
+236 focused PHP assertions and 16 family/viewport visual checks pass; native
+128→256→128 GB selection preserves the matching device and price. No overflow or
+console error observed. LOCAL only, uncommitted and not deployed. Evidence and
+limits: `docs/qa/product-information-presentation.md`.
+
+
+## 2026-10-28 — LOCAL stock presentation / adaptive selectors
+
+- Removed public available-stock badge/count and the add-to-cart stock footer.
+  Native stock fields, purchase limits, unavailable/backorder state and admin
+  rendering remain unchanged. No new availability copy replaces the count.
+- Existing option counts determine equal-width rows, with compact fixed storage
+  height and separate readable condition widths. Watch storage remains absent.
+- 284 focused PHP assertions PASS; 16 family/viewport visual checks PASS, including
+  disabled valid options, no overflow and no stock-count copy. Native selection
+  changes preserve the correct product/title/price. No data or provider actions.
+- LOCAL only, uncommitted. No TEST, push or deployment. Detailed rules/evidence:
+  `docs/qa/product-information-presentation.md`.
+
+
+## 2026-10-28 — LOCAL missing condition choices corrected
+
+Sparse inventory previously limited condition buttons to grades found on physical
+products. The frontend now includes all four existing domain grades (A+/A/B/C),
+with missing grades disabled and no fabricated price. The shared admin/domain
+definitions, selector matching and adaptive CSS are unchanged. 236 focused PHP
+checks and 16 family/viewport inspections pass. LOCAL only; no saved product/QA
+data, commit, push or deployment.
+
+
+### Resolved locally: product-page quantity and uneven column spacing (2026-10-28)
+
+- Removed the visible purchase quantity control without changing native Woo quantity/stock behavior; the add-to-cart button is full width.
+- Removed the shared desktop row-height dependency that left an oversized gap before iPhone product details. Both columns now stack their own cards with 24px gaps; the existing mobile order remains intact.
+- Replaced the four-item, category-dependent recommendation fallback with a read-only same-family query capped at six distinct active devices. Sparse/new model pages can use canonical family/model metadata without altering the selector's matching pool.
+- LOCAL verification: 477 focused checks passed (259 PHP, 192 viewport measurements, 26 interactive selector/cart checks), plus personal review of all four families at 1440/1280/390/320. No console/PHP errors. Each QA cart item was removed; no order or saved fixture was created. Not committed or deployed.
+
+## 2026-10-28 — LOCAL model specification binding
+
+Resolved: manual iPhone 12 Pro lacked a canonical profile; device entry did not resolve/report profile completeness. The shared service now binds selected models automatically, handles exact aliases and prevents stale cross-model fallback. The correct iPhone 12 Pro profile is added centrally from Apple 111875; no original product is edited. Existing 54 profiles and 123 resolved row sets are preserved.
+
+Data-completeness follow-up resolved: 48 missing profiles added from official Apple sources; 51 existing profiles revised (8 technical corrections, 50 archive URL updates, overlapping). Current 102-model catalog is fully covered; 103 stored profiles include the preserved historical `macbook_pro_16_m3` orphan. Missing profiles / exact URLs: 0 / 0. Guarded provisioning avoids overwriting unknown manual edits. 762 focused assertions and 12 desktop/mobile page checks PASS; all 169 original product objects unchanged and QA artifacts removed. LOCAL only; not committed or deployed. See `docs/qa/model-specifications.md`.
+
+LOCAL only, no commit/push/deployment. The pre-existing selector and product-layout changes remain intact.

@@ -101,6 +101,10 @@ final class DeviceProductEditor
     public function fields(): void
     {
         global $product_object;if(!$product_object instanceof \WC_Product)return;
+        $profile=$this->service->technicalProfileStatus((string)$product_object->get_meta('_appleklinika_device_model'));
+        if ($profile['model_key']!=='') foreach($profile['warnings'] as $warning) {
+            echo '<div class="notice notice-warning inline" data-model-spec-warning><p>'.esc_html($warning).'</p></div>';
+        }
         echo '<div class="options_group">';
         woocommerce_wp_checkbox(['id'=>'appleklinika_custom_name','label'=>'Egyedi terméknév','value'=>$product_object->get_meta('_appleklinika_custom_name')==='yes'?'yes':'no',
             'description'=>'Kikapcsolva a modell és tárhely adja a nevet. Apple Watchnál a belső tárhely nem kerül a névbe.']);

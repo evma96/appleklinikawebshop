@@ -212,3 +212,154 @@ alternative list requires verified model data later.
 
 Screenshots / DOM measurements outside Git:
 `/Users/apple/.codex/visualizations/2026/09/11/01a08fcb-a363-7761-acb7-46d99e2bde2c/local-model-selector-options-20261026/`.
+
+
+## LOCAL compact storage and summary removal — 2026-10-27
+
+This narrow presentation update removes the entire “A kiválasztott készülékhez”
+subsection, including its SIM/accessories summary, “Minden termékadat” link and
+divider. Its renderer, dynamic payload field and obsolete CSS are removed; the
+complete lower product facts, product metadata and existing selector matching
+remain intact. No replacement summary or empty spacer is introduced.
+
+Storage rows use wrapping flex layout with an 8px gap and natural-width tiles
+(minimum 88px, 60px height, 9px/12px padding). Labels reserve room for the existing
+selected checkmark; price deltas remain visible. The rules target storage only:
+condition controls keep their longer-label layout and color controls are unchanged.
+The existing Watch omission is retained. No page grid, gallery, purchase, protection,
+reviews, provider, cart/order behavior or database data was changed.
+
+### Focused verification
+
+- PHP syntax passes. Existing focused checks: model options 53, product information
+  48, gallery render 28, purchase render 68, frontend structure 3, trust/Watch 36:
+  **236 assertions PASS**. Fixtures remain unsaved; no provider/mail calls.
+- Personally inspected iPhone, iPad, MacBook and Apple Watch at **1440, 1280, 390
+  and 320px** (16 screenshots). Summary absent, content-height cards, no horizontal
+  overflow. Storage tiles measured 88–103px wide; mobile wraps naturally.
+- iPad's unavailable 256 GB and MacBook's unavailable capacities remain visible,
+  grey and disabled. iPad's two choices stay side-by-side at 320px. Watch has no
+  storage controls at any width.
+- Native iPhone clicks 128→256→128 GB resolve the intended existing product ID,
+  title and sale price. The removed summary remains absent after updates. No
+  browser console error was recorded. No cart submission/order was needed.
+- Existing browser test expectations were updated to remove only the obsolete
+  quick-facts comparison; its broader cart/gallery suite was not rerun.
+
+Screenshots and read-only browser metrics are outside Git in the private
+`selector-compact-storage-20261027` evidence directory under the active Codex
+visualization workspace. Files follow `<family>-<width>.jpg`, with a
+`verification.json` record. This is LOCAL acceptance only: no commit, push, TEST
+access or deployment.
+
+
+## LOCAL adaptive selectors and public stock-count removal — 2026-10-28
+
+Owner requested presentation only, superseding the previous natural-width storage
+layout. The earlier redundant equipment-summary removal is preserved.
+
+### Stock presentation
+
+- Available products have no visible badge above the title; the empty hidden badge
+  remains an update target for the existing unavailable/backorder presentation.
+- Deleted the entire “Készletinformáció” footer and its unused renderer, payload
+  field and CSS. No replacement availability message is added.
+- Suppressed native Woo in-stock HTML only while rendering the public purchase
+  fragment, including fragments refreshed by the selector. The filter is removed
+  in `finally`, also on template failure. Native unavailable/backorder markup and
+  the existing unavailable badge remain. No global/admin stock filter is installed.
+- Listing/related-card source does not output numeric stock labels; the LOCAL
+  iPhone listing's 16 product links were browser-checked with no count/footer text.
+- Stock values, sellability, quantity input limits, sold-device state, order/stock
+  actions and Back Office are unchanged. Tests use unsaved Woo products, including
+  stock 1/2/5, stock 0, backorder and missing-price cases. Native stock HTML outside
+  the public fragment is identical before/after rendering.
+
+### Exact adaptive layout
+
+The existing grid wrapper receives its display column count from its already
+rendered options. Short options use 1/2/3/4 equal columns for those counts, at most
+five before wrapping; a single option fills the row at the normal control height.
+Grid gap stays 8px. Minimum widths: colors 92px (104px for exactly four colors, so
+mobile wraps as 2+2), storage 104px, condition 180px. CSS `auto-fit`/`minmax` reduces
+column count only when the available width requires it. Storage height stays 60px;
+color and condition retain their existing normal minimum heights (76/72px).
+Condition counts 1/2 use 1/2 columns, 3 can use three where 180px per option fits,
+and 4 use two rows of two; narrow screens use fewer columns with readable labels.
+No fixed page/card height, added option, hidden unavailable option or grid outside
+the selector is introduced. Prices/deltas, matching and all data remain unchanged.
+
+### Verification
+
+- PHP syntax PASS; model options 53, information 48, gallery 28, purchase 116,
+  frontend structure 3, trust/Watch 36: **284 assertions PASS**. No saved fixtures.
+- Personally inspected iPhone, iPad, MacBook and Watch at 1440/1280/390/320:
+  16 views, no horizontal overflow/count text/stock footer/old summary.
+- Desktop examples: iPad two storage tiles 309px each; Watch three colors about
+  203.33px each; Mac four capacities 150.5px each; Mac single condition fills its
+  row at 72px height. Mobile storage is two columns at both requested widths.
+- Disabled model options stay visible grey, red selection preserved; Watch has
+  no storage group/card. Condition controls stack where their long labels need it.
+- Native desktop storage/color/condition clicks and mobile storage clicks keep
+  selected native ID, title and sale price coherent. Stock copy does not return
+  after updates. No browser console errors observed; no cart/order/provider action.
+- Broader historical cart/order browser suite was not repeated for this UI change.
+
+Private screenshots/geometry are outside Git in `selector-adaptive-stock-20261028`
+under the active Codex visualization workspace: `<family>-<width>.jpg`, full
+desktop captures, `purchase-without-stock-count.jpg`, listing evidence and
+`verification.json`. No commit, push, TEST access or deployment.
+
+
+## LOCAL complete configured condition scale — 2026-10-28
+
+Source of truth is `Domain/ProductCondition/Grade::options()`, also used by the
+existing admin fields: a_plus, a, b, c. No per-model/family grade restriction exists
+in the current catalogue. Definitions and the established display labels are
+unchanged. The previous one/two-grade screenshots reflected sparse physical
+inventory, not a restricted valid condition scale.
+
+`renderConditionSelector()` preserves existing product-backed items and fills
+only missing configured grades with disabled placeholders. They have no product
+URL, invented price delta or photo. Existing JavaScript still enables only a
+matching available physical product for the selected color/storage; native Woo
+pricing and current product-backed delta behavior are untouched. No CSS changed.
+
+Verification: 236 PHP assertions (model options 69, information 48, purchase 116,
+structure 3), with unsaved fixtures proving all four families retain the full scale,
+current selection, disabled missing grades and absent fabricated deltas. iPhone,
+iPad, MacBook and Watch were personally inspected at 1440/1280/390/320: all four
+grades visible, no overflow, availability agrees with the existing product payload,
+Watch storage absent. Native iPhone A+→B switching updates the physical ID/title/price
+and preserves existing delta labels. No console errors observed.
+
+Screenshots and individual viewport JSON records are outside Git in private
+`condition-valid-grades-20261028` evidence. Existing prior LOCAL work is preserved;
+no product data, cart/order/provider action, TEST access, commit, push or deployment.
+
+
+## Final product-page polish — 2026-10-28
+
+Scope: LOCAL only on `feature/product-selector-compact-storage`; previous uncommitted selector refinements are preserved. No commit/push/merge, TEST access, deployment, product-data changes or provider calls.
+
+### Presentation
+
+- The purchase form has one full-width grid track. Its native quantity wrapper is hidden only within `.appleklinika-cart-area`; Woo still supplies the default quantity, min/max and purchasability. Cart quantity controls and inventory rules are unchanged.
+- Product description/specification panels now continue inside the left column, directly after selectors. Guarantees and recommendations follow the purchase card in the right column. Both columns retain the existing width variables and use 24px card gaps, without equal-height stretching or filler content.
+- At <=1100px the column wrappers still release their children; explicit order preserves gallery → purchase → selectors → guarantees → details → recommendations. Gallery dimensions, Extra védelem, typography, selector choices and content are unchanged.
+
+### Recommendations
+
+`WooSimilarDevicesQuery` is a read-only Woo adapter. It retains eligible same-model candidates first, deduplicates by product ID, then fills up to six cards with published, visible, in-stock, purchasable devices in the same configured family. Canonical model metadata supports devices without category tags; Mac/Watch aliases normalize only for matching. Unknown families, other device families, hidden/search-only items, depleted stock and unpurchasable devices are excluded. Fewer cards remain acceptable if insufficient suitable inventory exists. Native prices and product URLs are used. The selector inventory query and payload are not broadened.
+
+### Verification
+
+- PHP: recommendations 23; purchase renderer 116; model options 69; information presentation 48; frontend structure 3 = **259 PASS**. Fixtures are unsaved objects or isolated stubs; no provider calls.
+- Browser: iPhone `iphone-13-pro-128gb`, iPad 10th-generation 64 GB, MacBook Air M2 512 GB and Watch SE 2nd-generation 40 mm, each at 1440/1280/390/320 = 16 personally inspected views, **192 layout checks PASS**.
+- Every view has a full-width >=44px action, no visible quantity or horizontal overflow, one selected state per group, contained photography and six unique relevant recommendations. Desktop alignment/gaps and mobile stacking were measured. Watch storage remains hidden.
+- **26 interactive checks PASS**: one-device add/remove round-trips for all four families; iPhone condition/color/storage switches preserve physical product IDs, native prices, selected states and hidden quantity. QA cart empty afterward. No orders, users or persistent QA products created.
+- Total **477 focused checks PASS**. Browser error log empty and no PHP error/warning/notice found during the checks; PHP syntax and whitespace checks pass.
+- Evidence (outside Git): `/Users/apple/.codex/visualizations/2026/09/11/01a08fcb-a363-7761-acb7-46d99e2bde2c/product-final-polish/`: before iPhone, all 16 full-page images and DOM measurements, review sheets, `layout-results.json`, `functional-results.json`.
+- Browser navigation occasionally timed out after the page had loaded; DOM confirmation established successful navigation. A first cart check used the wrong quantity selector and was corrected to the existing native cart field. Hidden input values are redacted by the browser tooling, so their native defaults are proven in the PHP renderer checks and by the actual cart quantity, not by exposing hidden field values.
+
+Result: **READY FOR INTEGRATION**, subject to the owner's next instruction. This pass leaves all work uncommitted and LOCAL.

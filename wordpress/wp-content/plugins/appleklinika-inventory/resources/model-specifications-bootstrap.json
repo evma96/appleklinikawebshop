@@ -1,0 +1,6890 @@
+{
+  "apple_watch_se_2": {
+    "source_url": "https://support.apple.com/en-us/111853",
+    "source_title": "Apple Watch SE (2nd generation) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "Apple Watch SE (2. generáció)"
+      },
+      {
+        "label": "Tokméretek",
+        "value": "40 mm, 44 mm"
+      },
+      {
+        "label": "Tokszínek",
+        "value": "Midnight, Starlight, Silver"
+      },
+      {
+        "label": "Kapcsolat",
+        "value": "GPS vagy GPS + Cellular modell"
+      },
+      {
+        "label": "Chip",
+        "value": "S8 SiP 64 bites kétmagos processzorral, W3 vezeték nélküli chip"
+      },
+      {
+        "label": "Kijelző",
+        "value": "Retina LTPO OLED kijelző, akár 1000 nit fényerő"
+      },
+      {
+        "label": "Felbontás",
+        "value": "40 mm: 324 × 394 pixel; 44 mm: 368 × 448 pixel"
+      },
+      {
+        "label": "Tárhely",
+        "value": "32 GB"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Optikai pulzusmérő, iránytű, altiméter, gyorsulásmérő, giroszkóp, környezeti fényérzékelő, esés- és ütközésészlelés"
+      },
+      {
+        "label": "Víz- és porállóság",
+        "value": "50 méter vízállóság"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 4 (802.11n), Bluetooth 5.3, GPS/GNSS; Cellular modellen LTE és UMTS"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 18 óra"
+      },
+      {
+        "label": "Töltés",
+        "value": "Mágneses töltőkábel"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "watchOS kompatibilitás"
+      }
+    ]
+  },
+  "apple_watch_se_3": {
+    "source_url": "https://support.apple.com/en-us/125094",
+    "source_title": "Apple Watch SE 3 - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "Apple Watch SE 3"
+      },
+      {
+        "label": "Tokméret",
+        "value": "40 mm vagy 44 mm"
+      },
+      {
+        "label": "Tok anyaga",
+        "value": "Alumínium"
+      },
+      {
+        "label": "Kijelző",
+        "value": "Always-On Retina OLED LTPO kijelző, Ion-X üveg"
+      },
+      {
+        "label": "Chip",
+        "value": "S10 chip, 64 bites kétmagos processzor, 4 magos Neural Engine"
+      },
+      {
+        "label": "Tárhely",
+        "value": "64 GB"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Optikai pulzusmérő, hőmérséklet-érzékelő, iránytű, magasságmérő, gyorsulásmérő, giroszkóp"
+      },
+      {
+        "label": "Vízállóság",
+        "value": "50 méter"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 18 óra normál használat, akár 32 óra alacsony fogyasztású módban"
+      }
+    ]
+  },
+  "apple_watch_series_10": {
+    "source_url": "https://support.apple.com/en-us/121202",
+    "source_title": "Apple Watch Series 10 - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "Apple Watch Series 10"
+      },
+      {
+        "label": "Tokméretek",
+        "value": "42 mm, 46 mm"
+      },
+      {
+        "label": "Tokszínek",
+        "value": "Alumínium és titán színváltozatok"
+      },
+      {
+        "label": "Kapcsolat",
+        "value": "GPS vagy GPS + Cellular modell"
+      },
+      {
+        "label": "Chip",
+        "value": "S10 SiP 64 bites kétmagos processzorral, W3 vezeték nélküli chip, U2 ultraszélessávú chip"
+      },
+      {
+        "label": "Kijelző",
+        "value": "Always‑On Retina LTPO3 széles látószögű OLED kijelző, akár 2000 nit fényerő"
+      },
+      {
+        "label": "Felbontás",
+        "value": "42 mm: 374 × 446 pixel; 46 mm: 416 × 496 pixel"
+      },
+      {
+        "label": "Tárhely",
+        "value": "64 GB"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "EKG, pulzusmérő, hőmérséklet-érzékelés, mélységmérő, vízhőmérséklet-érzékelő, gyorsulásmérő, giroszkóp, iránytű, altiméter, környezeti fényérzékelő"
+      },
+      {
+        "label": "Víz- és porállóság",
+        "value": "50 méter vízállóság, IP6X porállóság"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 4 (802.11n), Bluetooth 5.3, GPS/GNSS; Cellular modellen LTE és UMTS"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 18 óra, Alacsony töltöttségű módban akár 36 óra"
+      },
+      {
+        "label": "Töltés",
+        "value": "Mágneses gyorstöltő USB‑C kábellel"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "watchOS kompatibilitás"
+      }
+    ]
+  },
+  "apple_watch_series_11": {
+    "source_url": "https://support.apple.com/en-us/125093",
+    "source_title": "Apple Watch Series 11 - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "Apple Watch Series 11"
+      },
+      {
+        "label": "Tokméret",
+        "value": "42 mm vagy 46 mm"
+      },
+      {
+        "label": "Kijelző",
+        "value": "Always-On Retina kijelző széles látószögű OLED-del és LTPO3-mal"
+      },
+      {
+        "label": "Chip",
+        "value": "S10 chip, 64 bites kétmagos processzor, 4 magos Neural Engine"
+      },
+      {
+        "label": "Tárhely",
+        "value": "64 GB"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Elektromos pulzusmérő, optikai pulzusmérő, véroxigén, hőmérséklet, iránytű, magasságmérő"
+      },
+      {
+        "label": "Vízállóság",
+        "value": "50 méter"
+      },
+      {
+        "label": "Porállóság",
+        "value": "IP6X"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 24 óra normál használat, akár 38 óra alacsony fogyasztású módban"
+      }
+    ]
+  },
+  "apple_watch_series_8": {
+    "source_url": "https://support.apple.com/en-us/111848",
+    "source_title": "Apple Watch Series 8 - Technical Specifications",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "Apple Watch Series 8"
+      },
+      {
+        "label": "Tokméretek",
+        "value": "41 mm, 45 mm"
+      },
+      {
+        "label": "Tokszínek",
+        "value": "Alumínium és rozsdamentes acél színváltozatok"
+      },
+      {
+        "label": "Kapcsolat",
+        "value": "GPS vagy GPS + Cellular modell"
+      },
+      {
+        "label": "Chip",
+        "value": "S8 SiP 64 bites kétmagos processzorral, W3 vezeték nélküli chip, U1 chip"
+      },
+      {
+        "label": "Kijelző",
+        "value": "Always‑On Retina LTPO OLED kijelző, akár 1000 nit fényerő"
+      },
+      {
+        "label": "Felbontás",
+        "value": "41 mm: 352 × 430 pixel; 45 mm: 396 × 484 pixel"
+      },
+      {
+        "label": "Tárhely",
+        "value": "32 GB"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Véroxigén, EKG, pulzusmérő, hőmérséklet-érzékelés, gyorsulásmérő, giroszkóp, iránytű, altiméter, környezeti fényérzékelő"
+      },
+      {
+        "label": "Víz- és porállóság",
+        "value": "50 méter vízállóság, IP6X porállóság"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 4 (802.11n), Bluetooth 5.3, GPS/GNSS; Cellular modellen LTE és UMTS"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 18 óra"
+      },
+      {
+        "label": "Töltés",
+        "value": "Mágneses gyorstöltő USB‑C kábellel"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "watchOS kompatibilitás"
+      }
+    ]
+  },
+  "apple_watch_series_9": {
+    "source_url": "https://support.apple.com/en-us/111833",
+    "source_title": "Apple Watch Series 9 - Technical Specifications - Apple Support",
+    "fetched_at": "2026-06-23",
+    "match_status": "manual_verified_from_test_product_meta",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "Apple Watch Series 9"
+      },
+      {
+        "label": "Tokméretek",
+        "value": "41 mm, 45 mm"
+      },
+      {
+        "label": "Tokszínek",
+        "value": "Alumínium: Midnight, Starlight, Silver, Pink, (PRODUCT)RED; rozsdamentes acél opciók"
+      },
+      {
+        "label": "Kapcsolat",
+        "value": "GPS vagy GPS + Cellular modell"
+      },
+      {
+        "label": "Chip",
+        "value": "S9 SiP 64 bites kétmagos processzorral, W3 vezeték nélküli chip, U2 ultraszélessávú chip"
+      },
+      {
+        "label": "Kijelző",
+        "value": "Always‑On Retina LTPO OLED kijelző, akár 2000 nit fényerő"
+      },
+      {
+        "label": "45 mm felbontás",
+        "value": "396 × 484 pixel"
+      },
+      {
+        "label": "Tárhely",
+        "value": "64 GB"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Véroxigén, EKG, pulzusmérő, hőmérséklet-érzékelés, gyorsulásmérő, giroszkóp, iránytű, altiméter, környezeti fényérzékelő"
+      },
+      {
+        "label": "Víz- és porállóság",
+        "value": "50 méter vízállóság, IP6X porállóság"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 4 (802.11n), Bluetooth 5.3, GPS/GNSS; Cellular modellen LTE és UMTS"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 18 óra, Alacsony töltöttségű módban akár 36 óra"
+      },
+      {
+        "label": "Töltés",
+        "value": "Mágneses gyorstöltő USB‑C kábellel"
+      },
+      {
+        "label": "45 mm méretek",
+        "value": "45 × 38 × 10,7 mm"
+      },
+      {
+        "label": "45 mm súly",
+        "value": "Alumínium GPS modell: 38,7 g"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "watchOS 10 (megjelenéskori rendszer)"
+      }
+    ]
+  },
+  "apple_watch_ultra": {
+    "source_url": "https://support.apple.com/en-us/111852",
+    "source_title": "Apple Watch Ultra - Technical Specifications",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "Apple Watch Ultra"
+      },
+      {
+        "label": "Tokméretek",
+        "value": "49 mm"
+      },
+      {
+        "label": "Tokszínek",
+        "value": "Natúr titán"
+      },
+      {
+        "label": "Kapcsolat",
+        "value": "GPS + Cellular modell"
+      },
+      {
+        "label": "Chip",
+        "value": "S8 SiP 64 bites kétmagos processzorral, W3 vezeték nélküli chip, U1 chip"
+      },
+      {
+        "label": "Kijelző",
+        "value": "Always‑On Retina LTPO OLED kijelző, akár 2000 nit fényerő"
+      },
+      {
+        "label": "Felbontás",
+        "value": "410 × 502 pixel"
+      },
+      {
+        "label": "Tárhely",
+        "value": "32 GB"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Véroxigén, EKG, pulzusmérő, hőmérséklet-érzékelés, mélységmérő, vízhőmérséklet-érzékelő, iránytű, altiméter, gyorsulásmérő, giroszkóp"
+      },
+      {
+        "label": "Víz- és porállóság",
+        "value": "100 méter vízállóság, IP6X porállóság, EN13319 tanúsítás"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 4 (802.11n), Bluetooth 5.3, precíziós kétfrekvenciás GPS, LTE és UMTS"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 36 óra, Alacsony töltöttségű módban akár 60 óra"
+      },
+      {
+        "label": "Töltés",
+        "value": "Mágneses gyorstöltő USB‑C kábellel"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "watchOS kompatibilitás"
+      }
+    ]
+  },
+  "apple_watch_ultra_2": {
+    "source_url": "https://support.apple.com/en-us/111832",
+    "source_title": "Apple Watch Ultra 2 - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "Apple Watch Ultra 2"
+      },
+      {
+        "label": "Tokméretek",
+        "value": "49 mm"
+      },
+      {
+        "label": "Tokszínek",
+        "value": "Natúr titán, Fekete titán"
+      },
+      {
+        "label": "Kapcsolat",
+        "value": "GPS + Cellular modell"
+      },
+      {
+        "label": "Chip",
+        "value": "S9 SiP 64 bites kétmagos processzorral, W3 vezeték nélküli chip, U2 ultraszélessávú chip"
+      },
+      {
+        "label": "Kijelző",
+        "value": "Always‑On Retina LTPO OLED kijelző, akár 3000 nit fényerő"
+      },
+      {
+        "label": "Felbontás",
+        "value": "410 × 502 pixel"
+      },
+      {
+        "label": "Tárhely",
+        "value": "64 GB"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Véroxigén, EKG, pulzusmérő, hőmérséklet-érzékelés, mélységmérő, vízhőmérséklet-érzékelő, iránytű, altiméter, gyorsulásmérő, giroszkóp"
+      },
+      {
+        "label": "Víz- és porállóság",
+        "value": "100 méter vízállóság, IP6X porállóság, EN13319 tanúsítás"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 4 (802.11n), Bluetooth 5.3, precíziós kétfrekvenciás GPS, LTE és UMTS"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 36 óra, Alacsony töltöttségű módban akár 72 óra"
+      },
+      {
+        "label": "Töltés",
+        "value": "Mágneses gyorstöltő USB‑C kábellel"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "watchOS kompatibilitás"
+      }
+    ]
+  },
+  "apple_watch_ultra_3": {
+    "source_url": "https://support.apple.com/en-us/125095",
+    "source_title": "Apple Watch Ultra 3 - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "Apple Watch Ultra 3"
+      },
+      {
+        "label": "Tokméret",
+        "value": "49 mm"
+      },
+      {
+        "label": "Tok anyaga",
+        "value": "Grade 5 titán"
+      },
+      {
+        "label": "Kijelző",
+        "value": "Always-On Retina kijelző széles látószögű OLED-del és LTPO3-mal"
+      },
+      {
+        "label": "Chip",
+        "value": "S10 chip, 64 bites kétmagos processzor, 4 magos Neural Engine"
+      },
+      {
+        "label": "Tárhely",
+        "value": "64 GB"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Elektromos pulzusmérő, optikai pulzusmérő, véroxigén, hőmérséklet, mélységmérő, vízhőmérséklet, iránytű, magasságmérő"
+      },
+      {
+        "label": "Vízállóság",
+        "value": "100 méter, EN13319 búvárminősítés 40 méterig"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 42 óra normál használat, akár 72 óra alacsony fogyasztású módban"
+      },
+      {
+        "label": "Kapcsolat",
+        "value": "Wi‑Fi 4, Bluetooth 5.3, precíziós kétfrekvenciás GPS"
+      }
+    ]
+  },
+  "ipad_10": {
+    "source_url": "https://support.apple.com/en-us/111840",
+    "source_title": "iPad (10th generation) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPad (10. generáció)"
+      },
+      {
+        "label": "Színek",
+        "value": "Silver, Blue, Pink, Yellow"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "64 GB, 256 GB"
+      },
+      {
+        "label": "Kapcsolat",
+        "value": "Wi‑Fi modell vagy Wi‑Fi + Cellular modell"
+      },
+      {
+        "label": "Chip",
+        "value": "A14 Bionic chip, 6 magos CPU, 4 magos GPU, 16 magos Neural Engine"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "iPadOS 16 (megjelenéskori rendszer)"
+      },
+      {
+        "label": "Kijelző",
+        "value": "10,9 hüvelykes Liquid Retina kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2360 × 1640 pixel, 264 ppi"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "12 MP széles látószögű kamera"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP fekvő tájolású ultraszéles előlapi kamera, Center Stage támogatás"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6 (802.11ax), Bluetooth 5.2; Cellular modellen 5G támogatás"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 10 óra böngészés Wi‑Fi-n vagy videólejátszás"
+      },
+      {
+        "label": "Csatlakozó",
+        "value": "USB‑C"
+      },
+      {
+        "label": "Kompatibilitás",
+        "value": "Apple Pencil (USB‑C), Apple Pencil (1. generáció adapterrel), Magic Keyboard Folio"
+      }
+    ]
+  },
+  "ipad_7th_generation": {
+    "source_url": "https://support.apple.com/en-us/111911",
+    "source_title": "iPad (7th generation) - Technical Specifications",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPad (7th generation)"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "32 GB, 128 GB"
+      },
+      {
+        "label": "Kapcsolat",
+        "value": "Wi‑Fi vagy Wi‑Fi + Cellular modell"
+      },
+      {
+        "label": "Chip",
+        "value": "A10 Fusion"
+      },
+      {
+        "label": "Kijelző",
+        "value": "10,2 hüvelykes Retina kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2160 × 1620 pixel"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "8 MP"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "1,2 MP"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 5, Bluetooth 4.2; Cellular modellen LTE"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: akár 10 óra Wi‑Fi-böngészés vagy videó; mobilhálózaton akár 9 óra"
+      },
+      {
+        "label": "Csatlakozó",
+        "value": "Lightning"
+      },
+      {
+        "label": "Méretek",
+        "value": "250,6 × 174,1 × 7,5 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "Wi‑Fi: 483 g; Wi‑Fi + Cellular: 493 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Touch ID"
+      },
+      {
+        "label": "Apple Pencil",
+        "value": "Apple Pencil (1. generáció)"
+      }
+    ]
+  },
+  "ipad_8th_generation": {
+    "source_url": "https://support.apple.com/en-us/118451",
+    "source_title": "iPad (8th generation) - Technical specifications",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPad (8th generation)"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "32 GB, 128 GB"
+      },
+      {
+        "label": "Kapcsolat",
+        "value": "Wi‑Fi vagy Wi‑Fi + Cellular modell"
+      },
+      {
+        "label": "Chip",
+        "value": "A12 Bionic"
+      },
+      {
+        "label": "Kijelző",
+        "value": "10,2 hüvelykes Retina kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2160 × 1620 pixel"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "8 MP"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "1,2 MP"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 5, Bluetooth 4.2; Cellular modellen LTE"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: akár 10 óra Wi‑Fi-böngészés vagy videó; mobilhálózaton akár 9 óra"
+      },
+      {
+        "label": "Csatlakozó",
+        "value": "Lightning"
+      },
+      {
+        "label": "Méretek",
+        "value": "250,6 × 174,1 × 7,5 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "Wi‑Fi: 490 g; Wi‑Fi + Cellular: 495 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Touch ID"
+      },
+      {
+        "label": "Apple Pencil",
+        "value": "Apple Pencil (1. generáció)"
+      }
+    ]
+  },
+  "ipad_9": {
+    "source_url": "https://support.apple.com/en-us/111898",
+    "source_title": "iPad (9th generation) - Technical Specifications",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPad (9. generáció)"
+      },
+      {
+        "label": "Színek",
+        "value": "Space Gray, Silver"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "64 GB, 256 GB"
+      },
+      {
+        "label": "Kapcsolat",
+        "value": "Wi‑Fi modell vagy Wi‑Fi + Cellular modell"
+      },
+      {
+        "label": "Chip",
+        "value": "A13 Bionic chip, Neural Engine"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "iPadOS 15 (megjelenéskori rendszer)"
+      },
+      {
+        "label": "Kijelző",
+        "value": "10,2 hüvelykes Retina kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2160 × 1620 pixel, 264 ppi"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "8 MP széles látószögű kamera"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP ultraszéles előlapi kamera, Center Stage támogatás"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 5 (802.11ac), Bluetooth 4.2; Cellular modellen LTE támogatás"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 10 óra böngészés Wi‑Fi-n vagy videólejátszás"
+      },
+      {
+        "label": "Csatlakozó",
+        "value": "Lightning"
+      },
+      {
+        "label": "Kompatibilitás",
+        "value": "Apple Pencil (1. generáció), Smart Keyboard"
+      }
+    ]
+  },
+  "ipad_a16": {
+    "source_url": "https://support.apple.com/en-us/122240",
+    "source_title": "iPad (A16) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPad 11-inch (A16)"
+      },
+      {
+        "label": "Kijelző",
+        "value": "11 hüvelykes Liquid Retina kijelző, IPS technológia"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2360 × 1640 pixel, 264 ppi"
+      },
+      {
+        "label": "Chip",
+        "value": "A16 chip, 5 magos CPU, 4 magos GPU, 16 magos Neural Engine"
+      },
+      {
+        "label": "Kamera",
+        "value": "12 MP széles látószögű hátlapi kamera"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP Center Stage kamera"
+      },
+      {
+        "label": "Csatlakozó",
+        "value": "USB-C"
+      },
+      {
+        "label": "Apple Pencil",
+        "value": "Apple Pencil (USB-C), Apple Pencil (1. generáció adapterrel)"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 10 óra web Wi-Fi-n vagy videólejátszás"
+      }
+    ]
+  },
+  "ipad_air_11_m2": {
+    "source_url": "https://support.apple.com/en-us/119894",
+    "source_title": "iPad Air 11-inch (M2) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPad Air 11 hüvelykes (M2)"
+      },
+      {
+        "label": "Színek",
+        "value": "Space Gray, Blue, Purple, Starlight"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "128 GB, 256 GB, 512 GB, 1 TB"
+      },
+      {
+        "label": "Kapcsolat",
+        "value": "Wi‑Fi modell vagy Wi‑Fi + Cellular modell"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M2 chip, 8 magos CPU, 9 magos GPU, 16 magos Neural Engine"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "iPadOS 17 (megjelenéskori rendszer)"
+      },
+      {
+        "label": "Kijelző",
+        "value": "11 hüvelykes Liquid Retina kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2360 × 1640 pixel, 264 ppi"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "12 MP széles látószögű kamera"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP fekvő tájolású ultraszéles előlapi kamera, Center Stage támogatás"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6E (802.11ax), Bluetooth 5.3; Cellular modellen 5G támogatás"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 10 óra böngészés Wi‑Fi-n vagy videólejátszás"
+      },
+      {
+        "label": "Csatlakozó",
+        "value": "USB‑C"
+      },
+      {
+        "label": "Kompatibilitás",
+        "value": "Apple Pencil Pro, Apple Pencil (USB‑C), Magic Keyboard"
+      }
+    ]
+  },
+  "ipad_air_11_m3": {
+    "source_url": "https://support.apple.com/en-us/122241",
+    "source_title": "iPad Air 11-inch (M3) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPad Air 11 hüvelykes (M3)"
+      },
+      {
+        "label": "Színek",
+        "value": "Space Gray, Blue, Purple, Starlight"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "128 GB, 256 GB, 512 GB, 1 TB"
+      },
+      {
+        "label": "Kapcsolat",
+        "value": "Wi‑Fi modell vagy Wi‑Fi + Cellular modell"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M3 chip, 8 magos CPU, 9 magos GPU, 16 magos Neural Engine"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "iPadOS kompatibilitás"
+      },
+      {
+        "label": "Kijelző",
+        "value": "11 hüvelykes Liquid Retina kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2360 × 1640 pixel, 264 ppi"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "12 MP széles látószögű kamera"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP fekvő tájolású ultraszéles előlapi kamera, Center Stage támogatás"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6E (802.11ax), Bluetooth 5.3; Cellular modellen 5G támogatás"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 10 óra böngészés Wi‑Fi-n vagy videólejátszás"
+      },
+      {
+        "label": "Csatlakozó",
+        "value": "USB‑C"
+      },
+      {
+        "label": "Kompatibilitás",
+        "value": "Apple Pencil Pro, Apple Pencil (USB‑C), Magic Keyboard"
+      }
+    ]
+  },
+  "ipad_air_11_m4": {
+    "source_url": "https://support.apple.com/en-us/126471",
+    "source_title": "iPad Air 11-inch (M4) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPad Air 11-inch (M4)"
+      },
+      {
+        "label": "Kijelző",
+        "value": "11 hüvelykes Liquid Retina kijelző, IPS technológia"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2360 × 1640 pixel, 264 ppi"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M4 chip, 8 magos CPU, 9 magos GPU, 16 magos Neural Engine"
+      },
+      {
+        "label": "Memória",
+        "value": "12 GB egyesített memória"
+      },
+      {
+        "label": "Kamera",
+        "value": "12 MP széles látószögű hátlapi kamera"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP Center Stage kamera"
+      },
+      {
+        "label": "Wi‑Fi",
+        "value": "Wi‑Fi 7 (802.11be)"
+      },
+      {
+        "label": "Bluetooth",
+        "value": "Bluetooth 6"
+      },
+      {
+        "label": "Csatlakozó",
+        "value": "USB-C"
+      },
+      {
+        "label": "Apple Pencil",
+        "value": "Apple Pencil Pro, Apple Pencil (USB-C)"
+      }
+    ]
+  },
+  "ipad_air_13_m2": {
+    "source_url": "https://support.apple.com/en-us/119893",
+    "source_title": "iPad Air 13-inch (M2) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPad Air 13 hüvelykes (M2)"
+      },
+      {
+        "label": "Színek",
+        "value": "Space Gray, Blue, Purple, Starlight"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "128 GB, 256 GB, 512 GB, 1 TB"
+      },
+      {
+        "label": "Kapcsolat",
+        "value": "Wi‑Fi modell vagy Wi‑Fi + Cellular modell"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M2 chip, 8 magos CPU, 9 magos GPU, 16 magos Neural Engine"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "iPadOS 17 (megjelenéskori rendszer)"
+      },
+      {
+        "label": "Kijelző",
+        "value": "13 hüvelykes Liquid Retina kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2732 × 2048 pixel, 264 ppi"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "12 MP széles látószögű kamera"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP fekvő tájolású ultraszéles előlapi kamera, Center Stage támogatás"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6E (802.11ax), Bluetooth 5.3; Cellular modellen 5G támogatás"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 10 óra böngészés Wi‑Fi-n vagy videólejátszás"
+      },
+      {
+        "label": "Csatlakozó",
+        "value": "USB‑C"
+      },
+      {
+        "label": "Kompatibilitás",
+        "value": "Apple Pencil Pro, Apple Pencil (USB‑C), Magic Keyboard"
+      }
+    ]
+  },
+  "ipad_air_13_m3": {
+    "source_url": "https://support.apple.com/en-us/122242",
+    "source_title": "iPad Air 13‑inch (M3) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPad Air 13 hüvelykes (M3)"
+      },
+      {
+        "label": "Színek",
+        "value": "Space Gray, Blue, Purple, Starlight"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "128 GB, 256 GB, 512 GB, 1 TB"
+      },
+      {
+        "label": "Kapcsolat",
+        "value": "Wi‑Fi modell vagy Wi‑Fi + Cellular modell"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M3 chip, 8 magos CPU, 9 magos GPU, 16 magos Neural Engine"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "iPadOS kompatibilitás"
+      },
+      {
+        "label": "Kijelző",
+        "value": "13 hüvelykes Liquid Retina kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2732 × 2048 pixel, 264 ppi"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "12 MP széles látószögű kamera"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP fekvő tájolású ultraszéles előlapi kamera, Center Stage támogatás"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6E (802.11ax), Bluetooth 5.3; Cellular modellen 5G támogatás"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 10 óra böngészés Wi‑Fi-n vagy videólejátszás"
+      },
+      {
+        "label": "Csatlakozó",
+        "value": "USB‑C"
+      },
+      {
+        "label": "Kompatibilitás",
+        "value": "Apple Pencil Pro, Apple Pencil (USB‑C), Magic Keyboard"
+      }
+    ]
+  },
+  "ipad_air_13_m4": {
+    "source_url": "https://support.apple.com/en-us/126472",
+    "source_title": "iPad Air 13-inch (M4) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPad Air 13-inch (M4)"
+      },
+      {
+        "label": "Kijelző",
+        "value": "13 hüvelykes Liquid Retina kijelző, IPS technológia"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2732 × 2048 pixel, 264 ppi"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M4 chip, 8 magos CPU, 9 magos GPU, 16 magos Neural Engine"
+      },
+      {
+        "label": "Memória",
+        "value": "12 GB egyesített memória"
+      },
+      {
+        "label": "Kamera",
+        "value": "12 MP széles látószögű hátlapi kamera"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP Center Stage kamera"
+      },
+      {
+        "label": "Wi‑Fi",
+        "value": "Wi‑Fi 7 (802.11be)"
+      },
+      {
+        "label": "Bluetooth",
+        "value": "Bluetooth 6"
+      },
+      {
+        "label": "Csatlakozó",
+        "value": "USB-C"
+      },
+      {
+        "label": "Apple Pencil",
+        "value": "Apple Pencil Pro, Apple Pencil (USB-C)"
+      }
+    ]
+  },
+  "ipad_air_3rd_generation": {
+    "source_url": "https://support.apple.com/en-us/111939",
+    "source_title": "iPad Air (3rd generation) - Technical Specifications",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPad Air (3rd generation)"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "64 GB, 256 GB"
+      },
+      {
+        "label": "Kapcsolat",
+        "value": "Wi‑Fi vagy Wi‑Fi + Cellular modell"
+      },
+      {
+        "label": "Chip",
+        "value": "A12 Bionic"
+      },
+      {
+        "label": "Kijelző",
+        "value": "10,5 hüvelykes Retina kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2224 × 1668 pixel"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "8 MP"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "7 MP"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 5, Bluetooth 5.0; Cellular modellen LTE"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: akár 10 óra Wi‑Fi-böngészés vagy videó; mobilhálózaton akár 9 óra"
+      },
+      {
+        "label": "Csatlakozó",
+        "value": "Lightning"
+      },
+      {
+        "label": "Méretek",
+        "value": "250,6 × 174,1 × 6,1 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "Wi‑Fi: 456 g; Wi‑Fi + Cellular: 464 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Touch ID"
+      },
+      {
+        "label": "Apple Pencil",
+        "value": "Apple Pencil (1. generáció)"
+      }
+    ]
+  },
+  "ipad_air_4": {
+    "source_url": "https://support.apple.com/en-us/111905",
+    "source_title": "iPad Air (4th generation) - Technical Specifications",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPad Air (4. generáció)"
+      },
+      {
+        "label": "Színek",
+        "value": "Space Gray, Silver, Rose Gold, Green, Sky Blue"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "64 GB, 256 GB"
+      },
+      {
+        "label": "Kapcsolat",
+        "value": "Wi‑Fi modell vagy Wi‑Fi + Cellular modell"
+      },
+      {
+        "label": "Chip",
+        "value": "A14 Bionic chip, Neural Engine"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "iPadOS 14 (megjelenéskori rendszer)"
+      },
+      {
+        "label": "Kijelző",
+        "value": "10,9 hüvelykes Liquid Retina kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2360 × 1640 pixel, 264 ppi"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "12 MP széles látószögű kamera"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "7 MP FaceTime HD kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6 (802.11ax), Bluetooth 5.0; Cellular modellen LTE támogatás"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 10 óra böngészés Wi‑Fi-n vagy videólejátszás"
+      },
+      {
+        "label": "Csatlakozó",
+        "value": "USB‑C"
+      },
+      {
+        "label": "Kompatibilitás",
+        "value": "Apple Pencil (2. generáció), Magic Keyboard, Smart Keyboard Folio"
+      }
+    ]
+  },
+  "ipad_air_5": {
+    "source_url": "https://support.apple.com/en-us/111887",
+    "source_title": "iPad Air (5th generation) - Tech Specs - Apple Support",
+    "fetched_at": "2026-06-23",
+    "match_status": "manual_verified_from_test_product_meta",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPad Air (5. generáció)"
+      },
+      {
+        "label": "Színek",
+        "value": "Space Gray, Starlight, Pink, Purple, Blue"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "64 GB, 256 GB"
+      },
+      {
+        "label": "Kapcsolat",
+        "value": "Wi‑Fi modell vagy Wi‑Fi + Cellular modell"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M1 chip, 8 magos CPU, 8 magos GPU, Neural Engine"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "iPadOS 15 (megjelenéskori rendszer)"
+      },
+      {
+        "label": "Kijelző",
+        "value": "10,9 hüvelykes Liquid Retina kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2360 × 1640 pixel, 264 ppi"
+      },
+      {
+        "label": "Kijelzőtechnológia",
+        "value": "P3 széles színtartomány, True Tone, tükröződésgátló bevonat"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "12 MP széles látószögű kamera, ƒ/1.8 rekeszérték"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP ultraszéles előlapi kamera, Center Stage támogatás"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6 (802.11ax), Bluetooth 5.0; Cellular modellen 5G támogatás"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 10 óra böngészés Wi‑Fi-n vagy videólejátszás"
+      },
+      {
+        "label": "Csatlakozó",
+        "value": "USB‑C"
+      },
+      {
+        "label": "Méretek",
+        "value": "247,6 × 178,5 × 6,1 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "Wi‑Fi modell: 461 g; Wi‑Fi + Cellular modell: 462 g"
+      },
+      {
+        "label": "Kompatibilitás",
+        "value": "Apple Pencil (2. generáció), Magic Keyboard, Smart Keyboard Folio"
+      }
+    ]
+  },
+  "ipad_mini_5th_generation": {
+    "source_url": "https://support.apple.com/en-us/111904",
+    "source_title": "iPad mini (5th generation) - Technical Specifications",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPad mini (5th generation)"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "64 GB, 256 GB"
+      },
+      {
+        "label": "Kapcsolat",
+        "value": "Wi‑Fi vagy Wi‑Fi + Cellular modell"
+      },
+      {
+        "label": "Chip",
+        "value": "A12 Bionic"
+      },
+      {
+        "label": "Kijelző",
+        "value": "7,9 hüvelykes Retina kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2048 × 1536 pixel"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "8 MP"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "7 MP"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 5, Bluetooth 5.0; Cellular modellen LTE"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: akár 10 óra Wi‑Fi-böngészés vagy videó; mobilhálózaton akár 9 óra"
+      },
+      {
+        "label": "Csatlakozó",
+        "value": "Lightning"
+      },
+      {
+        "label": "Méretek",
+        "value": "203,2 × 134,8 × 6,1 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "Wi‑Fi: 300,5 g; Wi‑Fi + Cellular: 308,2 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Touch ID"
+      },
+      {
+        "label": "Apple Pencil",
+        "value": "Apple Pencil (1. generáció)"
+      }
+    ]
+  },
+  "ipad_mini_6": {
+    "source_url": "https://support.apple.com/en-us/111886",
+    "source_title": "iPad mini (6th generation) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPad mini (6. generáció)"
+      },
+      {
+        "label": "Színek",
+        "value": "Space Gray, Pink, Purple, Starlight"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "64 GB, 256 GB"
+      },
+      {
+        "label": "Kapcsolat",
+        "value": "Wi‑Fi modell vagy Wi‑Fi + Cellular modell"
+      },
+      {
+        "label": "Chip",
+        "value": "A15 Bionic chip, 6 magos CPU, 5 magos GPU, 16 magos Neural Engine"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "iPadOS 15 (megjelenéskori rendszer)"
+      },
+      {
+        "label": "Kijelző",
+        "value": "8,3 hüvelykes Liquid Retina kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2266 × 1488 pixel, 326 ppi"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "12 MP széles látószögű kamera"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP ultraszéles előlapi kamera, Center Stage támogatás"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6 (802.11ax), Bluetooth 5.0; Cellular modellen 5G támogatás"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 10 óra böngészés Wi‑Fi-n vagy videólejátszás"
+      },
+      {
+        "label": "Csatlakozó",
+        "value": "USB‑C"
+      },
+      {
+        "label": "Kompatibilitás",
+        "value": "Apple Pencil (2. generáció)"
+      }
+    ]
+  },
+  "ipad_mini_a17_pro": {
+    "source_url": "https://support.apple.com/en-us/121456",
+    "source_title": "iPad mini (A17 Pro) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPad mini (A17 Pro)"
+      },
+      {
+        "label": "Kijelző",
+        "value": "8,3 hüvelykes Liquid Retina kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2266 × 1488 pixel, 326 ppi"
+      },
+      {
+        "label": "Chip",
+        "value": "A17 Pro chip, 6 magos CPU, 5 magos GPU, 16 magos Neural Engine"
+      },
+      {
+        "label": "Kamera",
+        "value": "12 MP széles látószögű hátlapi kamera"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP Center Stage kamera"
+      },
+      {
+        "label": "Csatlakozó",
+        "value": "USB-C"
+      },
+      {
+        "label": "Apple Pencil",
+        "value": "Apple Pencil Pro, Apple Pencil (USB-C)"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 10 óra web Wi-Fi-n vagy videólejátszás"
+      }
+    ]
+  },
+  "ipad_pro_11_3rd_generation": {
+    "source_url": "https://support.apple.com/en-us/111897",
+    "source_title": "iPad Pro, 11-inch (3rd generation) - Technical Specifications",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPad Pro 11 hüvelykes (3. generáció)"
+      },
+      {
+        "label": "Színek",
+        "value": "Space Gray, Silver"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "128 GB, 256 GB, 512 GB, 1 TB, 2 TB"
+      },
+      {
+        "label": "Kapcsolat",
+        "value": "Wi‑Fi modell vagy Wi‑Fi + Cellular modell"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M1 chip, 8 magos CPU, 8 magos GPU, 16 magos Neural Engine"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "iPadOS 14 (megjelenéskori rendszer)"
+      },
+      {
+        "label": "Kijelző",
+        "value": "11 hüvelykes Liquid Retina kijelző ProMotion technológiával"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2388 × 1668 pixel, 264 ppi"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "12 MP széles és 10 MP ultraszéles kamera, LiDAR szkenner"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP TrueDepth ultraszéles előlapi kamera, Center Stage támogatás"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6 (802.11ax), Bluetooth 5.0; Cellular modellen 5G támogatás"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 10 óra böngészés Wi‑Fi-n vagy videólejátszás"
+      },
+      {
+        "label": "Csatlakozó",
+        "value": "USB‑C Thunderbolt / USB 4 támogatással"
+      },
+      {
+        "label": "Kompatibilitás",
+        "value": "Apple Pencil (2. generáció), Magic Keyboard, Smart Keyboard Folio"
+      }
+    ]
+  },
+  "ipad_pro_11_inch_2nd_generation": {
+    "source_url": "https://support.apple.com/en-us/118452",
+    "source_title": "iPad Pro 11-inch (2nd generation) - Technical Specifications",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPad Pro 11-inch (2nd generation)"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "128 GB, 256 GB, 512 GB, 1 TB"
+      },
+      {
+        "label": "Kapcsolat",
+        "value": "Wi‑Fi vagy Wi‑Fi + Cellular modell"
+      },
+      {
+        "label": "Chip",
+        "value": "A12Z Bionic"
+      },
+      {
+        "label": "Kijelző",
+        "value": "11 hüvelykes Liquid Retina, ProMotion kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2388 × 1668 pixel"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "12 MP széles látószögű + 10 MP ultraszéles"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "7 MP"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6, Bluetooth 5.0; Cellular modellen LTE"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: akár 10 óra Wi‑Fi-böngészés vagy videó; mobilhálózaton akár 9 óra"
+      },
+      {
+        "label": "Csatlakozó",
+        "value": "USB‑C"
+      },
+      {
+        "label": "Méretek",
+        "value": "247,6 × 178,5 × 5,9 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "Wi‑Fi: 471 g; Wi‑Fi + Cellular: 473 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Face ID, LiDAR"
+      },
+      {
+        "label": "Apple Pencil",
+        "value": "Apple Pencil (2. generáció)"
+      }
+    ]
+  },
+  "ipad_pro_11_m2": {
+    "source_url": "https://support.apple.com/en-us/111842",
+    "source_title": "iPad Pro 11-inch (4th generation) - Technical Specifications",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPad Pro 11 hüvelykes (M2)"
+      },
+      {
+        "label": "Színek",
+        "value": "Space Gray, Silver"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "128 GB, 256 GB, 512 GB, 1 TB, 2 TB"
+      },
+      {
+        "label": "Kapcsolat",
+        "value": "Wi‑Fi modell vagy Wi‑Fi + Cellular modell"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M2 chip, 8 magos CPU, 10 magos GPU, 16 magos Neural Engine"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "iPadOS 16 (megjelenéskori rendszer)"
+      },
+      {
+        "label": "Kijelző",
+        "value": "11 hüvelykes Liquid Retina kijelző ProMotion technológiával"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2388 × 1668 pixel, 264 ppi"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "12 MP széles és 10 MP ultraszéles kamera, LiDAR szkenner"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP TrueDepth ultraszéles előlapi kamera, Center Stage támogatás"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6E (802.11ax), Bluetooth 5.3; Cellular modellen 5G támogatás"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 10 óra böngészés Wi‑Fi-n vagy videólejátszás"
+      },
+      {
+        "label": "Csatlakozó",
+        "value": "USB‑C Thunderbolt / USB 4 támogatással"
+      },
+      {
+        "label": "Kompatibilitás",
+        "value": "Apple Pencil (2. generáció), Apple Pencil hover, Magic Keyboard"
+      }
+    ]
+  },
+  "ipad_pro_11_m4": {
+    "source_url": "https://support.apple.com/en-us/119892",
+    "source_title": "iPad Pro 11‑inch (M4) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPad Pro 11 hüvelykes (M4)"
+      },
+      {
+        "label": "Színek",
+        "value": "Silver, Space Black"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "256 GB, 512 GB, 1 TB, 2 TB"
+      },
+      {
+        "label": "Kapcsolat",
+        "value": "Wi‑Fi modell vagy Wi‑Fi + Cellular modell"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M4 chip"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "iPadOS kompatibilitás"
+      },
+      {
+        "label": "Kijelző",
+        "value": "11 hüvelykes Ultra Retina XDR kijelző Tandem OLED technológiával"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2420 × 1668 pixel, 264 ppi"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "12 MP széles látószögű kamera, LiDAR szkenner"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP fekvő tájolású TrueDepth kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6E (802.11ax), Bluetooth 5.3; Cellular modellen 5G támogatás"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 10 óra böngészés Wi‑Fi-n vagy videólejátszás"
+      },
+      {
+        "label": "Csatlakozó",
+        "value": "USB‑C Thunderbolt / USB 4 támogatással"
+      },
+      {
+        "label": "Kompatibilitás",
+        "value": "Apple Pencil Pro, Apple Pencil (USB‑C), Magic Keyboard"
+      }
+    ]
+  },
+  "ipad_pro_11_m5": {
+    "source_url": "https://support.apple.com/en-us/125406",
+    "source_title": "iPad Pro 11‑inch (M5) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPad Pro 11-inch (M5)"
+      },
+      {
+        "label": "Kijelző",
+        "value": "11 hüvelykes Ultra Retina XDR kijelző, Tandem OLED"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2420 × 1668 pixel, 264 ppi"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M5 chip"
+      },
+      {
+        "label": "Memória",
+        "value": "12 GB vagy 16 GB egyesített memória konfigurációtól függően"
+      },
+      {
+        "label": "Kamera",
+        "value": "12 MP széles látószögű hátlapi kamera"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP Center Stage TrueDepth kamera"
+      },
+      {
+        "label": "Wi‑Fi",
+        "value": "Wi‑Fi 7 (802.11be)"
+      },
+      {
+        "label": "Bluetooth",
+        "value": "Bluetooth 6"
+      },
+      {
+        "label": "Csatlakozó",
+        "value": "Thunderbolt / USB 4"
+      },
+      {
+        "label": "Apple Pencil",
+        "value": "Apple Pencil Pro, Apple Pencil (USB-C)"
+      }
+    ]
+  },
+  "ipad_pro_12_9_5th_generation": {
+    "source_url": "https://support.apple.com/en-us/111896",
+    "source_title": "iPad Pro, 12.9-inch (5th generation) - Technical Specifications",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPad Pro 12,9 hüvelykes (5. generáció)"
+      },
+      {
+        "label": "Színek",
+        "value": "Space Gray, Silver"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "128 GB, 256 GB, 512 GB, 1 TB, 2 TB"
+      },
+      {
+        "label": "Kapcsolat",
+        "value": "Wi‑Fi modell vagy Wi‑Fi + Cellular modell"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M1 chip, 8 magos CPU, 8 magos GPU, 16 magos Neural Engine"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "iPadOS 14 (megjelenéskori rendszer)"
+      },
+      {
+        "label": "Kijelző",
+        "value": "12,9 hüvelykes Liquid Retina XDR kijelző ProMotion technológiával"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2732 × 2048 pixel, 264 ppi"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "12 MP széles és 10 MP ultraszéles kamera, LiDAR szkenner"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP TrueDepth ultraszéles előlapi kamera, Center Stage támogatás"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6 (802.11ax), Bluetooth 5.0; Cellular modellen 5G támogatás"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 10 óra böngészés Wi‑Fi-n vagy videólejátszás"
+      },
+      {
+        "label": "Csatlakozó",
+        "value": "USB‑C Thunderbolt / USB 4 támogatással"
+      },
+      {
+        "label": "Kompatibilitás",
+        "value": "Apple Pencil (2. generáció), Magic Keyboard, Smart Keyboard Folio"
+      }
+    ]
+  },
+  "ipad_pro_12_9_inch_4th_generation": {
+    "source_url": "https://support.apple.com/en-us/111977",
+    "source_title": "iPad Pro 12.9-inch (4th generation) - Technical Specifications",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPad Pro 12.9-inch (4th generation)"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "128 GB, 256 GB, 512 GB, 1 TB"
+      },
+      {
+        "label": "Kapcsolat",
+        "value": "Wi‑Fi vagy Wi‑Fi + Cellular modell"
+      },
+      {
+        "label": "Chip",
+        "value": "A12Z Bionic"
+      },
+      {
+        "label": "Kijelző",
+        "value": "12,9 hüvelykes Liquid Retina, ProMotion kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2732 × 2048 pixel"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "12 MP széles látószögű + 10 MP ultraszéles"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "7 MP"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6, Bluetooth 5.0; Cellular modellen LTE"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: akár 10 óra Wi‑Fi-böngészés vagy videó; mobilhálózaton akár 9 óra"
+      },
+      {
+        "label": "Csatlakozó",
+        "value": "USB‑C"
+      },
+      {
+        "label": "Méretek",
+        "value": "280,6 × 214,9 × 5,9 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "Wi‑Fi: 641 g; Wi‑Fi + Cellular: 643 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Face ID, LiDAR"
+      },
+      {
+        "label": "Apple Pencil",
+        "value": "Apple Pencil (2. generáció)"
+      }
+    ]
+  },
+  "ipad_pro_12_9_m2": {
+    "source_url": "https://support.apple.com/en-us/111841",
+    "source_title": "iPad Pro 12.9-inch (6th generation) - Technical Specifications",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPad Pro 12,9 hüvelykes (M2)"
+      },
+      {
+        "label": "Színek",
+        "value": "Space Gray, Silver"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "128 GB, 256 GB, 512 GB, 1 TB, 2 TB"
+      },
+      {
+        "label": "Kapcsolat",
+        "value": "Wi‑Fi modell vagy Wi‑Fi + Cellular modell"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M2 chip, 8 magos CPU, 10 magos GPU, 16 magos Neural Engine"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "iPadOS 16 (megjelenéskori rendszer)"
+      },
+      {
+        "label": "Kijelző",
+        "value": "12,9 hüvelykes Liquid Retina XDR kijelző ProMotion technológiával"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2732 × 2048 pixel, 264 ppi"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "12 MP széles és 10 MP ultraszéles kamera, LiDAR szkenner"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP TrueDepth ultraszéles előlapi kamera, Center Stage támogatás"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6E (802.11ax), Bluetooth 5.3; Cellular modellen 5G támogatás"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 10 óra böngészés Wi‑Fi-n vagy videólejátszás"
+      },
+      {
+        "label": "Csatlakozó",
+        "value": "USB‑C Thunderbolt / USB 4 támogatással"
+      },
+      {
+        "label": "Kompatibilitás",
+        "value": "Apple Pencil (2. generáció), Apple Pencil hover, Magic Keyboard"
+      }
+    ]
+  },
+  "ipad_pro_13_m4": {
+    "source_url": "https://support.apple.com/en-us/119891",
+    "source_title": "iPad Pro 13‑inch (M4) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPad Pro 13 hüvelykes (M4)"
+      },
+      {
+        "label": "Színek",
+        "value": "Silver, Space Black"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "256 GB, 512 GB, 1 TB, 2 TB"
+      },
+      {
+        "label": "Kapcsolat",
+        "value": "Wi‑Fi modell vagy Wi‑Fi + Cellular modell"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M4 chip"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "iPadOS kompatibilitás"
+      },
+      {
+        "label": "Kijelző",
+        "value": "13 hüvelykes Ultra Retina XDR kijelző Tandem OLED technológiával"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2752 × 2064 pixel, 264 ppi"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "12 MP széles látószögű kamera, LiDAR szkenner"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP fekvő tájolású TrueDepth kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6E (802.11ax), Bluetooth 5.3; Cellular modellen 5G támogatás"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 10 óra böngészés Wi‑Fi-n vagy videólejátszás"
+      },
+      {
+        "label": "Csatlakozó",
+        "value": "USB‑C Thunderbolt / USB 4 támogatással"
+      },
+      {
+        "label": "Kompatibilitás",
+        "value": "Apple Pencil Pro, Apple Pencil (USB‑C), Magic Keyboard"
+      }
+    ]
+  },
+  "ipad_pro_13_m5": {
+    "source_url": "https://support.apple.com/en-us/125407",
+    "source_title": "iPad Pro 13‑inch (M5) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPad Pro 13-inch (M5)"
+      },
+      {
+        "label": "Kijelző",
+        "value": "13 hüvelykes Ultra Retina XDR kijelző, Tandem OLED"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2752 × 2064 pixel, 264 ppi"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M5 chip"
+      },
+      {
+        "label": "Memória",
+        "value": "12 GB vagy 16 GB egyesített memória konfigurációtól függően"
+      },
+      {
+        "label": "Kamera",
+        "value": "12 MP széles látószögű hátlapi kamera"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP Center Stage TrueDepth kamera"
+      },
+      {
+        "label": "Wi‑Fi",
+        "value": "Wi‑Fi 7 (802.11be)"
+      },
+      {
+        "label": "Bluetooth",
+        "value": "Bluetooth 6"
+      },
+      {
+        "label": "Csatlakozó",
+        "value": "Thunderbolt / USB 4"
+      },
+      {
+        "label": "Apple Pencil",
+        "value": "Apple Pencil Pro, Apple Pencil (USB-C)"
+      }
+    ]
+  },
+  "iphone_11": {
+    "source_url": "https://support.apple.com/en-gb/111865",
+    "source_title": "iPhone 11 - Technical Specifications",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPhone 11"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "64 GB, 128 GB, 256 GB"
+      },
+      {
+        "label": "Színek",
+        "value": "Black, Green, Yellow, Purple, (PRODUCT)RED, White"
+      },
+      {
+        "label": "Kijelző",
+        "value": "6,1 hüvelykes Liquid Retina HD LCD"
+      },
+      {
+        "label": "Felbontás",
+        "value": "1792 × 828 pixel"
+      },
+      {
+        "label": "Chip",
+        "value": "A13 Bionic, 6 magos CPU, 4 magos GPU"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "12 MP széles látószögű + 12 MP ultraszéles"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "LTE, Wi‑Fi 6, Bluetooth 5.0"
+      },
+      {
+        "label": "SIM",
+        "value": "Nano-SIM és eSIM; a regionális kivitel és a szolgáltató függvényében"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: videólejátszás akár 17 óra"
+      },
+      {
+        "label": "Töltés / csatlakozó",
+        "value": "Lightning; Qi vezeték nélküli töltés"
+      },
+      {
+        "label": "Méretek",
+        "value": "150,9 × 75,7 × 8,3 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "194 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Face ID"
+      }
+    ]
+  },
+  "iphone_11_pro": {
+    "source_url": "https://support.apple.com/en-gb/111879",
+    "source_title": "iPhone 11 Pro - Technical Specifications",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPhone 11 Pro"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "64 GB, 256 GB, 512 GB"
+      },
+      {
+        "label": "Színek",
+        "value": "Gold, Space Gray, Silver, Midnight Green"
+      },
+      {
+        "label": "Kijelző",
+        "value": "5,8 hüvelykes Super Retina XDR OLED"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2436 × 1125 pixel"
+      },
+      {
+        "label": "Chip",
+        "value": "A13 Bionic"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "12 MP széles látószögű + 12 MP ultraszéles + 12 MP telefotó"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "LTE, Wi‑Fi 6, Bluetooth 5.0"
+      },
+      {
+        "label": "SIM",
+        "value": "Nano-SIM és eSIM; a regionális kivitel és a szolgáltató függvényében"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: videólejátszás akár 18 óra"
+      },
+      {
+        "label": "Töltés / csatlakozó",
+        "value": "Lightning; Qi vezeték nélküli töltés"
+      },
+      {
+        "label": "Méretek",
+        "value": "144,0 × 71,4 × 8,1 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "188 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Face ID"
+      }
+    ]
+  },
+  "iphone_11_pro_max": {
+    "source_url": "https://support.apple.com/en-gb/111878",
+    "source_title": "iPhone 11 Pro Max - Technical Specifications",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPhone 11 Pro Max"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "64 GB, 256 GB, 512 GB"
+      },
+      {
+        "label": "Színek",
+        "value": "Gold, Space Gray, Silver, Midnight Green"
+      },
+      {
+        "label": "Kijelző",
+        "value": "6,5 hüvelykes Super Retina XDR OLED"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2688 × 1242 pixel"
+      },
+      {
+        "label": "Chip",
+        "value": "A13 Bionic"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "12 MP széles látószögű + 12 MP ultraszéles + 12 MP telefotó"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "LTE, Wi‑Fi 6, Bluetooth 5.0"
+      },
+      {
+        "label": "SIM",
+        "value": "Nano-SIM és eSIM; a regionális kivitel és a szolgáltató függvényében"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: videólejátszás akár 20 óra"
+      },
+      {
+        "label": "Töltés / csatlakozó",
+        "value": "Lightning; Qi vezeték nélküli töltés"
+      },
+      {
+        "label": "Méretek",
+        "value": "158,0 × 77,8 × 8,1 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "226 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Face ID"
+      }
+    ]
+  },
+  "iphone_12": {
+    "source_url": "https://support.apple.com/en-gb/111876",
+    "source_title": "iPhone 12 - Technical Specifications",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPhone 12"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "64 GB, 128 GB, 256 GB"
+      },
+      {
+        "label": "Színek",
+        "value": "Black, White, (PRODUCT)RED, Green, Blue, Purple"
+      },
+      {
+        "label": "Kijelző",
+        "value": "6,1 hüvelykes Super Retina XDR OLED"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2532 × 1170 pixel"
+      },
+      {
+        "label": "Chip",
+        "value": "A14 Bionic, 6 magos CPU, 4 magos GPU"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "12 MP széles látószögű + 12 MP ultraszéles"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "5G, Wi‑Fi 6, Bluetooth 5.0"
+      },
+      {
+        "label": "SIM",
+        "value": "Nano-SIM és eSIM; a regionális kivitel és a szolgáltató függvényében"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: videólejátszás akár 17 óra"
+      },
+      {
+        "label": "Töltés / csatlakozó",
+        "value": "Lightning; MagSafe"
+      },
+      {
+        "label": "Méretek",
+        "value": "146,7 × 71,5 × 7,4 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "162 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Face ID"
+      }
+    ]
+  },
+  "iphone_12_mini": {
+    "source_url": "https://support.apple.com/en-gb/111877",
+    "source_title": "iPhone 12 mini - Technical Specifications",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPhone 12 mini"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "64 GB, 128 GB, 256 GB"
+      },
+      {
+        "label": "Színek",
+        "value": "Black, White, (PRODUCT)RED, Green, Blue, Purple"
+      },
+      {
+        "label": "Kijelző",
+        "value": "5,4 hüvelykes Super Retina XDR OLED"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2340 × 1080 pixel"
+      },
+      {
+        "label": "Chip",
+        "value": "A14 Bionic, 6 magos CPU, 4 magos GPU"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "12 MP széles látószögű + 12 MP ultraszéles"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "5G, Wi‑Fi 6, Bluetooth 5.0"
+      },
+      {
+        "label": "SIM",
+        "value": "Nano-SIM és eSIM; a regionális kivitel és a szolgáltató függvényében"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: videólejátszás akár 15 óra"
+      },
+      {
+        "label": "Töltés / csatlakozó",
+        "value": "Lightning; MagSafe"
+      },
+      {
+        "label": "Méretek",
+        "value": "131,5 × 64,2 × 7,4 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "135 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Face ID"
+      }
+    ]
+  },
+  "iphone_12_pro": {
+    "source_url": "https://support.apple.com/en-us/111875",
+    "source_title": "iPhone 12 Pro - Technical Specifications - Apple Support",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPhone 12 Pro"
+      },
+      {
+        "label": "Színek",
+        "value": "Silver, Graphite, Gold, Pacific Blue"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "128 GB, 256 GB, 512 GB"
+      },
+      {
+        "label": "Kijelző",
+        "value": "6,1 hüvelykes Super Retina XDR OLED kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2532 × 1170 pixel, 460 ppi"
+      },
+      {
+        "label": "Chip",
+        "value": "A14 Bionic chip, Neural Engine"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "Három 12 MP kamera: ultraszéles, széles látószögű és telefotó; 2× optikai közelítés"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP TrueDepth kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "5G, Gigabit LTE, Wi‑Fi 6 (802.11ax), Bluetooth 5.0, NFC, ultraszélessávú chip"
+      },
+      {
+        "label": "SIM",
+        "value": "Nano-SIM és eSIM; a támogatás régiótól és szolgáltatótól függ"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: videólejátszás akár 17 óra; beépített lítiumion akkumulátor"
+      },
+      {
+        "label": "Töltés / csatlakozó",
+        "value": "Lightning; MagSafe akár 15 W; Qi akár 7,5 W"
+      },
+      {
+        "label": "Méretek",
+        "value": "146,7 × 71,5 × 7,4 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "189 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Face ID, LiDAR, barométer, giroszkóp, gyorsulásmérő, közelség- és fényérzékelő"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "iOS 14 (megjelenéskori rendszer)"
+      },
+      {
+        "label": "Kompatibilitás",
+        "value": "Lightning-csatlakozás, MagSafe és Qi töltés; régiófüggő nano-SIM/eSIM támogatás"
+      }
+    ]
+  },
+  "iphone_12_pro_max": {
+    "source_url": "https://support.apple.com/en-gb/111874",
+    "source_title": "iPhone 12 Pro Max - Technical Specifications",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPhone 12 Pro Max"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "128 GB, 256 GB, 512 GB"
+      },
+      {
+        "label": "Színek",
+        "value": "Silver, Graphite, Gold, Pacific Blue"
+      },
+      {
+        "label": "Kijelző",
+        "value": "6,7 hüvelykes Super Retina XDR OLED"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2778 × 1284 pixel"
+      },
+      {
+        "label": "Chip",
+        "value": "A14 Bionic"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "12 MP széles látószögű + 12 MP ultraszéles + 12 MP telefotó"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "5G, Wi‑Fi 6, Bluetooth 5.0"
+      },
+      {
+        "label": "SIM",
+        "value": "Nano-SIM és eSIM; a regionális kivitel és a szolgáltató függvényében"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: videólejátszás akár 20 óra"
+      },
+      {
+        "label": "Töltés / csatlakozó",
+        "value": "Lightning; MagSafe"
+      },
+      {
+        "label": "Méretek",
+        "value": "160,8 × 78,1 × 7,4 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "228 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Face ID; LiDAR"
+      }
+    ]
+  },
+  "iphone_13": {
+    "source_url": "https://support.apple.com/en-gb/111872",
+    "source_title": "iPhone 13 - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPhone 13"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "128 GB, 256 GB, 512 GB"
+      },
+      {
+        "label": "Színek",
+        "value": "(PRODUCT)RED, Starlight, Midnight, Blue, Pink, Green"
+      },
+      {
+        "label": "Kijelző",
+        "value": "6,1 hüvelykes Super Retina XDR OLED"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2532 × 1170 pixel"
+      },
+      {
+        "label": "Chip",
+        "value": "A15 Bionic, 6 magos CPU, 4 magos GPU"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "12 MP széles látószögű + 12 MP ultraszéles"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "5G, Wi‑Fi 6, Bluetooth 5.0"
+      },
+      {
+        "label": "SIM",
+        "value": "Nano-SIM és eSIM; a regionális kivitel és a szolgáltató függvényében"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: videólejátszás akár 19 óra"
+      },
+      {
+        "label": "Töltés / csatlakozó",
+        "value": "Lightning; MagSafe"
+      },
+      {
+        "label": "Méretek",
+        "value": "146,7 × 71,5 × 7,65 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "173 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Face ID"
+      }
+    ]
+  },
+  "iphone_13_mini": {
+    "source_url": "https://support.apple.com/en-gb/111873",
+    "source_title": "iPhone 13 mini - Technical Specifications",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPhone 13 mini"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "128 GB, 256 GB, 512 GB"
+      },
+      {
+        "label": "Színek",
+        "value": "(PRODUCT)RED, Starlight, Midnight, Blue, Pink, Green"
+      },
+      {
+        "label": "Kijelző",
+        "value": "5,4 hüvelykes Super Retina XDR OLED"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2340 × 1080 pixel"
+      },
+      {
+        "label": "Chip",
+        "value": "A15 Bionic, 6 magos CPU, 4 magos GPU"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "12 MP széles látószögű + 12 MP ultraszéles"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "5G, Wi‑Fi 6, Bluetooth 5.0"
+      },
+      {
+        "label": "SIM",
+        "value": "Nano-SIM és eSIM; a regionális kivitel és a szolgáltató függvényében"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: videólejátszás akár 17 óra"
+      },
+      {
+        "label": "Töltés / csatlakozó",
+        "value": "Lightning; MagSafe"
+      },
+      {
+        "label": "Méretek",
+        "value": "131,5 × 64,2 × 7,65 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "140 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Face ID"
+      }
+    ]
+  },
+  "iphone_13_pro": {
+    "source_url": "https://support.apple.com/en-us/111871",
+    "source_title": "iPhone 13 Pro - Technical Specifications - Apple Support",
+    "fetched_at": "2026-06-23",
+    "match_status": "manual_verified_from_test_product_meta",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPhone 13 Pro"
+      },
+      {
+        "label": "Színek",
+        "value": "Graphite, Gold, Silver, Sierra Blue, Alpine Green"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "128GB, 256GB, 512GB, 1TB"
+      },
+      {
+        "label": "Chip",
+        "value": "A15 Bionic chip, 6 magos CPU, 5 magos GPU, 16 magos Neural Engine"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "iOS 15 (megjelenéskori rendszer)"
+      },
+      {
+        "label": "Kijelző",
+        "value": "6,1 hüvelykes Super Retina XDR OLED kijelző ProMotion technológiával"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2532 × 1170 pixel, 460 ppi"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "5G, Gigabit LTE, Wi‑Fi 6 (802.11ax), Bluetooth 5.0, NFC"
+      },
+      {
+        "label": "SIM",
+        "value": "Dual SIM: nano‑SIM és eSIM; Dual eSIM támogatás"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "Pro 12 MP kamerarendszer: telefotó, széles látószögű és ultraszéles kamerák"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP TrueDepth kamera"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Videólejátszás akár 22 óra; beépített újratölthető lítiumion akkumulátor"
+      },
+      {
+        "label": "Töltés / csatlakozó",
+        "value": "Lightning, MagSafe vezeték nélküli töltés akár 15 W, Qi akár 7,5 W"
+      },
+      {
+        "label": "Méretek",
+        "value": "146,7 × 71,5 × 7,65 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "204 g"
+      },
+      {
+        "label": "Vízállóság",
+        "value": "IP68, legfeljebb 6 méter mélység 30 percig"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Face ID, LiDAR Scanner, barométer, háromtengelyű giroszkóp, gyorsulásmérő, közelségérzékelő, környezeti fényérzékelő"
+      }
+    ]
+  },
+  "iphone_13_pro_max": {
+    "source_url": "https://support.apple.com/en-gb/111870",
+    "source_title": "iPhone 13 Pro Max - Technical Specifications",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPhone 13 Pro Max"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "128 GB, 256 GB, 512 GB, 1 TB"
+      },
+      {
+        "label": "Színek",
+        "value": "Graphite, Gold, Silver, Sierra Blue, Alpine Green"
+      },
+      {
+        "label": "Kijelző",
+        "value": "6,7 hüvelykes Super Retina XDR OLED; ProMotion, akár 120 Hz"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2778 × 1284 pixel"
+      },
+      {
+        "label": "Chip",
+        "value": "A15 Bionic, 6 magos CPU, 5 magos GPU"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "12 MP széles látószögű + 12 MP ultraszéles + 12 MP telefotó"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "5G, Wi‑Fi 6, Bluetooth 5.0"
+      },
+      {
+        "label": "SIM",
+        "value": "Nano-SIM és eSIM; a regionális kivitel és a szolgáltató függvényében"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: videólejátszás akár 28 óra"
+      },
+      {
+        "label": "Töltés / csatlakozó",
+        "value": "Lightning; MagSafe"
+      },
+      {
+        "label": "Méretek",
+        "value": "160,8 × 78,1 × 7,65 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "240 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Face ID; LiDAR"
+      }
+    ]
+  },
+  "iphone_14": {
+    "source_url": "https://support.apple.com/en-gb/111850",
+    "source_title": "iPhone 14 - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPhone 14"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "128 GB, 256 GB, 512 GB"
+      },
+      {
+        "label": "Színek",
+        "value": "Midnight, Purple, Starlight, (PRODUCT)RED, Blue, Yellow"
+      },
+      {
+        "label": "Kijelző",
+        "value": "6,1 hüvelykes Super Retina XDR OLED"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2532 × 1170 pixel"
+      },
+      {
+        "label": "Chip",
+        "value": "A15 Bionic, 6 magos CPU, 5 magos GPU"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "12 MP széles látószögű + 12 MP ultraszéles"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "5G, Wi‑Fi 6, Bluetooth 5.3"
+      },
+      {
+        "label": "SIM",
+        "value": "Nano-SIM és eSIM; a regionális kivitel és a szolgáltató függvényében"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: videólejátszás akár 20 óra"
+      },
+      {
+        "label": "Töltés / csatlakozó",
+        "value": "Lightning; MagSafe"
+      },
+      {
+        "label": "Méretek",
+        "value": "146,7 × 71,5 × 7,80 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "172 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Face ID"
+      }
+    ]
+  },
+  "iphone_14_plus": {
+    "source_url": "https://support.apple.com/en-gb/111854",
+    "source_title": "iPhone 14 Plus - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPhone 14 Plus"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "128 GB, 256 GB, 512 GB"
+      },
+      {
+        "label": "Színek",
+        "value": "Midnight, Purple, Starlight, (PRODUCT)RED, Blue, Yellow"
+      },
+      {
+        "label": "Kijelző",
+        "value": "6,7 hüvelykes Super Retina XDR OLED"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2778 × 1284 pixel"
+      },
+      {
+        "label": "Chip",
+        "value": "A15 Bionic, 6 magos CPU, 5 magos GPU"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "12 MP széles látószögű + 12 MP ultraszéles"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "5G, Wi‑Fi 6, Bluetooth 5.3"
+      },
+      {
+        "label": "SIM",
+        "value": "Nano-SIM és eSIM; a regionális kivitel és a szolgáltató függvényében"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: videólejátszás akár 26 óra"
+      },
+      {
+        "label": "Töltés / csatlakozó",
+        "value": "Lightning; MagSafe"
+      },
+      {
+        "label": "Méretek",
+        "value": "160,8 × 78,1 × 7,80 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "203 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Face ID"
+      }
+    ]
+  },
+  "iphone_14_pro": {
+    "source_url": "https://support.apple.com/en-gb/111849",
+    "source_title": "iPhone 14 Pro - Technical Specifications",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPhone 14 Pro"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "128 GB, 256 GB, 512 GB, 1 TB"
+      },
+      {
+        "label": "Színek",
+        "value": "Space Black, Silver, Gold, Deep Purple"
+      },
+      {
+        "label": "Kijelző",
+        "value": "6,1 hüvelykes Super Retina XDR OLED; ProMotion, akár 120 Hz"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2556 × 1179 pixel"
+      },
+      {
+        "label": "Chip",
+        "value": "A16 Bionic, 6 magos CPU, 5 magos GPU"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "48 MP fő + 12 MP ultraszéles + 12 MP telefotó"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "5G, Wi‑Fi 6, Bluetooth 5.3"
+      },
+      {
+        "label": "SIM",
+        "value": "Nano-SIM és eSIM; a regionális kivitel és a szolgáltató függvényében"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: videólejátszás akár 23 óra"
+      },
+      {
+        "label": "Töltés / csatlakozó",
+        "value": "Lightning; MagSafe"
+      },
+      {
+        "label": "Méretek",
+        "value": "147,5 × 71,5 × 7,85 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "206 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Face ID; LiDAR"
+      }
+    ]
+  },
+  "iphone_14_pro_max": {
+    "source_url": "https://support.apple.com/en-gb/111846",
+    "source_title": "iPhone 14 Pro Max - Technical Specifications",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPhone 14 Pro Max"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "128 GB, 256 GB, 512 GB, 1 TB"
+      },
+      {
+        "label": "Színek",
+        "value": "Space Black, Silver, Gold, Deep Purple"
+      },
+      {
+        "label": "Kijelző",
+        "value": "6,7 hüvelykes Super Retina XDR OLED; ProMotion, akár 120 Hz"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2796 × 1290 pixel"
+      },
+      {
+        "label": "Chip",
+        "value": "A16 Bionic, 6 magos CPU, 5 magos GPU"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "48 MP fő + 12 MP ultraszéles + 12 MP telefotó"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "5G, Wi‑Fi 6, Bluetooth 5.3"
+      },
+      {
+        "label": "SIM",
+        "value": "Nano-SIM és eSIM; a regionális kivitel és a szolgáltató függvényében"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: videólejátszás akár 29 óra"
+      },
+      {
+        "label": "Töltés / csatlakozó",
+        "value": "Lightning; MagSafe"
+      },
+      {
+        "label": "Méretek",
+        "value": "160,7 × 77,6 × 7,85 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "240 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Face ID; LiDAR"
+      }
+    ]
+  },
+  "iphone_15": {
+    "source_url": "https://support.apple.com/en-gb/111831",
+    "source_title": "iPhone 15 - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPhone 15"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "128 GB, 256 GB, 512 GB"
+      },
+      {
+        "label": "Színek",
+        "value": "Black, Blue, Green, Yellow, Pink"
+      },
+      {
+        "label": "Kijelző",
+        "value": "6,1 hüvelykes Super Retina XDR OLED"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2556 × 1179 pixel"
+      },
+      {
+        "label": "Chip",
+        "value": "A16 Bionic, 6 magos CPU, 5 magos GPU"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "48 MP fő + 12 MP ultraszéles"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "5G, Wi‑Fi 6, Bluetooth 5.3"
+      },
+      {
+        "label": "SIM",
+        "value": "Nano-SIM és eSIM; a regionális kivitel és a szolgáltató függvényében"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: videólejátszás akár 20 óra"
+      },
+      {
+        "label": "Töltés / csatlakozó",
+        "value": "USB‑C; MagSafe"
+      },
+      {
+        "label": "Méretek",
+        "value": "147,6 × 71,6 × 7,80 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "171 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Face ID"
+      }
+    ]
+  },
+  "iphone_15_plus": {
+    "source_url": "https://support.apple.com/en-gb/111830",
+    "source_title": "iPhone 15 Plus - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPhone 15 Plus"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "128 GB, 256 GB, 512 GB"
+      },
+      {
+        "label": "Színek",
+        "value": "Black, Blue, Green, Yellow, Pink"
+      },
+      {
+        "label": "Kijelző",
+        "value": "6,7 hüvelykes Super Retina XDR OLED"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2796 × 1290 pixel"
+      },
+      {
+        "label": "Chip",
+        "value": "A16 Bionic, 6 magos CPU, 5 magos GPU"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "48 MP fő + 12 MP ultraszéles"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "5G, Wi‑Fi 6, Bluetooth 5.3"
+      },
+      {
+        "label": "SIM",
+        "value": "Nano-SIM és eSIM; a regionális kivitel és a szolgáltató függvényében"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: videólejátszás akár 26 óra"
+      },
+      {
+        "label": "Töltés / csatlakozó",
+        "value": "USB‑C; MagSafe"
+      },
+      {
+        "label": "Méretek",
+        "value": "160,9 × 77,8 × 7,80 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "201 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Face ID"
+      }
+    ]
+  },
+  "iphone_15_pro": {
+    "source_url": "https://support.apple.com/en-gb/111829",
+    "source_title": "iPhone 15 Pro - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPhone 15 Pro"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "128 GB, 256 GB, 512 GB, 1 TB"
+      },
+      {
+        "label": "Színek",
+        "value": "Black Titanium, White Titanium, Blue Titanium, Natural Titanium"
+      },
+      {
+        "label": "Kijelző",
+        "value": "6,1 hüvelykes Super Retina XDR OLED; ProMotion, akár 120 Hz"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2556 × 1179 pixel"
+      },
+      {
+        "label": "Chip",
+        "value": "A17 Pro, 6 magos CPU, 6 magos GPU"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "48 MP fő + 12 MP ultraszéles + 12 MP telefotó"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "5G, Wi‑Fi 6E, Bluetooth 5.3"
+      },
+      {
+        "label": "SIM",
+        "value": "Nano-SIM és eSIM; a regionális kivitel és a szolgáltató függvényében"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: videólejátszás akár 23 óra"
+      },
+      {
+        "label": "Töltés / csatlakozó",
+        "value": "USB‑C; MagSafe"
+      },
+      {
+        "label": "Méretek",
+        "value": "146,6 × 70,6 × 8,25 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "187 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Face ID; LiDAR"
+      }
+    ]
+  },
+  "iphone_15_pro_max": {
+    "source_url": "https://support.apple.com/en-gb/111828",
+    "source_title": "iPhone 15 Pro Max - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPhone 15 Pro Max"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "256 GB, 512 GB, 1 TB"
+      },
+      {
+        "label": "Színek",
+        "value": "Black Titanium, White Titanium, Blue Titanium, Natural Titanium"
+      },
+      {
+        "label": "Kijelző",
+        "value": "6,7 hüvelykes Super Retina XDR OLED; ProMotion, akár 120 Hz"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2796 × 1290 pixel"
+      },
+      {
+        "label": "Chip",
+        "value": "A17 Pro, 6 magos CPU, 6 magos GPU"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "48 MP fő + 12 MP ultraszéles + 12 MP telefotó"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "5G, Wi‑Fi 6E, Bluetooth 5.3"
+      },
+      {
+        "label": "SIM",
+        "value": "Nano-SIM és eSIM; a regionális kivitel és a szolgáltató függvényében"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: videólejátszás akár 29 óra"
+      },
+      {
+        "label": "Töltés / csatlakozó",
+        "value": "USB‑C; MagSafe"
+      },
+      {
+        "label": "Méretek",
+        "value": "159,9 × 76,7 × 8,25 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "221 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Face ID; LiDAR"
+      }
+    ]
+  },
+  "iphone_16": {
+    "source_url": "https://support.apple.com/en-gb/121029",
+    "source_title": "iPhone 16 - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPhone 16"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "128 GB, 256 GB, 512 GB"
+      },
+      {
+        "label": "Színek",
+        "value": "Black, White, Pink, Teal, Ultramarine"
+      },
+      {
+        "label": "Kijelző",
+        "value": "6,1 hüvelykes Super Retina XDR OLED"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2556 × 1179 pixel"
+      },
+      {
+        "label": "Chip",
+        "value": "A18, 6 magos CPU, 5 magos GPU"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "48 MP fő + 12 MP ultraszéles"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "5G, Wi‑Fi 7, Bluetooth 5.3"
+      },
+      {
+        "label": "SIM",
+        "value": "Nano-SIM és eSIM; a regionális kivitel és a szolgáltató függvényében"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: videólejátszás akár 22 óra"
+      },
+      {
+        "label": "Töltés / csatlakozó",
+        "value": "USB‑C; MagSafe"
+      },
+      {
+        "label": "Méretek",
+        "value": "147,6 × 71,6 × 7,80 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "170 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Face ID"
+      }
+    ]
+  },
+  "iphone_16_plus": {
+    "source_url": "https://support.apple.com/en-gb/121030",
+    "source_title": "iPhone 16 Plus - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPhone 16 Plus"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "128 GB, 256 GB, 512 GB"
+      },
+      {
+        "label": "Színek",
+        "value": "Black, White, Pink, Teal, Ultramarine"
+      },
+      {
+        "label": "Kijelző",
+        "value": "6,7 hüvelykes Super Retina XDR OLED"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2796 × 1290 pixel"
+      },
+      {
+        "label": "Chip",
+        "value": "A18, 6 magos CPU, 5 magos GPU"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "48 MP fő + 12 MP ultraszéles"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "5G, Wi‑Fi 7, Bluetooth 5.3"
+      },
+      {
+        "label": "SIM",
+        "value": "Nano-SIM és eSIM; a regionális kivitel és a szolgáltató függvényében"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: videólejátszás akár 27 óra"
+      },
+      {
+        "label": "Töltés / csatlakozó",
+        "value": "USB‑C; MagSafe"
+      },
+      {
+        "label": "Méretek",
+        "value": "160,9 × 77,8 × 7,80 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "199 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Face ID"
+      }
+    ]
+  },
+  "iphone_16_pro": {
+    "source_url": "https://support.apple.com/en-gb/121031",
+    "source_title": "iPhone 16 Pro - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPhone 16 Pro"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "128 GB, 256 GB, 512 GB, 1 TB"
+      },
+      {
+        "label": "Színek",
+        "value": "Black Titanium, White Titanium, Natural Titanium, Desert Titanium"
+      },
+      {
+        "label": "Kijelző",
+        "value": "6,3 hüvelykes Super Retina XDR OLED; ProMotion, akár 120 Hz"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2622 × 1206 pixel"
+      },
+      {
+        "label": "Chip",
+        "value": "A18 Pro, 6 magos CPU, 6 magos GPU"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "48 MP Fusion + 48 MP ultraszéles + 12 MP 5× telefotó"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "5G, Wi‑Fi 7, Bluetooth 5.3"
+      },
+      {
+        "label": "SIM",
+        "value": "Nano-SIM és eSIM; a regionális kivitel és a szolgáltató függvényében"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: videólejátszás akár 27 óra"
+      },
+      {
+        "label": "Töltés / csatlakozó",
+        "value": "USB‑C; MagSafe"
+      },
+      {
+        "label": "Méretek",
+        "value": "149,6 × 71,5 × 8,25 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "199 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Face ID; LiDAR"
+      }
+    ]
+  },
+  "iphone_16_pro_max": {
+    "source_url": "https://support.apple.com/en-gb/121032",
+    "source_title": "iPhone 16 Pro Max - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPhone 16 Pro Max"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "256 GB, 512 GB, 1 TB"
+      },
+      {
+        "label": "Színek",
+        "value": "Black Titanium, White Titanium, Natural Titanium, Desert Titanium"
+      },
+      {
+        "label": "Kijelző",
+        "value": "6,9 hüvelykes Super Retina XDR OLED; ProMotion, akár 120 Hz"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2868 × 1320 pixel"
+      },
+      {
+        "label": "Chip",
+        "value": "A18 Pro, 6 magos CPU, 6 magos GPU"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "48 MP Fusion + 48 MP ultraszéles + 12 MP 5× telefotó"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "5G, Wi‑Fi 7, Bluetooth 5.3"
+      },
+      {
+        "label": "SIM",
+        "value": "Nano-SIM és eSIM; a regionális kivitel és a szolgáltató függvényében"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: videólejátszás akár 33 óra"
+      },
+      {
+        "label": "Töltés / csatlakozó",
+        "value": "USB‑C; MagSafe"
+      },
+      {
+        "label": "Méretek",
+        "value": "163 × 77,6 × 8,25 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "227 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Face ID; LiDAR"
+      }
+    ]
+  },
+  "iphone_16e": {
+    "source_url": "https://support.apple.com/en-gb/122208",
+    "source_title": "iPhone 16e - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPhone 16e"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "128 GB, 256 GB, 512 GB"
+      },
+      {
+        "label": "Színek",
+        "value": "Black, White"
+      },
+      {
+        "label": "Kijelző",
+        "value": "6,1 hüvelykes Super Retina XDR OLED"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2532 × 1170 pixel"
+      },
+      {
+        "label": "Chip",
+        "value": "A18, 6 magos CPU, 4 magos GPU"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "48 MP Fusion fő kamera"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "5G, Wi‑Fi 6, Bluetooth 5.3"
+      },
+      {
+        "label": "SIM",
+        "value": "Nano-SIM és eSIM; a regionális kivitel és a szolgáltató függvényében"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: videólejátszás akár 26 óra"
+      },
+      {
+        "label": "Töltés / csatlakozó",
+        "value": "USB‑C; Qi vezeték nélküli töltés"
+      },
+      {
+        "label": "Méretek",
+        "value": "146,7 × 71,5 × 7,80 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "167 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Face ID"
+      }
+    ]
+  },
+  "iphone_17": {
+    "source_url": "https://support.apple.com/en-gb/125089",
+    "source_title": "iPhone 17 - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPhone 17"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "256 GB, 512 GB"
+      },
+      {
+        "label": "Színek",
+        "value": "Black, White, Mist Blue, Sage, Lavender"
+      },
+      {
+        "label": "Kijelző",
+        "value": "6,3 hüvelykes Super Retina XDR OLED; ProMotion, akár 120 Hz"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2622 × 1206 pixel"
+      },
+      {
+        "label": "Chip",
+        "value": "A19, 6 magos CPU, 5 magos GPU"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "48 MP Fusion fő + 48 MP Fusion ultraszéles"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "18 MP Center Stage kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "5G, Wi‑Fi 7, Bluetooth 6"
+      },
+      {
+        "label": "SIM",
+        "value": "Nano-SIM és eSIM; a regionális kivitel és a szolgáltató függvényében"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: videólejátszás akár 30 óra"
+      },
+      {
+        "label": "Töltés / csatlakozó",
+        "value": "USB‑C; MagSafe"
+      },
+      {
+        "label": "Méretek",
+        "value": "149,6 × 71,5 × 7,95 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "177 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Face ID"
+      }
+    ]
+  },
+  "iphone_17_pro": {
+    "source_url": "https://support.apple.com/en-gb/125090",
+    "source_title": "iPhone 17 Pro - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPhone 17 Pro"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "256 GB, 512 GB, 1 TB"
+      },
+      {
+        "label": "Színek",
+        "value": "Silver, Cosmic Orange, Deep Blue"
+      },
+      {
+        "label": "Kijelző",
+        "value": "6,3 hüvelykes Super Retina XDR OLED; ProMotion, akár 120 Hz"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2622 × 1206 pixel"
+      },
+      {
+        "label": "Chip",
+        "value": "A19 Pro, 6 magos CPU, 6 magos GPU"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "48 MP Fusion fő + 48 MP Fusion ultraszéles + 48 MP Fusion 4× telefotó"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "18 MP Center Stage kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "5G, Wi‑Fi 7, Bluetooth 6"
+      },
+      {
+        "label": "SIM",
+        "value": "Nano-SIM és eSIM; a regionális kivitel és a szolgáltató függvényében"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: videólejátszás akár 31 óra"
+      },
+      {
+        "label": "Töltés / csatlakozó",
+        "value": "USB‑C; MagSafe"
+      },
+      {
+        "label": "Méretek",
+        "value": "150 × 71,9 × 8,75 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "204 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Face ID; LiDAR"
+      }
+    ]
+  },
+  "iphone_17_pro_max": {
+    "source_url": "https://support.apple.com/en-gb/125091",
+    "source_title": "iPhone 17 Pro Max - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPhone 17 Pro Max"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "256 GB, 512 GB, 1 TB, 2 TB"
+      },
+      {
+        "label": "Színek",
+        "value": "Silver, Cosmic Orange, Deep Blue"
+      },
+      {
+        "label": "Kijelző",
+        "value": "6,9 hüvelykes Super Retina XDR OLED; ProMotion, akár 120 Hz"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2868 × 1320 pixel"
+      },
+      {
+        "label": "Chip",
+        "value": "A19 Pro, 6 magos CPU, 6 magos GPU"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "48 MP Fusion fő + 48 MP Fusion ultraszéles + 48 MP Fusion 4× telefotó"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "18 MP Center Stage kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "5G, Wi‑Fi 7, Bluetooth 6"
+      },
+      {
+        "label": "SIM",
+        "value": "Nano-SIM és eSIM; a regionális kivitel és a szolgáltató függvényében"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: videólejátszás akár 37 óra"
+      },
+      {
+        "label": "Töltés / csatlakozó",
+        "value": "USB‑C; MagSafe"
+      },
+      {
+        "label": "Méretek",
+        "value": "163,4 × 78 × 8,75 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "231 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Face ID; LiDAR"
+      }
+    ]
+  },
+  "iphone_17e": {
+    "source_url": "https://support.apple.com/en-gb/126470",
+    "source_title": "iPhone 17e - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPhone 17e"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "256 GB, 512 GB"
+      },
+      {
+        "label": "Színek",
+        "value": "Black, White, Soft Pink"
+      },
+      {
+        "label": "Kijelző",
+        "value": "6,1 hüvelykes Super Retina XDR OLED"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2532 × 1170 pixel"
+      },
+      {
+        "label": "Chip",
+        "value": "A19, 6 magos CPU, 4 magos GPU"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "48 MP Fusion fő kamera"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "12 MP kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "5G, Wi‑Fi 6, Bluetooth 5.3"
+      },
+      {
+        "label": "SIM",
+        "value": "Nano-SIM és eSIM; a regionális kivitel és a szolgáltató függvényében"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: videólejátszás akár 26 óra"
+      },
+      {
+        "label": "Töltés / csatlakozó",
+        "value": "USB‑C"
+      },
+      {
+        "label": "Méretek",
+        "value": "146,7 × 71,5 × 7,80 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "170 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Face ID"
+      }
+    ]
+  },
+  "iphone_air": {
+    "source_url": "https://support.apple.com/en-gb/125092",
+    "source_title": "iPhone Air - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPhone Air"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "256 GB, 512 GB, 1 TB"
+      },
+      {
+        "label": "Színek",
+        "value": "Space Black, Cloud White, Light Gold, Sky Blue"
+      },
+      {
+        "label": "Kijelző",
+        "value": "6,5 hüvelykes Super Retina XDR OLED; ProMotion, akár 120 Hz"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2736 × 1260 pixel"
+      },
+      {
+        "label": "Chip",
+        "value": "A19 Pro, 6 magos CPU, 5 magos GPU"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "48 MP Fusion fő kamera"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "18 MP Center Stage kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "5G, Wi‑Fi 7, Bluetooth 6"
+      },
+      {
+        "label": "SIM",
+        "value": "Két aktív eSIM; fizikai SIM-kártya nem támogatott"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: videólejátszás akár 27 óra"
+      },
+      {
+        "label": "Töltés / csatlakozó",
+        "value": "USB‑C; MagSafe"
+      },
+      {
+        "label": "Méretek",
+        "value": "156,2 × 74,7 × 5,64 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "165 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Face ID"
+      }
+    ]
+  },
+  "iphone_se_2nd_generation": {
+    "source_url": "https://support.apple.com/en-gb/111882",
+    "source_title": "iPhone SE (2nd generation) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPhone SE (2nd generation)"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "64 GB, 128 GB, 256 GB"
+      },
+      {
+        "label": "Színek",
+        "value": "Black, White, (PRODUCT)RED"
+      },
+      {
+        "label": "Kijelző",
+        "value": "4,7 hüvelykes Retina HD LCD"
+      },
+      {
+        "label": "Felbontás",
+        "value": "1334 × 750 pixel"
+      },
+      {
+        "label": "Chip",
+        "value": "A13 Bionic, 6 magos CPU, 4 magos GPU"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "12 MP széles látószögű kamera"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "7 MP kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "LTE, Wi‑Fi 6, Bluetooth 5.0"
+      },
+      {
+        "label": "SIM",
+        "value": "Nano-SIM és eSIM; a regionális kivitel és a szolgáltató függvényében"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: videólejátszás akár 13 óra"
+      },
+      {
+        "label": "Töltés / csatlakozó",
+        "value": "Lightning; Qi vezeték nélküli töltés"
+      },
+      {
+        "label": "Méretek",
+        "value": "138,4 × 67,3 × 7,3 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "148 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Touch ID"
+      }
+    ]
+  },
+  "iphone_se_3rd_generation": {
+    "source_url": "https://support.apple.com/en-gb/111866",
+    "source_title": "iPhone SE (3rd generation) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPhone SE (3rd generation)"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "64 GB, 128 GB, 256 GB"
+      },
+      {
+        "label": "Színek",
+        "value": "(PRODUCT)RED, Starlight, Midnight"
+      },
+      {
+        "label": "Kijelző",
+        "value": "4,7 hüvelykes Retina HD LCD"
+      },
+      {
+        "label": "Felbontás",
+        "value": "1334 × 750 pixel"
+      },
+      {
+        "label": "Chip",
+        "value": "A15 Bionic, 6 magos CPU, 4 magos GPU"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "12 MP széles látószögű kamera"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "7 MP kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "5G, Wi‑Fi 6, Bluetooth 5.0"
+      },
+      {
+        "label": "SIM",
+        "value": "Nano-SIM és eSIM; a regionális kivitel és a szolgáltató függvényében"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: videólejátszás akár 15 óra"
+      },
+      {
+        "label": "Töltés / csatlakozó",
+        "value": "Lightning; Qi vezeték nélküli töltés"
+      },
+      {
+        "label": "Méretek",
+        "value": "138,4 × 67,3 × 7,3 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "144 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Touch ID"
+      }
+    ]
+  },
+  "iphone_xr": {
+    "source_url": "https://support.apple.com/en-gb/111868",
+    "source_title": "iPhone XR - Technical Specifications",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPhone XR"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "64 GB, 128 GB, 256 GB"
+      },
+      {
+        "label": "Színek",
+        "value": "(PRODUCT)RED, Yellow, White, Coral, Black, Blue"
+      },
+      {
+        "label": "Kijelző",
+        "value": "6,1 hüvelykes Liquid Retina HD LCD"
+      },
+      {
+        "label": "Felbontás",
+        "value": "1792 × 828 pixel"
+      },
+      {
+        "label": "Chip",
+        "value": "A12 Bionic"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "12 MP széles látószögű kamera"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "7 MP kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "LTE, Wi‑Fi 5, Bluetooth 5.0"
+      },
+      {
+        "label": "SIM",
+        "value": "Nano-SIM és eSIM; a regionális kivitel és a szolgáltató függvényében"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: videólejátszás akár 16 óra"
+      },
+      {
+        "label": "Töltés / csatlakozó",
+        "value": "Lightning; Qi vezeték nélküli töltés"
+      },
+      {
+        "label": "Méretek",
+        "value": "150,9 × 75,7 × 8,3 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "194 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Face ID"
+      }
+    ]
+  },
+  "iphone_xs": {
+    "source_url": "https://support.apple.com/en-gb/111881",
+    "source_title": "iPhone XS - Technical Specifications",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPhone XS"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "64 GB, 256 GB, 512 GB"
+      },
+      {
+        "label": "Színek",
+        "value": "Gold, Space Gray, Silver"
+      },
+      {
+        "label": "Kijelző",
+        "value": "5,8 hüvelykes Super Retina HD OLED"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2436 × 1125 pixel"
+      },
+      {
+        "label": "Chip",
+        "value": "A12 Bionic"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "12 MP széles látószögű + 12 MP telefotó"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "7 MP kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "LTE, Wi‑Fi 5, Bluetooth 5.0"
+      },
+      {
+        "label": "SIM",
+        "value": "Nano-SIM és eSIM; a regionális kivitel és a szolgáltató függvényében"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: videólejátszás akár 14 óra"
+      },
+      {
+        "label": "Töltés / csatlakozó",
+        "value": "Lightning; Qi vezeték nélküli töltés"
+      },
+      {
+        "label": "Méretek",
+        "value": "143,6 × 70,9 × 7,7 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "177 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Face ID"
+      }
+    ]
+  },
+  "iphone_xs_max": {
+    "source_url": "https://support.apple.com/en-gb/111880",
+    "source_title": "iPhone XS Max - Technical Specifications",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "iPhone XS Max"
+      },
+      {
+        "label": "Kapacitások",
+        "value": "64 GB, 256 GB, 512 GB"
+      },
+      {
+        "label": "Színek",
+        "value": "Gold, Space Gray, Silver"
+      },
+      {
+        "label": "Kijelző",
+        "value": "6,5 hüvelykes Super Retina HD OLED"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2688 × 1242 pixel"
+      },
+      {
+        "label": "Chip",
+        "value": "A12 Bionic"
+      },
+      {
+        "label": "Hátlapi kamera",
+        "value": "12 MP széles látószögű + 12 MP telefotó"
+      },
+      {
+        "label": "Előlapi kamera",
+        "value": "7 MP kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "LTE, Wi‑Fi 5, Bluetooth 5.0"
+      },
+      {
+        "label": "SIM",
+        "value": "Nano-SIM és eSIM; a regionális kivitel és a szolgáltató függvényében"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: videólejátszás akár 15 óra"
+      },
+      {
+        "label": "Töltés / csatlakozó",
+        "value": "Lightning; Qi vezeték nélküli töltés"
+      },
+      {
+        "label": "Méretek",
+        "value": "157,5 × 77,4 × 7,7 mm"
+      },
+      {
+        "label": "Súly",
+        "value": "208 g"
+      },
+      {
+        "label": "Szenzorok",
+        "value": "Face ID"
+      }
+    ]
+  },
+  "macbook_air_13_m3": {
+    "source_url": "https://support.apple.com/en-gb/118551",
+    "source_title": "MacBook Air (13-inch, M3, 2024) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "MacBook Air 13 hüvelykes (M3, 2024)"
+      },
+      {
+        "label": "Színek",
+        "value": "Midnight, Starlight, Space Gray, Silver"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M3 chip, 8 magos CPU, 8 vagy 10 magos GPU, 16 magos Neural Engine"
+      },
+      {
+        "label": "Memória",
+        "value": "8 GB egyesített memória, konfigurálható 16 GB vagy 24 GB memóriával"
+      },
+      {
+        "label": "Tárhely",
+        "value": "256 GB SSD, konfigurálható 512 GB, 1 TB vagy 2 TB SSD-vel"
+      },
+      {
+        "label": "Kijelző",
+        "value": "13,6 hüvelykes Liquid Retina kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2560 × 1664 pixel, 224 ppi"
+      },
+      {
+        "label": "Kamera",
+        "value": "1080p FaceTime HD kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6E (802.11ax), Bluetooth 5.3"
+      },
+      {
+        "label": "Portok",
+        "value": "MagSafe 3, két Thunderbolt / USB 4 port, 3,5 mm fejhallgató-csatlakozó"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 18 óra Apple TV app filmlejátszás, akár 15 óra vezeték nélküli böngészés"
+      },
+      {
+        "label": "Töltő",
+        "value": "USB‑C hálózati adapter, MagSafe 3 kábel"
+      },
+      {
+        "label": "Súly",
+        "value": "1,24 kg"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "macOS kompatibilitás"
+      }
+    ]
+  },
+  "macbook_air_13_m4": {
+    "source_url": "https://support.apple.com/en-gb/122209",
+    "source_title": "MacBook Air (13-inch, M4, 2025) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "MacBook Air 13 hüvelykes (M4)"
+      },
+      {
+        "label": "Színek",
+        "value": "Sky Blue, Midnight, Starlight, Silver"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M4 chip, 10 magos CPU, 8 vagy 10 magos GPU, 16 magos Neural Engine"
+      },
+      {
+        "label": "Memória",
+        "value": "16 GB egyesített memória, konfigurálható 24 GB vagy 32 GB memóriával"
+      },
+      {
+        "label": "Tárhely",
+        "value": "256 GB SSD, konfigurálható 512 GB, 1 TB vagy 2 TB SSD-vel"
+      },
+      {
+        "label": "Kijelző",
+        "value": "13,6 hüvelykes Liquid Retina kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2560 × 1664 pixel, 224 ppi"
+      },
+      {
+        "label": "Kamera",
+        "value": "12 MP Center Stage kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6E (802.11ax), Bluetooth 5.3"
+      },
+      {
+        "label": "Portok",
+        "value": "MagSafe 3, két Thunderbolt 4 port, 3,5 mm fejhallgató-csatlakozó"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 18 óra videólejátszás"
+      },
+      {
+        "label": "Töltő",
+        "value": "USB‑C hálózati adapter, MagSafe 3 kábel"
+      },
+      {
+        "label": "Súly",
+        "value": "1,24 kg"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "macOS kompatibilitás"
+      }
+    ]
+  },
+  "macbook_air_15_m2": {
+    "source_url": "https://support.apple.com/en-gb/111346",
+    "source_title": "MacBook Air (15-inch, M2, 2023) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "MacBook Air 15 hüvelykes (M2, 2023)"
+      },
+      {
+        "label": "Színek",
+        "value": "Midnight, Starlight, Space Gray, Silver"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M2 chip, 8 magos CPU, 10 magos GPU, 16 magos Neural Engine"
+      },
+      {
+        "label": "Memória",
+        "value": "8 GB egyesített memória, konfigurálható 16 GB vagy 24 GB memóriával"
+      },
+      {
+        "label": "Tárhely",
+        "value": "256 GB SSD, konfigurálható 512 GB, 1 TB vagy 2 TB SSD-vel"
+      },
+      {
+        "label": "Kijelző",
+        "value": "15,3 hüvelykes Liquid Retina kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2880 × 1864 pixel, 224 ppi"
+      },
+      {
+        "label": "Kamera",
+        "value": "1080p FaceTime HD kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6 (802.11ax), Bluetooth 5.3"
+      },
+      {
+        "label": "Portok",
+        "value": "MagSafe 3, két Thunderbolt / USB 4 port, 3,5 mm fejhallgató-csatlakozó"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 18 óra Apple TV app filmlejátszás, akár 15 óra vezeték nélküli böngészés"
+      },
+      {
+        "label": "Töltő",
+        "value": "USB‑C hálózati adapter, MagSafe 3 kábel"
+      },
+      {
+        "label": "Súly",
+        "value": "1,51 kg"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "macOS kompatibilitás"
+      }
+    ]
+  },
+  "macbook_air_15_m3": {
+    "source_url": "https://support.apple.com/en-gb/118552",
+    "source_title": "MacBook Air (15-inch, M3, 2024) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "MacBook Air 15 hüvelykes (M3, 2024)"
+      },
+      {
+        "label": "Színek",
+        "value": "Midnight, Starlight, Space Gray, Silver"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M3 chip, 8 magos CPU, 10 magos GPU, 16 magos Neural Engine"
+      },
+      {
+        "label": "Memória",
+        "value": "8 GB egyesített memória, konfigurálható 16 GB vagy 24 GB memóriával"
+      },
+      {
+        "label": "Tárhely",
+        "value": "256 GB SSD, konfigurálható 512 GB, 1 TB vagy 2 TB SSD-vel"
+      },
+      {
+        "label": "Kijelző",
+        "value": "15,3 hüvelykes Liquid Retina kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2880 × 1864 pixel, 224 ppi"
+      },
+      {
+        "label": "Kamera",
+        "value": "1080p FaceTime HD kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6E (802.11ax), Bluetooth 5.3"
+      },
+      {
+        "label": "Portok",
+        "value": "MagSafe 3, két Thunderbolt / USB 4 port, 3,5 mm fejhallgató-csatlakozó"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 18 óra Apple TV app filmlejátszás, akár 15 óra vezeték nélküli böngészés"
+      },
+      {
+        "label": "Töltő",
+        "value": "USB‑C hálózati adapter, MagSafe 3 kábel"
+      },
+      {
+        "label": "Súly",
+        "value": "1,51 kg"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "macOS kompatibilitás"
+      }
+    ]
+  },
+  "macbook_air_15_m4": {
+    "source_url": "https://support.apple.com/en-gb/122210",
+    "source_title": "MacBook Air (15-inch, M4, 2025) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "MacBook Air 15 hüvelykes (M4)"
+      },
+      {
+        "label": "Színek",
+        "value": "Sky Blue, Midnight, Starlight, Silver"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M4 chip, 10 magos CPU, 10 magos GPU, 16 magos Neural Engine"
+      },
+      {
+        "label": "Memória",
+        "value": "16 GB egyesített memória, konfigurálható 24 GB vagy 32 GB memóriával"
+      },
+      {
+        "label": "Tárhely",
+        "value": "256 GB SSD, konfigurálható 512 GB, 1 TB vagy 2 TB SSD-vel"
+      },
+      {
+        "label": "Kijelző",
+        "value": "15,3 hüvelykes Liquid Retina kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2880 × 1864 pixel, 224 ppi"
+      },
+      {
+        "label": "Kamera",
+        "value": "12 MP Center Stage kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6E (802.11ax), Bluetooth 5.3"
+      },
+      {
+        "label": "Portok",
+        "value": "MagSafe 3, két Thunderbolt 4 port, 3,5 mm fejhallgató-csatlakozó"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 18 óra videólejátszás"
+      },
+      {
+        "label": "Töltő",
+        "value": "USB‑C hálózati adapter, MagSafe 3 kábel"
+      },
+      {
+        "label": "Súly",
+        "value": "1,51 kg"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "macOS kompatibilitás"
+      }
+    ]
+  },
+  "macbook_air_m1": {
+    "source_url": "https://support.apple.com/en-gb/111883",
+    "source_title": "MacBook Air (M1, 2020) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "MacBook Air (M1, 2020)"
+      },
+      {
+        "label": "Színek",
+        "value": "Gold, Silver, Space Gray"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M1 chip, 8 magos CPU, 7 vagy 8 magos GPU, 16 magos Neural Engine"
+      },
+      {
+        "label": "Memória",
+        "value": "8 GB egyesített memória, konfigurálható 16 GB memóriával"
+      },
+      {
+        "label": "Tárhely",
+        "value": "256 GB SSD, konfigurálható 512 GB, 1 TB vagy 2 TB SSD-vel"
+      },
+      {
+        "label": "Kijelző",
+        "value": "13,3 hüvelykes Retina kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2560 × 1600 pixel, 227 ppi"
+      },
+      {
+        "label": "Kamera",
+        "value": "720p FaceTime HD kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6 (802.11ax), Bluetooth 5.0"
+      },
+      {
+        "label": "Portok",
+        "value": "Két Thunderbolt / USB 4 port, 3,5 mm fejhallgató-csatlakozó"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 18 óra Apple TV app filmlejátszás, akár 15 óra vezeték nélküli böngészés"
+      },
+      {
+        "label": "Töltő",
+        "value": "USB‑C hálózati adapter"
+      },
+      {
+        "label": "Súly",
+        "value": "1,29 kg"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "macOS kompatibilitás"
+      }
+    ]
+  },
+  "macbook_air_m2": {
+    "source_url": "https://support.apple.com/en-us/111867",
+    "source_title": "MacBook Air (M2, 2022) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "MacBook Air (M2, 2022)"
+      },
+      {
+        "label": "Színek",
+        "value": "Midnight, Starlight, Space Gray, Silver"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M2 chip, 8 magos CPU, 8 vagy 10 magos GPU, 16 magos Neural Engine"
+      },
+      {
+        "label": "Memória",
+        "value": "8 GB egyesített memória, konfigurálható 16 GB vagy 24 GB memóriával"
+      },
+      {
+        "label": "Tárhely",
+        "value": "256 GB SSD, konfigurálható 512 GB, 1 TB vagy 2 TB SSD-vel"
+      },
+      {
+        "label": "Kijelző",
+        "value": "13,6 hüvelykes Liquid Retina kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2560 × 1664 pixel, 224 ppi"
+      },
+      {
+        "label": "Fényerő / színek",
+        "value": "500 nit, P3 széles színtartomány, True Tone"
+      },
+      {
+        "label": "Kamera",
+        "value": "1080p FaceTime HD kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6 (802.11ax), Bluetooth 5.3"
+      },
+      {
+        "label": "Portok",
+        "value": "MagSafe 3, két Thunderbolt / USB 4 port, 3,5 mm fejhallgató-csatlakozó"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 18 óra Apple TV app filmlejátszás, akár 15 óra vezeték nélküli böngészés"
+      },
+      {
+        "label": "Töltő",
+        "value": "USB‑C hálózati adapter, MagSafe 3 kábel"
+      },
+      {
+        "label": "Méretek",
+        "value": "1,13 × 30,41 × 21,5 cm"
+      },
+      {
+        "label": "Súly",
+        "value": "1,24 kg"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "macOS kompatibilitás"
+      }
+    ]
+  },
+  "macbook_pro_13_inch_m1": {
+    "source_url": "https://support.apple.com/en-gb/111893",
+    "source_title": "MacBook Pro (13-inch, M1, 2020) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "MacBook Pro 13-inch M1"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M1, 8 magos CPU, 8 magos GPU"
+      },
+      {
+        "label": "Memória",
+        "value": "8 GB vagy 16 GB egyesített memória (konfigurációtól függően)"
+      },
+      {
+        "label": "Tárhely",
+        "value": "256 GB, 512 GB, 1 TB, 2 TB SSD (gyári konfigurációk)"
+      },
+      {
+        "label": "Kijelző",
+        "value": "13,3 hüvelykes Retina kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2560 × 1600 pixel"
+      },
+      {
+        "label": "Kamera",
+        "value": "720p FaceTime HD"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6, Bluetooth 5.0"
+      },
+      {
+        "label": "Portok",
+        "value": "2 × Thunderbolt / USB 4; 3,5 mm fejhallgató"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: akár 20 óra videólejátszás, akár 17 óra vezeték nélküli böngészés"
+      },
+      {
+        "label": "Méretek",
+        "value": "30,41 × 21,24 × 1,56 cm"
+      },
+      {
+        "label": "Súly",
+        "value": "1,4 kg"
+      }
+    ]
+  },
+  "macbook_pro_13_m2": {
+    "source_url": "https://support.apple.com/en-gb/111869",
+    "source_title": "MacBook Pro (13-inch, M2, 2022) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "MacBook Pro 13 hüvelykes (M2, 2022)"
+      },
+      {
+        "label": "Színek",
+        "value": "Space Gray, Silver"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M2 chip, 8 magos CPU, 10 magos GPU, 16 magos Neural Engine"
+      },
+      {
+        "label": "Memória",
+        "value": "8 GB egyesített memória, konfigurálható 16 GB vagy 24 GB memóriával"
+      },
+      {
+        "label": "Tárhely",
+        "value": "256 GB SSD, konfigurálható 512 GB, 1 TB vagy 2 TB SSD-vel"
+      },
+      {
+        "label": "Kijelző",
+        "value": "13,3 hüvelykes Retina kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "2560 × 1600 pixel, 227 ppi"
+      },
+      {
+        "label": "Kamera",
+        "value": "720p FaceTime HD kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6 (802.11ax), Bluetooth 5.0"
+      },
+      {
+        "label": "Portok",
+        "value": "Két Thunderbolt / USB 4 port, 3,5 mm fejhallgató-csatlakozó"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 20 óra Apple TV app filmlejátszás, akár 17 óra vezeték nélküli böngészés"
+      },
+      {
+        "label": "Töltő",
+        "value": "USB‑C hálózati adapter"
+      },
+      {
+        "label": "Súly",
+        "value": "1,4 kg"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "macOS kompatibilitás"
+      }
+    ]
+  },
+  "macbook_pro_14_inch_m1_max": {
+    "source_url": "https://support.apple.com/en-gb/111902",
+    "source_title": "MacBook Pro (14-inch, 2021) - Technical Specifications",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "MacBook Pro 14-inch M1 Max"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M1 Max, 10 magos CPU, 24 vagy 32 magos GPU"
+      },
+      {
+        "label": "Memória",
+        "value": "32 GB vagy 64 GB egyesített memória (konfigurációtól függően)"
+      },
+      {
+        "label": "Tárhely",
+        "value": "512 GB, 1 TB, 2 TB, 4 TB, 8 TB SSD (gyári konfigurációk)"
+      },
+      {
+        "label": "Kijelző",
+        "value": "14,2 hüvelykes Liquid Retina XDR, ProMotion kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "3024 × 1964 pixel"
+      },
+      {
+        "label": "Kamera",
+        "value": "1080p FaceTime HD"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6, Bluetooth 5.0"
+      },
+      {
+        "label": "Portok",
+        "value": "3 × Thunderbolt 4; HDMI; SDXC; MagSafe 3; 3,5 mm fejhallgató"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: akár 17 óra videólejátszás, akár 11 óra vezeték nélküli böngészés"
+      },
+      {
+        "label": "Méretek",
+        "value": "31,26 × 22,12 × 1,55 cm"
+      },
+      {
+        "label": "Súly",
+        "value": "1,6 kg"
+      }
+    ]
+  },
+  "macbook_pro_14_inch_m1_pro": {
+    "source_url": "https://support.apple.com/en-gb/111902",
+    "source_title": "MacBook Pro (14-inch, 2021) - Technical Specifications",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "MacBook Pro 14-inch M1 Pro"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M1 Pro, 8 vagy 10 magos CPU, 14 vagy 16 magos GPU"
+      },
+      {
+        "label": "Memória",
+        "value": "16 GB vagy 32 GB egyesített memória (konfigurációtól függően)"
+      },
+      {
+        "label": "Tárhely",
+        "value": "512 GB, 1 TB, 2 TB, 4 TB, 8 TB SSD (gyári konfigurációk)"
+      },
+      {
+        "label": "Kijelző",
+        "value": "14,2 hüvelykes Liquid Retina XDR, ProMotion kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "3024 × 1964 pixel"
+      },
+      {
+        "label": "Kamera",
+        "value": "1080p FaceTime HD"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6, Bluetooth 5.0"
+      },
+      {
+        "label": "Portok",
+        "value": "3 × Thunderbolt 4; HDMI; SDXC; MagSafe 3; 3,5 mm fejhallgató"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: akár 17 óra videólejátszás, akár 11 óra vezeték nélküli böngészés"
+      },
+      {
+        "label": "Méretek",
+        "value": "31,26 × 22,12 × 1,55 cm"
+      },
+      {
+        "label": "Súly",
+        "value": "1,6 kg"
+      }
+    ]
+  },
+  "macbook_pro_14_inch_m2_max": {
+    "source_url": "https://support.apple.com/en-gb/111340",
+    "source_title": "MacBook Pro (14-inch, 2023) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "MacBook Pro 14-inch M2 Max"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M2 Max, 12 magos CPU, 30 vagy 38 magos GPU"
+      },
+      {
+        "label": "Memória",
+        "value": "32 GB vagy 64 GB; 96 GB a 38 magos GPU-val egyesített memória (konfigurációtól függően)"
+      },
+      {
+        "label": "Tárhely",
+        "value": "1 TB, 2 TB, 4 TB, 8 TB SSD (gyári konfigurációk)"
+      },
+      {
+        "label": "Kijelző",
+        "value": "14,2 hüvelykes Liquid Retina XDR, ProMotion kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "3024 × 1964 pixel"
+      },
+      {
+        "label": "Kamera",
+        "value": "1080p FaceTime HD"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6E, Bluetooth 5.3"
+      },
+      {
+        "label": "Portok",
+        "value": "3 × Thunderbolt 4; HDMI; SDXC; MagSafe 3; 3,5 mm fejhallgató"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: akár 18 óra videólejátszás, akár 12 óra vezeték nélküli böngészés"
+      },
+      {
+        "label": "Méretek",
+        "value": "31,26 × 22,12 × 1,55 cm"
+      },
+      {
+        "label": "Súly",
+        "value": "1,63 kg"
+      }
+    ]
+  },
+  "macbook_pro_14_inch_m4_max": {
+    "source_url": "https://support.apple.com/en-gb/121553",
+    "source_title": "MacBook Pro (14-inch, M4 Pro or M4 Max, 2024) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "MacBook Pro 14-inch M4 Max"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M4 Max, 14 vagy 16 magos CPU, 32 vagy 40 magos GPU"
+      },
+      {
+        "label": "Memória",
+        "value": "36 GB a 14 magos CPU-val; 48 GB, 64 GB vagy 128 GB a 16 magos CPU-val egyesített memória (konfigurációtól függően)"
+      },
+      {
+        "label": "Tárhely",
+        "value": "1 TB, 2 TB, 4 TB, 8 TB SSD (gyári konfigurációk)"
+      },
+      {
+        "label": "Kijelző",
+        "value": "14,2 hüvelykes Liquid Retina XDR, ProMotion kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "3024 × 1964 pixel"
+      },
+      {
+        "label": "Kamera",
+        "value": "12 MP Center Stage"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6E, Bluetooth 5.3"
+      },
+      {
+        "label": "Portok",
+        "value": "3 × Thunderbolt 5; HDMI; SDXC; MagSafe 3; 3,5 mm fejhallgató"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: akár 18 óra videólejátszás, akár 13 óra vezeték nélküli böngészés"
+      },
+      {
+        "label": "Méretek",
+        "value": "31,26 × 22,12 × 1,55 cm"
+      },
+      {
+        "label": "Súly",
+        "value": "1,62 kg"
+      }
+    ]
+  },
+  "macbook_pro_14_inch_m5_max": {
+    "source_url": "https://support.apple.com/en-gb/126318",
+    "source_title": "MacBook Pro (14-inch, M5 Pro or M5 Max) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "MacBook Pro 14-inch M5 Max"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M5 Max, 18 magos CPU, 32 vagy 40 magos GPU"
+      },
+      {
+        "label": "Memória",
+        "value": "36 GB a 32 magos GPU-val; 48 GB, 64 GB vagy 128 GB a 40 magos GPU-val egyesített memória (konfigurációtól függően)"
+      },
+      {
+        "label": "Tárhely",
+        "value": "2 TB, 4 TB, 8 TB SSD (gyári konfigurációk)"
+      },
+      {
+        "label": "Kijelző",
+        "value": "14,2 hüvelykes Liquid Retina XDR, ProMotion kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "3024 × 1964 pixel"
+      },
+      {
+        "label": "Kamera",
+        "value": "12 MP Center Stage"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 7, Bluetooth 6"
+      },
+      {
+        "label": "Portok",
+        "value": "3 × Thunderbolt 5; HDMI; SDXC; MagSafe 3; 3,5 mm fejhallgató"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: akár 20 óra videólejátszás, akár 13 óra vezeték nélküli böngészés"
+      },
+      {
+        "label": "Méretek",
+        "value": "31,26 × 22,12 × 1,55 cm"
+      },
+      {
+        "label": "Súly",
+        "value": "1,62 kg"
+      }
+    ]
+  },
+  "macbook_pro_14_m2_pro": {
+    "source_url": "https://support.apple.com/en-gb/111340",
+    "source_title": "MacBook Pro (14-inch, 2023) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "MacBook Pro 14 hüvelykes (M2 Pro, 2023)"
+      },
+      {
+        "label": "Színek",
+        "value": "Space Gray, Silver"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M2 Pro chip, akár 12 magos CPU és 19 magos GPU, 16 magos Neural Engine"
+      },
+      {
+        "label": "Memória",
+        "value": "16 GB egyesített memória, konfigurálható 32 GB memóriával"
+      },
+      {
+        "label": "Tárhely",
+        "value": "512 GB SSD, konfigurálható 1 TB, 2 TB, 4 TB vagy 8 TB SSD-vel"
+      },
+      {
+        "label": "Kijelző",
+        "value": "14,2 hüvelykes Liquid Retina XDR kijelző ProMotion technológiával"
+      },
+      {
+        "label": "Felbontás",
+        "value": "3024 × 1964 pixel"
+      },
+      {
+        "label": "Kamera",
+        "value": "1080p FaceTime HD kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6E (802.11ax), Bluetooth 5.3"
+      },
+      {
+        "label": "Portok",
+        "value": "MagSafe 3, három Thunderbolt 4 port, HDMI, SDXC, 3,5 mm fejhallgató-csatlakozó"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 18 óra Apple TV app filmlejátszás, akár 12 óra vezeték nélküli böngészés"
+      },
+      {
+        "label": "Töltő",
+        "value": "USB‑C hálózati adapter, MagSafe 3 kábel"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "macOS kompatibilitás"
+      }
+    ]
+  },
+  "macbook_pro_14_m3": {
+    "source_url": "https://support.apple.com/en-gb/117735",
+    "source_title": "MacBook Pro (14-inch, M3, Nov 2023) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "MacBook Pro 14 hüvelykes (M3, 2023)"
+      },
+      {
+        "label": "Színek",
+        "value": "Space Gray, Silver"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M3 chip, 8 magos CPU és 10 magos GPU, 16 magos Neural Engine"
+      },
+      {
+        "label": "Memória",
+        "value": "8 GB egyesített memória, konfigurálható 16 GB vagy 24 GB memóriával"
+      },
+      {
+        "label": "Tárhely",
+        "value": "512 GB SSD, konfigurálható 1 TB vagy 2 TB SSD-vel"
+      },
+      {
+        "label": "Kijelző",
+        "value": "14,2 hüvelykes Liquid Retina XDR kijelző ProMotion technológiával"
+      },
+      {
+        "label": "Felbontás",
+        "value": "3024 × 1964 pixel"
+      },
+      {
+        "label": "Kamera",
+        "value": "1080p FaceTime HD kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6E (802.11ax), Bluetooth 5.3"
+      },
+      {
+        "label": "Portok",
+        "value": "MagSafe 3, két Thunderbolt / USB 4 port, HDMI, SDXC, 3,5 mm fejhallgató-csatlakozó"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 22 óra Apple TV app filmlejátszás, akár 15 óra vezeték nélküli böngészés"
+      },
+      {
+        "label": "Töltő",
+        "value": "USB‑C hálózati adapter, MagSafe 3 kábel"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "macOS kompatibilitás"
+      }
+    ]
+  },
+  "macbook_pro_14_m3_max": {
+    "source_url": "https://support.apple.com/en-gb/117736",
+    "source_title": "MacBook Pro (14-inch, M3 Pro or M3 Max, Nov 2023) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "MacBook Pro 14 hüvelykes (M3 Max, 2023)"
+      },
+      {
+        "label": "Színek",
+        "value": "Space Black, Silver"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M3 Max chip, akár 16 magos CPU és 40 magos GPU, 16 magos Neural Engine"
+      },
+      {
+        "label": "Memória",
+        "value": "36 GB egyesített memória, konfigurálható 48 GB, 64 GB, 96 GB vagy 128 GB memóriával"
+      },
+      {
+        "label": "Tárhely",
+        "value": "1 TB SSD, konfigurálható 2 TB, 4 TB vagy 8 TB SSD-vel"
+      },
+      {
+        "label": "Kijelző",
+        "value": "14,2 hüvelykes Liquid Retina XDR kijelző ProMotion technológiával"
+      },
+      {
+        "label": "Felbontás",
+        "value": "3024 × 1964 pixel"
+      },
+      {
+        "label": "Kamera",
+        "value": "1080p FaceTime HD kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6E (802.11ax), Bluetooth 5.3"
+      },
+      {
+        "label": "Portok",
+        "value": "MagSafe 3, három Thunderbolt 4 port, HDMI, SDXC, 3,5 mm fejhallgató-csatlakozó"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 18 óra Apple TV app filmlejátszás, akár 12 óra vezeték nélküli böngészés"
+      },
+      {
+        "label": "Töltő",
+        "value": "USB‑C hálózati adapter, MagSafe 3 kábel"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "macOS kompatibilitás"
+      }
+    ]
+  },
+  "macbook_pro_14_m3_pro": {
+    "source_url": "https://support.apple.com/en-gb/117736",
+    "source_title": "MacBook Pro (14-inch, M3 Pro or M3 Max, Nov 2023) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "MacBook Pro 14 hüvelykes (M3 Pro, 2023)"
+      },
+      {
+        "label": "Színek",
+        "value": "Space Black, Silver"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M3 Pro chip, akár 12 magos CPU és 18 magos GPU, 16 magos Neural Engine"
+      },
+      {
+        "label": "Memória",
+        "value": "18 GB egyesített memória, konfigurálható 36 GB memóriával"
+      },
+      {
+        "label": "Tárhely",
+        "value": "512 GB SSD, konfigurálható 1 TB, 2 TB vagy 4 TB SSD-vel"
+      },
+      {
+        "label": "Kijelző",
+        "value": "14,2 hüvelykes Liquid Retina XDR kijelző ProMotion technológiával"
+      },
+      {
+        "label": "Felbontás",
+        "value": "3024 × 1964 pixel"
+      },
+      {
+        "label": "Kamera",
+        "value": "1080p FaceTime HD kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6E (802.11ax), Bluetooth 5.3"
+      },
+      {
+        "label": "Portok",
+        "value": "MagSafe 3, három Thunderbolt 4 port, HDMI, SDXC, 3,5 mm fejhallgató-csatlakozó"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 18 óra Apple TV app filmlejátszás, akár 12 óra vezeték nélküli böngészés"
+      },
+      {
+        "label": "Töltő",
+        "value": "USB‑C hálózati adapter, MagSafe 3 kábel"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "macOS kompatibilitás"
+      }
+    ]
+  },
+  "macbook_pro_14_m4": {
+    "source_url": "https://support.apple.com/en-gb/121552",
+    "source_title": "MacBook Pro (14-inch, M4, 2024) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "MacBook Pro 14 hüvelykes (M4)"
+      },
+      {
+        "label": "Színek",
+        "value": "Space Black, Silver"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M4 chip, 10 magos CPU, 10 magos GPU, 16 magos Neural Engine"
+      },
+      {
+        "label": "Memória",
+        "value": "16 GB egyesített memória, konfigurálható 24 GB vagy 32 GB memóriával"
+      },
+      {
+        "label": "Tárhely",
+        "value": "512 GB SSD, konfigurálható 1 TB vagy 2 TB SSD-vel"
+      },
+      {
+        "label": "Kijelző",
+        "value": "14,2 hüvelykes Liquid Retina XDR kijelző ProMotion technológiával"
+      },
+      {
+        "label": "Felbontás",
+        "value": "3024 × 1964 pixel"
+      },
+      {
+        "label": "Kamera",
+        "value": "12 MP Center Stage kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6E (802.11ax), Bluetooth 5.3"
+      },
+      {
+        "label": "Portok",
+        "value": "MagSafe 3, három Thunderbolt 4 port, HDMI, SDXC, 3,5 mm fejhallgató-csatlakozó"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 24 óra videólejátszás"
+      },
+      {
+        "label": "Töltő",
+        "value": "USB‑C hálózati adapter, MagSafe 3 kábel"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "macOS kompatibilitás"
+      }
+    ]
+  },
+  "macbook_pro_14_m4_pro": {
+    "source_url": "https://support.apple.com/en-gb/121553",
+    "source_title": "MacBook Pro (14-inch, M4 Pro or M4 Max, 2024) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "MacBook Pro 14 hüvelykes (M4 Pro)"
+      },
+      {
+        "label": "Színek",
+        "value": "Space Black, Silver"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M4 Pro chip, akár 14 magos CPU és 20 magos GPU, 16 magos Neural Engine"
+      },
+      {
+        "label": "Memória",
+        "value": "24 GB vagy 48 GB egyesített memória"
+      },
+      {
+        "label": "Tárhely",
+        "value": "512 GB SSD, konfigurálható 1 TB, 2 TB vagy 4 TB SSD-vel"
+      },
+      {
+        "label": "Kijelző",
+        "value": "14,2 hüvelykes Liquid Retina XDR kijelző ProMotion technológiával"
+      },
+      {
+        "label": "Felbontás",
+        "value": "3024 × 1964 pixel"
+      },
+      {
+        "label": "Kamera",
+        "value": "12 MP Center Stage kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6E (802.11ax), Bluetooth 5.3"
+      },
+      {
+        "label": "Portok",
+        "value": "MagSafe 3, három Thunderbolt 5 port, HDMI, SDXC, 3,5 mm fejhallgató-csatlakozó"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 22 óra videólejátszás"
+      },
+      {
+        "label": "Töltő",
+        "value": "USB‑C hálózati adapter, MagSafe 3 kábel"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "macOS kompatibilitás"
+      }
+    ]
+  },
+  "macbook_pro_14_m5": {
+    "source_url": "https://support.apple.com/en-gb/125405",
+    "source_title": "MacBook Pro (14-inch, M5) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "MacBook Pro 14-inch (M5)"
+      },
+      {
+        "label": "Kijelző",
+        "value": "14,2 hüvelykes Liquid Retina XDR kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "3024 × 1964 pixel, 254 ppi"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M5 chip, 10 magos CPU, 10 magos GPU, 16 magos Neural Engine"
+      },
+      {
+        "label": "Memória",
+        "value": "16 GB, 24 GB vagy 32 GB egyesített memória"
+      },
+      {
+        "label": "Tárhely",
+        "value": "512 GB, 1 TB, 2 TB vagy 4 TB SSD (gyári konfigurációk)"
+      },
+      {
+        "label": "Portok",
+        "value": "MagSafe 3, 3 × Thunderbolt 4, HDMI, SDXC, 3,5 mm fejhallgató"
+      },
+      {
+        "label": "Wi‑Fi",
+        "value": "Wi‑Fi 6E (802.11ax)"
+      },
+      {
+        "label": "Bluetooth",
+        "value": "Bluetooth 5.3"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 24 óra videóstreaming"
+      }
+    ]
+  },
+  "macbook_pro_14_m5_pro": {
+    "source_url": "https://support.apple.com/en-gb/126318",
+    "source_title": "MacBook Pro (14-inch, M5 Pro or M5 Max) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "MacBook Pro 14-inch (M5 Pro)"
+      },
+      {
+        "label": "Kijelző",
+        "value": "14,2 hüvelykes Liquid Retina XDR kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "3024 × 1964 pixel, 254 ppi"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M5 Pro chip, 15 magos CPU és 16 magos GPU vagy 18 magos CPU és 20 magos GPU; 16 magos Neural Engine"
+      },
+      {
+        "label": "Memória",
+        "value": "24 GB vagy 48 GB egyesített memória; 64 GB a 20 magos GPU-val"
+      },
+      {
+        "label": "Tárhely",
+        "value": "1 TB, 2 TB vagy 4 TB SSD (gyári konfigurációk)"
+      },
+      {
+        "label": "Portok",
+        "value": "MagSafe 3, 3 × Thunderbolt 5, HDMI, SDXC, 3,5 mm fejhallgató"
+      },
+      {
+        "label": "Wi‑Fi",
+        "value": "Wi‑Fi 7"
+      },
+      {
+        "label": "Bluetooth",
+        "value": "Bluetooth 6"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 22 óra videóstreaming"
+      }
+    ]
+  },
+  "macbook_pro_16_inch_m1_max": {
+    "source_url": "https://support.apple.com/en-gb/111901",
+    "source_title": "MacBook Pro (16-inch, 2021) - Technical Specifications",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "MacBook Pro 16-inch M1 Max"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M1 Max, 10 magos CPU, 24 vagy 32 magos GPU"
+      },
+      {
+        "label": "Memória",
+        "value": "32 GB vagy 64 GB egyesített memória (konfigurációtól függően)"
+      },
+      {
+        "label": "Tárhely",
+        "value": "1 TB, 2 TB, 4 TB, 8 TB SSD (gyári konfigurációk)"
+      },
+      {
+        "label": "Kijelző",
+        "value": "16,2 hüvelykes Liquid Retina XDR, ProMotion kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "3456 × 2234 pixel"
+      },
+      {
+        "label": "Kamera",
+        "value": "1080p FaceTime HD"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6, Bluetooth 5.0"
+      },
+      {
+        "label": "Portok",
+        "value": "3 × Thunderbolt 4; HDMI; SDXC; MagSafe 3; 3,5 mm fejhallgató"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: akár 21 óra videólejátszás, akár 14 óra vezeték nélküli böngészés"
+      },
+      {
+        "label": "Méretek",
+        "value": "35,57 × 24,81 × 1,68 cm"
+      },
+      {
+        "label": "Súly",
+        "value": "2,2 kg"
+      }
+    ]
+  },
+  "macbook_pro_16_inch_m1_pro": {
+    "source_url": "https://support.apple.com/en-gb/111901",
+    "source_title": "MacBook Pro (16-inch, 2021) - Technical Specifications",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "MacBook Pro 16-inch M1 Pro"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M1 Pro, 10 magos CPU, 16 magos GPU"
+      },
+      {
+        "label": "Memória",
+        "value": "16 GB vagy 32 GB egyesített memória (konfigurációtól függően)"
+      },
+      {
+        "label": "Tárhely",
+        "value": "512 GB, 1 TB, 2 TB, 4 TB, 8 TB SSD (gyári konfigurációk)"
+      },
+      {
+        "label": "Kijelző",
+        "value": "16,2 hüvelykes Liquid Retina XDR, ProMotion kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "3456 × 2234 pixel"
+      },
+      {
+        "label": "Kamera",
+        "value": "1080p FaceTime HD"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6, Bluetooth 5.0"
+      },
+      {
+        "label": "Portok",
+        "value": "3 × Thunderbolt 4; HDMI; SDXC; MagSafe 3; 3,5 mm fejhallgató"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: akár 21 óra videólejátszás, akár 14 óra vezeték nélküli böngészés"
+      },
+      {
+        "label": "Méretek",
+        "value": "35,57 × 24,81 × 1,68 cm"
+      },
+      {
+        "label": "Súly",
+        "value": "2,1 kg"
+      }
+    ]
+  },
+  "macbook_pro_16_inch_m2_max": {
+    "source_url": "https://support.apple.com/en-gb/111838",
+    "source_title": "MacBook Pro (16-inch, 2023) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "MacBook Pro 16-inch M2 Max"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M2 Max, 12 magos CPU, 30 vagy 38 magos GPU"
+      },
+      {
+        "label": "Memória",
+        "value": "32 GB vagy 64 GB; 96 GB a 38 magos GPU-val egyesített memória (konfigurációtól függően)"
+      },
+      {
+        "label": "Tárhely",
+        "value": "1 TB, 2 TB, 4 TB, 8 TB SSD (gyári konfigurációk)"
+      },
+      {
+        "label": "Kijelző",
+        "value": "16,2 hüvelykes Liquid Retina XDR, ProMotion kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "3456 × 2234 pixel"
+      },
+      {
+        "label": "Kamera",
+        "value": "1080p FaceTime HD"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6E, Bluetooth 5.3"
+      },
+      {
+        "label": "Portok",
+        "value": "3 × Thunderbolt 4; HDMI; SDXC; MagSafe 3; 3,5 mm fejhallgató"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: akár 22 óra videólejátszás, akár 15 óra vezeték nélküli böngészés"
+      },
+      {
+        "label": "Méretek",
+        "value": "35,57 × 24,81 × 1,68 cm"
+      },
+      {
+        "label": "Súly",
+        "value": "2,16 kg"
+      }
+    ]
+  },
+  "macbook_pro_16_inch_m5_max": {
+    "source_url": "https://support.apple.com/en-gb/126319",
+    "source_title": "MacBook Pro (16-inch, M5 Pro or M5 Max) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "MacBook Pro 16-inch M5 Max"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M5 Max, 18 magos CPU, 32 vagy 40 magos GPU"
+      },
+      {
+        "label": "Memória",
+        "value": "36 GB a 32 magos GPU-val; 48 GB, 64 GB vagy 128 GB a 40 magos GPU-val egyesített memória (konfigurációtól függően)"
+      },
+      {
+        "label": "Tárhely",
+        "value": "2 TB, 4 TB, 8 TB SSD (gyári konfigurációk)"
+      },
+      {
+        "label": "Kijelző",
+        "value": "16,2 hüvelykes Liquid Retina XDR, ProMotion kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "3456 × 2234 pixel"
+      },
+      {
+        "label": "Kamera",
+        "value": "12 MP Center Stage"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 7, Bluetooth 6"
+      },
+      {
+        "label": "Portok",
+        "value": "3 × Thunderbolt 5; HDMI; SDXC; MagSafe 3; 3,5 mm fejhallgató"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Gyártói adat új készülékre: akár 22 óra videólejátszás, akár 16 óra vezeték nélküli böngészés"
+      },
+      {
+        "label": "Méretek",
+        "value": "35,57 × 24,81 × 1,68 cm"
+      },
+      {
+        "label": "Súly",
+        "value": "2,15 kg"
+      }
+    ]
+  },
+  "macbook_pro_16_m2_pro": {
+    "source_url": "https://support.apple.com/en-gb/111838",
+    "source_title": "MacBook Pro (16-inch, 2023) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "MacBook Pro 16 hüvelykes (M2 Pro, 2023)"
+      },
+      {
+        "label": "Színek",
+        "value": "Space Gray, Silver"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M2 Pro chip, 12 magos CPU és 19 magos GPU, 16 magos Neural Engine"
+      },
+      {
+        "label": "Memória",
+        "value": "16 GB egyesített memória, konfigurálható 32 GB memóriával"
+      },
+      {
+        "label": "Tárhely",
+        "value": "512 GB SSD, konfigurálható 1 TB, 2 TB, 4 TB vagy 8 TB SSD-vel"
+      },
+      {
+        "label": "Kijelző",
+        "value": "16,2 hüvelykes Liquid Retina XDR kijelző ProMotion technológiával"
+      },
+      {
+        "label": "Felbontás",
+        "value": "3456 × 2234 pixel"
+      },
+      {
+        "label": "Kamera",
+        "value": "1080p FaceTime HD kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6E (802.11ax), Bluetooth 5.3"
+      },
+      {
+        "label": "Portok",
+        "value": "MagSafe 3, három Thunderbolt 4 port, HDMI, SDXC, 3,5 mm fejhallgató-csatlakozó"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 22 óra Apple TV app filmlejátszás, akár 15 óra vezeték nélküli böngészés"
+      },
+      {
+        "label": "Töltő",
+        "value": "USB‑C hálózati adapter, MagSafe 3 kábel"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "macOS kompatibilitás"
+      }
+    ]
+  },
+  "macbook_pro_16_m3": {
+    "source_url": "https://support.apple.com/en-gb/117737",
+    "source_title": "MacBook Pro (16-inch, Nov 2023) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "MacBook Pro 16 hüvelykes (M3 család, 2023)"
+      },
+      {
+        "label": "Színek",
+        "value": "Space Black, Silver"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M3 Pro vagy M3 Max chip konfigurációtól függően"
+      },
+      {
+        "label": "Memória",
+        "value": "18 GB egyesített memória, konfigurálható nagyobb M3 Max memóriával"
+      },
+      {
+        "label": "Tárhely",
+        "value": "512 GB SSD vagy nagyobb konfigurációk"
+      },
+      {
+        "label": "Kijelző",
+        "value": "16,2 hüvelykes Liquid Retina XDR kijelző ProMotion technológiával"
+      },
+      {
+        "label": "Felbontás",
+        "value": "3456 × 2234 pixel"
+      },
+      {
+        "label": "Kamera",
+        "value": "1080p FaceTime HD kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6E (802.11ax), Bluetooth 5.3"
+      },
+      {
+        "label": "Portok",
+        "value": "MagSafe 3, három Thunderbolt 4 port, HDMI, SDXC, 3,5 mm fejhallgató-csatlakozó"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 22 óra Apple TV app filmlejátszás, akár 15 óra vezeték nélküli böngészés"
+      },
+      {
+        "label": "Töltő",
+        "value": "USB‑C hálózati adapter, MagSafe 3 kábel"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "macOS kompatibilitás"
+      }
+    ]
+  },
+  "macbook_pro_16_m3_max": {
+    "source_url": "https://support.apple.com/en-gb/117737",
+    "source_title": "MacBook Pro (16-inch, Nov 2023) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "MacBook Pro 16 hüvelykes (M3 Max, 2023)"
+      },
+      {
+        "label": "Színek",
+        "value": "Space Black, Silver"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M3 Max chip, akár 16 magos CPU és 40 magos GPU, 16 magos Neural Engine"
+      },
+      {
+        "label": "Memória",
+        "value": "36 GB egyesített memória, konfigurálható 48 GB, 64 GB, 96 GB vagy 128 GB memóriával"
+      },
+      {
+        "label": "Tárhely",
+        "value": "1 TB SSD, konfigurálható 2 TB, 4 TB vagy 8 TB SSD-vel"
+      },
+      {
+        "label": "Kijelző",
+        "value": "16,2 hüvelykes Liquid Retina XDR kijelző ProMotion technológiával"
+      },
+      {
+        "label": "Felbontás",
+        "value": "3456 × 2234 pixel"
+      },
+      {
+        "label": "Kamera",
+        "value": "1080p FaceTime HD kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6E (802.11ax), Bluetooth 5.3"
+      },
+      {
+        "label": "Portok",
+        "value": "MagSafe 3, három Thunderbolt 4 port, HDMI, SDXC, 3,5 mm fejhallgató-csatlakozó"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 22 óra Apple TV app filmlejátszás, akár 15 óra vezeték nélküli böngészés"
+      },
+      {
+        "label": "Töltő",
+        "value": "USB‑C hálózati adapter, MagSafe 3 kábel"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "macOS kompatibilitás"
+      }
+    ]
+  },
+  "macbook_pro_16_m3_pro": {
+    "source_url": "https://support.apple.com/en-gb/117737",
+    "source_title": "MacBook Pro (16-inch, Nov 2023) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "MacBook Pro 16 hüvelykes (M3 Pro, 2023)"
+      },
+      {
+        "label": "Színek",
+        "value": "Space Black, Silver"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M3 Pro chip, akár 12 magos CPU és 18 magos GPU, 16 magos Neural Engine"
+      },
+      {
+        "label": "Memória",
+        "value": "18 GB egyesített memória, konfigurálható 36 GB memóriával"
+      },
+      {
+        "label": "Tárhely",
+        "value": "512 GB SSD, konfigurálható 1 TB, 2 TB vagy 4 TB SSD-vel"
+      },
+      {
+        "label": "Kijelző",
+        "value": "16,2 hüvelykes Liquid Retina XDR kijelző ProMotion technológiával"
+      },
+      {
+        "label": "Felbontás",
+        "value": "3456 × 2234 pixel"
+      },
+      {
+        "label": "Kamera",
+        "value": "1080p FaceTime HD kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6E (802.11ax), Bluetooth 5.3"
+      },
+      {
+        "label": "Portok",
+        "value": "MagSafe 3, három Thunderbolt 4 port, HDMI, SDXC, 3,5 mm fejhallgató-csatlakozó"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 22 óra Apple TV app filmlejátszás, akár 15 óra vezeték nélküli böngészés"
+      },
+      {
+        "label": "Töltő",
+        "value": "USB‑C hálózati adapter, MagSafe 3 kábel"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "macOS kompatibilitás"
+      }
+    ]
+  },
+  "macbook_pro_16_m4_max": {
+    "source_url": "https://support.apple.com/en-gb/121554",
+    "source_title": "MacBook Pro (16-inch, 2024) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "MacBook Pro 16 hüvelykes (M4 Max)"
+      },
+      {
+        "label": "Színek",
+        "value": "Space Black, Silver"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M4 Max chip, akár 16 magos CPU és 40 magos GPU, 16 magos Neural Engine"
+      },
+      {
+        "label": "Memória",
+        "value": "36 GB egyesített memória, konfigurálható 48 GB, 64 GB vagy 128 GB memóriával"
+      },
+      {
+        "label": "Tárhely",
+        "value": "1 TB SSD, konfigurálható 2 TB, 4 TB vagy 8 TB SSD-vel"
+      },
+      {
+        "label": "Kijelző",
+        "value": "16,2 hüvelykes Liquid Retina XDR kijelző ProMotion technológiával"
+      },
+      {
+        "label": "Felbontás",
+        "value": "3456 × 2234 pixel"
+      },
+      {
+        "label": "Kamera",
+        "value": "12 MP Center Stage kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6E (802.11ax), Bluetooth 5.3"
+      },
+      {
+        "label": "Portok",
+        "value": "MagSafe 3, három Thunderbolt 5 port, HDMI, SDXC, 3,5 mm fejhallgató-csatlakozó"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 21 óra videóstreaming, akár 14 óra vezeték nélküli böngészés"
+      },
+      {
+        "label": "Töltő",
+        "value": "USB‑C hálózati adapter, MagSafe 3 kábel"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "macOS kompatibilitás"
+      }
+    ]
+  },
+  "macbook_pro_16_m4_pro": {
+    "source_url": "https://support.apple.com/en-gb/121554",
+    "source_title": "MacBook Pro (16-inch, 2024) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "MacBook Pro 16 hüvelykes (M4 Pro)"
+      },
+      {
+        "label": "Színek",
+        "value": "Space Black, Silver"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M4 Pro chip, akár 14 magos CPU és 20 magos GPU, 16 magos Neural Engine"
+      },
+      {
+        "label": "Memória",
+        "value": "24 GB vagy 48 GB egyesített memória"
+      },
+      {
+        "label": "Tárhely",
+        "value": "512 GB SSD, konfigurálható 1 TB, 2 TB vagy 4 TB SSD-vel"
+      },
+      {
+        "label": "Kijelző",
+        "value": "16,2 hüvelykes Liquid Retina XDR kijelző ProMotion technológiával"
+      },
+      {
+        "label": "Felbontás",
+        "value": "3456 × 2234 pixel"
+      },
+      {
+        "label": "Kamera",
+        "value": "12 MP Center Stage kamera"
+      },
+      {
+        "label": "Vezeték nélküli kapcsolat",
+        "value": "Wi‑Fi 6E (802.11ax), Bluetooth 5.3"
+      },
+      {
+        "label": "Portok",
+        "value": "MagSafe 3, három Thunderbolt 5 port, HDMI, SDXC, 3,5 mm fejhallgató-csatlakozó"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 24 óra videólejátszás"
+      },
+      {
+        "label": "Töltő",
+        "value": "USB‑C hálózati adapter, MagSafe 3 kábel"
+      },
+      {
+        "label": "Operációs rendszer",
+        "value": "macOS kompatibilitás"
+      }
+    ]
+  },
+  "macbook_pro_16_m5_pro": {
+    "source_url": "https://support.apple.com/en-gb/126319",
+    "source_title": "MacBook Pro (16-inch, M5 Pro or M5 Max) - Tech Specs",
+    "fetched_at": "2026-10-28",
+    "match_status": "verified_official_model_source",
+    "rows": [
+      {
+        "label": "Márka",
+        "value": "Apple"
+      },
+      {
+        "label": "Modell",
+        "value": "MacBook Pro 16-inch (M5 Pro)"
+      },
+      {
+        "label": "Kijelző",
+        "value": "16,2 hüvelykes Liquid Retina XDR kijelző"
+      },
+      {
+        "label": "Felbontás",
+        "value": "3456 × 2234 pixel, 254 ppi"
+      },
+      {
+        "label": "Chip",
+        "value": "Apple M5 Pro chip, 18 magos CPU, 20 magos GPU, 16 magos Neural Engine"
+      },
+      {
+        "label": "Memória",
+        "value": "24 GB, 48 GB vagy 64 GB egyesített memória"
+      },
+      {
+        "label": "Tárhely",
+        "value": "1 TB, 2 TB vagy 4 TB SSD (gyári konfigurációk)"
+      },
+      {
+        "label": "Portok",
+        "value": "MagSafe 3, 3 × Thunderbolt 5, HDMI, SDXC, 3,5 mm fejhallgató"
+      },
+      {
+        "label": "Wi‑Fi",
+        "value": "Wi‑Fi 7"
+      },
+      {
+        "label": "Bluetooth",
+        "value": "Bluetooth 6"
+      },
+      {
+        "label": "Akkumulátor",
+        "value": "Akár 24 óra videóstreaming"
+      }
+    ]
+  }
+}

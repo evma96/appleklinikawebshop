@@ -5,6 +5,7 @@ if (PHP_SAPI !== 'cli') exit(1);
 require dirname(__DIR__, 4) . '/wp-load.php';
 
 use Appleklinika\Inventory\Application\ProductSelector\ModelSelectorOptions;
+use Appleklinika\Inventory\Domain\ProductCondition\Grade;
 use Appleklinika\Inventory\Infrastructure\WordPress\DeviceCatalogRepository;
 use Appleklinika\Inventory\Infrastructure\WordPress\WooProductConditionRepository;
 use Appleklinika\Inventory\Interfaces\Frontend\ProductFrontendDisplay;
@@ -62,10 +63,17 @@ try {
         $specs = [$key=>['rows'=>$rows]];
         $rendered = $html('renderBelowHeroProductArea',$p,$id,['url'=>'','html'=>'','srcset'=>''],[$p]);
         $xp=$parse($rendered);
+        $check(!str_contains($rendered,'A kiválasztott készülékhez')&&!str_contains($rendered,'Minden termékadat')&&!str_contains($rendered,'appleklinika-quick-facts'),$type.': redundant summary and divider removed.');
         $check($xp->query('//section[@data-selector-group="color"]//button')->length===2,$type.': model colors survive sparse inventory.');
         $check($xp->query('//button[@data-option-value="gold" and @disabled and @aria-disabled="true"]')->length===1,$type.': no-product option is disabled before JavaScript.');
         $check($xp->query('//button[@data-option-value="silver" and @aria-pressed="true"]')->length===1,$type.': existing current color remains selected.');
         $check($xp->query('//section[@data-selector-group="condition"]')->length===1,$type.': condition preserved.');
+        $gradeButtons=$xp->query('//section[@data-selector-group="condition"]//button');
+        $gradeKeys=array_map(static fn ($button)=>$button->getAttribute('data-option-value'),iterator_to_array($gradeButtons));
+        $check($gradeKeys===array_keys(Grade::options()),$type.': full configured condition scale/order survives sparse inventory.');
+        $check($xp->query('//section[@data-selector-group="condition"]//button[@data-option-value="a" and @aria-pressed="true" and not(@disabled)]')->length===1,$type.': current physical condition stays selected and enabled.');
+        $check($xp->query('//section[@data-selector-group="condition"]//button[@disabled and @aria-disabled="true" and @tabindex="-1"]')->length===3,$type.': valid missing grades remain visible and disabled before JavaScript.');
+        $check($xp->query('//section[@data-selector-group="condition"]//button[@disabled]//span[contains(@class,"__meta")]')->length===0,$type.': missing grades have no invented price delta.');
         $check(str_contains($rendered,'appleklinika-product-below-hero--compact-options')===($type!=='iphone'),$type.': approved iPhone dimensions preserved.');
         if($type==='apple_watch'){
             $check(!str_contains($rendered,'appleklinika-below-panel--technical')&&!str_contains($rendered,'data-selector-group="storage"'), 'Watch has no storage card, controls or gap wrapper.');

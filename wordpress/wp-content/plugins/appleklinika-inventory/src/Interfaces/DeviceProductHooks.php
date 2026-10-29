@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Appleklinika\Inventory\Interfaces;
 
-use Appleklinika\Inventory\Infrastructure\WordPress\DeviceAvailability;
+use Appleklinika\Inventory\Infrastructure\WordPress\WooDeviceQueries;
 use Appleklinika\Inventory\Infrastructure\WordPress\ProductPhotoProcessor;
 use Appleklinika\Inventory\Infrastructure\WordPress\WooDeviceProductSafety;
 
@@ -19,6 +19,9 @@ final class DeviceProductHooks
         add_action('pre_get_posts', [$this, 'catalog'], 30);
         add_filter('woocommerce_product_object_query_args', [$this, 'markPublicQuery']);
         add_filter('woocommerce_product_data_store_cpt_get_products_query', [$this, 'productQuery'], 20, 2);
+        $queries = new WooDeviceQueries();
+        add_filter('posts_where', [$queries, 'availableWhere'], 20, 2);
+        add_filter('posts_orderby', [$queries, 'searchOrder'], 20, 2);
         add_filter('wp_generate_attachment_metadata', [$this, 'photoMetadata'], 20, 2);
     }
 
@@ -31,9 +34,7 @@ final class DeviceProductHooks
             && $query->get('post_type') !== 'product') {
             return;
         }
-        $meta = (array) $query->get('meta_query');
-        $meta[] = DeviceAvailability::constraint();
-        $query->set('meta_query', $meta);
+        $query->set(WooDeviceQueries::AVAILABLE, true);
     }
 
     public function markPublicQuery(array $vars): array
@@ -47,11 +48,7 @@ final class DeviceProductHooks
 
     public function productQuery(array $query, array $vars): array
     {
-        if (!empty($vars['appleklinika_available_devices'])) {
-            $query['meta_query'][] = DeviceAvailability::constraint();
-        }
-        unset($query['appleklinika_available_devices']);
-        return $query;
+        return (new WooDeviceQueries())->productQuery($query, $vars);
     }
 
     public function photoMetadata(array $metadata, int $id): array

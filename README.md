@@ -2,6 +2,9 @@
 
 Production-oriented WooCommerce webshop foundation for selling used Apple devices.
 
+Measured LOCAL storefront query improvements and their before/after evidence are documented in [performance query fixes](docs/qa/performance-query-fixes.md). They preserve native Woo availability and family relevance, batch only render-time metadata, and resolve legacy HEIC description URLs to existing JPEGs. No TEST deployment is included.
+
+
 Device-photo metadata cleanup preserves all embedded ICC profiles in place,
 including separate iPhone HEIC HDR gain-map profiles. See the
 [TEST acceptance record](docs/qa/physical-device-foundation-test.md).
@@ -232,7 +235,7 @@ The frontend currently includes:
 - A right-side purchase panel with WooCommerce stock status, product title, short description, product price, sale savings, real WooCommerce add-to-cart form, add-to-cart feedback, and stock note.
 - Product gallery thumbnails, previous/next controls, and lightbox navigation use real WooCommerce product images.
 - Single product description, specs, reviews, and related products render from real WooCommerce product data, product attributes/meta, WooCommerce reviews, and WooCommerce related/same-model products.
-- Single product `Termékadatok` keeps a short Apple Klinika condition view by default and can show imported official manufacturer specification rows through a `Mutass többet` / `Mutass kevesebbet` toggle when stored model-level specs exist for the product model key. The current model-level cache lives in the `appleklinika_official_specs_by_model` WordPress option, published products reference it with `_ak_official_specs_model_key`, and the current demo catalog has model-level specs coverage for all published products; legacy `_ak_official_specs` product meta is kept as fallback during verification.
+- Model technical specifications are resolved from the selected model through the shared `ModelSpecifications` application port and the existing `appleklinika_official_specs_by_model` WordPress registry. Device entry saves only a canonical relationship/completeness status; no per-device spec/URL copying or title guessing. Existing legacy JSON is preserved but is not a fallback. Missing profiles and non-model-specific source URLs are reported in admin. Current coverage: 102/102 catalog models, 103 stored profiles including one historical orphan, all with exact Apple archive URLs. Guarded data revisions preserve unknown editor changes. LOCAL regression and audit commands: [model specifications](docs/qa/model-specifications.md).
 - The product page uses a theme-level WooCommerce single product template override so the custom Appleklinika layout is the only product layout rendered.
 - The block theme product template uses the `appleklinika_single_product` shortcode to avoid fallback rendering through default WooCommerce product content.
 - The header includes real product search, account/cart action buttons with functional icons, and a WooCommerce cart count.
@@ -566,3 +569,32 @@ LOCAL manual product entry and HEIC recovery: [diagnosis and workflow](docs/qa/m
 The shared Woo-backed device-entry service, private SKU/IMEI/serial order snapshots, automatic titles, native ordered photos and safe single-unit stock behavior are documented in [the LOCAL rehearsal report](docs/qa/physical-device-foundation-local.md). Run `make test-local-device-foundation` only in the isolated LOCAL runtime. The future Back Office entry UI is not implemented. COD remains deferred; no payment/provider lifecycle is changed.
 
 The physical-device foundation and current LOCAL product-page work were approved for checkpoint/integration on 2026-10-27. TEST requires the reproducible media overlay and a one-device acceptance rehearsal; see [integration/runtime contract](docs/qa/physical-device-foundation-test.md). No Back Office entry UI or COD activation is included.
+
+
+### LOCAL compact storage controls — 2026-10-27
+
+The redundant selected-device summary is removed from the selector UI; complete
+equipment data remains below. iPhone/iPad/Mac storage controls use natural compact
+widths, with existing availability/price behavior; Watch storage stays hidden.
+See [focused LOCAL verification](docs/qa/product-information-presentation.md#local-compact-storage-and-summary-removal--2026-10-27). No commit or deployment.
+
+
+### LOCAL stock presentation and adaptive selectors — 2026-10-28
+
+Public available-stock counts and the redundant stock footer are removed without
+changing native stock/purchasability. Selector grids now distribute the existing
+option count across equal columns and wrap for narrow widths; Watch storage stays
+hidden. This supersedes the natural-width tile rule above. See the latest section
+of [the product information report](docs/qa/product-information-presentation.md).
+LOCAL only, uncommitted and not deployed.
+
+
+LOCAL condition availability correction (2026-10-28): selectors now retain the
+complete existing `Grade::options()` scale, including disabled missing grades
+without invented price deltas. The approved adaptive layout and native matching
+are unchanged; see the latest product-information QA section. Not committed/deployed.
+
+
+### Product-page visual polish — LOCAL, 2026-10-28
+
+The purchase action spans its container; native Woo quantity defaults/limits remain intact while the product-page quantity control is visually hidden. Desktop details continue directly below selectors, and recommendations follow guarantees in the independent right column. Up to six active same-family devices are shown, preferring existing model peers. See [verification](docs/qa/product-information-presentation.md#final-product-page-polish--2026-10-28). No commit, deployment, provider or stock changes were made in this pass.

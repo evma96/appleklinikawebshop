@@ -42,10 +42,8 @@ try {
     $description = $html('renderProductDescriptionPanel',$p);
     foreach (['iPhone 13 Pro','128 GB','Ezüst','84%','B – jó'] as $fact) $check(str_contains($description,$fact),'Description contains stored fact '.$fact);
     $check(!preg_match('/selector|teszt|WooCommerce/i',$description),'No QA prose in fallback.');
-    $quick = $html('renderQuickFacts',$id);
-    $check(str_contains($quick,'Két eSIM') && str_contains($quick,'Töltőkábel'),'Quick facts use actual equipment.');
-    $check(!str_contains($quick,'Garancia') && !str_contains($quick,'Cikkszám') && !str_contains($quick,'Készlet'),'Repeated purchase/reference fields removed from quick facts.');
     $facts = $html('renderProductFactGroups',$p,$id);
+    $check(str_contains($facts,'Két eSIM') && str_contains($facts,'Töltőkábel'),'Equipment data remains available in the lower product details.');
     $check(substr_count($facts,'<dt>Garancia</dt>')===1 && substr_count($facts,'<dt>Tartozékok</dt>')===1,'Complete facts kept once in lower reference.');
     $check(str_contains($facts,'<details') && str_contains($facts,$p->get_sku()),'Canonical SKU preserved in expandable reference.');
     $check(str_contains($facts,'<dt>Akkumulátor állapota</dt><dd>84%</dd>'),'Battery value has no repeated label.');
@@ -55,7 +53,7 @@ try {
     $payload = $call('productSelectorPayload',[$p])[0];
     $check($payload['salePrice']===90000.0 && $payload['regularPrice']===100000.0,'Pricing payload unchanged.');
     $check($payload['values']===['color'=>'silver','storage'=>'128_gb','condition'=>'b'],'Canonical selector keys unchanged.');
-    $check($payload['factsHtml']===$facts && $payload['descriptionHtml']===$description && $payload['quickFactsHtml']===$quick,'Selected product carries the same factual renderers.');
+    $check($payload['factsHtml']===$facts && $payload['descriptionHtml']===$description,'Selected product carries the same factual renderers.');
     $check($payload['batteryHealthLabel']==='84%','Battery display follows selected physical phone.');
     $specs = ['source_url'=>'https://example.invalid/specification','source_title'=>'Internal import provider','fetched_at'=>'2026-06-23','rows'=>[
         ['label'=>'Modell','value'=>'iPhone 13 Pro'],
@@ -92,7 +90,7 @@ try {
     $meta['battery_health']=''; $meta['warranty_duration']=''; $meta['accessories']=''; $meta['sim_config']='';
     $check(!str_contains($call('localDemoDescription',$p),'%'),'Unknown battery health omitted.');
     $check(!str_contains($html('renderTrustCards',$id),'hónap garancia'),'Unknown warranty omitted.');
-    $check(!str_contains($html('renderQuickFacts',$id),'Tartozékok'),'Unknown accessories omitted.');
+    $check(!isset($payload['quickFactsHtml']),'Removed summary is absent from the dynamic selector payload.');
     $remoteHome = static fn () => 'https://example.invalid'; // No network request.
     add_filter('home_url',$remoteHome);
     $check(!$call('isLocalSelectorDemo',$p) && $call('displayProductTitle',$p)===$p->get_name(),'Non-local business title untouched.');

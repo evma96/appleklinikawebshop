@@ -43,8 +43,10 @@ add_action('init', static function (): void {
     $selectorDemoProductsSeeder->register();
 
     $saveHandler = new Appleklinika\Inventory\Application\ProductCondition\SaveProductConditionHandler($repository, $deviceCatalogRepository);
+    $modelSpecifications = new Appleklinika\Inventory\Infrastructure\WordPress\WordPressModelSpecifications();
+    $modelSpecifications->installMissingProfiles();
     $deviceStore = new Appleklinika\Inventory\Infrastructure\WordPress\WooDeviceProductStore();
-    $deviceService = new Appleklinika\Inventory\Application\DeviceProduct\DeviceProductService($deviceStore, $saveHandler);
+    $deviceService = new Appleklinika\Inventory\Application\DeviceProduct\DeviceProductService($deviceStore, $saveHandler, $modelSpecifications);
     (new Appleklinika\Inventory\Interfaces\Admin\DeviceProductEditor($deviceService, $deviceStore))->register();
     (new Appleklinika\Inventory\Interfaces\DeviceProductHooks())->register();
     (new Appleklinika\Inventory\Interfaces\DeviceOrderHooks())->register();
@@ -60,6 +62,6 @@ add_action('init', static function (): void {
     (new Appleklinika\Inventory\Interfaces\Frontend\ProductProtection($protectionCatalog, $protectionCart, new Appleklinika\Inventory\Infrastructure\WordPress\WooProtectionAssociation()))->register();
     (new Appleklinika\Inventory\Interfaces\Admin\ProductProtectionFields())->register();
 
-    $frontendDisplay = new Appleklinika\Inventory\Interfaces\Frontend\ProductFrontendDisplay($repository, $deviceCatalogRepository);
+    $frontendDisplay = new Appleklinika\Inventory\Interfaces\Frontend\ProductFrontendDisplay($repository, $deviceCatalogRepository, $modelSpecifications);
     $frontendDisplay->register();
 });

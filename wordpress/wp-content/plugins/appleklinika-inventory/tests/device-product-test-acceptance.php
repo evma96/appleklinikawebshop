@@ -31,7 +31,7 @@ $snapshot=static function(int $exclude):array {
  $result=[];foreach(wc_get_products(['limit'=>-1,'status'=>['publish','draft','pending','private','trash']])as$p)if($p->get_id()!==$exclude)$result[$p->get_id()]=hash('sha256',serialize($p->get_data()));ksort($result);return$result;
 };
 $condition=new WooProductConditionRepository();$catalog=new DeviceCatalogRepository();$store=new WooDeviceProductStore();
-$service=new DeviceProductService($store,new SaveProductConditionHandler($condition,$catalog));
+$service=new DeviceProductService($store,new SaveProductConditionHandler($condition,$catalog),new \Appleklinika\Inventory\Infrastructure\WordPress\WordPressModelSpecifications());
 $save=static fn(int $id,array $data):int=>$service->save(new SaveDeviceProductCommand($id,$data));
 $sku='AK-QA-DEVICE-ENTRY-20261027';
 $imei='QA-ENTRY-IMEI-20261027';$serial='QA-ENTRY-SERIAL-20261027';

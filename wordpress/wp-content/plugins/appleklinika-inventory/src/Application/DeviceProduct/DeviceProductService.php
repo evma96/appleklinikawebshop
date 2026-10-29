@@ -4,9 +4,16 @@ namespace Appleklinika\Inventory\Application\DeviceProduct;
 use Appleklinika\Inventory\Application\ProductCondition\{SaveProductConditionCommand,SaveProductConditionHandler};
 use Appleklinika\Inventory\Domain\DeviceProduct\PhysicalDevice;
 use InvalidArgumentException;
+use Appleklinika\Inventory\Application\ModelSpecification\ModelSpecifications;
 final class DeviceProductService
 {
-    public function __construct(private readonly DeviceProductStore $store,private readonly SaveProductConditionHandler $condition) {}
+    public function __construct(private readonly DeviceProductStore $store,private readonly SaveProductConditionHandler $condition, private readonly ModelSpecifications $specifications) {}
+    /** Shared by every entry UI; no technical data is copied into a physical device. */
+    public function technicalProfileStatus(string $modelKey): array
+    {
+        $profile=$this->specifications->resolve($modelKey);
+        return ['model_key'=>$profile['model_key'],'status'=>$profile['status'],'warnings'=>$profile['warnings']];
+    }
     public function save(SaveDeviceProductCommand $command): int
     {
         return $this->store->synchronized(fn()=> $this->store->persist($command->productId,$this->prepare($command)));
@@ -44,7 +51,7 @@ final class DeviceProductService
         $inventory=$this->condition->prepare(new SaveProductConditionCommand($command->productId,$data));
         if(($data['storage_capacity']??'')!==''&&$inventory['storage_capacity']!==$data['storage_capacity'])throw new InvalidArgumentException('A kiválasztott tárhely nem tartozik ehhez a modellhez.');
         if (($data['color']??'')!=='' && ($inventory['color']!==$data['color'] || (!empty($model['colors']) && !array_key_exists($data['color'],$model['colors'])))) throw new InvalidArgumentException('A kiválasztott szín nem tartozik ehhez a modellhez.');
-        return ['inventory'=>$inventory,'title'=>$data['title'],'custom_name'=>$data['custom_name'],'sku'=>$data['sku'],'imei'=>$data['imei'],'serial_number'=>$data['serial_number'],
+        return ['technical_profile'=>$this->technicalProfileStatus($inventory['device_model']),'inventory'=>$inventory,'title'=>$data['title'],'custom_name'=>$data['custom_name'],'sku'=>$data['sku'],'imei'=>$data['imei'],'serial_number'=>$data['serial_number'],
             'status'=>$data['status'],'regular_price'=>$data['regular_price'],'sale_price'=>$data['sale_price'],'stock'=>$data['stock'],'photos'=>$data['photos']];
     }
 }
