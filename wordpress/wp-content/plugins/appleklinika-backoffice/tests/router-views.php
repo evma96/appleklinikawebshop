@@ -15,6 +15,9 @@ function is_account_page(): bool { return $GLOBALS['view_test_account']; }
 function is_user_logged_in(): bool { return $GLOBALS['view_test_user'] > 0; }
 function get_current_user_id(): int { return $GLOBALS['view_test_user']; }
 function wp_get_environment_type(): string { return 'staging'; }
+define('AKBO_CANONICAL_WRITES', true);
+define('AKBO_CANONICAL_WRITE_ENVIRONMENT', 'staging');
+require_once dirname(__DIR__) . '/src/Infrastructure/CanonicalRuntime.php';
 function esc_html(mixed $value): string { return htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8', false); }
 function esc_attr(mixed $value): string { return esc_html($value); }
 function esc_url(string $value): string { return esc_html($value); }
@@ -191,7 +194,7 @@ $GLOBALS['view_test_options']['woocommerce_cod_settings'] = ['enabled'=>'yes','e
 $payment = new ReflectionMethod($router, 'paymentLabel');
 $assert($payment->invoke($router, $order) === 'Fizetési mód beállítása ellenőrzendő', 'Unapproved courier COD is explicit and never claims that cash was collected.');
 $order->payment = 'bacs';
-$assert($payment->invoke($router, $order) === 'Fizetés: ✓ Sikeres', 'Confirmed non-COD payment is shown without manual review.');
+$assert($payment->invoke($router, $order) === 'Fizetés: Sikeres', 'Confirmed non-COD payment is shown without manual review.');
 $order->status = 'refunded';
 $assert($payment->invoke($router, $order) === 'Visszatérítve', 'Refunded orders are not mislabeled as cancelled.');
 

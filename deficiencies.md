@@ -735,3 +735,7 @@ Closed in the separate LOCAL candidate: every webshop shipping method now allows
 ## 2026-10-29 — Consolidation staged; Back Office release dependency remains
 
 The completed independent packages and 30 already-deployed Back Office repair files are checkpointed. The staged candidate passes 4,397 focused/offline assertions. The newer Back Office intake package still requires the canonical order-command/background-worker boundary; its 115 pending paths and the original 34 storefront paths are preserved. No partial TEST release is claimed or deployed. See `docs/qa/final-local-consolidation.md` for exact SHAs, source drift, test limits and the required resume step.
+
+## 2026-10-29 — Final integrated release boundary
+
+The previously pending Back Office source dependency is reconciled with the approved Storefront/Smart Selector candidate; see `docs/qa/final-integrated-release.md`. The current TEST runtime was found using the base image without the approved metadata tool; deployment must retain the existing media overlay. The canonical target registry must be verified after safe provisioning (previous TEST count: 54 profiles). Full integrated concurrency/reservation/late-callback and controlled provider E2E acceptance remains a separate explicit next task. Google Reviews live authorization, production activation and production empty-catalog preparation are not silently completed by this release.

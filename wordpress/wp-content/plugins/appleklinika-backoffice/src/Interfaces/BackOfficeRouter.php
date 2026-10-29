@@ -96,6 +96,7 @@ final class BackOfficeRouter
         check_admin_referer('appleklinika_backoffice_' . $action . '_' . $orderId);
 
         try {
+            \Appleklinika\BackOffice\Infrastructure\CanonicalRuntime::authorizeWrite();
             if (in_array($action, ['resolve_shipping','reconcile_shipping','confirm_manual_payment','recheck_barion'], true)) {
                 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') { throw new InvalidArgumentException('A rendezés csak POST kéréssel végezhető.'); }
                 $field = static fn(string $key): string => is_string($_POST[$key] ?? null) ? sanitize_textarea_field(wp_unslash($_POST[$key])) : '';
@@ -179,6 +180,8 @@ final class BackOfficeRouter
             exit;
         }
 
+        try { \Appleklinika\BackOffice\Infrastructure\CanonicalRuntime::authorizeWrite(); }
+        catch (InvalidArgumentException $error) { wp_die($error->getMessage(), 'Írás letiltva', ['response' => 403]); }
         $this->orders->recordDocumentAccess($order, $document);
 
         nocache_headers();
@@ -205,6 +208,27 @@ final class BackOfficeRouter
     private function renderQueue(): void
     {
         $view = isset($_GET['view']) ? sanitize_key(wp_unslash($_GET['view'])) : '';
+        if (in_array($view, ['devices','device-edit'], true)) {
+            $controller = new DeviceProductsController();
+            $result = $view === 'devices' ? $controller->listing() : $controller->edit(absint($_GET['device'] ?? 0));
+            $this->documentStart('Készülékek – Apple Klinika',false,$result['status']??200);
+            echo '<main class="akbo-shell">';
+            $this->renderApplicationHeader($view === 'devices' ? 'Készülékek' : 'Készülék szerkesztése');
+            $page = new DeviceProductsPage();
+            $view === 'devices' ? $page->listing($result) : $page->edit($result);
+            echo '</main>';
+            $this->documentEnd();
+            return;
+        }
+        if ($view === 'device-intake') {
+            $this->documentStart('Új készülék – Apple Klinika');
+            echo '<main class="akbo-shell">';
+            $this->renderApplicationHeader('Készülékbevétel');
+            (new DeviceIntakePage())->render();
+            echo '</main>';
+            $this->documentEnd();
+            return;
+        }
         if ($view === 'activity') {
             $this->renderTodayActivity();
             return;
@@ -343,16 +367,22 @@ final class BackOfficeRouter
             echo '<div><strong>' . esc_html($count['user']) . '</strong><span>' . esc_html((string) $count['count']) . ' művelet</span></div>';
         }
         echo '</div></section>';
-        echo '<section class="akbo-card"><h2>Mai műveletek</h2><div class="akbo-table-wrap"><table class="akbo-table"><thead><tr><th>Idő</th><th>Munkatárs</th><th>Rendelés</th><th>Művelet</th><th>Állapot</th></tr></thead><tbody>';
+        echo '<section class="akbo-card"><h2>Mai műveletek</h2><div class="akbo-table-wrap"><table class="akbo-table"><thead><tr><th>Idő</th><th>Munkatárs</th><th>Rendelés / készülék</th><th>Művelet</th><th>Állapot</th></tr></thead><tbody>';
         if ($activity === []) {
             echo '<tr><td colspan="5" class="akbo-empty">Ma még nincs rögzített Back Office művelet.</td></tr>';
         }
         foreach ($activity as $entry) {
             $orderId = absint($entry['order_id'] ?? 0);
+            $productId = absint($entry['product_id'] ?? 0);
             $from = FulfilmentWorkflow::labels()[FulfilmentWorkflow::state((string) ($entry['from'] ?? ''))];
             $to = FulfilmentWorkflow::labels()[FulfilmentWorkflow::state((string) ($entry['to'] ?? ''))];
             echo '<tr><td>' . esc_html(substr((string) ($entry['at'] ?? ''), 11, 5)) . '</td><td>' . esc_html((string) ($entry['user'] ?? 'Ismeretlen felhasználó')) . '</td><td>';
+            if ($productId > 0) {
+                echo '<a href="'.esc_url($this->url(['view'=>'device-intake','created'=>$productId])).'">'.esc_html((string)($entry['sku'] ?? '#'.$productId)).'</a>';
+                $from = $to = 'Bevételezve';
+            } else {
             echo $orderId > 0 ? '<a href="' . esc_url($this->url(['order' => $orderId])) . '">#' . esc_html((string) $orderId) . '</a>' : '—';
+            }
             echo '</td><td>' . esc_html(FulfilmentWorkflow::activityLabels()[(string) ($entry['action'] ?? '')] ?? 'Ismeretlen művelet') . '</td><td>' . esc_html($from === $to ? $to : $from . ' → ' . $to) . '</td></tr>';
         }
         echo '</tbody></table></div></section></main>';
@@ -931,8 +961,12 @@ final class BackOfficeRouter
     private function renderApplicationHeader(string $context, string $aside = ''): void
     {
         $user = wp_get_current_user();
+        $isIntake = ($_GET['view'] ?? '') === 'device-intake';
+        $isDevices = in_array($_GET['view'] ?? '', ['devices','device-edit'], true);
+        $devicesLink = class_exists(DeviceIntakeController::class) && DeviceIntakeController::allowed() ? '<a class="'.($isDevices ? 'is-active' : '').'" href="'.esc_url($this->url(['view'=>'devices'])).'">Készülékek</a>' : '';
+        $intakeLink = class_exists(DeviceIntakeController::class) && DeviceIntakeController::allowed() ? '<a class="'.($isIntake ? 'is-active' : '').'" href="'.esc_url($this->url(['view'=>'device-intake'])).'">+ Új készülék</a>' : '';
         $isActivity = isset($_GET['view']) && sanitize_key(wp_unslash($_GET['view'])) === 'activity';
-        echo '<header class="akbo-header"><div><p class="akbo-eyebrow">Apple Klinika <span>Back Office</span></p><h1>' . esc_html($context) . '</h1></div><div class="akbo-header-actions"><nav class="akbo-primary-nav" aria-label="Back Office"><a class="' . ($isActivity ? '' : 'is-active') . '" href="' . esc_url($this->url()) . '">Rendelések</a><a class="' . ($isActivity ? 'is-active' : '') . '" href="' . esc_url($this->url(['view' => 'activity'])) . '">Mai aktivitás</a></nav><div class="akbo-user"><span>' . esc_html($user->display_name ?: $user->user_login) . '</span><a class="akbo-link" href="' . esc_url(wp_logout_url(home_url('/backoffice/'))) . '">Kijelentkezés</a></div>' . $aside . '</div></header>';
+        echo '<header class="akbo-header"><div><p class="akbo-eyebrow">Apple Klinika <span>Back Office</span></p><h1>' . esc_html($context) . '</h1></div><div class="akbo-header-actions"><nav class="akbo-primary-nav" aria-label="Back Office"><a class="' . ($isActivity || $isIntake || $isDevices ? '' : 'is-active') . '" href="' . esc_url($this->url()) . '">Rendelések</a><a class="' . ($isActivity ? 'is-active' : '') . '" href="' . esc_url($this->url(['view' => 'activity'])) . '">Mai aktivitás</a>' . $devicesLink . $intakeLink . '</nav><div class="akbo-user"><span>' . esc_html($user->display_name ?: $user->user_login) . '</span><a class="akbo-link" href="' . esc_url(wp_logout_url(home_url('/backoffice/'))) . '">Kijelentkezés</a></div>' . $aside . '</div></header>';
     }
 
     private function attention(WC_Order $order, string $state): string

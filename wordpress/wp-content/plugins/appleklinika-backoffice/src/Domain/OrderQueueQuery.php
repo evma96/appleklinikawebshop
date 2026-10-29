@@ -37,6 +37,12 @@ final class OrderQueueQuery
             },
         ];
 
+        // All normal work queues and their counts share one payment admission rule.
+        // Explicit diagnostic/history scopes retain their existing discoverability.
+        if (! in_array($queue, ['all', 'payment_pending', 'payment_on_hold', 'handed_to_gls', 'wc_completed'], true)) {
+            $arguments = array_replace($arguments, PaymentState::operationalQueueArguments());
+        }
+
         $queueMetaQuery = $this->queueMetaQuery($queue);
         $term = trim($term);
         $searchType = $this->searchType($term, $searchType);

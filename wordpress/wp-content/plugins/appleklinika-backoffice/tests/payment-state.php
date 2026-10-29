@@ -7,16 +7,17 @@ require_once dirname(__DIR__).'/src/Infrastructure/WooOrderPayment.php';
 use Appleklinika\BackOffice\Domain\PaymentState;
 use Appleklinika\BackOffice\Infrastructure\WooOrderPayment;
 $n=0; $assert=static function(bool $ok,string $why)use(&$n):void{++$n;if(!$ok){throw new RuntimeException($why);}};
+$assert(PaymentState::operationalQueueArguments() === ['payment_method'=>'barion','status'=>['processing']], 'One native query admission rule for unfinished paid Barion work; no shipping or private payment flag.');
 foreach (['gls','pickup','unknown'] as $mode) {
     foreach (['','error','mismatch','Prepared'] as $oldReview) {
         $p=PaymentState::describe('barion','processing',true,$mode,null,false,$oldReview);
-        $assert($p['state']==='paid' && !$p['review'] && $p['block']===null,'Authoritative paid state wins; old review cannot re-gate paid order.');
+        $assert($p['state']==='paid' && $p['label']==='Fizetés: Sikeres' && !$p['review'] && $p['block']===null,'Authoritative paid state wins; old review cannot re-gate paid order.');
     }
 }
 foreach (['pending','on-hold'] as $status) {
     foreach (['','Prepared','Started','Waiting','InProgress'] as $provider) {
         $p=PaymentState::describe('barion',$status,false,'gls',null,false,$provider);
-        $assert($p['state']==='pending' && !$p['review'] && $p['block']!==null,'Awaiting customer/provider is not manual review and cannot fulfil.');
+        $assert($p['state']==='pending' && $p['label']==='Barion fizetésre vár' && !$p['review'] && $p['block']!==null,'Awaiting customer/provider is informational, not manual review, and cannot fulfil.');
     }
 }
 foreach (['error','mismatch','unavailable','Succeeded','Reserved','Authorized','unknown'] as $provider) {

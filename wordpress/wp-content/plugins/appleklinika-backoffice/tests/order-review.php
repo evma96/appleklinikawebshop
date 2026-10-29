@@ -20,6 +20,8 @@ namespace Appleklinika\BackOffice\Infrastructure {
 }
 namespace {
     if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
+    define('AKBO_CANONICAL_WRITES', true);
+    define('AKBO_CANONICAL_WRITE_ENVIRONMENT', 'staging');
     spl_autoload_register(static function ($class) {
         $prefix='Appleklinika\\BackOffice\\';
         if (str_starts_with($class,$prefix)) { require_once dirname(__DIR__).'/src/'.str_replace('\\','/',substr($class,strlen($prefix))).'.php'; }

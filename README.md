@@ -611,3 +611,5 @@ The [focused payment eligibility report](docs/qa/launch-payment-eligibility.md) 
 ### Final LOCAL consolidation — 2026-10-29
 
 Approved Smart Selector, storefront/specification/performance and Barion-only packages are now protected by focused LOCAL checkpoints and staged with the exact already-running TEST Back Office repairs. The newer Back Office order/worker boundary is still incomplete; develop and TEST remain unchanged. See [the consolidation receipt and precise resume dependency](docs/qa/final-local-consolidation.md). Historical uncommitted status notes above describe their earlier acceptance date.
+
+Final approved Storefront/Back Office reconciliation, native verification and the bounded TEST release/rollback procedure are documented in [final integrated release](docs/qa/final-integrated-release.md). Device intake now uses the current shared Inventory service in the native authorized TEST runtime; the original LOCAL development environments remain separate.

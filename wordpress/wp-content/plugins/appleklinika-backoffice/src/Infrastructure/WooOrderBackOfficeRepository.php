@@ -489,6 +489,19 @@ final class WooOrderBackOfficeRepository
     }
 
     /** @return list<array{order_id:int,action:string,from:string,to:string,user_id:int,user:string,at:string}> */
+    public function recordProductIntake(int $productId, int $employee): void
+    {
+        $product = wc_get_product($productId);
+        if (!$product) { return; }
+        $user = get_userdata($employee);
+        $event = ['order_id'=>0, 'product_id'=>$productId, 'product_name'=>$product->get_name(), 'sku'=>$product->get_sku(),
+            'action'=>'create_device', 'from'=>'', 'to'=>'', 'user_id'=>$employee, 'user'=>$user ? $user->display_name : '', 'at'=>current_time('mysql')];
+        // Reuse the existing history shape and daily activity index; never log IMEI or serial.
+        $product->update_meta_data(self::HISTORY_META_KEY, [$event]);
+        $product->save_meta_data();
+        $this->recordTodayActivity($event);
+    }
+
     public function todayActivity(): array
     {
         $activity = get_transient($this->dailyActivityTransientKey());

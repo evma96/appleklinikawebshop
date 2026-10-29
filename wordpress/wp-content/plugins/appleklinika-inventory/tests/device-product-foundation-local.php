@@ -169,7 +169,9 @@ try {
     $check($p->get_stock_quantity()===0&&!$p->is_in_stock(),'Native stock reduction reaches zero');
     $check(!in_array($iphone,wc_get_products(['visibility'=>'catalog','status'=>'publish','include'=>[$iphone],'return'=>'ids']),true),'Sold device removed from catalog');
     $related=(new ReflectionMethod($frontend,'relatedProducts'))->invoke($frontend,$p);
-    $check(!in_array($iphone,array_map(static fn($x)=>$x->get_id(),$related),true),'Sold device removed from available selector');
+    $payload=(new ReflectionMethod($frontend,'productSelectorPayload'))->invoke($frontend,$related);
+    $eligible=array_column(array_filter($payload,static fn($row)=>$row['selectorEligible']),'id');
+    $check(!in_array($iphone,$eligible,true),'Sold device is never eligible in the Smart Selector, even when retained as current page context');
     $check(get_post_status($iphone)==='publish'&&wc_get_order($order->get_id())->get_item_count()===4,'Sold product/order retained');
     wc_reduce_stock_levels($order->get_id());$check(wc_get_product($iphone)->get_stock_quantity()===0,'Stock reduction retry idempotent');
     wc_increase_stock_levels($order->get_id());$p=wc_get_product($iphone);

@@ -13,7 +13,7 @@ html { margin-top: 0 !important; }
 .akbo-eyebrow { margin: 0; color: var(--akbo-accent); font-size: 11px; font-weight: 750; letter-spacing: .09em; text-transform: uppercase; }
 .akbo-eyebrow span { color: var(--akbo-muted); border-left: 1px solid #c9cfd7; margin-left: 8px; padding-left: 10px; }
 .akbo-header-actions { display: grid; gap: 10px; justify-items: end; }
-.akbo-primary-nav { display: flex; gap: 4px; background: #e9ecf0; border-radius: 8px; padding: 3px; }
+.akbo-primary-nav { display: flex; flex-wrap: wrap; gap: 4px; background: #e9ecf0; border-radius: 8px; padding: 3px; }
 .akbo-primary-nav a { color: #56616f; font-size: 13px; font-weight: 650; padding: 7px 13px; border-radius: 6px; text-decoration: none; }
 .akbo-primary-nav a.is-active { background: #fff; color: #202938; box-shadow: 0 1px 3px #20293812; }
 .akbo-user { display: flex; gap: 12px; align-items: center; font-size: 12px; color: var(--akbo-muted); }
@@ -167,7 +167,7 @@ html { margin-top: 0 !important; }
   .akbo-shell { padding: 18px 14px 36px; }
   .akbo-header { gap: 16px; flex-wrap: wrap; }
   .akbo-header h1 { font-size: 26px; }
-  .akbo-header-actions, .akbo-print-action { justify-items: start; }
+  .akbo-header-actions, .akbo-print-action { justify-items: start; max-width: 100%; }
   .akbo-print-action small { text-align: left; }
   .akbo-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .akbo-summary > a:last-child { grid-column: 1/-1; }
@@ -199,3 +199,47 @@ html { margin-top: 0 !important; }
   .akbo-two-columns { grid-template-columns: 1fr; }
 }
 @media print { .akbo-body { background: #fff; } .akbo-print { max-width: none; padding: 0; } .akbo-print-controls { display: none; } .akbo-print section { break-inside: avoid; } }
+
+/* Physical-device intake shares the operational Back Office shell. */
+#akbo-intake [hidden]{display:none!important}
+.akbo-intake-layout{display:grid;grid-template-columns:minmax(0,2fr) minmax(260px,1fr);gap:20px;align-items:start}
+.akbo-intake-layout fieldset{min-width:0;margin:0;border:1px solid #e0e5ec;padding:24px}
+.akbo-intake-layout legend{font-weight:700;font-size:1.1rem;padding:0 8px}
+.akbo-intake-layout label{display:flex;flex-direction:column;gap:7px;font-size:14px;font-weight:600;margin-bottom:16px}
+.akbo-intake-layout input:not([type=checkbox]),.akbo-intake-layout select{width:100%;min-height:44px;padding:10px 12px;border:1px solid #cbd4df;border-radius:8px;background:#fff;color:#182434;font:inherit;box-sizing:border-box}
+.akbo-intake-layout input:focus,.akbo-intake-layout select:focus,.akbo-intake-photo-list button:focus-visible{outline:3px solid #72b1e7;outline-offset:2px}
+.akbo-intake-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 18px}
+.akbo-intake-layout .akbo-intake-check{flex-direction:row;align-items:center}
+.akbo-intake-name{background:#f2f6fa;padding:14px;border-radius:8px;font-size:14px}
+.akbo-intake-photos,.akbo-intake-save{grid-column:1/-1}
+.akbo-intake-drop{padding:22px;border:2px dashed #b6c5d6;border-radius:10px;background:#f8fafc;text-align:center}
+.akbo-intake-drop label{cursor:pointer}.akbo-intake-drop.is-dragging{border-color:#1768a4;background:#eaf4fc}
+.akbo-intake-drop input{max-width:440px}.akbo-intake-drop .akbo-help{margin-bottom:0}
+.akbo-intake-photo-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px;padding:0;list-style:none;margin:20px 0 0}
+.akbo-intake-photo-list li{min-width:0;border:1px solid #dbe3ec;border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:7px;cursor:grab;background:#fff}
+.akbo-intake-photo-list img,.akbo-intake-photo-placeholder{height:140px;width:100%;object-fit:contain;background:#f5f7fa;border-radius:5px}
+.akbo-intake-photo-placeholder{display:grid;place-items:center;text-align:center;font-size:12px;padding:10px;box-sizing:border-box}
+.akbo-intake-photo-list span{font-size:12px;overflow-wrap:anywhere}.akbo-intake-photo-list li>div:last-child{display:flex;gap:8px}
+.akbo-intake-photo-list button{min-width:36px;min-height:36px;border:1px solid #bdcad8;background:white;border-radius:6px;cursor:pointer}.akbo-intake-photo-list button:disabled{opacity:.4;cursor:default}
+.akbo-intake-save{position:sticky;bottom:0;background:#fff;padding:18px;box-shadow:0 -3px 20px #233b5710;border:1px solid #e0e5ec;border-radius:10px;display:flex;gap:12px;align-items:center;justify-content:flex-end;z-index:2}
+.akbo-intake-save p{margin:0 auto 0 0}.akbo-intake-error{color:#9e2525;font-size:14px}
+.akbo-intake-summary{display:grid;grid-template-columns:180px 1fr;gap:7px 14px}.akbo-intake-summary dt{color:#58677a}.akbo-intake-summary dd{margin:0;overflow-wrap:anywhere}
+.akbo-intake-success-actions{display:flex;flex-wrap:wrap;gap:10px}
+#akbo-intake-success{border-left:4px solid #258255;margin-bottom:20px}
+@media(max-width:800px){.akbo-intake-layout{grid-template-columns:1fr}.akbo-intake-grid{grid-template-columns:1fr}.akbo-intake-save{flex-wrap:wrap;position:static}.akbo-intake-save p{width:100%}.akbo-intake-save button{flex:1}.akbo-intake-layout fieldset{padding:18px}.akbo-intake-summary{grid-template-columns:1fr}.akbo-intake-summary dd{margin-bottom:8px}}
+
+.akbo-intake-saved-photos{display:flex;flex-wrap:wrap;gap:12px;margin:15px 0}.akbo-intake-saved-photos img{width:130px;height:150px;object-fit:contain;background:#f5f7fa;border:1px solid #dbe3ec;border-radius:6px}#akbo-intake-success details{margin:16px 0}#akbo-intake-success summary{cursor:pointer;font-weight:600}
+.akbo-device-filters { display: flex; flex-wrap: wrap; gap: 16px; align-items: end; }
+.akbo-device-filters label, .akbo-device-edit label { display: grid; gap: 6px; }
+.akbo-device-filters input, .akbo-device-filters select, .akbo-device-edit input, .akbo-device-edit select { min-width: 0; width: 100%; padding: 10px; border: 1px solid var(--akbo-border, #d9dee5); border-radius: 8px; font: inherit; }
+.akbo-device-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 18px; }
+.akbo-device-card header { display: flex; gap: 14px; align-items: start; }
+.akbo-device-card header img { width: 76px; height: 76px; object-fit: contain; flex-shrink: 0; border-radius: 8px; }
+.akbo-device-card h2 { font-size: 18px; margin: 0 0 8px; }
+.akbo-device-card p { overflow-wrap: anywhere; margin: 0 0 8px; }
+.akbo-device-card dl > div { display: flex; justify-content: space-between; gap: 16px; padding: 7px 0; border-bottom: 1px solid #eef0f3; }
+.akbo-device-card dt { color: #667085; }
+.akbo-device-card dd { margin: 0; text-align: right; }
+.akbo-device-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
+.akbo-device-edit { margin: 18px 0; }
+.akbo-device-edit .akbo-intake-grid { margin: 16px 0; }

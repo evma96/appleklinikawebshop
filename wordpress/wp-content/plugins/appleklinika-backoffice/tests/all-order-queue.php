@@ -6,6 +6,7 @@ if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 
 // Isolated adapter contracts: no WordPress bootstrap, database or provider calls.
 require_once dirname(__DIR__) . '/src/Domain/DeliveryMode.php';
+require_once dirname(__DIR__) . '/src/Domain/PaymentState.php';
 require_once dirname(__DIR__) . '/src/Domain/FulfilmentWorkflow.php';
 require_once dirname(__DIR__) . '/src/Domain/OrderQueueQuery.php';
 require_once dirname(__DIR__) . '/src/Infrastructure/WooOrderBackOfficeRepository.php';
@@ -37,9 +38,15 @@ foreach ([true, false] as $hpos) {
     $repository->queuePage('all', 3, '737', 'order');
     $args = $GLOBALS['all_queue_queries'][0];
     $assert($args['status'] === ($hpos ? ['all'] : array_values(get_post_stati())), 'All statuses use the correct native HPOS/CPT representation.');
-    $assert($args['id'] === 737 && $args['page'] === 3 && $args['limit'] === 25 && ! isset($args['meta_query']), 'All-order adapter retains exact search and bounded paging without a fulfilment restriction.');
+    $assert($args['id'] === 737 && $args['page'] === 3 && $args['limit'] === 25 && ! isset($args['meta_query']) && ! isset($args['payment_method']), 'All-order adapter retains exact search and bounded paging without fulfilment/payment restrictions.');
     $repository->queuePage('', 1, '', '');
-    $assert($GLOBALS['all_queue_queries'][1]['status'] === ['pending', 'on-hold', 'processing'] && isset($GLOBALS['all_queue_queries'][1]['meta_query']), 'The default open queue remains unchanged on both stores.');
+    $assert($GLOBALS['all_queue_queries'][1]['status'] === ['processing'] && $GLOBALS['all_queue_queries'][1]['payment_method'] === 'barion' && isset($GLOBALS['all_queue_queries'][1]['meta_query']), 'The default operational queue uses paid Barion and open fulfilment on both stores.');
+    $GLOBALS['all_queue_queries'] = [];
+    $repository->queueCounts();
+    $assert(count($GLOBALS['all_queue_queries']) === 5, 'Dashboard retains five bounded count queries.');
+    foreach ($GLOBALS['all_queue_queries'] as $args) {
+        $assert($args['status'] === ['processing'] && $args['payment_method'] === 'barion' && $args['limit'] === 1 && $args['return'] === 'ids', 'Each dashboard count shares the operational admission rule without loading order objects.');
+    }
 }
 foreach (['checkout-draft', 'auto-draft', 'trash', 'cancelled', 'failed', 'refunded', 'completed', 'custom'] as $status) {
     $assert($repository->fulfilmentBlockReason(new WC_Order($status)) !== null, 'Discovering a non-operational order does not authorize fulfilment: ' . $status);

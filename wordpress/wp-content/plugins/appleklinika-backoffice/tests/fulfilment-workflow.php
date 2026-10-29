@@ -8,6 +8,7 @@ if (PHP_SAPI !== 'cli') {
 }
 
 require_once dirname(__DIR__) . '/src/Domain/DeliveryMode.php';
+require_once dirname(__DIR__) . '/src/Domain/PaymentState.php';
 require_once dirname(__DIR__) . '/src/Domain/FulfilmentWorkflow.php';
 require_once dirname(__DIR__) . '/src/Domain/OrderQueueQuery.php';
 require_once dirname(__DIR__) . '/src/Interfaces/BackOfficeRouter.php';
@@ -58,7 +59,7 @@ final class FulfilmentWorkflowTest
         $this->assert($newQueue['limit'] === OrderQueueQuery::PAGE_SIZE && $newQueue['paginate'] === true, 'Queue queries have a bounded page size and request total pagination data.');
         $this->assert($newQueue['page'] === 2, 'Queue queries can address pages beyond the first page.');
         $this->assert($newQueue['orderby'] === 'date ID' && $newQueue['order'] === 'DESC', 'Queue pagination has a deterministic creation-date and order-ID sort for timestamp ties.');
-        $this->assert($newQueue['status'] === FulfilmentWorkflow::operationalOrderStatuses(), 'Checkout drafts and terminal WooCommerce statuses are excluded at query level.');
+        $this->assert($newQueue['status'] === ['processing'] && $newQueue['payment_method'] === 'barion', 'Native paid Barion is required for operational admission.');
         $this->assert($newQueue['meta_query']['relation'] === 'OR' && $newQueue['meta_query'][0]['compare'] === 'NOT EXISTS', 'A queue-only query keeps its existing meta-query structure without an unnecessary outer group.');
         $this->assert($queueQuery->page(0) === 1 && $queueQuery->page(PHP_INT_MAX) === OrderQueueQuery::MAX_PAGE, 'Invalid queue pages are bounded safely.');
 

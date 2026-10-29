@@ -73,6 +73,7 @@ final class FulfilmentWorkflow
     public static function actions(): array
     {
         return [
+            'create_device' => 'Készülék bevételezése',
             'note' => 'Belső megjegyzés hozzáadása',
             'start' => 'Feldolgozás megkezdése',
             'accept_cash_pickup' => 'Készlet ellenőrizve – rendelés elfogadása',
@@ -150,15 +151,15 @@ final class FulfilmentWorkflow
     public static function queueLabels(): array
     {
         return [
-            '' => 'Összes nyitott',
+            '' => 'Feldolgozható rendelések',
             'all' => 'Összes rendelés',
             'new' => 'Feldolgozásra vár',
             'preparation' => 'Előkészítés alatt',
             'packing' => 'Csomagolás alatt',
             'ready_for_shipping' => 'Átadásra előkészítve',
             'problem' => 'Problémás',
-            'payment_pending' => 'Fizetésre vár',
-            'payment_on_hold' => 'Fizetés ellenőrzendő',
+            'payment_pending' => 'Fizetésre vár (diagnosztika)',
+            'payment_on_hold' => 'Fizetés ellenőrzendő (diagnosztika)',
             'handed_to_gls' => 'Átadva / átvéve',
             'wc_completed' => 'Lezárt rendelések',
         ];

@@ -44,6 +44,7 @@ register_activation_hook(__FILE__, static function (): void {
 });
 
 register_deactivation_hook(__FILE__, static function (): void {
+    wp_clear_scheduled_hook('appleklinika_intake_cleanup');
     flush_rewrite_rules();
 });
 
@@ -61,6 +62,7 @@ add_action('plugins_loaded', static function (): void {
     $change = new Appleklinika\BackOffice\Application\ChangeFulfilment(new Appleklinika\BackOffice\Infrastructure\WooFulfilmentStore($orders), $mutex);
     $router = new Appleklinika\BackOffice\Interfaces\BackOfficeRouter($orders, $change);
     $router->register();
+    (new Appleklinika\BackOffice\Interfaces\DeviceIntakeController())->register();
     (new Appleklinika\BackOffice\Interfaces\ProviderObservationHooks())->register();
     if (Appleklinika\BackOffice\Infrastructure\LifecycleConfiguration::supportsEnvironment()) {
         (new Appleklinika\BackOffice\Infrastructure\PublicSurfaceSecurity())->register();

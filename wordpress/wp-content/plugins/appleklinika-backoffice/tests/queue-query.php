@@ -8,6 +8,7 @@ if (PHP_SAPI !== 'cli') {
 }
 
 require_once dirname(__DIR__) . '/src/Domain/DeliveryMode.php';
+require_once dirname(__DIR__) . '/src/Domain/PaymentState.php';
 require_once dirname(__DIR__) . '/src/Domain/FulfilmentWorkflow.php';
 require_once dirname(__DIR__) . '/src/Domain/OrderQueueQuery.php';
 
@@ -18,7 +19,7 @@ final class QueueQueryTest
 {
     private int $assertions = 0;
 
-    /** @var array<int, array{status:string,meta:array<string,string>}> */
+    /** @var array<int, array{status:string,payment_method:string,meta:array<string,string>}> */
     private array $orders = [];
 
     public function run(): void
@@ -47,25 +48,30 @@ final class QueueQueryTest
         $this->fixture(29, 'trash', 'new');
         $this->fixture(30, 'auto-draft', null);
         $this->fixture(31, 'custom-order-status', 'unrecognised_legacy_value');
+        foreach (['bacs', 'cod', 'cheque', ''] as $offset => $method) {
+            $this->fixture(32 + $offset, 'processing', 'new', $method);
+        }
+        // Provider/private markers cannot substitute for native Woo paid status.
+        $this->orders[21]['meta']['_barion_payment_status'] = 'Succeeded';
         $this->orders[9]['meta'][OrderQueueQuery::DEVICE_IDENTIFIER_META_KEY] = 'QA-GLS-IMEI-001';
         $this->orders[19]['meta'][OrderQueueQuery::DEVICE_IDENTIFIER_META_KEY] = 'QA-CLOSED-IMEI-001';
 
         $query = new OrderQueueQuery();
         $ids = fn (string $queue, string $term = '', string $type = ''): array => $this->matchingIds($query->arguments($queue, 1, $term, $type, true));
-        $open = [...range(1, 14), 21, 22];
+        $open = range(1, 14);
 
-        $this->assert(FulfilmentWorkflow::queueLabels()['all'] === 'Összes rendelés', 'The all-order queue is an explicit option, distinct from the unchanged open default.');
-        $this->assert($ids('all') === range(1, 31), 'All includes every order status and every fulfilment state, including drafts, trash and custom statuses.');
+        $this->assert(FulfilmentWorkflow::queueLabels()['all'] === 'Összes rendelés', 'The all-order queue is an explicit diagnostic option, distinct from paid operational work.');
+        $this->assert($ids('all') === range(1, 35), 'All includes every payment method, order status and fulfilment state, including drafts, trash and custom statuses.');
         $all = $query->arguments('all', 2, '', '', true);
-        $this->assert($all['status'] === ['all'] && ! isset($all['meta_query']), 'All removes both status and fulfilment restrictions, not just the open-state filter.');
+        $this->assert($all['status'] === ['all'] && ! isset($all['meta_query']) && ! isset($all['payment_method']), 'All removes payment, status and fulfilment restrictions, not just the open-state filter.');
         $this->assert($all['type'] === 'shop_order' && $all['limit'] === 25 && $all['page'] === 2 && $all['paginate'] === true && $all['orderby'] === 'date ID', 'All still queries orders only with bounded deterministic pagination.');
         $this->assert($ids('all', '#24', '') === [24] && $ids('all', '26', '') === [26] && $ids('all', '999999', '') === [], 'Automatic exact-ID search works for cancelled orders and drafts without broadening unknown matches.');
         $this->assert($ids('all', 'QA-CLOSED-IMEI-001', 'device') === [19], 'Exact device search remains active in the all-order scope.');
         $this->assert(isset($query->arguments('all', 1, 'Teszt Elek', 'customer', true)['field_query']) && $query->arguments('all', 1, 'qa@example.test', 'email', true)['billing_email'] === 'qa@example.test', 'All retains customer and email search constraints.');
 
-        $this->assert($ids('') === $open, 'The open worklist excludes physical handover, pickup, legacy completion and terminal WooCommerce statuses.');
-        $this->assert($ids('new') === [1, 2, 3, 4, 21], 'Missing, empty and unknown stored states appear in the same NEW queue as their rendered normalized state.');
-        $this->assert($ids('preparation') === [5, 6, 7, 22], 'Preparation includes its legacy states and submitted on-hold orders.');
+        $this->assert($ids('') === $open, 'Operational work excludes unpaid Barion, legacy payment methods, physical handover and terminal Woo statuses.');
+        $this->assert($ids('new') === [1, 2, 3, 4], 'Paid missing, empty and unknown stored states appear in the same NEW queue as their rendered normalized state.');
+        $this->assert($ids('preparation') === [5, 6, 7], 'Preparation includes paid legacy states but excludes on-hold orders.');
         $this->assert($ids('packing') === [8], 'Packing excludes WooCommerce-completed orders even when old Back Office metadata still says packing.');
         $this->assert($ids('ready_for_shipping') === [9, 10, 11, 12, 13], 'The ready queue includes GLS, pickup and all supported legacy ready states.');
         $this->assert($ids('problem') === [14], 'The problem queue has its own exact state scope.');
@@ -80,6 +86,20 @@ final class QueueQueryTest
         sort($partition);
         $this->assert($partition === $open && count(array_unique($partition)) === count($open), 'Dashboard state queues partition the open worklist exactly once, including legacy and unknown states.');
 
+        foreach ([true, false] as $hpos) {
+            foreach (['', 'new', 'preparation', 'packing', 'ready_for_shipping', 'problem'] as $queue) {
+                $args = $query->arguments($queue, 2, 'QA-GLS-IMEI-001', 'device', $hpos);
+                $this->assert($args['payment_method'] === 'barion' && $args['status'] === ['processing'] && $args['page'] === 2 && isset($args['meta_query']), 'Every operational query/count uses native paid Barion constraints, retaining search and pagination on both stores.');
+            }
+        }
+        foreach (['gls', 'pickup'] as $mode) {
+            $this->orders[21]['meta']['_appleklinika_backoffice_delivery_mode'] = $mode;
+            $this->assert($ids('', '21', 'order') === [], 'Pending is diagnostic-only regardless of delivery mode or provider marker.');
+            $this->orders[21]['status'] = 'processing';
+            $this->assert($ids('', '21', 'order') === [21] && in_array(21, $ids('new'), true), 'The same native Woo order is automatically admitted after payment without a Back Office confirmation marker.');
+            $this->orders[21]['status'] = 'pending';
+        }
+
         $this->assert($ids('', 'QA-GLS-IMEI-001', 'device') === [9] && $ids('ready_for_shipping', 'QA-GLS-IMEI-001', 'device') === [9], 'Exact device search intersects the default open scope and a selected state queue.');
         $this->assert($ids('payment_pending', 'QA-GLS-IMEI-001', 'device') === [] && $ids('wc_completed', 'QA-CLOSED-IMEI-001', 'device') === [19], 'Device search cannot escape payment filters and also works in the closed-order view.');
         $this->assert($ids('wc_completed', '#18', 'order') === [18] && $ids('', '#18', 'order') === [], 'Exact order search retains the selected open/closed scope.');
@@ -90,9 +110,9 @@ final class QueueQueryTest
         echo "Back Office queue query passed: {$this->assertions} assertions.\n";
     }
 
-    private function fixture(int $id, string $status, ?string $state): void
+    private function fixture(int $id, string $status, ?string $state, string $method = 'barion'): void
     {
-        $this->orders[$id] = ['status' => $status, 'meta' => $state === null ? [] : [FulfilmentWorkflow::META_KEY => $state]];
+        $this->orders[$id] = ['status' => $status, 'payment_method' => $method, 'meta' => $state === null ? [] : [FulfilmentWorkflow::META_KEY => $state]];
     }
 
     /** @param array<string,mixed> $arguments @return list<int> */
@@ -101,6 +121,7 @@ final class QueueQueryTest
         $ids = [];
         foreach ($this->orders as $id => $order) {
             if ((! in_array('all', $arguments['status'], true) && ! in_array($order['status'], $arguments['status'], true))
+                || (isset($arguments['payment_method']) && $arguments['payment_method'] !== $order['payment_method'])
                 || (isset($arguments['id']) && $arguments['id'] !== $id)
                 || (isset($arguments['meta_query']) && ! $this->matchesMeta($arguments['meta_query'], $order['meta']))) {
                 continue;
