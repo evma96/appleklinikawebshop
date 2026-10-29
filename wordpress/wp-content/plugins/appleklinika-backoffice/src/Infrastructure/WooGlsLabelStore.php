@@ -25,11 +25,19 @@ final class WooGlsLabelStore implements GlsLabelStore
             'attempt' => is_array($attempt) ? (string) ($attempt['state'] ?? '') : ''];
     }
 
-    public function recordAttempt(int $id, string $state): void
+    public function recordAttempt(int $id, string $state, string $message = ''): void
     {
         $order = wc_get_order($id);
-        $order->update_meta_data(self::META, ['state' => $state, 'at' => gmdate('c'), 'actor' => get_current_user_id()]);
+        $account = class_exists('GLS_Shipping_Account_Helper') ? \GLS_Shipping_Account_Helper::get_active_account() : [];
+        foreach (['username','password','client_id'] as $key) {
+            $secret = (string)($account[$key] ?? '');
+            if ($secret !== '') { $message = str_replace([$secret,rawurlencode($secret),htmlspecialchars($secret,ENT_QUOTES)], '[védett adat]', $message); }
+        }
+        $message = mb_substr(trim(strip_tags($message)),0,600);
+        $order->update_meta_data(self::META, ['state' => $state, 'at' => gmdate('c'), 'actor' => get_current_user_id(), 'message'=>$message]);
         $order->save_meta_data();
+        $fresh = wc_get_order($id); $fresh->read_meta_data(true);
+        if (($fresh->get_meta(self::META,true)['state'] ?? '') !== $state) { throw new \RuntimeException('GLS attempt evidence was not persisted.'); }
         if ($state !== 'attempting') {
             $order->add_order_note(match ($state) {
                 'ready' => 'GLS címke elkészült. Futárátadás még nem történt.',

@@ -20,13 +20,15 @@ final class ChangeFulfilment
             if ($expected !== $order['state']) {
                 throw new \InvalidArgumentException('A rendelés állapota közben megváltozott. Frissítsd az oldalt.');
             }
+            if ($action === 'handed_to_gls' && !empty($order['documents_block'])) { throw new \InvalidArgumentException($order['documents_block']); }
             $cash = !empty($order['cash']);
+            if ($cash && $actor <= 0) { throw new \InvalidArgumentException('A készpénzes rendelés feldolgozásához azonosított munkatárs szükséges.'); }
             $accepted = !empty($order['cash_accepted']);
             if (in_array($action, ['accept_cash_pickup', 'record_cash_pickup'], true) && (!$cash || $actor <= 0)) {
                 throw new \InvalidArgumentException('Ez a művelet csak készpénzes személyes átvételnél végezhető el munkatársként.');
             }
-            if ($cash && !$accepted && !in_array($action, ['accept_cash_pickup', 'problem', 'correct'], true)) {
-                throw new \InvalidArgumentException('Először ellenőrizd a készletet és fogadd el a készpénzes rendelést.');
+            if ($cash && !$accepted && !in_array($action, ['start', 'resume', 'accept_cash_pickup', 'problem', 'correct'], true)) {
+                throw new \InvalidArgumentException('Először kezdd meg a feldolgozást; ekkor a rendszer ellenőrzi a készletfoglalást.');
             }
             if ($cash && $action === 'picked_up') {
                 throw new \InvalidArgumentException('Készpénzes átvételnél a fizetést és átadást együtt rögzítő művelet szükséges.');
@@ -47,7 +49,7 @@ final class ChangeFulfilment
                 $to = $target;
             } else {
                 $to = FulfilmentWorkflow::transition($order['state'], $action, $order['mode']);
-                if ($action === 'accept_cash_pickup') { $this->orders->verifyCashReservation($id); }
+                if ($cash && !$accepted && in_array($action, ['start', 'resume', 'accept_cash_pickup'], true)) { $this->orders->verifyCashReservation($id); }
                 if ($action === 'record_cash_pickup') { $this->orders->recordCashPayment($id, $actor); }
                 if (in_array($action, ['create_label','create_mpl_label'], true)) {
                     if ($order['label']) {

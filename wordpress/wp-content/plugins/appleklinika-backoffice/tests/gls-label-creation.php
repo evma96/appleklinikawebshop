@@ -8,7 +8,7 @@ final class Labels implements GlsLabelStore {
  public array $order=['state'=>'ready_for_shipping','mode'=>'gls','paid'=>true,'blocked'=>null,'recorded'=>false,'attempt'=>''];
  public array $journal=[];
  public function snapshot(int $id):array{return $this->order;}
- public function recordAttempt(int $id,string $state):void{$this->order['attempt']=$state;$this->journal[]=$state;}
+ public function recordAttempt(int $id,string $state,string $message=''):void{$this->order['attempt']=$state;$this->journal[]=$state;}
 }
 final class LabelMutex implements OrderMutex {
  public bool $held=false;

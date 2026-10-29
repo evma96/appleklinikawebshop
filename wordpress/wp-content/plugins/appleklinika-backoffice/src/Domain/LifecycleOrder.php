@@ -20,6 +20,7 @@ final class LifecycleOrder
         public readonly bool $submissionEligible = false,
         public readonly bool $cashPickup = false,
         public readonly bool $cashAccepted = false,
+        public readonly bool $invoiceEvidence = false,
     ) {
     }
 }

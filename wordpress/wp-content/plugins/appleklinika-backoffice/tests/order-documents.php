@@ -86,6 +86,8 @@ require_once dirname(__DIR__) . '/src/Infrastructure/MplCarrier.php';
 require_once dirname(__DIR__) . '/src/Infrastructure/OrderDocuments.php';
 require_once dirname(__DIR__) . '/src/Application/Port/InvoiceIssuer.php';
 require_once dirname(__DIR__) . '/src/Infrastructure/SzamlazzInvoice.php';
+require_once dirname(__DIR__) . '/src/Application/Port/ArtifactReconciliationStore.php';
+require_once dirname(__DIR__) . '/src/Infrastructure/WooArtifactReconciliation.php';
 
 use Appleklinika\BackOffice\Infrastructure\OrderDocuments;
 

@@ -152,11 +152,8 @@ final class WooOrderReview implements OrderReviewStore
             return [$block === null ? 'confirm_manual_payment' : '', $block ?? 'Csak a teljes összeg tényleges jóváírásának / befizetésének ellenőrzése után igazold. A WooCommerce payment_complete művelete rögzíti a fizetési időpontot és indítja a meglévő automatizmusokat.'];
         }
         if ($facts['payment'] === 'cod') {
-            if ($facts['mode'] === DeliveryMode::UNKNOWN) { return ['', 'Készpénzes rendelés: először az átvételi módot kell rendezni. Fizetést nem igazolunk a rendelés processing állapota alapján.']; }
-            if (class_exists(CashPickup::class) && class_exists(LifecycleConfiguration::class) && CashPickup::matches($order) && LifecycleConfiguration::submitted($order)) {
-                return ['', CashPickup::paymentRecorded($order) ? 'A készpénz átvétele rögzítve.' : 'Készpénzes személyes átvétel: előbb készletellenőrzés és elfogadás, majd átvételre előkészítés. A „Készpénz átvéve – személyes átadás rögzítése” művelet csak a tényleges fizetés és átadás lépésénél érhető el.'];
-            }
-            return ['', 'Ehhez az utánvétes / régi készpénzes rendeléshez nincs igazolt, beadott személyes-átvételi készletfoglalás. A készletfoglalást és a befizetés bizonylatát kivételes rendelésadminisztrációban kell egyeztetni; a processing állapotot nem tekintjük készpénzfizetésnek.'];
+            $payment = WooOrderPayment::describe($order, $facts['mode']);
+            return ['', $payment['block'] ?? $payment['label'] . '. Előkészíthető előzetes fizetésigazolás nélkül.'];
         }
         return ['', 'A fizetési mód nem támogat biztonságos Back Office visszaigazolást ('.$facts['payment'].'). A megfelelő fizetési szolgáltató igazolása vagy a hibás fizetésimód-adat kivételes rendelésadminisztrációs javítása szükséges. Tranzakcióazonosítót nem találunk ki.'];
     }

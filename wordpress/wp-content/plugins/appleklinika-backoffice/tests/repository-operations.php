@@ -11,12 +11,17 @@ require_once dirname(__DIR__) . '/src/Infrastructure/MplCarrier.php';
 require_once dirname(__DIR__) . '/src/Infrastructure/ProductionReadiness.php';
 require_once dirname(__DIR__) . '/src/Infrastructure/CashPickup.php';
 require_once dirname(__DIR__) . '/src/Domain/DeliveryMode.php';
+require_once dirname(__DIR__) . '/src/Domain/PaymentState.php';
+require_once dirname(__DIR__) . '/src/Infrastructure/WooOrderPayment.php';
 require_once dirname(__DIR__) . '/src/Domain/FulfilmentWorkflow.php';
 require_once dirname(__DIR__) . '/src/Domain/OrderQueueQuery.php';
 require_once dirname(__DIR__) . '/src/Infrastructure/WooOrderBackOfficeRepository.php';
 require_once dirname(__DIR__) . '/src/Application/Port/OrderMutex.php';
 require_once dirname(__DIR__) . '/src/Infrastructure/WooOrderMutex.php';
 require_once dirname(__DIR__) . '/src/Infrastructure/GlsAutomation.php';
+require_once dirname(__DIR__) . '/src/Infrastructure/OrderDocuments.php';
+require_once dirname(__DIR__) . '/src/Application/Port/ArtifactReconciliationStore.php';
+require_once dirname(__DIR__) . '/src/Infrastructure/WooArtifactReconciliation.php';
 require_once dirname(__DIR__) . '/src/Application/Port/GlsLabelStore.php';
 require_once dirname(__DIR__) . '/src/Application/CreateGlsLabel.php';
 require_once dirname(__DIR__) . '/src/Infrastructure/WooGlsLabelStore.php';
@@ -45,8 +50,9 @@ $GLOBALS['filters'] = [];
 $GLOBALS['backoffice_capability'] = true;
 
 function get_post_meta(int $id, string $key, bool $single): mixed { return $GLOBALS['products'][$id][$key] ?? ''; }
+function doing_action(string $hook): bool { return ($GLOBALS['worker_hook'] ?? '') === $hook; }
 function get_current_user_id(): int { return 81; }
-function get_option(string $key, mixed $default = false): mixed { return $key === 'home' ? $GLOBALS['site_home'] : $default; }
+function get_option(string $key, mixed $default = false): mixed { return $key === 'home' ? $GLOBALS['site_home'] : ($GLOBALS['test_options'][$key] ?? $default); }
 function wc_get_logger(): object { return new class { public function error(string $code, array $context): void { $GLOBALS['automation_errors'][] = $code; } }; }
 function get_userdata(int $id): object { return (object) ['display_name' => 'QA Employee', 'user_email' => 'qa@example.invalid']; }
 function current_user_can(string $capability, mixed ...$arguments): bool { return $capability === 'manage_appleklinika_backoffice' && $GLOBALS['backoffice_capability']; }
@@ -103,6 +109,7 @@ class WC_Order extends RepositoryMetaDouble
     public function get_items(string $type): array { return $this->items; }
     public function get_formatted_line_subtotal(WC_Order_Item_Product $item): string { return "4 000 Ft"; }
     public function get_status(): string { return $this->status; }
+    public function has_status(string $status): bool { return $this->status === $status; }
     public function is_paid(): bool { return $this->paid; }
     public function get_date_paid(): ?string { return $this->paid ? "2026-10-16" : null; }
     public function get_shipping_methods(): array
@@ -110,6 +117,7 @@ class WC_Order extends RepositoryMetaDouble
         return [new class($this->shippingMethod) {
             public function __construct(private string $id) {}
             public function get_method_id(): string { return $this->id; }
+            public function get_instance_id(): int { return 0; }
         }];
     }
     public function add_order_note(string $content, bool $customer = false, bool $employee = false): int
@@ -366,6 +374,26 @@ final class RepositoryOperationsTest
         $repository->recordDocumentAccess($stale, 'invoice');
         $this->assert(count($repository->history($order)) === $beforeHistory + 1 && $repository->state($order) === 'ready_for_shipping', 'Document audit reloads under lock; a stale request cannot overwrite state or history.');
 
+        $GLOBALS['site_home'] = 'https://teszt.appleklinika.com'; $GLOBALS['environment'] = 'staging';
+        $auditOrder = new WC_Order(1382); $GLOBALS['orders'][1382] = $auditOrder;
+        $auditOrder->update_meta_data(FulfilmentWorkflow::META_KEY, FulfilmentWorkflow::READY_FOR_SHIPPING);
+        $this->assert(str_contains($repository->operationalStateLabel($auditOrder), 'dokumentumokra vár'), 'Packed order without provider files is not operationally ready.');
+        if (method_exists($repository, 'transition')) {
+            $this->rejects(fn()=>$repository->transition($auditOrder,'handed_to_gls',81),'Forged handover POST cannot bypass missing provider documents.');
+        }
+        $GLOBALS['worker_hook'] = \Appleklinika\BackOffice\Infrastructure\WooArtifactReconciliation::WORK;
+        $repository->recordAutomation(1382,'gls','done','gls:done');
+        $repository->recordAutomation(1382,'gls','done','gls:done');
+        $systemHistory=$repository->history($auditOrder);
+        $this->assert(count($systemHistory)===1 && $systemHistory[0]['user_id']===0 && $systemHistory[0]['user']==='Automatika', 'Background work is audited once as the system, never as an invented employee.');
+        $systemDaily=array_filter($repository->todayActivity(),static fn($e)=>($e['automation_operation']??'')==='artifact:1382:gls:done');
+        $this->assert(count($systemDaily)===1,'Repeated automation audit repairs the same daily projection without duplicate activity.');
+        $manualHistory=$systemHistory[0]; unset($manualHistory['automation_operation']); $manualHistory['user_id']=81; $manualHistory['user']='QA Employee';
+        $auditOrder->update_meta_data('_appleklinika_backoffice_history',[$manualHistory]);
+        $repository->recordAutomation(1382,'gls','done','gls:done');
+        $this->assert(count($repository->history($auditOrder))===1 && $repository->history($auditOrder)[0]['user_id']===81,'Observing an already audited manual recovery does not invent a second automatic generation.');
+        $GLOBALS['worker_hook']='';
+        $this->rejects(fn()=>$repository->recordAutomation(1382,'gls','done','forged'),'Ordinary requests cannot impersonate automation audit.');
         $automatic = new \Appleklinika\BackOffice\Infrastructure\GlsAutomation($repository);
         $GLOBALS['site_home'] = 'https://teszt.appleklinika.com';
         $GLOBALS['environment'] = 'staging';
@@ -396,10 +424,19 @@ final class RepositoryOperationsTest
         $failedAuto->update_meta_data(FulfilmentWorkflow::META_KEY, FulfilmentWorkflow::READY_FOR_SHIPPING);
         GLS_Shipping_Order::$fail = true; $automatic->run(1379); $automatic->run(1379);
         $this->assert(GLS_Shipping_Order::$calls === $beforeAutomatic + 2 && $failedAuto->get_meta('_appleklinika_gls_attempt')['state'] === 'uncertain', 'Failed automatic GLS is durable and never blindly retried.');
-        $this->assert(str_contains($automatic->status($failedAuto), 'eredménye bizonytalan') && array_slice($repository->history($failedAuto), -1)[0]['action'] === 'gls_automation_failed', 'Actual automatic provider failure is visible and audited.');
+        $this->assert(str_contains($automatic->status($failedAuto), 'Offline provider failure') && array_slice($repository->history($failedAuto), -1)[0]['action'] === 'gls_automation_failed', 'Actual automatic provider failure is visible and audited.');
         $this->assert(empty($GLOBALS['automation_errors']), 'No unexpected integration exception was swallowed in these cases.');
         GLS_Shipping_Order::$fail = false;
 
+        $cod = new WC_Order(1380); $GLOBALS['orders'][1380] = $cod;
+        $cod->payment = 'cod'; $cod->paid = false; $cod->status = 'on-hold';
+        $cod->update_meta_data(FulfilmentWorkflow::META_KEY, FulfilmentWorkflow::READY_FOR_SHIPPING);
+        $GLOBALS['test_options']['woocommerce_cod_settings'] = ['enabled'=>'yes','enable_for_methods'=>['gls_shipping_method']];
+        $calls = GLS_Shipping_Order::$calls;
+        $this->assert($repository->fulfilmentBlockReason($cod) !== null, 'Courier COD remains outside the approved Barion-only launch.');
+        $automatic->run(1380); $automatic->run(1380);
+        $this->assert(GLS_Shipping_Order::$calls === $calls && !$repository->hasGlsLabel($cod), 'Courier COD cannot create a label even if an old setting allows the method.');
+        $this->assert(!$cod->paid && $cod->payment === 'cod' && $cod->status === 'on-hold', 'GLS generation preserves COD and does not record payment.');
         echo "Back Office repository operations passed: {$this->assertions} assertions.\n";
     }
 }

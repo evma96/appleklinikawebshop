@@ -235,7 +235,7 @@ namespace {
     $assert(str_contains($description,'processing') && str_contains($description,'2026-10-19') && str_contains($description,'tranzakció: rögzítve'),'Payment review describes real persisted status/date/transaction evidence.');
     $assert($order->payments===0,'All previews and audit rendering remain read-only.');
     $order->paid=true;$order->state='ready_for_shipping';
-    $assert(str_contains($store->nextStep($order),'címkeeredmény hiányzik'),'Review result reuses GLS observation, not a normal manual-generation instruction.');
+    $assert(str_contains($store->nextStep($order),'GLS címke még hiányzik'),'Review result reuses GLS observation, not a normal manual-generation instruction.');
     // Write-ahead evidence, duplicate requests and deterministic interruption recovery.
     $order=new WC_Order();$initial=$store->review(537)['fingerprint'];
     $fail_meta_key=\Appleklinika\BackOffice\Domain\OrderReview::JOURNAL_KEY;

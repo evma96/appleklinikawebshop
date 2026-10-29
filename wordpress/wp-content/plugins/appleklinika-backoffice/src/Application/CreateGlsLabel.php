@@ -32,7 +32,7 @@ final class CreateGlsLabel
                 $result = ['success' => false];
             }
             $state = !empty($result['success']) ? 'ready' : (!empty($result['retry_safe']) ? 'retryable' : 'uncertain');
-            $this->orders->recordAttempt($id, $state);
+            $this->orders->recordAttempt($id, $state, is_scalar($result['error'] ?? null) ? (string)$result['error'] : '');
             if ($state !== 'ready') {
                 return ['success' => false, 'error' => $state === 'retryable'
                     ? 'A GLS címke nem készült el. Ellenőrizd a GLS beállításait és a rendelés szállítási adatait, majd használd a GLS címke létrehozása műveletet az újrapróbáláshoz.'

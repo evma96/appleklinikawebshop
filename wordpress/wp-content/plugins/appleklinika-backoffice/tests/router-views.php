@@ -58,6 +58,8 @@ function check_admin_referer(string $action): void { if (!($GLOBALS['view_test_n
 require_once dirname(__DIR__) . '/src/Infrastructure/MplCarrier.php';
 require_once dirname(__DIR__, 4) . '/wp-includes/kses.php';
 require_once dirname(__DIR__) . '/src/Domain/DeliveryMode.php';
+require_once dirname(__DIR__) . '/src/Domain/PaymentState.php';
+require_once dirname(__DIR__) . '/src/Infrastructure/WooOrderPayment.php';
 require_once dirname(__DIR__) . '/src/Domain/FulfilmentWorkflow.php';
 require_once dirname(__DIR__) . '/src/Domain/OrderQueueQuery.php';
 require_once dirname(__DIR__) . '/src/Infrastructure/WooOrderBackOfficeRepository.php';
@@ -69,6 +71,8 @@ require_once dirname(__DIR__) . '/src/Infrastructure/OrderDocuments.php';
 require_once dirname(__DIR__) . '/src/Infrastructure/GlsAutomation.php';
 require_once dirname(__DIR__) . '/src/Application/Port/InvoiceIssuer.php';
 require_once dirname(__DIR__) . '/src/Infrastructure/SzamlazzInvoice.php';
+require_once dirname(__DIR__) . '/src/Application/Port/ArtifactReconciliationStore.php';
+require_once dirname(__DIR__) . '/src/Infrastructure/WooArtifactReconciliation.php';
 require_once dirname(__DIR__) . '/src/Interfaces/BackOfficeRouter.php';
 
 use Appleklinika\BackOffice\Domain\FulfilmentWorkflow;
@@ -176,17 +180,18 @@ $order->status = 'pending';
 $GLOBALS['view_test_capability'] = true;
 $GLOBALS['view_test_order'] = $order;
 $actions = $render('renderActions', $order, 'new', 'pickup', []);
-$assert(str_contains($actions, 'fizetés ellenőrzése') && ! str_contains($actions, '<form'), 'Unpaid orders display the actual block without an enabled mutation.');
+$assert(str_contains($actions, 'befizetés tényleges beérkezését') && ! str_contains($actions, '<form'), 'Manual unpaid orders display the actual block without an enabled mutation.');
 $order->status = 'processing';
 $order->meta['_appleklinika_backoffice_delivery_mode'] = 'gls';
 $order->meta[FulfilmentWorkflow::META_KEY] = 'ready_for_shipping';
 $actions = $render('renderActions', $order, 'ready_for_shipping', 'gls', []);
-$assert(str_contains($actions, 'nem normál kézi munkalépés') && ! str_contains($actions, 'value="create_label"'), 'Label generation is never a normal primary action.');
+$assert(str_contains($actions, 'még nem adható futárnak') && !str_contains($actions, 'value="create_label"') && !str_contains($actions, 'value="handed_to_gls"'), 'Label generation is never a normal primary action.');
 $order->payment = 'cod';
+$GLOBALS['view_test_options']['woocommerce_cod_settings'] = ['enabled'=>'yes','enable_for_methods'=>['gls_shipping_method']];
 $payment = new ReflectionMethod($router, 'paymentLabel');
-$assert($payment->invoke($router, $order) === 'Utánvét', 'COD processing never claims that cash was collected.');
+$assert($payment->invoke($router, $order) === 'Fizetési mód beállítása ellenőrzendő', 'Unapproved courier COD is explicit and never claims that cash was collected.');
 $order->payment = 'bacs';
-$assert($payment->invoke($router, $order) === 'Fizetés rendben', 'Existing non-COD paid wording remains intact.');
+$assert($payment->invoke($router, $order) === 'Fizetés: ✓ Sikeres', 'Confirmed non-COD payment is shown without manual review.');
 $order->status = 'refunded';
 $assert($payment->invoke($router, $order) === 'Visszatérítve', 'Refunded orders are not mislabeled as cancelled.');
 
@@ -271,6 +276,18 @@ try {
         }
     }
     $assert(str_contains($html, 'autoprint=1') && !str_contains($html, 'generate_invoice'), 'Order sheet Print requests the browser dialog, never provider generation.');
+    $order->meta[\Appleklinika\BackOffice\Domain\FulfilmentWorkflow::META_KEY] = 'ready_for_shipping';
+    $repository = new WooOrderBackOfficeRepository();
+    $assert($repository->shippingDocumentsBlock($order) === null, 'GLS ready requires actual invoice and label files plus tracking.');
+    $order->status = 'processing';
+    $savedInvoice = $order->meta['_wc_szamlazz_invoice']; unset($order->meta['_wc_szamlazz_invoice']);
+    $assert(str_contains($repository->operationalStateLabel($order), 'dokumentumokra vár'), 'Packed but invoice-missing order is never presented as ready.');
+    $blockedActions = $render('renderActions', $order, 'ready_for_shipping', 'gls', []);
+    $assert(!str_contains($blockedActions, 'value="handed_to_gls"') && str_contains($blockedActions, 'számla'), 'Missing invoice blocks courier handover, not invoice/GLS generation.');
+    $order->meta['_wc_szamlazz_invoice'] = $savedInvoice;
+    $order->meta['_gls_print_label'] = 'missing.pdf';
+    $assert($repository->shippingDocumentsBlock($order) !== null, 'Provider filename alone is not document readiness.');
+    $order->meta['_gls_print_label'] = 'view.pdf';
     $order->shipping = ['local_pickup'];
     $pickup = $render('renderDocuments', $order);
     $assert(!str_contains($pickup, 'GLS') && !str_contains($pickup, 'download_label'), 'Pickup has no GLS document actions even with stale real-file metadata.');

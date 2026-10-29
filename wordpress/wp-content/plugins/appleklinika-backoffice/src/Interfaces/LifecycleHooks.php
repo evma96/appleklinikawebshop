@@ -103,7 +103,10 @@ final class LifecycleHooks
 
     public function transitioned(int $id, string $action): void
     {
-        if ($action === 'accept_cash_pickup') { $this->queue($id, CustomerNotification::PAID); }
+        if ($action === 'accept_cash_pickup' || (in_array($action, ['start','resume'], true)
+            && ($order = wc_get_order($id)) instanceof \WC_Order
+            && \Appleklinika\BackOffice\Infrastructure\CashPickup::matches($order)
+            && LifecycleConfiguration::submitted($order))) { $this->queue($id, CustomerNotification::PAID); }
         if (in_array($action, ['handed_to_gls','handed_to_carrier'], true)) {
             $this->queue($id, CustomerNotification::SHIPPED);
         }

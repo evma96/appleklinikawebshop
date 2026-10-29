@@ -12,6 +12,7 @@ final class WooFulfilmentStore implements FulfilmentStore
     {
         $order = $this->order($id);
         return ['state' => $this->orders->state($order), 'mode' => $this->orders->deliveryMode($order),
+            'documents_block' => $this->orders->shippingDocumentsBlock($order),
             'blocked' => $this->orders->fulfilmentBlockReason($order), 'label' => MplCarrier::matches($order) ? MplCarrier::hasLabel($order) : $this->orders->hasGlsLabel($order),
             'tracking' => (new OrderDocuments())->trackingLinks($order) !== [],
             'manifest' => !MplCarrier::matches($order) || $order->get_meta('_vp_woo_pont_mpl_closed', true) === 'yes',

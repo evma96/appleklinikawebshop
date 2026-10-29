@@ -29,16 +29,20 @@ final class GlsAutomation
     {
         if (!self::enabled()) { return 'Az automatikus GLS-folyamat ebben a környezetben nincs engedélyezve.'; }
         if (($reason = $this->orders->glsReadinessMessage()) !== null) { return $reason; }
+        if (($message = WooArtifactReconciliation::message($order, 'gls')) !== null) {
+            $last = $order->get_meta('_appleklinika_gls_attempt', true);
+            return $message . (is_array($last) && !empty($last['message']) ? ' ' . $last['message'] : '');
+        }
         $attempt = $order->get_meta('_appleklinika_gls_attempt', true);
         if (is_array($attempt) && ($attempt['state'] ?? '') === 'retryable') { return 'A GLS kérés elutasítva. Az adatok/beállítások javítása után a helyreállítási művelettel biztonságosan újrapróbálható.'; }
         if (is_array($attempt) && !empty($attempt['state']) && $attempt['state'] !== 'ready') {
             return 'A GLS feldolgozás ellenőrzést igényel. ' . ($attempt['message'] ?? 'A korábbi kérés eredményét egyeztetni kell; új címke nem indul automatikusan.');
         }
-        if (!$order->is_paid() || $order->get_payment_method() === 'cod') { return 'Automatikus GLS feldolgozásra vár — igazolt fizetés és kész csomag szükséges. Az utánvét feldolgozási állapota önmagában nem fizetési igazolás.'; }
+        if (($block = $this->orders->fulfilmentBlockReason($order)) !== null) { return $block; }
         if ($this->orders->state($order) !== FulfilmentWorkflow::READY_FOR_SHIPPING) {
             return 'Automatikus GLS feldolgozásra vár — a „Csomagolás kész” művelet indítja. Nem szükséges külön címkekészítés.';
         }
-        return 'Az automatikus GLS címkeeredmény hiányzik. Ellenőrizd a folyamatot; a régi állapot önmagában nem indít új címkét.';
+        return 'A csomagolás kész, de a GLS címke még hiányzik. Az ütemezett egyeztetés az aktuális jogosultság és szolgáltatói eredmény alapján pótolja az elmaradt műveletet; még nem adható futárnak.';
     }
 
     /** Invoked after the authorized packing transition has been persisted. */
@@ -46,8 +50,20 @@ final class GlsAutomation
     {
         if (!self::enabled() || get_current_user_id() < 1
             || (!current_user_can('manage_appleklinika_backoffice') && !current_user_can('manage_options') && !(current_user_can('manage_woocommerce') && current_user_can('edit_shop_order', $id)))) { return; }
+        $this->process($id, false);
+    }
+
+    /** Only the registered server-side worker may run without an employee session. */
+    public function runScheduled(int $id): void
+    {
+        if (!WooArtifactReconciliation::enabled() || !doing_action(WooArtifactReconciliation::WORK)) { return; }
+        $this->process($id, true);
+    }
+
+    private function process(int $id, bool $scheduled): void
+    {
         try {
-            (new WooOrderMutex())->synchronized($id, function () use ($id): void {
+            (new WooOrderMutex())->synchronized($id, function () use ($id, $scheduled): void {
                 $order = wc_get_order($id);
                 if (!$order instanceof WC_Order || $this->orders->deliveryMode($order) !== DeliveryMode::GLS
                     || $this->orders->state($order) !== FulfilmentWorkflow::READY_FOR_SHIPPING) { return; }
@@ -59,11 +75,11 @@ final class GlsAutomation
                 $attempt = $order->get_meta('_appleklinika_gls_attempt', true);
                 if (is_array($attempt) && in_array($attempt['state'] ?? '', ['generating', 'attempting', 'failed', 'uncertain', 'ready'], true)) { return; }
                 try {
-                    if (!$order->is_paid() || $order->get_payment_method() === 'cod') {
-                        throw new \InvalidArgumentException('Az automatikus GLS címkéhez igazolt fizetés szükséges; az utánvét nem fizetési igazolás.');
+                    if (($block = $this->orders->fulfilmentBlockReason($order)) !== null) {
+                        throw new \InvalidArgumentException($block);
                     }
                     $this->orders->createGlsLabel($order);
-                    $this->orders->recordDocumentAccess(wc_get_order($id), 'gls_label_generated');
+                    if (!$scheduled) { $this->orders->recordDocumentAccess(wc_get_order($id), 'gls_label_generated'); }
                 } catch (\Throwable $error) {
                     $fresh = wc_get_order($id);
                     if (!$fresh instanceof WC_Order) { return; }
@@ -71,11 +87,11 @@ final class GlsAutomation
                     $record = $fresh->get_meta('_appleklinika_gls_attempt', true);
                     $record = is_array($record) ? $record : [];
                     $record['state'] = empty($record['state']) || $record['state'] === 'blocked' ? 'blocked' : ($record['state'] === 'retryable' ? 'retryable' : 'uncertain');
-                    $record['message'] = $this->safeError($error);
+                    $record['message'] = !empty($record['message']) ? $record['message'] : $this->safeError($error);
                     $record['at'] = current_time('mysql');
                     $fresh->update_meta_data('_appleklinika_gls_attempt', $record);
                     $fresh->save_meta_data();
-                    $this->orders->recordDocumentAccess($fresh, 'gls_automation_failed');
+                    if (!$scheduled) { $this->orders->recordDocumentAccess($fresh, 'gls_automation_failed'); }
                 }
             });
         } catch (\Throwable) {

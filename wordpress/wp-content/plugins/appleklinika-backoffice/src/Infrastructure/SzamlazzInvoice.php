@@ -17,6 +17,11 @@ final class SzamlazzInvoice implements InvoiceIssuer
     /** Read-only projection of the installed payment-complete automation. */
     public function automationStatus(WC_Order $order): array
     {
+        if (($message = WooArtifactReconciliation::message($order, 'invoice')) !== null) {
+            $failure = $order->get_meta('_appleklinika_szamlazz_failure', true);
+            if (is_array($failure) && !empty($failure['message'])) { $message .= ' ' . $this->safeMessage((string)$failure['message'], $this->selectedKey($order)); }
+            return ['state'=>'reconciliation','label'=>'Automatikus számla — egyeztetés állapota','reason'=>$message];
+        }
         $attempt = $order->get_meta(self::ATTEMPT, true);
         $attempt = is_array($attempt) ? $attempt : [];
         $state = (string) ($attempt['state'] ?? '');
@@ -59,7 +64,7 @@ final class SzamlazzInvoice implements InvoiceIssuer
         if (!$order->is_paid()) {
             return ['state' => 'waiting_payment', 'label' => 'Automatikus számlára vár — fizetés után', 'reason' => 'A sikeres fizetés indítja a webshop meglévő számlázását; nincs normál kézi teendő.'];
         }
-        return ['state' => $state === 'blocked' ? 'blocked' : 'waiting', 'label' => $state === 'blocked' ? 'Automatikus számlázás korábban blokkolva' : 'Az automatikus számla még nem érkezett meg', 'reason' => $state === 'blocked' ? 'A számlafolyamat konfiguráció miatt nem küldött kiállítási kérést. Javítás után a helyreállítás újraindíthatja a meglévő folyamatot.' : 'A fizetés rögzítve van, de számlaeredmény még nincs. Ez nem jelent új kézi kiállítási feladatot; ellenőrizd a folyamatot.'];
+        return ['state' => $state === 'blocked' ? 'blocked' : 'waiting', 'label' => $state === 'blocked' ? 'Automatikus számlázás korábban blokkolva' : 'Az automatikus számla még nem érkezett meg', 'reason' => $state === 'blocked' ? 'A számlafolyamat konfiguráció miatt nem küldött kiállítási kérést. Javítás után a helyreállítás újraindíthatja a meglévő folyamatot.' : 'A fizetés rögzítve van, de a számla még hiányzik. Az ütemezett egyeztetés pótolja az elmaradt jogosult műveletet. Nem szükséges kézi kiállítás.'];
     }
 
     /** These are the installed provider's explicit automatic opt-outs, not new billing rules. */

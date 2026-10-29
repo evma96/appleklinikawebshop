@@ -11,11 +11,11 @@ use Appleklinika\BackOffice\Domain\{LifecycleOrder, CustomerNotification as Even
 
 final class MemoryOrders implements OrderLifecycleStore
 {
-    public bool $cash = false, $cashAccepted = false;
+    public bool $cash = false, $cashAccepted = false, $invoiceEvidence = false;
     public bool $managed = true, $paid = true, $handoff = false, $submitted = false, $submissionEligible = false;
     public string $status = 'processing', $number = '', $pdf = '';
     public array $tracking = [], $emails = [], $invoice = [], $issues = [];
-    public function order(int $id): ?LifecycleOrder { return new LifecycleOrder($id, $this->managed, $this->paid, $this->status, $this->number, $this->pdf, $this->handoff, $this->tracking, $this->submitted, $this->submissionEligible, $this->cash, $this->cashAccepted); }
+    public function order(int $id): ?LifecycleOrder { return new LifecycleOrder($id, $this->managed, $this->paid, $this->status, $this->number, $this->pdf, $this->handoff, $this->tracking, $this->submitted, $this->submissionEligible, $this->cash, $this->cashAccepted, $this->invoiceEvidence); }
     public function recordSubmission(int $id): void { $this->submitted = true; }
     public function notification(int $id, string $event): array { return $this->emails[$event] ?? []; }
     public function recordNotification(int $id, string $event, array $record): void { $this->emails[$event] = $record; }
@@ -133,10 +133,11 @@ final class FulfilmentFixture implements FulfilmentStore
     public array $events = []; public int $labels = 0;
     public function snapshot(int $id): array { return $this->order; }
     public int $cashChecks = 0, $cashPayments = 0;
-    public function verifyCashReservation(int $id): void { ++$this->cashChecks; }
+    public bool $reservationFails = false;
+    public function verifyCashReservation(int $id): void { if ($this->reservationFails) { throw new InvalidArgumentException('Reservation missing'); } ++$this->cashChecks; }
     public function recordCashPayment(int $id, int $actor): void { ++$this->cashPayments; }
     public function createLabel(int $id): void { ++$this->labels; $this->order['label'] = $this->order['tracking'] = true; }
-    public function record(int $id, string $action, string $to, int $actor, string $reason): void { $this->order['state'] = $to; if ($action === 'accept_cash_pickup') { $this->order['cash_accepted'] = true; } $this->events[] = compact('action', 'to', 'actor', 'reason'); }
+    public function record(int $id, string $action, string $to, int $actor, string $reason): void { $this->order['state'] = $to; if (in_array($action, ['accept_cash_pickup','start','resume'], true)) { $this->order['cash_accepted'] = true; } $this->events[] = compact('action', 'to', 'actor', 'reason'); }
 }
 $ful = new FulfilmentFixture(); $change = new ChangeFulfilment($ful, new FixtureMutex());
 foreach (['start', 'start_packing', 'packing_completed'] as $action) { $change->execute(1, $action, 7, $ful->order['state']); }
@@ -169,16 +170,23 @@ $assert($service->notify(1, Event::SHIPPED) === 'ineligible', 'Pickup never send
 $ful = new FulfilmentFixture();
 $ful->order['mode']='pickup'; $ful->order['cash']=true; $ful->order['cash_accepted']=false;
 $change = new ChangeFulfilment($ful, new FixtureMutex());
-foreach (['start', 'prepare_pickup', 'record_cash_pickup'] as $action) {
+foreach (['prepare_pickup', 'record_cash_pickup'] as $action) {
     try { $change->execute(1,$action,7,'new'); $assert(false,'Unaccepted cash cannot progress.'); } catch (InvalidArgumentException) { $assert(true,'Unaccepted cash rejected.'); }
 }
 try { $change->execute(1,'correct',7,'new','ready_for_pickup','skip'); $assert(false,'Correction cannot accept cash.'); } catch (InvalidArgumentException) { $assert(true,'Correction cannot accept cash.'); }
-$change->execute(1,'accept_cash_pickup',7,'new');
-$assert($ful->cashChecks===1 && $ful->order['state']==='preparation', 'Staff verifies reserved stock through shared service.');
+try { $change->execute(1,'start',0,'new'); $assert(false,'Cash actor required.'); } catch (InvalidArgumentException) { $assert($ful->events===[],'Anonymous start cannot confirm stock.'); }
+$ful->reservationFails=true;
+try { $change->execute(1,'start',7,'new'); $assert(false,'Missing reservation cannot start.'); } catch (InvalidArgumentException) { $assert($ful->events===[] && $ful->cashPayments===0,'Missing reservation changes no workflow/payment.'); }
+$ful->reservationFails=false;
+$change->execute(1,'start',7,'new');
+$assert($ful->cashChecks===1 && $ful->order['state']==='preparation' && $ful->cashPayments===0, 'Starting preparation verifies reserved stock, not payment, without another acceptance action.');
+try { $change->execute(1,'start',7,'new'); $assert(false,'Duplicate preparation must not repeat stock check.'); } catch (InvalidArgumentException) { $assert($ful->cashChecks===1,'Duplicate start does not repeat stock reservation check.'); }
 $change->execute(1,'prepare_pickup',7,'preparation');
 try { $change->execute(1,'picked_up',7,'ready_for_pickup'); $assert(false,'Generic pickup cannot skip payment.'); } catch (InvalidArgumentException) { $assert(true,'Generic pickup rejected for cash.'); }
 $change->execute(1,'record_cash_pickup',7,'ready_for_pickup');
 try { $change->execute(1,'record_cash_pickup',7,'ready_for_pickup'); $assert(false,'Retry cannot repeat payment.'); } catch (InvalidArgumentException) { $assert(true,'Duplicate cash handoff rejected.'); }
 $assert($ful->cashPayments===1 && $ful->order['state']==='picked_up', 'One pickup payment and shared terminal state.');
 $assert(count($ful->events)===3 && $ful->events[0]['actor']===7, 'Acceptance, preparation and cash handoff are audited once.');
+[$store,$invoice,$mailer,$service]=$new();$store->invoiceEvidence=true;$service->paymentConfirmed(1);
+$assert($invoice->calls===0 && $store->invoice['state']==='document_missing','Partial provider invoice evidence cannot generate a duplicate after a missed event.');
 echo "Order lifecycle: $n assertions passed; no database, email, or provider calls.\n";

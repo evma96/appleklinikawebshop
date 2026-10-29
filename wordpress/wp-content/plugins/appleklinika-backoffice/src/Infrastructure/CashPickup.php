@@ -20,7 +20,8 @@ final class CashPickup
     public static function accepted(\WC_Order $order): bool
     {
         foreach ((new WooOrderBackOfficeRepository())->history($order) as $entry) {
-            if (($entry['action'] ?? '') === 'accept_cash_pickup' && (int) ($entry['user_id'] ?? 0) > 0) { return true; }
+            if (in_array($entry['action'] ?? '', ['accept_cash_pickup', 'start', 'resume'], true)
+                && ($entry['to'] ?? '') === 'preparation' && (int) ($entry['user_id'] ?? 0) > 0) { return true; }
         }
         return false;
     }
@@ -33,15 +34,15 @@ final class CashPickup
 
     public function verifyReservation(\WC_Order $order): void
     {
-        // Native COD on-hold already reserves stock by reducing it once. Staff
-        // confirms physical availability explicitly; never deduct a second time.
+        // Native COD on-hold already reserves stock by reducing it once. Starting
+        // preparation verifies that evidence; never deduct a second time.
         if (!$order->has_status('on-hold') || $order->get_items() === []) {
-            throw new \InvalidArgumentException('Elfogadáshoz beadott, fizetésre váró készpénzes rendelés szükséges.');
+            throw new \InvalidArgumentException('Előkészítéshez beadott, átvételkori fizetésre váró rendelés szükséges.');
         }
         foreach ($order->get_items() as $item) {
             $product = $item->get_product();
             if (!$product || ($product->managing_stock() && (float) $item->get_meta('_reduced_stock', true) < (float) $item->get_quantity())) {
-                throw new \InvalidArgumentException('A rendelés készletfoglalása nem igazolt. Ellenőrizd a terméket és a Woo készletnaplót; elfogadó levél nem készült.');
+                throw new \InvalidArgumentException('A rendelés készletfoglalása nem igazolt. Ellenőrizd a terméket és a Woo készletnaplót; a feldolgozás nem indult el.');
             }
         }
     }

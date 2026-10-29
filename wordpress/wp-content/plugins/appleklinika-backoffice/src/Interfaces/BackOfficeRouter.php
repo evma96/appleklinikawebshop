@@ -130,7 +130,7 @@ final class BackOfficeRouter
             $state = $this->fulfilment->execute($orderId, $action, get_current_user_id(), $expected);
             $notice = $action === 'create_label'
                 ? 'GLS címke létrehozva. A rendelés állapota változatlanul: ' . FulfilmentWorkflow::labels()[$state] . '.'
-                : 'Rendelés állapota frissítve: ' . FulfilmentWorkflow::labels()[$state] . '.';
+                : 'Rendelés állapota frissítve: ' . $this->orders->operationalStateLabel(wc_get_order($orderId)) . '.';
             $this->redirect($orderId, $notice, false, $worklistContext);
         } catch (InvalidArgumentException $exception) {
             $this->redirect($orderId, $exception->getMessage(), true, $worklistContext);
@@ -272,7 +272,8 @@ final class BackOfficeRouter
             echo '<td data-label="Rendelés"><a href="' . esc_url($this->orderUrl($order->get_id(), $worklistContext)) . '">#' . esc_html($order->get_order_number()) . '</a><small>' . esc_html(wc_format_datetime($order->get_date_created())) . '</small></td>';
             echo '<td data-label="Ügyfél / átvétel"><strong>' . esc_html($order->get_formatted_billing_full_name() ?: 'Nincs név megadva') . '</strong><small>' . esc_html($order->get_billing_email()) . '</small><small class="akbo-delivery">' . esc_html($this->orders->deliveryModeLabel($order)) . '</small></td>';
             echo '<td data-label="Termék / összeg">' . esc_html($primaryDevice) . '<small class="akbo-amount">' . wp_kses_post($order->get_formatted_order_total()) . '</small></td>';
-            echo '<td data-label="Állapot / fizetés"><span class="akbo-badge akbo-state--' . esc_attr($state) . '">' . esc_html($order->has_status('completed') ? 'Lezárt rendelés' : FulfilmentWorkflow::labels()[$state]) . '</span><small class="' . ($order->is_paid() ? ($order->get_payment_method() === 'cod' ? '' : 'akbo-payment-ok') : 'akbo-attention') . '">' . esc_html($this->paymentLabel($order)) . '</small></td>';
+            $payment = \Appleklinika\BackOffice\Infrastructure\WooOrderPayment::describe($order, $mode);
+            echo '<td data-label="Állapot / fizetés"><span class="akbo-badge akbo-state--' . esc_attr($state) . '">' . esc_html($this->orders->operationalStateLabel($order)) . '</span><small class="' . ($payment['review'] ? 'akbo-attention' : ($payment['state'] === 'paid' ? 'akbo-payment-ok' : '')) . '">' . esc_html($payment['label']) . '</small></td>';
             echo '<td data-label="Következő teendő"><span class="' . ($block !== null && ! $closed ? 'akbo-attention' : '') . '">' . esc_html($nextLabel) . '</span><small><a href="' . esc_url($this->orderUrl($order->get_id(), $worklistContext)) . '">Megnyitás →</a></small></td>';
             echo '</tr>';
         }
@@ -368,7 +369,7 @@ final class BackOfficeRouter
         echo '<a class="akbo-back" href="' . esc_url($this->url($worklistContext)) . '">← Vissza a rendelésekhez</a>';
         $this->renderApplicationHeader('Rendelés #' . $order->get_order_number());
         $this->notice();
-        echo '<div class="akbo-status-line"><span class="akbo-badge akbo-state--' . esc_attr($state) . '">' . esc_html($order->has_status('completed') ? 'Lezárt rendelés' : FulfilmentWorkflow::labels()[$state]) . '</span><span>' . esc_html($this->paymentLabel($order)) . '</span><span>' . esc_html($this->orders->deliveryModeLabel($order)) . '</span><strong>' . wp_kses_post($order->get_formatted_order_total()) . '</strong></div>';
+        echo '<div class="akbo-status-line"><span class="akbo-badge akbo-state--' . esc_attr($state) . '">' . esc_html($this->orders->operationalStateLabel($order)) . '</span><span>' . esc_html($this->paymentLabel($order)) . '</span><span>' . esc_html($this->orders->deliveryModeLabel($order)) . '</span><strong>' . wp_kses_post($order->get_formatted_order_total()) . '</strong></div>';
         $this->renderProgress($order, $state, $deliveryMode);
 
         echo '<div class="akbo-layout"><div class="akbo-main">';
@@ -392,6 +393,7 @@ final class BackOfficeRouter
         }
         $safeState = FulfilmentWorkflow::customerProgressState($state, $this->orders->history($order), $deliveryMode);
         $labels = FulfilmentWorkflow::customerProgressLabels($deliveryMode);
+        if ($deliveryMode === DeliveryMode::GLS && $state === FulfilmentWorkflow::READY_FOR_SHIPPING) { $labels[$state] = $this->orders->operationalStateLabel($order); }
         $current = array_search($safeState, array_keys($labels), true);
         echo '<ol class="akbo-progress" aria-label="Rendelés feldolgozása">';
         foreach (array_values($labels) as $index => $label) {
@@ -405,7 +407,7 @@ final class BackOfficeRouter
     private function renderActions(WC_Order $order, string $state, string $deliveryMode, array $worklistContext): void
     {
         echo '<section class="akbo-card akbo-next-action"><p class="akbo-eyebrow">Feldolgozás</p><h2>Következő lépés</h2>';
-        echo '<p><strong>Jelenlegi állapot:</strong> ' . esc_html(FulfilmentWorkflow::labels()[$state]) . '</p>';
+        echo '<p><strong>Jelenlegi állapot:</strong> ' . esc_html($this->orders->operationalStateLabel($order)) . '</p>';
         $pending = $order->get_meta('_appleklinika_shipping_review_operation', true);
         if (is_array($pending) && !empty($pending['id']) && ($pending['stage'] ?? '') !== 'complete') {
             $this->renderReview($order, $worklistContext);
@@ -427,7 +429,10 @@ final class BackOfficeRouter
 
         $hasGlsLabel = $deliveryMode === DeliveryMode::GLS && $this->orders->hasGlsLabel($order);
         $primaryAction = $this->orders->primaryAction($order);
-        if ($primaryAction === 'create_mpl_label' && \Appleklinika\BackOffice\Infrastructure\MplCarrier::readiness() !== null) {
+        $documentsBlock = $state === FulfilmentWorkflow::READY_FOR_SHIPPING ? $this->orders->shippingDocumentsBlock($order) : null;
+        if ($documentsBlock !== null) {
+            echo '<p class="akbo-action-block">' . esc_html($documentsBlock) . '</p>';
+        } elseif ($primaryAction === 'create_mpl_label' && \Appleklinika\BackOffice\Infrastructure\MplCarrier::readiness() !== null) {
             echo '<p class="akbo-action-block">' . esc_html(\Appleklinika\BackOffice\Infrastructure\MplCarrier::readiness()) . '</p>';
         } elseif ($primaryAction === 'create_label') {
             echo '<p class="akbo-help">A csomag előkészítve. A GLS feldolgozás állapotát a Szállítás / átvétel rész mutatja; a címkekészítés nem normál kézi munkalépés.</p>';
@@ -435,7 +440,9 @@ final class BackOfficeRouter
             echo '<p class="akbo-help">' . esc_html(match ($primaryAction) {
                 'accept_cash_pickup' => 'Ellenőrizd és tedd félre a rendelés készülékeit. Ez a művelet elküldi a rendelés elfogadását; a fizetés továbbra is átvételkor esedékes.',
                 'record_cash_pickup' => 'Csak a tényleges készpénzfizetés és személyes átadás után rögzítsd. A fizetéshez egyszer készül számla.',
-                'start' => 'Vedd munkába a rendelést, és ellenőrizd a megrendelt készüléket.',
+                'start' => \Appleklinika\BackOffice\Infrastructure\CashPickup::matches($order)
+                    ? 'Vedd munkába és készítsd elő a rendelést. A rendszer ellenőrzi a meglévő készletfoglalást és megőrzi az elfogadási értesítést. A fizetés csak a személyes átadáskor esedékes.'
+                    : 'Vedd munkába a rendelést, és ellenőrizd a megrendelt készüléket.',
                 'start_packing' => 'Az ellenőrzött készülék és a tartozékok csomagolása következik.',
                 'packing_completed' => $deliveryMode === DeliveryMode::GLS ? 'A csomag lezárásával, igazolt fizetés mellett automatikusan elkészül a GLS címke. Futárátadás még nem történik.' : 'A csomag lezárása után jelöld szállításra késznek.',
                 'prepare_pickup' => 'Készítsd elő a rendelést a személyes átvételre.',
@@ -472,9 +479,14 @@ final class BackOfficeRouter
                 $this->reviewForm($order, 'resolve_shipping', 'Átvételi mód mentése', $review, $context);
             }
         }
-        if (!$review['facts']['paid'] || $review['facts']['payment'] === 'cod') {
-            echo '<h3>Fizetés rendezése</h3><p class="akbo-help">'.esc_html($review['payment_message']).'</p>';
+        $payment = \Appleklinika\BackOffice\Infrastructure\WooOrderPayment::describe($order, $review['facts']['mode']);
+        if ($payment['review'] || $review['payment_action'] !== '') {
+            $optional = !$payment['review'] && $review['payment_action'] === 'recheck_barion';
+            if ($optional) { echo '<details><summary>Barion állapot újraellenőrzése</summary>'; }
+            else { echo '<h3>Fizetés rendezése</h3>'; }
+            echo '<p class="akbo-help">'.esc_html($review['payment_message']).'</p>';
             if ($review['payment_action'] !== '') { $this->reviewForm($order, $review['payment_action'], $review['payment_action'] === 'recheck_barion' ? 'Barion állapot újraellenőrzése' : 'Fizetés beérkezésének igazolása', $review, $context); }
+            if ($optional) { echo '</details>'; }
         }
     }
 
@@ -928,30 +940,15 @@ final class BackOfficeRouter
         if ($state === FulfilmentWorkflow::PROBLEM) {
             return 'Probléma kezelése szükséges';
         }
-        if (! $order->is_paid() && in_array($order->get_status(), ['pending', 'on-hold'], true)) {
-            return 'Fizetés ellenőrzése szükséges';
-        }
-        return '';
+        if ($this->orders->deliveryMode($order) === DeliveryMode::UNKNOWN) { return 'Átvételi mód ellenőrzése'; }
+        $payment = \Appleklinika\BackOffice\Infrastructure\WooOrderPayment::describe($order, $this->orders->deliveryMode($order));
+        if ($payment['block'] !== null) { return $payment['label']; }
+        return $state === FulfilmentWorkflow::READY_FOR_SHIPPING && $this->orders->shippingDocumentsBlock($order) !== null ? 'Dokumentumokra vár' : '';
     }
 
     private function paymentLabel(WC_Order $order): string
     {
-        if (\Appleklinika\BackOffice\Infrastructure\CashPickup::matches($order)) {
-            return $order->is_paid() ? 'Készpénzfizetés rögzítve' : 'Fizetés készpénzben, személyes átvételkor';
-        }
-        if ($order->is_paid()) {
-            // WooCommerce marks COD as processing before cash collection.
-            return $order->get_payment_method() === 'cod' ? 'Utánvét' : 'Fizetés rendben';
-        }
-
-        return match ($order->get_status()) {
-            'pending' => 'Fizetésre vár',
-            'on-hold' => 'Ellenőrzés szükséges',
-            'cancelled' => 'Törölt rendelés',
-            'failed' => 'Sikertelen fizetés',
-            'refunded' => 'Visszatérítve',
-            default => 'Ellenőrzés szükséges',
-        };
+        return \Appleklinika\BackOffice\Infrastructure\WooOrderPayment::describe($order, $this->orders->deliveryMode($order))['label'];
     }
 
     private function shippingMethod(WC_Order $order): string

@@ -231,8 +231,8 @@ final class WooOrderBackOfficeRepository
     public function primaryAction(WC_Order $order): ?string
     {
         $next = FulfilmentWorkflow::primaryAction($this->state($order), $this->deliveryMode($order), MplCarrier::matches($order) ? MplCarrier::hasLabel($order) : $this->hasGlsLabel($order));
+        if ($next === 'handed_to_gls' && $this->shippingDocumentsBlock($order) !== null) { return null; }
         if (CashPickup::matches($order) && LifecycleConfiguration::submitted($order)) {
-            if (in_array($next, ['start', 'resume'], true) && !CashPickup::accepted($order)) { return 'accept_cash_pickup'; }
             if ($next === 'picked_up') { return 'record_cash_pickup'; }
         }
         return $next;
@@ -254,14 +254,10 @@ final class WooOrderBackOfficeRepository
         if (! in_array($status, FulfilmentWorkflow::operationalOrderStatuses(), true)) {
             return 'Ez a rendelés nem szerepel a nyitott operatív munkalistában.';
         }
-        if (! $order->is_paid() && !(CashPickup::matches($order) && LifecycleConfiguration::submitted($order) && $order->has_status('on-hold'))) {
-            return 'A rendelés még nem dolgozható fel: a fizetés ellenőrzése szükséges.';
-        }
         if (! DeliveryMode::isSupported($this->deliveryMode($order))) {
             return 'Az átvételi mód nem azonosítható biztonságosan a WooCommerce szállítási metódusából. Ellenőrzés szükséges.';
         }
-
-        return null;
+        return WooOrderPayment::describe($order, $this->deliveryMode($order))['block'];
     }
 
     public function glsReadinessMessage(): ?string
@@ -319,6 +315,56 @@ final class WooOrderBackOfficeRepository
         return is_array($history) ? $history : [];
     }
 
+
+    /** Physical packing is not proof that the provider documents are ready. Read-only. */
+    public function shippingDocumentsBlock(WC_Order $order): ?string
+    {
+        if ($this->deliveryMode($order) !== DeliveryMode::GLS) { return null; }
+        $docs = new OrderDocuments(); $missing = [];
+        if (!$order->get_meta('_wc_szamlazz_invoice', true) || $docs->filePath($order, 'invoice') === null) { $missing[] = 'számla / számla-PDF'; }
+        if ($docs->filePath($order, 'gls_label') === null) { $missing[] = 'GLS címke-PDF'; }
+        if ($this->trackingCodes($order) === []) { $missing[] = 'GLS csomagszám'; }
+        return $missing === [] ? null : 'Csomagolás kész, de még nem adható futárnak. Hiányzik: ' . implode(', ', $missing) . '. A számla és a szállítás automatikus folyamatának állapotát ellenőrizd lent.';
+    }
+
+    public function operationalStateLabel(WC_Order $order): string
+    {
+        if ($order->has_status('completed')) { return 'Lezárt rendelés'; }
+        $state = $this->state($order);
+        return $state === FulfilmentWorkflow::READY_FOR_SHIPPING && $this->shippingDocumentsBlock($order) !== null
+            ? 'Csomagolás kész — dokumentumokra vár' : FulfilmentWorkflow::labels()[$state];
+    }
+
+    /** System actor, existing history/day index, deterministic projection key. No staff impersonation. */
+    public function recordAutomation(int $id, string $kind, string $result, string $key): void
+    {
+        if (!WooArtifactReconciliation::enabled() || !doing_action(WooArtifactReconciliation::WORK)
+            || !in_array($kind, ['invoice','gls'], true)) { throw new InvalidArgumentException('Scheduled automation audit required.'); }
+        (new WooOrderMutex())->synchronized($id, function () use ($id,$kind,$result,$key): void {
+            $order = wc_get_order($id); $history = $this->history($order);
+            $operation = 'artifact:' . $id . ':' . $key;
+            foreach ($history as $entry) {
+                if (($entry['automation_operation'] ?? '') === $operation) { $this->recordTodayActivity($entry); return; }
+            }
+            $state = $this->state($order);
+            $action = $kind === 'invoice' ? ($result === 'done' ? 'invoice_generated' : 'invoice_generation_failed')
+                : ($result === 'done' ? 'gls_label_generated' : 'gls_automation_failed');
+            // Manual recovery may already have recorded this provider success.
+            // Reconciliation observes that evidence; it must not claim a second generation.
+            if ($result === 'done') {
+                foreach ($history as $existing) {
+                    if (($existing['action'] ?? '') === $action && empty($existing['automation_operation'])) { return; }
+                }
+            }
+            $entry = ['order_id'=>$id,'action'=>$action,'from'=>$state,'to'=>$state,'user_id'=>0,'user'=>'Automatika',
+                'at'=>current_time('mysql'),'automation_operation'=>$operation,'result'=>$result];
+            $history[] = $entry; $order->update_meta_data(self::HISTORY_META_KEY,$history); $order->save_meta_data();
+            if (!in_array($operation,array_column($this->history(wc_get_order($id)),'automation_operation'),true)) {
+                throw new \RuntimeException('Automation audit persistence failed.');
+            }
+            $this->recordTodayActivity($entry);
+        });
+    }
 
     public function recordDocumentAccess(WC_Order $order, string $document): void
     {
@@ -721,13 +767,14 @@ final class WooOrderBackOfficeRepository
             $key = $this->dailyActivityTransientKey();
             $entries = get_transient($key);
             $entries = is_array($entries) ? $entries : [];
-            $operation = $activity['review_operation'] ?? '';
-            if ($operation !== '' && in_array($operation, array_column($entries, 'review_operation'), true)) { return; }
+            $operationField = isset($activity['automation_operation']) ? 'automation_operation' : 'review_operation';
+            $operation = $activity[$operationField] ?? '';
+            if ($operation !== '' && in_array($operation, array_column($entries, $operationField), true)) { return; }
             $entries[] = $activity;
             set_transient($key, $entries, $this->secondsUntilTomorrow());
             if ($operation !== '') {
                 $saved = get_transient($key);
-                if (!is_array($saved) || !in_array($operation, array_column($saved, 'review_operation'), true)) { throw new \RuntimeException('Daily correction activity was not saved.'); }
+                if (!is_array($saved) || !in_array($operation, array_column($saved, $operationField), true)) { throw new \RuntimeException('Daily correction activity was not saved.'); }
             }
         });
     }

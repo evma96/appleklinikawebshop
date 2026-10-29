@@ -38,9 +38,9 @@ final class OrderLifecycle
             if ($order === null || ! $order->managed || ! $order->paid || in_array($order->status, ['cancelled', 'failed', 'refunded'], true)) {
                 return;
             }
-            if ($order->invoiceNumber !== '') {
-                $this->store->invoiceState($id, $order->invoicePath !== '' ? 'ready' : 'document_missing');
-                if ($order->invoicePath === '') {
+            if ($order->invoiceNumber !== '' || $order->invoiceEvidence) {
+                $this->store->invoiceState($id, $order->invoicePath !== '' && $order->invoiceNumber !== '' ? 'ready' : 'document_missing');
+                if ($order->invoicePath === '' || $order->invoiceNumber === '') {
                     $this->store->issue($id, 'invoice_pdf_missing');
                 }
                 return;
