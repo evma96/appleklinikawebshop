@@ -1,0 +1,17 @@
+/* Only alternative-choice affordances; approved selector grids remain unchanged. */
+.appleklinika-config-card.is-alternative:not(.is-selected){border-style:dashed;border-color:#b8a3a8;background:#fffafb}
+.appleklinika-config-card__meta[hidden],.ak-selector-alternatives[hidden]{display:none!important}
+.ak-selector-alternatives{margin-top:14px;padding:16px;background:#faf9fa;border:1px solid #e7e2e3;border-radius:14px;min-width:0}
+.ak-selector-alternatives__heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ak-selector-alternatives__heading h4{margin:0;font-size:16px;line-height:1.4;color:#242126}
+.ak-selector-alternatives__close{border:0;background:transparent;color:#65565a;padding:6px;font:inherit;font-size:13px;cursor:pointer}
+.ak-selector-alternatives__intro{margin:8px 0 12px;font-size:13px;line-height:1.5;color:#665f62}
+.ak-selector-alternatives__list{display:grid;gap:8px;max-height:360px;overflow-y:auto}
+.ak-selector-alternatives__device{display:flex;align-items:flex-start;gap:12px;padding:12px;border:1px solid #e9e4e5;border-radius:10px;background:white;color:#252126;text-decoration:none;min-width:0}
+.ak-selector-alternatives__device:hover{border-color:#bf1739}.ak-selector-alternatives__device:focus-visible,.ak-selector-alternatives__close:focus-visible{outline:2px solid #bf1739;outline-offset:2px}
+.ak-selector-alternatives__device img{width:56px;height:66px;object-fit:contain;flex:0 0 56px}
+.ak-selector-alternatives__content{display:grid;gap:7px;min-width:0;font-size:14px;line-height:1.45;overflow-wrap:anywhere}
+.ak-selector-alternatives__facts{display:flex;flex-wrap:wrap;gap:3px 12px;font-size:12px;color:#625b5e}
+.ak-selector-alternatives__facts .is-difference{color:#9e1732;font-weight:600}
+.ak-selector-alternatives__price{font-size:16px;color:#272126}.ak-selector-alternatives__action{color:#b51636;font-size:12px;font-weight:600}
+@media(max-width:480px){.ak-selector-alternatives{padding:12px}.ak-selector-alternatives__device{gap:9px;padding:10px}.ak-selector-alternatives__device img{width:42px;height:54px;flex-basis:42px}.ak-selector-alternatives__list{max-height:420px}}

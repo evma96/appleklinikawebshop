@@ -720,3 +720,18 @@ Resolved: manual iPhone 12 Pro lacked a canonical profile; device entry did not 
 Data-completeness follow-up resolved: 48 missing profiles added from official Apple sources; 51 existing profiles revised (8 technical corrections, 50 archive URL updates, overlapping). Current 102-model catalog is fully covered; 103 stored profiles include the preserved historical `macbook_pro_16_m3` orphan. Missing profiles / exact URLs: 0 / 0. Guarded provisioning avoids overwriting unknown manual edits. 762 focused assertions and 12 desktop/mobile page checks PASS; all 169 original product objects unchanged and QA artifacts removed. LOCAL only; not committed or deployed. See `docs/qa/model-specifications.md`.
 
 LOCAL only, no commit/push/deployment. The pre-existing selector and product-layout changes remain intact.
+
+
+## 2026-10-28 — Smart selector resolved in isolated LOCAL candidate
+
+Previously a valid option available only with another color/condition/storage or technical configuration was disabled, and identical configurations could silently select an arbitrary physical product. The candidate shows explicit alternatives with real prices/photos/differences, retains exact-match deltas and disables truly unavailable choices without misleading prices. Current product identity is explicit; shared canonical aliases are queried together. Native stock/cart behavior and model profiles are preserved.
+
+Status: SAFE TO INTEGRATE for this feature, subject to the separate consolidation task; not merged, committed, pushed or deployed. Validation and limits are recorded in `docs/qa/smart-product-selector.md`. The original localhost:8082 runtime and its 34 pending files remain unchanged.
+
+### Launch payment eligibility — LOCAL candidate (2026-10-28)
+
+Closed in the separate LOCAL candidate: every webshop shipping method now allows Barion only; BACS, COD and pay-at-pickup are unavailable, including manipulated requests and stale sessions. See [verification and isolation boundaries](docs/qa/launch-payment-eligibility.md). This final decision supersedes the previous pickup-payment checkout option. The existing `cod` gateway/settings remain registered internally for staff cash recording and the unchanged activation preflight, but cannot be selected or processed through webshop checkout. Final consolidation and separately authorized TEST verification remain pending; the localhost:8082 storefront/performance work is unchanged.
+
+## 2026-10-29 — Consolidation staged; Back Office release dependency remains
+
+The completed independent packages and 30 already-deployed Back Office repair files are checkpointed. The staged candidate passes 4,397 focused/offline assertions. The newer Back Office intake package still requires the canonical order-command/background-worker boundary; its 115 pending paths and the original 34 storefront paths are preserved. No partial TEST release is claimed or deployed. See `docs/qa/final-local-consolidation.md` for exact SHAs, source drift, test limits and the required resume step.

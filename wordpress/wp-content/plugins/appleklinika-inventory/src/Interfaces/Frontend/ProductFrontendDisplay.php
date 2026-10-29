@@ -54,6 +54,8 @@ final class ProductFrontendDisplay
         $plugin = $root . '/appleklinika-inventory.php';
         wp_enqueue_style('appleklinika-product-gallery', plugins_url('assets/product-gallery.css', $plugin), [], (string) filemtime($root . '/assets/product-gallery.css'));
         wp_enqueue_script('appleklinika-product-gallery', plugins_url('assets/product-gallery.js', $plugin), [], (string) filemtime($root . '/assets/product-gallery.js'), true);
+        wp_enqueue_style('appleklinika-smart-selector', plugins_url('assets/smart-product-selector.css', $plugin), [], (string) filemtime($root . '/assets/smart-product-selector.css'));
+        wp_enqueue_script('appleklinika-smart-selector', plugins_url('assets/smart-product-selector.js', $plugin), [], (string) filemtime($root . '/assets/smart-product-selector.js'), true);
     }
 
     public function removeDefaultProductBlocks(): void
@@ -304,82 +306,7 @@ final class ProductFrontendDisplay
 
                 const selectorDataNode = document.getElementById("appleklinika-product-selector-data");
                 const selectorProducts = selectorDataNode ? JSON.parse(selectorDataNode.textContent || "[]") : [];
-                const productBackedSelectorGroups = ["color", "storage", "condition"];
-
-                function selectedSelectorValues() {
-                    const values = {};
-                    document.querySelectorAll("[data-selector-group]").forEach(function (group) {
-                        const selected = group.querySelector("[data-selector-option].is-selected");
-                        if (selected) {
-                            values[group.dataset.selectorGroup] = selected.dataset.optionValue || "";
-                        }
-                    });
-
-                    return values;
-                }
-
-                function hasAvailableProductForOption(groupName, optionValue, selectedValues) {
-                    if (productBackedSelectorGroups.indexOf(groupName) === -1) {
-                        return true;
-                    }
-
-                    return selectorProducts.some(function (product) {
-                        if (!product.available || !product.values || product.values[groupName] !== optionValue) {
-                            return false;
-                        }
-
-                        return productBackedSelectorGroups.every(function (otherGroup) {
-                            if (otherGroup === groupName) {
-                                return true;
-                            }
-
-                            return !selectedValues[otherGroup] || product.values[otherGroup] === selectedValues[otherGroup];
-                        });
-                    });
-                }
-
-                function setOptionAvailability(option, available) {
-                    option.disabled = !available;
-                    option.classList.toggle("is-unavailable", !available);
-                    option.setAttribute("aria-disabled", available ? "false" : "true");
-                    if (available) {
-                        option.removeAttribute("tabindex");
-                    } else {
-                        option.setAttribute("tabindex", "-1");
-                    }
-                }
-
-                function updateSelectorAvailability() {
-                    if (!selectorProducts.length) {
-                        return;
-                    }
-
-                    const selectedValues = selectedSelectorValues();
-
-                    document.querySelectorAll("[data-selector-group]").forEach(function (group) {
-                        const groupName = group.dataset.selectorGroup || "";
-
-                        if (productBackedSelectorGroups.indexOf(groupName) === -1) {
-                            return;
-                        }
-
-                        group.querySelectorAll("[data-selector-option]").forEach(function (option) {
-                            const optionValue = option.dataset.optionValue || "";
-                            setOptionAvailability(option, hasAvailableProductForOption(groupName, optionValue, selectedValues));
-                        });
-                    });
-                }
-
-                function findMatchingProduct(values) {
-                    const exact = selectorProducts.find(function (product) {
-                        return product.available && product.values
-                            && product.values.color === values.color
-                            && (!values.storage || product.values.storage === values.storage)
-                            && product.values.condition === values.condition;
-                    });
-
-                    return exact || null;
-                }
+                let activeProduct = selectorProducts.find(product => Number(product.id) === Number(document.querySelector(".appleklinika-product-shell")?.dataset.currentProductId)) || null;
 
                 function renderProductGallery(images) {
                     window.AppleklinikaProductGallery?.replace(images);
@@ -387,6 +314,7 @@ final class ProductFrontendDisplay
 
                 function updateProductView(product) {
                     if (!product) return;
+                    document.querySelector(".appleklinika-product-shell").dataset.currentProductId = String(product.id);
 
                     const title = document.querySelector("[data-appleklinika-product-title]");
                     const price = document.querySelector("[data-appleklinika-product-price]");
@@ -410,6 +338,9 @@ final class ProductFrontendDisplay
                     ].forEach(function (entry) {
                         const node = document.querySelector(entry[0]);
                         if (node && product[entry[1]]) node.outerHTML = product[entry[1]];
+                        else if (node && entry[1] === "descriptionHtml") {
+                            node.replaceChildren(); node.hidden = true;
+                        }
                     });
                     const batteryMeta = document.querySelector("[data-selector-group=battery] [data-option-value=standard] .appleklinika-config-card__meta");
                     if (batteryMeta) batteryMeta.textContent = product.batteryHealthLabel;
@@ -418,7 +349,6 @@ final class ProductFrontendDisplay
                     if (window.history && product.url) {
                         window.history.replaceState({ productId: product.id }, "", product.url);
                     }
-                    updateSelectorAvailability();
                 }
 
                 function selectedBatteryExtra() {
@@ -438,7 +368,6 @@ final class ProductFrontendDisplay
                     const extra = selectedBatteryExtra();
                     const price = document.querySelector("[data-appleklinika-product-price]");
                     const form = document.querySelector(".appleklinika-cart-area form.cart");
-                    const activeProduct = findMatchingProduct(selectedSelectorValues()) || selectorProducts[0] || null;
 
                     if (form) {
                         let input = form.querySelector("[name=\"appleklinika_battery_extra\"]");
@@ -461,42 +390,11 @@ final class ProductFrontendDisplay
                         + (saving > 0 ? "<span class=\"appleklinika-price-stack__saving\">Megtakarítás: " + formatFt(saving) + "</span>" : "");
                 }
 
-                document.querySelectorAll("[data-selector-group]").forEach(function (group) {
-                    group.addEventListener("click", function (event) {
-                        const option = event.target.closest("[data-selector-option]");
-                        if (!option || !group.contains(option)) return;
-                        if (option.disabled || option.getAttribute("aria-disabled") === "true") return;
-                        const options = Array.from(group.querySelectorAll("[data-selector-option]"));
-                        options.forEach(function (item) {
-                            item.classList.remove("is-selected", "is-active");
-                            item.setAttribute("aria-pressed", "false");
-                        });
-                        option.classList.add("is-selected", "is-active");
-                        option.setAttribute("aria-pressed", "true");
-
-                        const selected = group.querySelector("[data-selected-label]");
-                        if (selected) {
-                            selected.textContent = option.dataset.optionLabel || option.textContent.trim();
-                        }
-
-                        const imageUrl = option.dataset.imageUrl || "";
-                        const stageImage = document.querySelector("[data-appleklinika-stage-image]");
-                        if (imageUrl && stageImage) {
-                            stageImage.src = imageUrl;
-                            stageImage.removeAttribute("srcset");
-                        }
-
-                        if (group.dataset.selectorGroup === "battery") {
-                            updateBatteryExtra();
-                            updateSelectorAvailability();
-                            return;
-                        }
-
-                        updateProductView(findMatchingProduct(selectedSelectorValues()));
-                    });
+                window.AppleklinikaSmartSelector?.mount({
+                    products: selectorProducts,
+                    initialId: document.querySelector(".appleklinika-product-shell")?.dataset.currentProductId,
+                    onSelect: function (product) { activeProduct = product; updateProductView(product); }
                 });
-
-                updateSelectorAvailability();
                 updateBatteryExtra();
             });
         </script>';
@@ -522,7 +420,7 @@ final class ProductFrontendDisplay
         $relatedProducts = $this->relatedProducts($product);
         \Appleklinika\Inventory\Infrastructure\WordPress\WooProductMetadata::prime($relatedProducts);
 
-        echo '<section class="appleklinika-product-shell" data-appleklinika-product-shell aria-label="Termék és vásárlási lehetőségek">';
+        echo '<section class="appleklinika-product-shell" data-appleklinika-product-shell data-current-product-id="' . esc_attr((string) $productId) . '" aria-label="Termék és vásárlási lehetőségek">';
         echo '<div class="appleklinika-product-hero">';
         echo '<div class="appleklinika-product-column appleklinika-product-column--configuration">';
         $this->renderProductGallery($images);
@@ -1225,6 +1123,11 @@ final class ProductFrontendDisplay
             return [$product];
         }
 
+        $canonical = ModelIdentity::canonical($model);
+        $keys = [$model, $canonical];
+        foreach ($this->deviceCatalogRepository->all() as $entry) {
+            if (ModelIdentity::canonical((string) $entry['key']) === $canonical) $keys[] = $entry['key'];
+        }
         $products = wc_get_products([
             'status' => 'publish',
             'limit' => -1,
@@ -1232,13 +1135,12 @@ final class ProductFrontendDisplay
             'visibility' => 'visible',
             'orderby' => 'date',
             'order' => 'DESC',
-            'meta_key' => WooProductConditionRepository::META_PREFIX . 'device_model',
-            'meta_value' => $model,
+            \Appleklinika\Inventory\Infrastructure\WordPress\WooDeviceQueries::FAMILY => ['models' => array_values(array_unique($keys))],
         ]);
-        $byId = \Appleklinika\Inventory\Infrastructure\WordPress\DeviceAvailability::active($product) ? [$product->get_id() => $product] : [];
+        $byId = [$product->get_id() => $product];
 
         foreach ($products as $relatedProduct) {
-            if ($relatedProduct instanceof \WC_Product && \Appleklinika\Inventory\Infrastructure\WordPress\DeviceAvailability::active($relatedProduct)) {
+            if ($relatedProduct instanceof \WC_Product && ModelIdentity::canonical($this->conditionRepository->get($relatedProduct->get_id(), 'device_model')) === $canonical && \Appleklinika\Inventory\Infrastructure\WordPress\DeviceAvailability::active($relatedProduct)) {
                 $byId[$relatedProduct->get_id()] = $relatedProduct;
             }
         }
@@ -1252,13 +1154,22 @@ final class ProductFrontendDisplay
      */
     private function productSelectorPayload(array $products): array
     {
+        \Appleklinika\Inventory\Infrastructure\WordPress\WooSelectorConfiguration::prime($products);
         return array_values(array_map(function (\WC_Product $product): array {
             $productId = $product->get_id();
             $images = $this->productImages($product);
 
             return [
                 'id' => $productId,
+                'modelKey' => ModelIdentity::canonical($this->conditionRepository->get($productId, 'device_model')),
+                'technical' => (new \Appleklinika\Inventory\Infrastructure\WordPress\WooSelectorConfiguration($this->conditionRepository))->forProduct($product),
+                'labels' => [
+                    'color' => $this->colorDisplayLabel($this->conditionRepository->get($productId, 'device_model'), $this->conditionRepository->get($productId, 'color')),
+                    'storage' => $this->storageLabel($this->conditionRepository->get($productId, 'storage_capacity')),
+                    'condition' => $this->gradeLabel($this->conditionRepository->get($productId, 'overall_grade')),
+                ],
                 'available' => $product->is_purchasable() && $product->is_in_stock(),
+                'selectorEligible' => \Appleklinika\Inventory\Infrastructure\WordPress\DeviceAvailability::active($product),
                 'url' => get_permalink($productId),
                 'title' => $this->displayProductTitle($product),
                 'leadHtml' => $this->capture(fn () => $this->renderProductLead($product)),

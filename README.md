@@ -598,3 +598,16 @@ are unchanged; see the latest product-information QA section. Not committed/depl
 ### Product-page visual polish — LOCAL, 2026-10-28
 
 The purchase action spans its container; native Woo quantity defaults/limits remain intact while the product-page quantity control is visually hidden. Desktop details continue directly below selectors, and recommendations follow guarantees in the independent right column. Up to six active same-family devices are shown, preferring existing model peers. See [verification](docs/qa/product-information-presentation.md#final-product-page-polish--2026-10-28). No commit, deployment, provider or stock changes were made in this pass.
+
+
+### Smart physical-device selector — isolated LOCAL candidate, 2026-10-28
+
+The selector now distinguishes exact devices, explicitly accepted alternative configurations, and unavailable valid options. It uses canonical model identity and the existing batched Woo availability query; no inventory, cart, order or provider lifecycle is changed. Multiple matching physical devices require an explicit choice. The implementation is isolated on `feature/smart-product-selector`; it includes an unchanged copy of the 34 pending storefront/performance files as its baseline. No integration, commit or deployment has occurred. See [the evidence and reproduction guide](docs/qa/smart-product-selector.md).
+
+### Launch payment eligibility — LOCAL candidate (2026-10-28)
+
+The [focused payment eligibility report](docs/qa/launch-payment-eligibility.md) implements the final business decision: every webshop order is prepaid through Barion, including free personal pickup. Checkout excludes BACS, COD and pay-at-pickup, rejects manipulated payment requests, and clears stale session choices. Staff cash recording and production activation guards remain unchanged. This separate LOCAL candidate supersedes the earlier pickup-payment checkout policy; the pending storefront/performance work is preserved for final consolidation. No TEST deployment.
+
+### Final LOCAL consolidation — 2026-10-29
+
+Approved Smart Selector, storefront/specification/performance and Barion-only packages are now protected by focused LOCAL checkpoints and staged with the exact already-running TEST Back Office repairs. The newer Back Office order/worker boundary is still incomplete; develop and TEST remain unchanged. See [the consolidation receipt and precise resume dependency](docs/qa/final-local-consolidation.md). Historical uncommitted status notes above describe their earlier acceptance date.

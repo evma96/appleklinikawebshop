@@ -54,6 +54,8 @@ add_action('plugins_loaded', static function (): void {
         return;
     }
 
+    (new Appleklinika\BackOffice\Interfaces\CheckoutPaymentHooks())->register();
+
     $orders = new Appleklinika\BackOffice\Infrastructure\WooOrderBackOfficeRepository();
     $mutex = new Appleklinika\BackOffice\Infrastructure\WooOrderMutex();
     $change = new Appleklinika\BackOffice\Application\ChangeFulfilment(new Appleklinika\BackOffice\Infrastructure\WooFulfilmentStore($orders), $mutex);

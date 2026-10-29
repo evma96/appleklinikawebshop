@@ -85,7 +85,7 @@ $ok(count($mail())===5&&wc_get_product($p->get_id())->get_stock_quantity()===3,'
 WC()->session->set('chosen_shipping_methods',['gls_shipping_method:1']);$gateways=apply_filters('woocommerce_available_payment_gateways',['barion'=>new stdClass(),'bacs'=>new stdClass(),'cod'=>$gateway]);
 $ok(isset($gateways['barion'])&&!isset($gateways['bacs'])&&!isset($gateways['cod']),'E: courier Barion only');
 WC()->session->set('chosen_shipping_methods',['local_pickup:2']);$gateways=apply_filters('woocommerce_available_payment_gateways',['barion'=>new stdClass(),'bacs'=>new stdClass(),'cod'=>$gateway]);
-$ok(isset($gateways['cod'])&&!isset($gateways['bacs']),'E: pickup cash available, BACS absent');
+$ok(isset($gateways['barion'])&&!isset($gateways['cod'])&&!isset($gateways['bacs']),'E: pickup checkout Barion only; separate staff cash recording above remains intact');
 $ok(($GLOBALS['fixture_network_attempts']??0)===0,'No real HTTP attempt from the lifecycle');
 $dirty=R::report(true);$ok(!$dirty['ready'] && $dirty['counts']['products']===1 && $dirty['counts']['orders']===2 && $dirty['counts']['customers']===1,'Actual post-launch Woo data refuses a new empty-launch certificate');
 $c['enabled']=false;$write($c);$ok(!R::allowed()&&!wp_mail('buyer@example.invalid','Emergency blocked','Blocked'),'Emergency OFF stops mail after activation');
