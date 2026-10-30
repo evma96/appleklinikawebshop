@@ -1,126 +1,108 @@
-# BX11 TEST integration — disabled preparation
+# BX11 TEST backup integration
 
-Status 2026-10-15: BX11 does not exist. No account/key, connection, upload, timer,
-remote deletion, server change or provider action has occurred in this task.
-The code/configuration below is a LOCAL candidate, not active TEST configuration.
-[Current published baseline](current-operational-baseline.md) is unchanged.
+The original 2026-10-15 disabled SSH/23 preparation is superseded by the SFTP/22
+integration on 2026-10-30. The existing encrypted backup producer and Mac backup
+workflow are preserved. No application release or production change is involved.
 
-## Prepared components
+## Transport and credentials
 
-- `scripts/operations/offserver-sync.py`: dry-run by default, separate `--apply`
-  plus private `enabled: true` required. Upload allowed only for the configured
-  TEST host; production is refused. SSH/rsync over port 23, dedicated subaccount,
-  pinned host key, no password fallback, local checksums, remote checksums and
-  manifest published last. Each run rechecks uploaded bytes even if previously
-  successful. No plaintext source path, private recovery key or arbitrary extra
-  file is part of an upload set.
-- Four expected encrypted streams: `database.cms`, `files.cms`, `inventory.cms`,
-  `logs.cms`, with `SHA256SUMS`. Only complete timestamp directories are considered.
-  The proven backup producer encrypts before writing backup data; the adapter
-  verifies exact set membership/checksums and does not create/encrypt backups.
-- Private atomic state and non-overlapping job lock; only status/counts logged,
-  never remote stderr/configuration values. An absent/failed/old remote state is
-  actionable. “Fresh” means both a successful check and the newest actual backup
-  are <=30 hours old; rechecking an old set cannot mask a stopped backup job.
-- `test-monitor.py` opt-in hook: `/etc/appleklinika-ops/offserver-sync.json` absent
-  or disabled means no change to existing behavior. After enablement, corrupt
-  config/state, failed service, missing/stale remote backup generate
-  `remote_backup_failure_or_stale` through the existing deduplicated alert route.
-  A failed upload exits nonzero; systemd/journal records failure without secrets.
-- `docker/operations/appleklinika-test-offserver.service` and `.timer`: opt-in
-  templates, 04:30 UTC after the 03:15 UTC existing daily backup window; host guard.
-  Nothing installs/enables these automatically. Confirm worst-case backup duration.
-- `verify-encrypted-set.py`: validate downloaded checksums; decrypt all four streams
-  on a recovery computer without printing/extracting plaintext; inspect DB footer,
-  table count and required TEST recovery archive members. This is a decryption
-  proof, not a database import/application restore. Archive links still require
-  human review before extraction.
+- Dedicated Storage Box subaccount, Helsinki; subaccount root is the assigned
+  `appleklinika-test-backups` directory. The SFTP view starts at `/`, so the base
+  directory is not duplicated in paths.
+- Inside that restricted root: `appleklinika/test/routine/<UTC-set>/`.
+- `offserver-sftp.py` uses Paramiko (`python3-paramiko` from Ubuntu packages on TEST),
+  SFTP port 22, pinned known-hosts, explicit key identity, no agent/password fallback.
+  Host key is checked against the independently published Hetzner RSA fingerprint:
+  `SHA256:EMlfI8GsRIfpVkoW1H2u0zYVpFGKkIMKHFZIRkf2ioI`.
+- Dedicated upload private key remains root-only under `/etc/appleklinika-ops/`.
+  A separate recovery access key is stored privately on the Mac. Both public keys
+  use RFC4716 format in the subaccount `.ssh/authorized_keys`; prior keys preserved.
+  The one-time enrollment password was entered through hidden terminal input,
+  used in memory only and not written to a file, log, repository or report.
+- These SSH access keys are distinct from the encryption recovery key. TEST has
+  only the public encryption certificate; the private decryption key stays on the
+  recovery computer. Independent encrypted key-vault/password-manager custody is pending; no physical drive is required.
 
-## Retention and destination convention
+## Archive safety and integrity
 
-Assign the upload subaccount to a dedicated private directory. Inside its restricted
-root use `appleklinika/test/routine/YYYYMMDDTHHMMSSZ/`. Never mix production backup
-sets here. `STORAGEBOX_REMOTE_PATH` is relative to the subaccount root; no leading
-slash, spaces, `..` or shell syntax. Set local server retention 14 and Mac 30 as
-already configured. Proposed remote retention: newest 30 **verified complete sets**.
+The existing `test-backup.sh` produces the same four encrypted CMS streams:
+`database.cms`, `files.cms`, `inventory.cms`, `logs.cms`, plus `SHA256SUMS`.
+The upload adapter reuses the format, checksums, private-state and host guards in
+`offserver-sync.py`. No plaintext database, media or private configuration is uploaded.
 
-`--action retention-plan --apply` reads the remote directory and verifies complete
-sets, then lists `keep`, `review_expired` and `retain_incomplete_for_investigation`.
-It performs **no deletion**. Failed/incomplete/unrecognised directories are never
-silently pruned. Until separately reviewed pruning is activated, remote retention
-is conservative and unbounded; check usage in Hetzner monthly and before expiry
-reviews. Delete only individually approved expired set directories through the
-provider file UI/limited shell, keeping the 30 complete sets and independent
-restore proof. Snapshots, if configured, have separate retention/capacity costs;
-review provider options rather than claim immutability.
+Each run selects the newest complete local set (must be <=30 hours old). Uploads
+use a unique `.partial-*` directory. Each encrypted file is read back over SFTP and
+hashed; the manifest is uploaded last, then the directory is renamed to its final
+UTC name. A pre-existing final set is verified, never overwritten. Conflicting or
+corrupt bytes fail closed. Incomplete uploads remain identifiable for investigation.
 
-## Information still needed from Martin
+Port 22 does not provide a remote shell. Therefore “remote checksum” means SHA-256
+of actual remote ciphertext read back through authenticated SFTP, not a claim that
+`sha256sum` executed on the Storage Box. Independent download verification compares
+all encrypted files against the original manifest again.
 
-1. Provisioned BX11 location and main-account control-panel access (no password in
-   chat); choose a location different from TEST where possible.
-2. Dedicated restricted subaccount and its actual `STORAGEBOX_USER`, corresponding
-   `STORAGEBOX_HOST`, and assigned base directory. The host for a subaccount is
-   normally `uNNNNN-subN.your-storagebox.de`, not the main-account host.
-3. Confirm `STORAGEBOX_REMOTE_PATH`, SSH support and external reachability for
-   recovery from a Mac outside Hetzner; confirm storage/snapshot/retention policy.
-4. Independently verified host-key fingerprint from a trusted provider channel;
-   never accept a key solely because `ssh-keyscan` returned it.
-5. Confirmation that the existing recovery kit has been copied to an encrypted
-   external device independently of the Mac/TEST. Do not send the key here.
+## Schedule, retention and monitoring
 
-## One-time secure setup after provisioning/authorization
+- Existing local daily backup: 03:15 UTC with up to five minutes jitter, unchanged.
+- Off-server service/timer: 04:30 UTC with up to five minutes jitter, persistent
+  catch-up after restart; enabled only after the first round-trip verification.
+- Uploads are locked against overlap and bounded by a four-hour service timeout.
+- Remote retention: at least newest 30 complete sets. Before pruning, all retained
+  sets are verified; only older sets recorded as created by this service may be
+  removed. Pre-existing/unmanaged sets, unknown names and partial directories are
+  never pruned automatically. No deletion is needed for the first uploaded set.
+- Existing local and Mac retention remain unchanged. Storage Box snapshots are
+  not enabled or asserted by this task. A writable subaccount is not immutable.
+- Existing five-minute TEST monitor now includes `remote_backup_failure_or_stale`:
+  missing/corrupt state, failed service/transfer, or latest backup/check older than
+  30 hours. A running job has a maximum two-hour grace only while a previously
+  successful backup is still fresh. The existing deduplicated SMTP alert/recovery
+  route is reused without replacing its credentials or recipients.
+- Failed/incomplete operations do not refresh successful backup timestamps.
 
-1. Create a separate directory-restricted write subaccount for TEST uploads and,
-   where supported by the chosen account setup, a read-only recovery subaccount
-   for downloading. No main Storage Box credential goes on TEST. Restriction to
-   a directory is least privilege, **not append-only/immutable storage**; a writer
-   can alter its own directory. A separate administrative identity reviews pruning.
-2. Generate the dedicated upload SSH key only during the authorized setup, store
-   it root-owned 0600 in `/etc/appleklinika-ops/`, and install its public half via
-   Hetzner's supported port-23 `install-ssh-key` workflow. Preserve existing keys;
-   do not overwrite `authorized_keys`. Keep passwords in hidden interactive input.
-3. Pin the independently verified host key to a private known-hosts file using the
-   `[host]:23` entry. Use a separate recovery identity on the recovery computer.
-4. Copy `docker/operations/offserver-sync.json.example` into root-private
-   `/etc/appleklinika-ops/offserver-sync.json`. Fill the three STORAGEBOX placeholders,
-   confirm actual hostname/path/permissions. Leave disabled until these are checked.
-   No new application environment keys or mailbox/provider settings are needed.
-5. Install the reviewed scripts and service/timer templates in the existing TEST
-   operations paths. Keep both enabled state and timer OFF until a manual round trip
-   succeeds. `python3 offserver-sync.py /private/config.json` is offline dry-run.
-6. Set `enabled: true` in private TEST config only, then invoke the explicit upload:
+Offline regression command: `make test-offserver-backup` (no network/provider calls).
 
-   ```sh
-   python3 /usr/local/lib/appleklinika-ops/offserver-sync.py /etc/appleklinika-ops/offserver-sync.json --apply
-   python3 /usr/local/lib/appleklinika-ops/offserver-sync.py /etc/appleklinika-ops/offserver-sync.json --action retention-plan --apply
-   ```
+## Recovery and operation
 
-7. On the recovery computer create a private 0700 parent directory and private
-   download configuration (`environment: RECOVERY`, its exact hostname, read-only
-   account/key/known-hosts, enabled true). Download a selected complete timestamp
-   into a **new** directory; existing targets are refused:
+Use a private 0700 workspace and 0600 recovery configuration. Recovery uses
+`environment: RECOVERY`, exact local hostname, explicit separate identity and the
+same pinned host key. All secret paths are local configuration, not Git data.
 
-   ```sh
-   python3 scripts/operations/offserver-sync.py /private/recovery-sync.json --action download --apply --set YYYYMMDDTHHMMSSZ --destination /private/restore/YYYYMMDDTHHMMSSZ
-   python3 scripts/operations/verify-encrypted-set.py /private/restore/YYYYMMDDTHHMMSSZ --key /encrypted-device/recovery-key.pem --cert /encrypted-device/recovery-cert.pem
-   ```
+```sh
+python3 scripts/operations/offserver-sftp.py /private/recovery-sync.json --action download --apply --set YYYYMMDDTHHMMSSZ --destination /private/restore/YYYYMMDDTHHMMSSZ
+python3 scripts/operations/verify-encrypted-set.py /private/restore/YYYYMMDDTHHMMSSZ --key /private/recovery-key.pem --cert /private/recovery-cert.pem
+```
 
-   The decryption key stays on the recovery computer/device, never TEST/Storage Box.
-   If a passphrase-protected key needs entry, use the terminal's hidden prompt;
-   never command-line password arguments or plaintext password files.
-8. Complete the isolated WordPress/DB/media restore in the [DR runbook](disaster-recovery.md).
-   Record timestamp, source SHA, checksums, table/archive counts and restore result,
-   no personal data. Test one controlled failed remote state in isolation to confirm
-   monitor classification; authorize any real human alert separately.
-9. Only then enable the TEST off-server timer, check the first scheduled success and
-   freshness/alert hook, and record remote capacity and retained set count. This
-   does not authorize a production timer or production secrets.
+Download refuses an existing target. Verification decrypts in memory/streams and
+prints only counts: SQL tables and completion marker, gzip CRC, safe tar paths,
+required runtime/config members, media-file presence and nonempty inventory/logs.
+It does not print or extract plaintext private data. This is archive/decryption
+verification, **not** a new database import or complete application restore drill.
+Use the existing [disaster recovery procedure](disaster-recovery.md) for that.
 
-The limited Storage Box shell supports explicit `ls`, `cat`, `sha256sum`, `mkdir`
-and rsync. Scripts do not depend on `find`, shell pipes, redirections or uploaded
-server scripts. Commands above run on the client, not inside the Storage Box shell.
+Operational copies are installed outside the TEST application repository from the
+reviewed source checkpoint. See
+[the acceptance record](qa/bx11-backup-20261030.md) for observed results.
 
-Official references checked 2026-10-15:
-[SSH/rsync](https://docs.hetzner.com/storage/storage-box/access/access-ssh-rsync-borg/),
-[subaccount access](https://docs.hetzner.com/storage/storage-box/access/access-overview/),
-[key installation](https://docs.hetzner.com/storage/storage-box/ssh-keys/add-ssh-keys/).
+Official references:
+[host fingerprints and formats](https://docs.hetzner.com/storage/storage-box/general/),
+[key installation](https://docs.hetzner.com/storage/storage-box/ssh-keys/add-ssh-keys/),
+[SFTP access](https://docs.hetzner.com/storage/storage-box/access/access-sftp-scp/).
+
+## Reproducible installation (TEST only)
+
+From the reviewed release checkout, install Ubuntu's `python3-paramiko` package.
+Install `scripts/operations/{offserver-sync.py,offserver-sftp.py,verify-encrypted-set.py}`
+as root-owned 0755 files into `/usr/local/lib/appleklinika-ops/`. Install the tracked
+`docker/operations/appleklinika-test-offserver.service` and `.timer` into
+`/etc/systemd/system/`, then reload systemd. The existing monitor imports
+`offserver-sync.py`; retain its existing alert credentials and timer.
+
+Create private 0700 configuration/state directories. Populate the tracked
+`offserver-sync.json.example` as a 0600 private configuration with the verified
+TEST hostname, subaccount, pinned known-hosts file and root-only upload identity.
+Never copy example placeholders over an existing configuration. Keep the established
+backup producer, public encryption certificate and Mac recovery workflow unchanged.
+Enable the timer only after a controlled service run, ciphertext read-back and
+independent download/decryption pass. Compare installed script hashes to this release;
+no untracked code patch is required. No keys or private configuration are in Git.

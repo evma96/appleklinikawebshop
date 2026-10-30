@@ -14,14 +14,15 @@ of an existing environment is distinct from the [empty production launch](produc
 | Current code | Rewritten `evma96/appleklinikawebshop` public refs; exact approved SHA | Current clean refs proven; old direct sensitive-image URLs still need GitHub Support purge. Do not recover old public ancestry by accident. |
 | Full TEST data/config/media/code | `/opt/appleklinika/backups/routine/<UTC-set>/` | Daily encrypted four-stream sets, server keeps 14 complete sets. Same-server copy alone does not survive server loss. |
 | Additional data copy | `~/AppleKlinika-Private-Backups/routine-test/<UTC-set>/` on Martin's Mac | 30 complete sets; existing pull/decrypt checks. Copy is conditional on Mac availability. Its extra `verification.json` is local evidence, not an upload-set member. |
-| BX11 independent copy | Planned restricted `appleklinika/test/routine/<UTC-set>/` | NOT PROVISIONED / NOT VERIFIED. Do not assume it can recover anything yet. |
+| BX11 independent copy | Restricted subaccount, SFTP22, `appleklinika/test/routine/<UTC-set>/` | 2026-10-30 transfer/download/decryption verified; daily timer enabled, 30-set retention. See [acceptance](qa/bx11-backup-20261030.md). External decryption-key custody still pending. |
 | Private key + certificate + instructions | `~/AppleKlinika-Private-Backups/recovery-custody-20261014/` | Ready, private permissions. Owner's encrypted off-Mac copy is NOT confirmed. Original operational Mac key remains in `round1-20261005/`. TEST has only the public certificate. |
 | Git emergency safety | `~/AppleKlinika-Private-Backups/pre-history-rewrite-20261014/` | Verified encrypted archive and private restored bundles. Contains OLD sensitive history; never publish/mirror-push it. Use selectively and map identities. Not yet independent off-Mac. |
 | Operational procedures | This repo + a private offline copy of this runbook/reference map | Keep together with recovery instructions, outside dependence on GitHub alone. Never put private key or credentials in Git. |
 
-Last recorded actual routine set verification: `20261014T142155Z`, 62 DB tables,
-24,250 archive entries. This is historical evidence, not a claim about today's
-freshness. Before recovery choose the newest verified complete set appropriate to
+Latest recorded BX11 round-trip verification: `20261030T120758Z`, 62 DB tables,
+25,690 archive entries and 1,133 media files. Transfer and stream/archive decryption
+passed; a new database import/application restore was not performed. Recheck current
+freshness before any incident recovery. Before recovery choose the newest verified complete set appropriate to
 the incident; record its timestamp and estimate data loss since it. Daily scheduling
 suggests up to a day of normal data loss, but failures/late copies can make it
 longer. No unmeasured RTO guarantee is made.
@@ -47,7 +48,8 @@ longer. No unmeasured RTO guarantee is made.
 ## Scenario A — application/TEST server lost
 
 - Code: clean GitHub baseline or verified repository content from an encrypted set.
-- Data: Mac verified routine copy; once accepted, BX11 is the independent default.
+- Data: BX11 verified encrypted routine copy, or the existing verified Mac copy.
+  Use the SFTP22 download procedure in [the BX11 guide](storagebox-test-preparation.md).
 - Key: encrypted external recovery kit; today only the Mac copy is confirmed.
 - Recreate server SSH host keys, access keys, WireGuard peer identity/firewall binding,
   DB passwords and certificates appropriate to the replacement host. Do not simply

@@ -751,3 +751,11 @@ A verified Barion payment now revalidates physical-device stock under order/prod
 
 ### Used-device warranty consistency (2026-10-30)
 Used-device demo warranty defaults now match the approved 12 months, independent of cosmetic grade. Missing warranty on newly entered supported devices defaults to 12 months; explicitly configured terms remain supported. The guarded LOCAL/TEST data correction preserves previous order terms in product metadata without rewriting orders. See `docs/qa/warranty-consistency.md`. Production and legal documents are unchanged.
+
+## BX11 TEST off-server integration (2026-10-30)
+
+The former unprovisioned Storage Box/SSH23 preparation is superseded by a dedicated
+SFTP22 subaccount and unattended upload key. Operational acceptance is recorded in
+`docs/qa/bx11-backup-20261030.md`; this does not alter older historical findings.
+Martin's encrypted external recovery-key copy remains a separate manual gate.
+No production backup activation or fresh application/database restore drill is claimed.

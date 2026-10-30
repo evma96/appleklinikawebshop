@@ -37,9 +37,9 @@ from the reviewed clean public history, never from an old recovery bundle.
    required private operational overlays. Do not run demo seeders, QA scripts or old
    migrations/imports from a quarantined worktree. Validate PHP and proxy syntax.
 3. Create a fresh database with independent credentials/salts. Activate Woo and custom
-   plugins using supported APIs. Require Buyback schema 1.5.0 diagnostics healthy;
-   use approved HPOS storage. Recreate approved Buyback pricing/configuration only
-   after owner review, without requests/customer history/TEST transaction records.
+   plugins using supported APIs. Use approved HPOS storage. Buyback remains OFF at launch; do not publish its
+   submission route or activate a price book as part of launch. Retain source/schema
+   for a separately approved future rollout, without importing TEST request history.
 4. Recreate reviewed pages/categories/attributes/menu and public settings through an
    explicit allowlist, remapping page/media IDs. Approved homepage/contact/category
    photos may remain; demo-product-only photos and product relationships must not.
@@ -59,7 +59,9 @@ from the reviewed clean public history, never from an old recovery bundle.
 
 - Homepage/hero/categories, empty search/shop/featured blocks, stale product 404,
   Contact/map/navigation, account/login and Back Office on desktop/mobile.
-- BACS OFF and instructions empty. Barion online; cash only with pickup.
+- Barion is the only webshop payment method for GLS, MPL and free personal pickup.
+  BACS OFF (instructions empty), COD and pay-at-pickup unavailable to webshop
+  checkout. Direct in-store cash recording is a separate Back Office operation.
 - GLS point/locker 1,490 and home 1,990 HUF; manual MPL point 1,040 and home 2,090;
   pickup 0. No generic free courier. No invented weights or advanced MPL API work.
 - Correct store address, legal page mappings and approved content; no localhost,
@@ -82,7 +84,7 @@ individual sale, fresh main photo/gallery. No customer battery-choice UI.
 Verify card/detail/gallery/selectors/cart and no internal IMEI disclosure.
 
 Authorize one controlled real order separately, including recipient, amount and
-provider effects. Verify Barion/payment/invoice/customer delivery/GLS and cash-pickup
+provider effects. Verify Barion/payment/invoice/customer delivery/GLS and prepaid personal-pickup
 paths as applicable; no real transaction is implied by this document. Confirm
 monitoring and the first scheduled independent encrypted backup after launch.
 
