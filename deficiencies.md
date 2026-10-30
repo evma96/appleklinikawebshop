@@ -739,3 +739,7 @@ The completed independent packages and 30 already-deployed Back Office repair fi
 ## 2026-10-29 — Final integrated release boundary
 
 The previously pending Back Office source dependency is reconciled with the approved Storefront/Smart Selector candidate; see `docs/qa/final-integrated-release.md`. The current TEST runtime was found using the base image without the approved metadata tool; deployment must retain the existing media overlay. The canonical target registry must be verified after safe provisioning (previous TEST count: 54 profiles). Full integrated concurrency/reservation/late-callback and controlled provider E2E acceptance remains a separate explicit next task. Google Reviews live authorization, production activation and production empty-catalog preparation are not silently completed by this release.
+
+## Accessory draft / mixed invoice release gate (2026-10-30)
+
+An overlapping native Store API draft rebuild can preserve a duplicate accessory behind an unchanged cart hash. The candidate now serializes the cart session before it is loaded and reconciles only unpaid linked-accessory drafts through Woo APIs. LOCAL reproduction and repair pass. The approved K.AFA used-iPhone / 27% accessory mapping passes the real vendor XML builder with unchanged gross prices. Actual issued TEST PDF acceptance is still required before closing this gate; see `docs/qa/accessory-draft-mixed-invoice.md`.

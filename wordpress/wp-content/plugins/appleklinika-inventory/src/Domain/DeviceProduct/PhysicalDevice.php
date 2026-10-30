@@ -6,7 +6,7 @@ use Appleklinika\Inventory\Domain\ProductCondition\StorageCapacityCatalog;
 final class PhysicalDevice
 {
     public const MARKER = '_appleklinika_physical_device';
-    public const NOTE = 'Használt cikk - különbözet szerinti szabályozás';
+    public const NOTE = 'használt cikk - különbözet szerinti szabályozás';
     public static function type(string $type): string { return ['mac'=>'macbook','watch'=>'apple_watch'][$type] ?? $type; }
     public static function text(mixed $value): string
     {

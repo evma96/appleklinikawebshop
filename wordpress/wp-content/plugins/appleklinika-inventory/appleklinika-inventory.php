@@ -28,6 +28,7 @@ spl_autoload_register(static function (string $className): void {
 });
 
 (new Appleklinika\Inventory\Interfaces\Frontend\StoreReviews())->register();
+(new Appleklinika\Inventory\Interfaces\StoreDraftHooks())->register();
 
 add_action('init', static function (): void {
     $deviceCatalogRepository = new Appleklinika\Inventory\Infrastructure\WordPress\DeviceCatalogRepository();
