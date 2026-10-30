@@ -623,3 +623,18 @@ A verified Barion payment now revalidates physical-device stock under order/prod
 
 ### Used-device warranty consistency (2026-10-30)
 Used-device demo warranty defaults now match the approved 12 months, independent of cosmetic grade. Missing warranty on newly entered supported devices defaults to 12 months; explicitly configured terms remain supported. The guarded LOCAL/TEST data correction preserves previous order terms in product metadata without rewriting orders. See `docs/qa/warranty-consistency.md`. Production and legal documents are unchanged.
+
+## TEST off-server backup (2026-10-30)
+
+The BX11 integration uses dedicated-key SFTP/22 and the existing encrypted backup
+format, with read-back checksums, independent Mac download/decryption verification,
+30-set remote retention and the established failure-alert route. Local/Mac backups
+are preserved. See [the operations guide](docs/storagebox-test-preparation.md) and
+[acceptance evidence](docs/qa/bx11-backup-20261030.md). External encrypted recovery-key
+custody still requires Martin's confirmation; production backup activation is not implied.
+
+## Red team remediation — 2026-10-30
+
+Closed production now rejects Store API draft writes before dispatch and guards classic/order-pay entry points. New eligible used iPhones receive the explicit K.AFA class; new protection accessories receive 27% without changing gross prices or other device-family defaults. Shipping notification dispatch waits for prerequisite acknowledgements/confirmation; recovery reuses native payment/stock/document operations.
+
+See [production reconciliation](docs/production-reconciliation.md), [activation and opening](docs/production-lifecycle-activation.md), and [remediation evidence](docs/qa/red-team-remediation-20261030.md). Initial empty provisioning and later public opening with reviewed real inventory are separate checks. Backup source is reproducible and versioned; production remains OFF. No provider transaction is needed to run the isolated production simulation.

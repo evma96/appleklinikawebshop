@@ -177,7 +177,7 @@ try {
     $assert(str_contains($documents->invoice(new WC_Order())['generation_block'], 'Agent-kulcs'), 'The provider-resolved missing account key is an exact generation blocker.');
     WC_Szamlazz()->agentKey = 'ISOLATED-SECRET-NEVER-OUTPUT';
     $blocked = $documents->invoice(new WC_Order());
-    $assert(str_contains($blocked['generation_block'], 'TEST') && ! str_contains(json_encode($blocked), WC_Szamlazz()->agentKey), 'Configured credentials never leak and an unverified TEST account still blocks generation.');
+    $assert(str_contains($blocked['generation_block'], 'igazolt') && ! str_contains(json_encode($blocked), WC_Szamlazz()->agentKey), 'Configured credentials never leak and an unverified TEST account still blocks generation.');
     $manual = $documents->invoice(new WC_Order(['_wc_szamlazz_invoice' => 'MANUAL', '_wc_szamlazz_invoice_manual' => 1, '_wc_szamlazz_completed' => '2026-09-01']));
     $assert($manual['state'] === 'issued' && $manual['manual'] && $manual['paid'] === '2026-09-01' && !$manual['available'], 'Manual/paid provider metadata is independent from file availability.');
     $void = $documents->invoice(new WC_Order(['_wc_szamlazz_void' => 'VOID-1', '_wc_szamlazz_completed' => '2026-09-01']));

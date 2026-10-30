@@ -9,6 +9,14 @@ $files = ['Domain/ProductionActivation.php','Infrastructure/ProductionReadiness.
     'Infrastructure/ProductionTransportGuard.php','Interfaces/ProductionHooks.php'];
 foreach ($files as $file) {
     if (!is_readable($base . $file)) {
+        add_filter('rest_pre_dispatch', static function($result, $server, $request) {
+            return preg_match('#^/wc/store/v[0-9]+/checkout(?:/|$)#i', $request->get_route())
+                ? new WP_Error('appleklinika_guard_missing','Production safety module is missing.',['status'=>403]) : $result;
+        }, -9999, 3);
+        add_action('wc_ajax_checkout', static function() { wp_die('Production safety module is missing.', '', ['response'=>403]); }, -9999);
+        foreach (['woocommerce_checkout_process','woocommerce_checkout_create_order','woocommerce_before_pay_action'] as $hook) {
+            add_action($hook, static function() { throw new RuntimeException('Production safety module is missing.'); }, -9999);
+        }
         add_filter('pre_wp_mail', static fn() => false, PHP_INT_MAX);
         add_filter('woocommerce_available_payment_gateways', static fn() => [], PHP_INT_MAX);
         add_filter('pre_http_request', static fn() => new WP_Error('appleklinika_guard_missing','Production safety module is missing.'),PHP_INT_MAX);

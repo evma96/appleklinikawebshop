@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Read-only recovery verification. Decrypt streams; do not extract or print private data."""
 import argparse
+import gzip
 import importlib.util
 import json
 import os
@@ -27,22 +28,30 @@ def verify(folder, key, cert):
                               stdout=subprocess.PIPE, stderr=subprocess.DEVNULL) as process:
             try:
                 if name == 'files.cms':
-                    count, links, required = 0, 0, set()
-                    with tarfile.open(fileobj=process.stdout, mode='r|gz') as archive:
-                        for member in archive:
-                            path = pathlib.PurePosixPath(member.name)
-                            if path.is_absolute() or '..' in path.parts:
-                                raise ValueError('Unsafe archive path')
-                            count += 1
-                            links += int(member.issym() or member.islnk())
-                            if str(path) in required_members:
-                                required.add(str(path))
-                    # Drain CMS padding/trailer before checking openssl exit status.
+                    count, links, media, required = 0, 0, 0, set()
+                    with gzip.GzipFile(fileobj=process.stdout, mode='rb') as decompressed:
+                        with tarfile.open(fileobj=decompressed, mode='r|') as archive:
+                            for member in archive:
+                                path = pathlib.PurePosixPath(member.name)
+                                if path.is_absolute() or '..' in path.parts:
+                                    raise ValueError('Unsafe archive path')
+                                count += 1
+                                links += int(member.issym() or member.islnk())
+                                if member.isfile() and member.size > 0 and (str(path).startswith('opt/appleklinika/production/uploads/')
+                                        or str(path).startswith('var/lib/docker/volumes/appleklinika-staging_wordpress_data/_data/wp-content/uploads/')):
+                                    media += 1
+                                if str(path) in required_members:
+                                    required.add(str(path))
+                        # Read through the gzip trailer to validate its CRC/length too.
+                        while decompressed.read(1024 * 1024):
+                            pass
                     while process.stdout.read(1024 * 1024):
                         pass
-                    if required != required_members:
-                        raise ValueError('Incomplete restore archive')
-                    summary[name] = {'entries': count, 'links_to_review_before_extraction': links}
+                    if required != required_members or not media:
+                        raise ValueError('Incomplete restore archive or missing media')
+                    summary[name] = {'entries': count, 'media_files': media,
+                                     'gzip_integrity': 'pass', 'required_config_members': 'pass',
+                                     'links_to_review_before_extraction': links}
                 else:
                     size, tables, tail = 0, 0, b''
                     for line in process.stdout:

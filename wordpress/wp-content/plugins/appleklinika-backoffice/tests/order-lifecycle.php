@@ -127,6 +127,25 @@ foreach (['checkout-draft','cancelled','refunded','trash','auto-draft'] as $stat
     $assert($service->notify(1, Event::RECEIVED) === 'ineligible', 'No acknowledgement for ' . $status);
 }
 
+// H3: fulfilment may finish while SMTP fails, but later mail cannot overtake.
+[$store, $invoice, $mailer, $service] = $new();
+$store->submissionEligible = true; $service->orderSubmitted(1); $service->paymentConfirmed(1);
+$store->handoff = true; $store->tracking = [['code'=>'123','url'=>'fixture']];
+$mailer->accept = false;
+$service->notify(1, Event::RECEIVED);
+$assert($service->notify(1, Event::SHIPPED) === 'waiting_confirmation', 'Failed acknowledgement blocks shipping without undoing handoff.');
+$mailer->accept = true; $service->notify(1, Event::RECEIVED);
+$mailer->accept = false; $service->notify(1, Event::PAID);
+$assert($service->notify(1, Event::SHIPPED) === 'waiting_confirmation', 'Failed acceptance blocks shipping.');
+$mailer->accept = true; $service->notify(1, Event::PAID); $service->notify(1, Event::SHIPPED);
+$sent = count($mailer->sent);
+for ($i=0;$i<4;$i++) foreach ([Event::RECEIVED,Event::PAID,Event::SHIPPED] as $event) $service->notify(1,$event);
+$assert(count($mailer->sent)===$sent && end($mailer->sent)===Event::SHIPPED && $invoice->calls===1 && $store->handoff, 'Recovery ordering and retries preserve invoice/fulfilment and never resend accepted mail.');
+[$store, $invoice, $mailer, $service] = $new(); $service->paymentConfirmed(1);
+$store->handoff = true; $store->tracking = [['code'=>'123','url'=>'fixture']]; $mailer->throw = true;
+$service->notify(1, Event::PAID); $mailer->throw = false;
+$assert($service->notify(1, Event::SHIPPED)==='waiting_confirmation', 'Uncertain acceptance also blocks shipping; operator reconciliation required.');
+
 final class FulfilmentFixture implements FulfilmentStore
 {
     public array $order = ['state' => 'new', 'mode' => 'gls', 'blocked' => null, 'label' => false, 'tracking' => false];

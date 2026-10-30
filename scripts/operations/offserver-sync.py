@@ -171,7 +171,8 @@ def health(state, now=None):
     try:
         age = now - state['latest_backup_epoch']
         checked = now - state['checked_epoch']
-        if state['status'] != 'success' or not 0 <= age <= 30 * 3600 or not 0 <= checked <= 30 * 3600:
+        running = state['status'] == 'running' and 0 <= now - state.get('started_epoch', 0) <= 2 * 3600
+        if (state['status'] != 'success' and not running) or not 0 <= age <= 30 * 3600 or not 0 <= checked <= 30 * 3600:
             return 'remote_backup_failure_or_stale'
     except (KeyError, TypeError):
         return 'remote_backup_failure_or_stale'

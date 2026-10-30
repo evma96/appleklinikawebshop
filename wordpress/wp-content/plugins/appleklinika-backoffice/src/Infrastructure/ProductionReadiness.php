@@ -112,9 +112,9 @@ final class ProductionReadiness
             'szamlazz' => (bool)$szamlazz,
             'gls' => ($g['mode'] ?? '') === 'production' && \GLS_Shipping_Account_Helper::get_account_setting('mode') === 'production'
                 && in_array(strtoupper((string)($g['country'] ?? '')),['HU','HR','CZ','SK','SI','RO','RS'],true) && self::filled($ids['gls']) && $senderReady && self::pinned('gls',$ids['gls'],$c),
-            'smtp' => (bool)$smtp, 'customer_email' => $emails && get_option('appleklinika_cash_pickup_enabled','no') === 'yes',
+            'smtp' => (bool)$smtp, 'customer_email' => $emails,
             'payment_policy' => (get_option('woocommerce_bacs_settings',[])['enabled'] ?? 'no') === 'no'
-                && ($cod['enabled'] ?? '') === 'yes' && $pickupOnly,
+                && (($cod['enabled'] ?? 'no') === 'no' || $pickupOnly),
             'mpl_manual' => get_option('appleklinika_mpl_enabled','no') === 'yes' && get_option('appleklinika_mpl_api_enabled','no') !== 'yes',
             'operations' => (bool)$operations];
     }
@@ -210,10 +210,85 @@ final class ProductionReadiness
         $counts = $e['counts'] ?? [];
         return is_string($signature) && strlen($signature) === 64 && is_int($start) && $start > 0 && $start <= time()
             && ($e['home'] ?? '') === get_option('home') && is_int($e['checked_at'] ?? null)
-            && $e['checked_at'] <= $start && $start - $e['checked_at'] <= 3600
+            && $e['checked_at'] <= $start
             && array_keys($counts) === ['products','variations','orders','unapproved_users','customers','qa_users','sessions','persistent_carts','stock_reservations','provider_jobs']
             && count(array_filter($counts, static fn($n) => $n !== 0)) === 0
             && hash_equals($signature, self::fingerprint('empty-launch',$e));
+    }
+
+    /** Public order admission is separate from provider/callback recovery. */
+    public static function publicAllowed(): bool
+    {
+        if (!self::production()) { return true; }
+        try {
+            $c = self::config(); $e = $c['public_opening_evidence'] ?? [];
+            $signature = $e['signature'] ?? ''; unset($e['signature']);
+            return self::allowed() && ($c['public_open'] ?? false) === true
+                && get_option('woocommerce_coming_soon', 'no') !== 'yes'
+                && ($e['home'] ?? '') === get_option('home')
+                && ($e['provisioning_signature'] ?? '') === ($c['launch_evidence']['signature'] ?? '')
+                && is_int($e['checked_at'] ?? null) && $e['checked_at'] <= time()
+                && ($e['ready'] ?? false) === true && is_string($signature)
+                && hash_equals(self::fingerprint('public-opening', $e), $signature);
+        } catch (\Throwable) { return false; }
+    }
+
+    /** Read-only public-opening preflight. No deletion; every existing product needs explicit review. */
+    public static function publicReport(): array
+    {
+        $c = self::config(); $report = self::report(); $counts = self::dataCounts($c);
+        $ids = get_posts(['post_type'=>['product','product_variation'], 'post_status'=>array_keys(get_post_stati()),
+            'numberposts'=>-1, 'fields'=>'ids']);
+        $reviewed = array_values(array_filter((array)($c['reviewed_real_product_ids'] ?? []), static fn($id) => is_int($id) && $id > 0));
+        $problems = []; $skus = []; $identifiers = [];
+        foreach ($ids as $id) {
+            $p = wc_get_product($id);
+            if (!$p || !in_array((int)$id, $reviewed, true)) { $problems[$id] = 'not_explicitly_reviewed'; continue; }
+            if (!$p->is_type('simple') || preg_match('/(^|[\s_-])(demo|qa|test|teszt|fixture)([\s_-]|$)/iu', $p->get_name().' '.$p->get_sku())) {
+                $problems[$id] = 'demo_or_unsupported_product'; continue;
+            }
+            foreach ($p->get_meta_data() as $meta) {
+                $data = $meta->get_data();
+                if (preg_match('/(?:^|_)(?:qa|demo|fixture)(?:_|$)/i', $data['key']) && !empty($data['value'])) { $problems[$id] = 'qa_metadata'; }
+            }
+            $sku = $p->get_sku();
+            if ($sku === '' || isset($skus[$sku])) { $problems[$id] = 'missing_or_duplicate_sku'; }
+            $skus[$sku] = true;
+            if ($p->get_meta('_appleklinika_protection_group') !== '') {
+                if ($p->get_tax_status() !== 'taxable' || $p->get_tax_class() !== 'ak-accessories-27') { $problems[$id] = 'accessory_tax_not_approved'; }
+                continue;
+            }
+            if ($p->get_meta('_appleklinika_physical_device') !== 'yes' || !$p->get_manage_stock()
+                || !in_array($p->get_stock_quantity(), [0, 1], true) || $p->get_backorders() !== 'no'
+                || !$p->is_sold_individually()) { $problems[$id] = 'invalid_physical_stock'; }
+            $imei = (string)$p->get_meta('_appleklinika_imei'); $serial = (string)$p->get_meta('_appleklinika_serial_number');
+            if ($imei === '' && $serial === '') { $problems[$id] = 'missing_device_identity'; }
+            foreach (['imei'=>$imei, 'serial'=>$serial] as $kind=>$value) {
+                if ($value === '') { continue; }
+                if (isset($identifiers[$kind.':'.$value])) { $problems[$id] = 'duplicate_device_identity'; }
+                $identifiers[$kind.':'.$value] = true;
+            }
+        }
+        // Real catalog is permitted. QA/order/customer artifacts are not a launch seed.
+        unset($counts['products'], $counts['variations']);
+        $clean = array_sum($counts) === 0 && $problems === [];
+        $tax = get_option('woocommerce_calc_taxes') === 'yes' && get_option('woocommerce_prices_include_tax') === 'yes'
+            && function_exists('WC_Szamlazz') && \WC_Szamlazz()->get_option('afakulcs') === '';
+        return ['ready'=>$report['ready'] && $clean && $tax, 'capabilities'=>$report['capabilities'],
+            'provisioning_evidence_valid'=>self::validLaunchEvidence($c), 'product_count'=>count($ids),
+            'product_problems'=>$problems, 'non_catalog_counts'=>$counts, 'gross_tax_configuration'=>$tax];
+    }
+
+    public static function publicOpeningEvidence(): array
+    {
+        $report = self::publicReport();
+        if (!$report['ready']) { throw new \RuntimeException('Public opening is NOT READY; preserve real inventory and resolve reported problems.'); }
+        $c = self::config();
+        $e = ['home'=>(string)get_option('home'), 'checked_at'=>time(), 'ready'=>true,
+            'provisioning_signature'=>$c['launch_evidence']['signature'],
+            'reviewed_real_product_ids'=>array_values((array)($c['reviewed_real_product_ids'] ?? []))];
+        $e['signature'] = self::fingerprint('public-opening', $e);
+        return $e;
     }
 
     private static function filled(array $values): bool { return $values !== [] && count(array_filter($values, static fn($v) => trim($v) === '')) === 0; }

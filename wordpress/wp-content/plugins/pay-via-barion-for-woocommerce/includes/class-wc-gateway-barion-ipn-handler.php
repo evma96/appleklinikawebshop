@@ -23,11 +23,13 @@ class WC_Gateway_Barion_IPN_Handler {
         if(empty($_GET) || empty($_GET['paymentId']))
             exit;
 
-        $payment_details = $this->barion_client->GetPaymentState($_GET['paymentId']);
-
-        if(!empty($payment_details->Errors)) {
-            $this->gateway::log('GetPaymentState returned errors. Payment details: ' . json_encode($payment_details));
-
+        try { $payment_details = $this->barion_client->GetPaymentState($_GET['paymentId']); }
+        catch (\Throwable $error) { $payment_details = null; }
+        if (!is_object($payment_details) || !empty($payment_details->Errors)) {
+            // Never acknowledge a lookup outage as a processed callback or log its payload.
+            $this->gateway::log('Barion state lookup unavailable; callback remains retryable.');
+            status_header(503);
+            header('Retry-After: 300');
             exit;
         }
 $args = array(

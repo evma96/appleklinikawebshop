@@ -17,6 +17,38 @@ $write($c);$report=R::report(true);file_put_contents('/control/preflight.json',j
 $ok($report['ready'] && $report['activation']==='OFF','Prelaunch capabilities and actual empty Woo database ready');
 $c['launch_evidence']=R::launchEvidence();$c['activated_at']=time();$c['enabled']=true;$write($c);
 $ok(R::allowed(),'C: explicit production fixture activation only');
+// Real Store API dispatch, including GET/PUT drafts, must stop before any Woo write.
+$closed = static function() use ($ok) {
+    $before = wc_get_orders(['limit'=>1,'paginate'=>true,'status'=>array_merge(array_keys(wc_get_order_statuses()),['wc-checkout-draft'])])->total;
+    wp_set_current_user(0);
+    foreach (['GET','POST','PUT'] as $verb) {
+        $request=new WP_REST_Request($verb,'/wc/store/v1/checkout');
+        $request->set_param('payment_method','barion');
+        $response=rest_do_request($request);
+        $ok($response->get_status()===403 && $response->get_data()['code']==='appleklinika_checkout_closed', 'Closed '.$verb.' rejected before draft/order creation');
+    }
+    $after = wc_get_orders(['limit'=>1,'paginate'=>true,'status'=>array_merge(array_keys(wc_get_order_statuses()),['wc-checkout-draft'])])->total;
+    $ok($before===$after,'Manipulated/stale Store API requests create zero drafts');
+    foreach (['woocommerce_checkout_process','woocommerce_checkout_create_order','woocommerce_before_pay_action'] as $hook) {
+        try { do_action($hook); $ok(false,'Closed classic boundary'); } catch (RuntimeException $e) { $ok(str_contains($e->getMessage(),'nem fogad'),'Classic write/payment boundary rejects'); }
+    }
+};
+$c['enabled']=false;$write($c);$closed();
+wp_set_current_user(1);
+$real=new WC_Product_Simple();$real->set_name('iPhone 13 Pro');$real->set_sku('SHOP-DEVICE-001');$real->set_regular_price('100000');$real->set_manage_stock(true);$real->set_stock_quantity(1);$real->set_sold_individually(true);$real->set_backorders('no');$real->update_meta_data('_appleklinika_physical_device','yes');$real->update_meta_data('_appleklinika_serial_number','OFFLINE-IDENTITY');$real->save();
+$ok($real->get_id()>0 && !R::allowed(),'Staff inventory entry remains possible before provider activation');
+$c['enabled']=true;$write($c);
+$ok(!R::publicReport()['ready'],'Unreviewed real inventory cannot open the store');
+$c['reviewed_real_product_ids']=[$real->get_id()];$write($c);
+$ok(R::publicReport()['ready'] && !R::report(true)['ready'],'Reviewed unique-device stock allowed at opening; empty provisioning certificate cannot be recreated');
+$real->set_name('QA fixture device');$real->save();$ok(!R::publicReport()['ready'],'Explicit review cannot bless known QA/demo inventory');
+$real->set_name('iPhone 13 Pro');$real->set_stock_quantity(2);$real->save();$ok(!R::publicReport()['ready'],'Invalid physical stock blocks public opening');
+$real->set_stock_quantity(1);$real->save();
+$c['public_opening_evidence']=R::publicOpeningEvidence();$write($c);$closed();
+$c['public_open']=true;$write($c);update_option('woocommerce_coming_soon','yes');$closed();
+$ok(R::allowed(),'Coming Soon leaves authorized recovery/provider callbacks available');
+update_option('woocommerce_coming_soon','no');$ok(R::publicAllowed(),'Separate explicit public approval opens purchase boundary');
+$real->delete(true);wp_set_current_user(0);
 $buyer=wp_insert_user(['user_login'=>'fixture_buyer','user_pass'=>wp_generate_password(40),'user_email'=>'buyer@example.invalid','role'=>'customer']);
 $p=new WC_Product_Simple();$p->set_name('Offline fixture device');$p->set_regular_price('1000');$p->set_manage_stock(true);$p->set_stock_quantity(5);$p->save();
 $newOrder=static function($method,$shipping)use($buyer,$p){$o=wc_create_order(['customer_id'=>$buyer]);$o->set_created_via('checkout');$o->set_payment_method($method);$o->set_billing_email('buyer@example.invalid');$o->set_billing_first_name('Ágnes');$o->add_product($p,1);$s=new WC_Order_Item_Shipping();$s->set_method_id($shipping);$s->set_method_title($shipping);$o->add_item($s);$o->calculate_totals();$o->save();return $o;};
@@ -30,6 +62,9 @@ $write($c);
 for($i=0;$i<3;$i++)do_action('woocommerce_checkout_order_processed',$id,[],$o);
 $ok(count($mail())===1&&$mail()[0]['subject']==='Rendelésed beérkezett','C: one acknowledgement');
 $ok($mail()[0]['attachments']===[]&&!str_contains($mail()[0]['message'],'Fizetve'),'C: acknowledgement unpaid and no PDF');
+$proc=proc_open([PHP_BINARY,'/fixtures/callback.php',(string)$id,'outage'],[1=>['pipe','w'],2=>['pipe','w']],$pipes);
+stream_get_contents($pipes[1]);stream_get_contents($pipes[2]);fclose($pipes[1]);fclose($pipes[2]);proc_close($proc);
+$ok(json_decode(file_get_contents('/control/callback-outage.json'),true)['status']===503 && !wc_get_order($id)->is_paid(), 'Native callback lookup outage returns retryable HTTP 503 without payment mutation');
 // Run the REAL Barion IPN handler in a separate offline PHP process, including its exit paths.
 for($i=0;$i<3;$i++){
  $proc=proc_open([PHP_BINARY,'/fixtures/callback.php',(string)$id],[1=>['pipe','w'],2=>['pipe','w']],$pipes);
@@ -88,6 +123,7 @@ WC()->session->set('chosen_shipping_methods',['local_pickup:2']);$gateways=apply
 $ok(isset($gateways['barion'])&&!isset($gateways['cod'])&&!isset($gateways['bacs']),'E: pickup checkout Barion only; separate staff cash recording above remains intact');
 $ok(($GLOBALS['fixture_network_attempts']??0)===0,'No real HTTP attempt from the lifecycle');
 $dirty=R::report(true);$ok(!$dirty['ready'] && $dirty['counts']['products']===1 && $dirty['counts']['orders']===2 && $dirty['counts']['customers']===1,'Actual post-launch Woo data refuses a new empty-launch certificate');
+require '/fixtures/red-team-recovery.php';
 $c['enabled']=false;$write($c);$ok(!R::allowed()&&!wp_mail('buyer@example.invalid','Emergency blocked','Blocked'),'Emergency OFF stops mail after activation');
 file_put_contents('/control/results.json',json_encode(['assertions'=>$n,'mail_count'=>count($mail()),'invoices'=>get_option('fixture_invoice_calls'),'gls'=>get_option('fixture_gls_calls'),'network_attempts'=>$GLOBALS['fixture_network_attempts']??0],JSON_PRETTY_PRINT));
 echo "Offline production Woo/HPOS lifecycle: $n assertions passed; real Woo state/stock/IPN handler; fake providers; no delivery claim.\n";

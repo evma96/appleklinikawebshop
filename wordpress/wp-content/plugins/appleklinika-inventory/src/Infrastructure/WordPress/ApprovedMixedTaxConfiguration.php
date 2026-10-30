@@ -42,6 +42,24 @@ final class ApprovedMixedTaxConfiguration
         return ['iphone'=>$iphoneId,'accessories'=>$ids,'gross_prices_unchanged'=>true,'other_device_families_changed'=>false];
     }
 
+    /** Creation defaults only: explicit existing/custom terms are never overwritten. */
+    public function defaultForNewDevice(\WC_Product $product, string $type): void
+    {
+        if ($product->get_id() || $type !== 'iphone' || $product->get_tax_class() !== '' || $product->get_tax_status() !== 'taxable') { return; }
+        $this->rate(self::IPHONE, 'AK used iPhone margin', '0', 'K.AFA');
+        $product->set_tax_status('taxable');
+        $product->set_tax_class(self::IPHONE);
+    }
+
+    public function defaultForNewAccessory(\WC_Product $product): void
+    {
+        if ($product->get_id() || !in_array($product->get_meta('_appleklinika_protection_group'), ['glass','case','camera','adapter'], true)) { return; }
+        if (!in_array($product->get_tax_class(), ['', self::IPHONE], true)) { return; }
+        $this->rate(self::ACCESSORY, 'AK accessories 27', '27', '27%');
+        $product->set_tax_status('taxable');
+        $product->set_tax_class(self::ACCESSORY);
+    }
+
     private function rate(string $slug, string $name, string $percent, string $label): void
     {
         $existing = \WC_Tax::get_rates_for_tax_class($slug);
@@ -49,7 +67,8 @@ final class ApprovedMixedTaxConfiguration
             if (count($existing)!==1) throw new \RuntimeException('Unexpected tax rates for '.$slug);
             $rate = reset($existing);
             if ($rate->tax_rate_country!=='HU' || $rate->tax_rate_state!=='' || (float)$rate->tax_rate!==(float)$percent
-                || $rate->tax_rate_name!==$label || (int)$rate->tax_rate_compound!==0 || (int)$rate->tax_rate_shipping!==0) {
+                || $rate->tax_rate_name!==$label || (int)$rate->tax_rate_compound!==0 || (int)$rate->tax_rate_shipping!==0
+                || (int)$rate->tax_rate_priority!==1 || !empty($rate->postcode_count) || !empty($rate->city_count)) {
                 throw new \RuntimeException('Existing tax rate conflicts with approved configuration: '.$slug);
             }
             return;

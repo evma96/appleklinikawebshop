@@ -18,7 +18,7 @@ up:
 down:
 	$(COMPOSE) down
 
-test: test-unit test-integration test-order-lifecycle test-security
+test: test-unit test-integration test-order-lifecycle test-security test-offserver-backup
 
 test-unit:
 	@echo "No unit test suite is configured yet."
@@ -203,3 +203,10 @@ test-backoffice-review-preview:
 .PHONY: test-local-device-foundation
 test-local-device-foundation:
 	$(COMPOSE) exec -T --user www-data wordpress php /var/www/html/wp-content/plugins/appleklinika-inventory/tests/device-product-foundation-local.php
+
+.PHONY: test-offserver-backup
+test-offserver-backup:
+	PYTHONDONTWRITEBYTECODE=1 python3 scripts/operations/test-offserver-sync.py
+	PYTHONDONTWRITEBYTECODE=1 python3 scripts/operations/test-offserver-sftp.py
+	python3 scripts/operations/test-monitor.py --self-test
+	python3 scripts/operations/monitor-alert.py --self-test

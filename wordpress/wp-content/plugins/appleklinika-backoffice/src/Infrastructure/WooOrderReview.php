@@ -16,18 +16,23 @@ final class WooOrderReview implements OrderReviewStore
             && in_array(strtolower((string)parse_url((string)get_option('home',''), PHP_URL_HOST)), ['teszt.appleklinika.com','localhost','127.0.0.1'], true);
     }
 
+    public static function reviewEnvironment(): bool
+    {
+        return self::testEnvironment() || (wp_get_environment_type() === 'production' && class_exists(ProductionReadiness::class) && ProductionReadiness::allowed());
+    }
+
     public function review(int $id): array
     {
         $order = $this->order($id);
         $facts = $this->facts($order);
         $journal = $order->get_meta(OrderReview::JOURNAL_KEY, true);
-        $shippingBlock = self::testEnvironment() ? OrderReview::shippingBlock($facts) : 'A rendezési műveletek ebben a környezetben még nincsenek engedélyezve.';
+        $shippingBlock = self::reviewEnvironment() ? OrderReview::shippingBlock($facts) : 'A rendezési műveletek ebben a környezetben még nincsenek engedélyezve.';
         if (OrderReview::pending($journal)) { $shippingBlock = 'Egy korábbi átvételimód-javítás lezárása hiányzik. Előbb folytasd a mentés és a napló egyeztetését; új javítást ne indíts.'; }
         $choices = $shippingBlock === null ? $this->shippingChoices($order) : [];
         if ($shippingBlock === null && $choices === []) { $shippingBlock = 'Nincs alkalmazható, engedélyezett személyes átvétel vagy GLS címre kézbesítés ehhez a címhez. A WooCommerce szállítási zónát / metódust vagy a hiányzó címet kell rendezni. Csomagpont/automata kiválasztásához külön, valódi pontazonosító szükséges.'; }
         [$action, $message] = $this->paymentReview($order, $facts);
         if (OrderReview::pending($journal)) { $action = ''; $message = $shippingBlock; }
-        if (!self::testEnvironment()) { $action = ''; $message = 'A fizetés rendezése ebben a környezetben még nincs engedélyezve.'; }
+        if (!self::reviewEnvironment()) { $action = ''; $message = 'A fizetés rendezése ebben a környezetben még nincs engedélyezve.'; }
         $previews = [];
         foreach ($choices as $key => $choice) { $previews[$key] = $this->shippingPreview($facts, $choice); }
         $revision = count(array_filter($this->orders->history($order), static fn(array $entry): bool => ($entry['action'] ?? '') === 'resolve_shipping'));
@@ -161,7 +166,7 @@ final class WooOrderReview implements OrderReviewStore
     public function correctShipping(int $id, string $expected, string $choice, string $reason): string
     {
         $order = $this->order($id);
-        if (!self::testEnvironment()) { throw new \InvalidArgumentException('A rendezés ebben a környezetben nincs engedélyezve.'); }
+        if (!self::reviewEnvironment()) { throw new \InvalidArgumentException('A rendezés ebben a környezetben nincs engedélyezve.'); }
         $operation = hash('sha256', (string)wp_json_encode([$id, get_current_user_id(), $expected, $choice, $reason]));
         $journal = $order->get_meta(OrderReview::JOURNAL_KEY, true);
         if (is_array($journal) && ($journal['id'] ?? '') === $operation) { return $this->reconcileShipping($id, $operation); }
@@ -182,7 +187,7 @@ final class WooOrderReview implements OrderReviewStore
     public function reconcileShipping(int $id, string $operation): string
     {
         $order = $this->order($id);
-        if (!self::testEnvironment()) { throw new \InvalidArgumentException('A rendezés ebben a környezetben nincs engedélyezve.'); }
+        if (!self::reviewEnvironment()) { throw new \InvalidArgumentException('A rendezés ebben a környezetben nincs engedélyezve.'); }
         $journal = $order->get_meta(OrderReview::JOURNAL_KEY, true);
         if (!preg_match('/^[a-f0-9]{64}$/D', $operation) || !is_array($journal) || ($journal['id'] ?? '') !== $operation) { throw new \InvalidArgumentException('Az egyeztetendő javítás már nem aktuális. Frissítsd a rendelést.'); }
         if (($journal['stage'] ?? '') === 'complete') { return 'Ez a javítás és a naplója már rögzült; ismételt módosítás nem történt.'; }
@@ -259,7 +264,7 @@ final class WooOrderReview implements OrderReviewStore
 
     public function confirmPayment(int $id): void
     {
-        if (!self::testEnvironment()) { throw new \InvalidArgumentException('A rendezés ebben a környezetben nincs engedélyezve.'); }
+        if (!self::reviewEnvironment()) { throw new \InvalidArgumentException('A rendezés ebben a környezetben nincs engedélyezve.'); }
         $order = $this->order($id);
         if (($block = OrderReview::manualPaymentBlock($this->facts($order))) !== null) { throw new \InvalidArgumentException($block); }
         $order->payment_complete(); // Native date/status/stock/hooks; no fabricated transaction identifier.

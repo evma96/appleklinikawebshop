@@ -16,7 +16,7 @@ final class WooArtifactReconciliation implements ArtifactReconciliationStore
 
     public static function enabled(): bool
     {
-        return in_array(wp_get_environment_type(), ['local','staging'], true)
+        return (ProductionReadiness::production() && ProductionReadiness::allowed()) || in_array(wp_get_environment_type(), ['local','staging'], true)
             && in_array(strtolower((string)parse_url((string)get_option('home'), PHP_URL_HOST)), ['localhost','127.0.0.1','teszt.appleklinika.com'], true);
     }
 
@@ -99,7 +99,7 @@ final class WooArtifactReconciliation implements ArtifactReconciliationStore
 
     public function generate(int $id, string $kind): void
     {
-        if (!self::enabled() || !doing_action(self::WORK)) { throw new \RuntimeException('Scheduled TEST worker required.'); }
+        if (!self::enabled() || !doing_action(self::WORK)) { throw new \RuntimeException('Authorized environment scheduled worker required.'); }
         $post = $_POST;
         $_POST = []; // Provider options come from persisted order/configuration, never an ambient queue POST.
         try {
@@ -111,6 +111,14 @@ final class WooArtifactReconciliation implements ArtifactReconciliationStore
 
     public function audit(int $id, string $kind, string $result, string $key): void
     {
+        if ($kind === 'invoice' && $result === 'done') {
+            // Recover only from persisted order/provider data, never ambient POST.
+            $post = $_POST; $_POST = [];
+            try {
+                (new OrderLifecycle(new WooOrderLifecycleStore(), new WooOrderMutex(), new SzamlazzAutomation(), new WooCustomerMailer()))->paymentConfirmed($id);
+                do_action('wc_szamlazz_document_created', ['order_id'=>$id, 'document_type'=>'invoice']);
+            } finally { $_POST = $post; }
+        }
         (new WooOrderBackOfficeRepository())->recordAutomation($id, $kind, $result, $key);
     }
 

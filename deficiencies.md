@@ -1,3 +1,9 @@
+## 2026-10-30 red team remediation
+
+H1/H2/H3/H4 have targeted source fixes and offline/native validation; the matching TEST release is recorded in `docs/qa/red-team-remediation-20261030.md` and its external exact-SHA evidence. M1's verified encrypted BX11 upload/restore scripts, templates and installation workflow are source-controlled. No live providers or production environment were activated.
+
+Open independently: **H5** actual production LIVE credentials/account/site-license/readiness verification; **M2** dedicated business-queue/failure alerting beyond current infrastructure/backup monitoring; **M3** independent encrypted recovery-key custody (a physical drive is not required); **M4** GitHub historical object purge/support confirmation. SMTP acceptance order is enforced, but recipient Inbox order cannot be guaranteed. `make quality` remains placeholder lint/static targets, not comprehensive static analysis.
+
 # Deficiencies
 
 ## LOCAL performance fixes — 2026-10-28
@@ -751,3 +757,11 @@ A verified Barion payment now revalidates physical-device stock under order/prod
 
 ### Used-device warranty consistency (2026-10-30)
 Used-device demo warranty defaults now match the approved 12 months, independent of cosmetic grade. Missing warranty on newly entered supported devices defaults to 12 months; explicitly configured terms remain supported. The guarded LOCAL/TEST data correction preserves previous order terms in product metadata without rewriting orders. See `docs/qa/warranty-consistency.md`. Production and legal documents are unchanged.
+
+## BX11 TEST off-server integration (2026-10-30)
+
+The former unprovisioned Storage Box/SSH23 preparation is superseded by a dedicated
+SFTP22 subaccount and unattended upload key. Operational acceptance is recorded in
+`docs/qa/bx11-backup-20261030.md`; this does not alter older historical findings.
+Martin's encrypted external recovery-key copy remains a separate manual gate.
+No production backup activation or fresh application/database restore drill is claimed.

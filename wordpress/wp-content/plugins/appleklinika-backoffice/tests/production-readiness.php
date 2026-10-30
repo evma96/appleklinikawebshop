@@ -22,6 +22,8 @@ function wp_count_posts($type){return (object)['publish'=>$GLOBALS['counts'][$ty
 function wc_get_orders($args){return (object)['total'=>$GLOBALS['counts']['orders']??0];}
 function wc_get_order_statuses(){return ['wc-pending'=>'Pending'];}
 function get_users($args){return array_map(static fn($id)=>(object)['ID'=>$id,'roles'=>$GLOBALS['roles']??['administrator'],'user_login'=>$GLOBALS['login']??'staff'], $GLOBALS['users']??[1]);}
+function get_posts($args){return [];}
+function get_post_stati(){return ['publish'=>'publish'];}
 function as_get_scheduled_actions($args){return $GLOBALS['jobs']??[];}
 class WP_Error{function __construct(public $code,public $message){}}
 class WooCommerce{} class WC_Gateway_Barion{} class GLS_Shipping_For_Woo{} class WC_Szamlazz_Xml_Generator{}
@@ -69,7 +71,17 @@ try{
  $write($c);$ok(R::report(true)['ready'] && !R::allowed(),'Ready capabilities cannot imply activation');
  $c['launch_evidence']=R::launchEvidence();$c['activated_at']=time();$c['enabled']=true;$write($c);
  $ok(R::allowed() && L::enabled(),'C: explicit valid activation permits production');
- $ok($hooks->gateways(['barion'=>1,'cod'=>2,'bacs'=>3,'other'=>4])===['barion'=>1,'cod'=>2],'E: BACS and unexpected gateways never exposed');
+ $ok($hooks->gateways(['barion'=>1])===[], 'Provider activation alone is not public opening');
+ $GLOBALS['options']['woocommerce_calc_taxes']='yes';$GLOBALS['options']['woocommerce_prices_include_tax']='yes';
+ $c['public_opening_evidence']=R::publicOpeningEvidence();$c['public_open']=true;$write($c);
+ $ok($hooks->gateways(['barion'=>1,'cod'=>2,'bacs'=>3,'other'=>4])===['barion'=>1],'E: explicitly opened storefront exposes Barion only');
+ $GLOBALS['options']['woocommerce_coming_soon']='yes';
+ $ok(!R::publicAllowed() && R::allowed(),'Coming Soon closes purchase, not previously authorized provider recovery');
+ foreach (['GET','PUT','POST'] as $verb) {
+   $request=new class{function get_route(){return '/wc/store/v1/checkout';}};
+   $ok($hooks->rest(null,null,$request) instanceof WP_Error, 'Closed Store API blocked before '.$verb.' draft dispatch');
+ }
+ $GLOBALS['options']['woocommerce_coming_soon']='no';
  $ok($hooks->mail(null)===null && $hooks->stock(true),'C: valid configured mail and stock path');
  T::barion('https://api.barion.com/v2/Payment/GetPaymentState','fixture-live-key');
  T::invoice('<xmlszamla><beallitasok><szamlaagentkulcs>fixture-live-agent</szamlaagentkulcs></beallitasok></xmlszamla>');
@@ -94,7 +106,8 @@ try{
  $GLOBALS['wpdb']->last_error='fixture query failure';try{R::report(true);$ok(false,'Inventory error not zero');}catch(RuntimeException){$ok(true,'Inventory error refuses proof');}$GLOBALS['wpdb']->last_error='';
  $GLOBALS['counts']=['product'=>1,'orders'=>1];$ok(R::allowed(),'Sealed zero launch does not disable legitimate later catalog/orders');$GLOBALS['counts']=[];
  $bad=$c;$bad['launch_evidence']['counts']['products']=1;$write($bad);$ok(!R::allowed(),'Tampered receipt rejected');
- $bad=$c;$bad['activated_at']=$c['launch_evidence']['checked_at']+3601;$write($bad);$ok(!R::allowed(),'Stale activation window rejected');
+ $bad=$c;$bad['launch_evidence']['checked_at']=time()-86400;$e=$bad['launch_evidence'];unset($e['signature']);$bad['launch_evidence']['signature']=R::fingerprint('empty-launch',$e);$write($bad);
+ $ok(R::allowed(), 'Signed empty provisioning remains valid while real inventory is prepared before public opening');
  $write($c);$GLOBALS['options']['woocommerce_barion_settings']['environment']='test';$ok(!R::allowed(),'TEST Barion not accepted');$GLOBALS['options']['woocommerce_barion_settings']['environment']='live';
  $GLOBALS['gls']['mode']='sandbox';$ok(!R::allowed(),'TEST GLS not accepted');$GLOBALS['gls']['mode']='production';
  $GLOBALS['options']['appleklinika_szamlazz_test_agent_sha256']=hash('sha256','fixture-live-agent');$ok(!R::allowed(),'Known TEST Agent key cannot be approved as live');unset($GLOBALS['options']['appleklinika_szamlazz_test_agent_sha256']);

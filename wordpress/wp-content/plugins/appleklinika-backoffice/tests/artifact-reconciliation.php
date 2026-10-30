@@ -41,4 +41,8 @@ foreach(['invoice','gls']as$kind){
 [$s,$app]=$new();$s->saveFails=true;try{$app->execute(1,1000);}catch(RuntimeException){}$ok(array_sum($s->calls)===0,'Journal failure prevents external operation.');
 [$s,$app]=$new();$s->auditFails=true;try{$app->execute(1,1000);}catch(RuntimeException){}$s->auditFails=false;$app->execute(1,2000);$app->execute(1,2300);
 $ok($s->calls===['invoice'=>1,'gls'=>1]&&count($s->events)===2,'Audit failure recovered without repeating successful provider operation.');
+[$s,$app]=$new();foreach(['invoice','gls'] as $k){$s->f[$k]['complete']=true;$s->f[$k]['eligible']=false;}$app->execute(1,1000);
+$ok($s->r===[]&&$s->events===[]&&array_sum($s->calls)===0,'Unmanaged historical documents are untouched.');
+[$s,$app]=$new();foreach(['invoice','gls'] as $k){$s->f[$k]['complete']=true;$s->f[$k]['attempt']='ready';}$app->execute(1,1000);
+$ok($s->r===[]&&$s->events===[],'Completed historical documents without interrupted work are not backfilled.');
 echo "Artifact reconciliation: $n assertions passed; no network or database.\n";

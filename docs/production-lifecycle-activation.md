@@ -15,7 +15,7 @@ are supplied or changed by this work.
 | Számlázz PRO + one paid `payment_complete` invoice rule + verified TEST Agent fingerprint | Unlicensed/wrong account/early/duplicate invoice | Keep vendor license checks intact. Require real stored PRO activation/key, explicitly approved live account/site license and separately pinned resolved Agent key; reject the known TEST key. |
 | Invoice attempt ownership and durable invoice/mail ledgers | Duplicate native invoice/processing email, uncertain retry | Unchanged. Gate direct XML before debug/file/cURL and validate resolved account, including routing. No separate provider customer email. |
 | GLS sandbox check and sender/account readiness | Accidental real parcel from TEST | TEST still sandbox only; production requires explicit `production` mode, complete sender/account, private approval and final transport guard. Labels never imply carrier handoff. |
-| Barion native TEST/live setting and callback ID/closed checks | Native payment and stock effects; previously no managed production authorization gate | Private live key/payee approval, exact HTTPS production API, guard before cURL for Start/GetPaymentState/refund etc.; Woo pre-payment/stock gates. Existing callback/idempotency logic unchanged. |
+| Barion native TEST/live setting and callback ID/closed checks | Native payment and stock effects; previously no managed production authorization gate | Private live key/payee approval, exact HTTPS production API, guard before cURL for Start/GetPaymentState/refund etc.; Woo pre-payment/stock gates. Callback lookup outages return retryable HTTP 503; operator recovery verifies provider state independently and reuses stock admission. |
 | Native Woo stock markers | Duplicate stock reduction | Unchanged; production OFF rejects payment and prevents stock reduction. Offline proof uses actual Woo HPOS and native callback handler. |
 | Cash rollout, pickup method, staff acceptance and cash receipt marker | Courier COD / premature paid claim/invoice | Same workflow behind production gate: acknowledgement, explicit stock-checked acceptance, invoice only after actual recorded pickup payment. |
 | MPL API TEST-only switch | Unapproved postal API calls | Manual compliance mode required; production MPL API NOT APPLICABLE and blocked. Prices/business model unchanged. |
@@ -52,10 +52,9 @@ cleanup or activation. Exit 2 indicates NOT READY. It reports READY / NOT READY 
 - GLS production account and complete sender, approved identity;
 - one encrypted authenticated SMTP route, forced Apple Klinika identity and approved
   sender credentials; no alternate/PHP fallback configuration;
-- three customer emails enabled, cash rollout, BACS OFF, cash restricted to pickup;
+- three customer emails enabled, BACS OFF and Barion-only webshop admission; separate staff cash recording is preserved;
 - manual MPL, separate production operations prerequisites;
-- fresh zero-data inventory: all-status products/variations/orders/refunds/drafts,
-  non-approved users, any customers/subscribers or named QA users, sessions/persistent carts, stock reservations and pending provider jobs (Action Scheduler and WP cron).
+- signed initial zero-data provisioning proof, followed by a separate current public-opening check: explicitly reviewed real products are permitted; demo/QA inventory, invalid unique stock and QA orders/customers are not.
 
 MPL API reports NOT APPLICABLE. Presence/approval is not a real provider availability,
 license-server, inbox, backup-storage or legal test. Számlázz uses the same Agent
@@ -87,26 +86,41 @@ binding; TEST mode/key cannot silently become live. Fresh production salts are r
    operations evidence. Keep `enabled=false`, `activated_at=0`. Never use TEST keys,
    recipient overrides, provider IDs, old incident state, sessions or SQL dumps.
 4. Verify provider identities in their official accounts. Capture `--fingerprints`
-   privately and approve each digest in the JSON. Run the default readiness command;
-   every required capability must be READY. Fix the named reason; do not weaken a gate.
-5. Freeze catalog/order/user/session writes under maintenance. Run
-   `wp appleklinika production-readiness --launch-evidence` and save the returned
-   signed zero-count object as `launch_evidence` in the private JSON. The command does
-   not change WordPress/configuration. Inventory errors refuse evidence; nothing is
-   deleted. No application/test data may change between this check and activation.
-6. With final owner approval, atomically set `activated_at` to the current Unix UTC
-   timestamp (within one hour after evidence) and `enabled=true`. Do not alter the
-   signed evidence. If an emergency OFF constant was used during preparation, clear
-   it only within this same authorized activation step. Confirm the runtime policy
-   reports ON. The evidence records that
-   launch was empty; legitimate products/orders added **after** activation do not
-   disable the shop. The default command remains a fresh *prelaunch* empty-data audit,
-   so a legitimately populated live shop is not expected to pass it later.
-7. Run separately authorized production smoke checks: URLs, least privilege, checkout
-   options, private document access, authenticated transport/delivery and first scheduled
-   backup/monitoring. A real payment/invoice/parcel requires its own approved controlled
-   transaction. Only after the empty-launch gate may Martin add real physical devices.
-   Offline/TEST success is not evidence of actual production credentials or live delivery.
+   privately and approve each digest. Run `wp appleklinika production-readiness
+   --provisioning`; fix missing capabilities without weakening guards.
+5. Before first real stock entry, freeze setup writes and run
+   `wp appleklinika production-readiness --provisioning-evidence` (legacy alias:
+   `--launch-evidence`). Save its signed zero-count object as `launch_evidence`.
+   This initial receipt requires no products/orders/QA users, independently configured
+   live identities, and all provider/operations prerequisites. Nothing is deleted.
+6. Keep `public_open=false` and Coming Soon enabled. Staff can add real physical
+   devices while `enabled=false`. Preserve the signed provisioning receipt; it does
+   not expire merely because photography/catalog preparation takes more than an hour.
+   Never recreate an empty receipt by deleting real inventory.
+7. After separately authorized provider activation, set `activated_at` and
+   `enabled=true`. This enables legitimate provider/callback recovery, not customer
+   checkout. Recheck actual live identities/operations. Record the exact reviewed
+   real product/accessory IDs in private `reviewed_real_product_ids`. Run the default
+   `wp appleklinika production-readiness` (or `--public-opening`). Every existing
+   product must be explicitly reviewed; known demo/QA metadata/names, duplicate
+   identity/SKU and invalid unique stock fail. Customer/order/session artifacts and
+   non-approved staff are forbidden as a launch seed. Gross native Woo taxation and
+   absence of a global Számlázz VAT override are required.
+8. Freeze setup writes during the final inspection. Run `--public-opening-evidence`
+   and save the signed result as `public_opening_evidence`. Only with final owner
+   approval set `public_open=true` and disable Woo Coming Soon. Provider activation,
+   public approval and the signed receipt must all be valid. Real products remain.
+   The public report is a pre-opening inspection, not a demand to erase legitimate
+   customer orders after opening. Future real inventory uses normal validated entry.
+9. Run separately authorized production smoke checks and actual live provider,
+   mailbox, backup and monitor verification. These remain H5/manual requirements;
+   offline/TEST success does not establish actual LIVE readiness.
+
+The early Store API REST gate covers GET/PUT/POST before draft creation. Classic
+checkout, its pre-save boundary and direct order-pay are also guarded. Staff preview
+and product entry do not grant checkout bypass. Setting `public_open=false` or
+Coming Soon closes new purchases while previously authorized provider recovery can
+continue. Full emergency OFF below additionally stops provider effects.
 
 ## Emergency OFF / rollback
 

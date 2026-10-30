@@ -166,7 +166,7 @@ class TransportTests(unittest.TestCase):
         key.chmod(0o600)
         archive = io.BytesIO()
         with tarfile.open(fileobj=archive, mode='w:gz') as tar:
-            for name in ('opt/appleklinika/production/compose.yaml', 'opt/appleklinika/production/secrets/mysql_password', 'var/lib/docker/volumes/appleklinika-staging_wordpress_data/_data/wp-config.php'):
+            for name in ('opt/appleklinika/production/compose.yaml', 'opt/appleklinika/production/secrets/mysql_password', 'var/lib/docker/volumes/appleklinika-staging_wordpress_data/_data/wp-config.php', 'opt/appleklinika/production/uploads/fixture.jpg'):
                 info = tarfile.TarInfo(name); info.size = 7
                 tar.addfile(info, io.BytesIO(b'fixture'))
         data = {'files.cms': archive.getvalue(), 'database.cms': b'CREATE TABLE fixture (id int);\n-- Dump completed\n',
@@ -179,6 +179,8 @@ class TransportTests(unittest.TestCase):
         report = verify.verify(self.folder, key, cert)
         self.assertEqual(report['status'], 'checksum_and_decrypt_pass')
         self.assertEqual(report['streams']['database.cms']['tables'], 1)
+        self.assertEqual(report['streams']['files.cms']['media_files'], 1)
+        self.assertEqual(report['streams']['files.cms']['gzip_integrity'], 'pass')
         self.assertFalse((self.root / 'wordpress').exists())
 
 if __name__ == '__main__':
