@@ -9,6 +9,10 @@ final class WooOrderPayment
 {
     public static function describe(\WC_Order $order, string $mode): array
     {
+        if ($order->get_meta('_appleklinika_payment_stock_exception')) {
+            return ['state'=>'stock_conflict','label'=>'Barion-fizetés: készletütközés',
+                'block'=>'A pénz beérkezhetett, de a készülék nem biztosítható. Egyeztesd a Barion-tranzakciót és a készletet; szükség esetén visszatérítés szükséges. Automatikus teljesítés tiltva.', 'review'=>true];
+        }
         $codBlock = null;
         $cashRecorded = false;
         if ($order->get_payment_method() === 'cod') {

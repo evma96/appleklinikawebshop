@@ -742,4 +742,8 @@ The previously pending Back Office source dependency is reconciled with the appr
 
 ## Accessory draft / mixed invoice release gate (2026-10-30)
 
-An overlapping native Store API draft rebuild can preserve a duplicate accessory behind an unchanged cart hash. The candidate now serializes the cart session before it is loaded and reconciles only unpaid linked-accessory drafts through Woo APIs. LOCAL reproduction and repair pass. The approved K.AFA used-iPhone / 27% accessory mapping passes the real vendor XML builder with unchanged gross prices. Actual issued TEST PDF acceptance is still required before closing this gate; see `docs/qa/accessory-draft-mixed-invoice.md`.
+An overlapping native Store API draft rebuild can preserve a duplicate accessory behind an unchanged cart hash. The candidate now serializes the cart session before it is loaded and reconciles only unpaid linked-accessory drafts through Woo APIs. LOCAL reproduction and repair pass. The approved K.AFA used-iPhone / 27% accessory mapping passes the real vendor XML builder with unchanged gross prices. Closed by issued TEST invoice E-APP-2026-17 on 2026-10-30: actual PDF has three intended product lines, K.AFA / 27% / 27%, gross 115000 HUF, exact approved note and device-only serial snapshot; three callback replays preserved the invoice and stock. Disposable QA order #801 was removed; provider/PDF evidence retained. See `docs/qa/accessory-draft-mixed-invoice.md`.
+
+## Order stock safety (2026-10-30)
+
+A verified Barion payment now revalidates physical-device stock under order/product locks before Woo marks the order paid. A late captured payment that lost its stock is recorded as an actionable exception, without a second stock deduction, invoice or fulfilment. Native Woo reservations and in-store cash remain unchanged. See [focused acceptance](docs/qa/order-stock-safety.md).

@@ -615,3 +615,7 @@ Approved Smart Selector, storefront/specification/performance and Barion-only pa
 Final approved Storefront/Back Office reconciliation, native verification and the bounded TEST release/rollback procedure are documented in [final integrated release](docs/qa/final-integrated-release.md). Device intake now uses the current shared Inventory service in the native authorized TEST runtime; the original LOCAL development environments remain separate.
 
 The focused accessory draft synchronization and approved mixed-invoice accounting setup are documented in [accessory draft and mixed invoice acceptance](docs/qa/accessory-draft-mixed-invoice.md). Only unpaid Store API drafts are reconciled; provider acceptance remains a separate sandbox gate.
+
+## Order stock safety (2026-10-30)
+
+A verified Barion payment now revalidates physical-device stock under order/product locks before Woo marks the order paid. A late captured payment that lost its stock is recorded as an actionable exception, without a second stock deduction, invoice or fulfilment. Native Woo reservations and in-store cash remain unchanged. See [focused acceptance](docs/qa/order-stock-safety.md).
