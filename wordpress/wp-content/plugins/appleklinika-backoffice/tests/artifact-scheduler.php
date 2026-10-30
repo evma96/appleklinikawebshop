@@ -16,13 +16,14 @@ namespace Appleklinika\BackOffice\Infrastructure {
  class GlsAutomation {function __construct($r){} function runScheduled($id){if($_POST!==[])throw new \RuntimeException('Ambient provider override');$o=\wc_get_order($id);++$GLOBALS['gls_calls'];$o->meta['_gls_print_label']='label.pdf';$o->meta['_gls_tracking_codes']=['123'];$o->meta['gls_label_file']='/private/label.pdf';}}
 }
 namespace Appleklinika\BackOffice\Application {
- class OrderLifecycle {function __construct(...$args){}function paymentConfirmed($id){if($_POST!==[])throw new \RuntimeException('Ambient provider override');$o=\wc_get_order($id);++$GLOBALS['invoice_calls'];$o->meta['_wc_szamlazz_invoice']='TEST';$o->meta['_wc_szamlazz_invoice_pdf']='invoice.pdf';$o->meta['invoice_file']='/private/invoice.pdf';}}
+ class OrderLifecycle {function __construct(...$args){}function paymentConfirmed($id){if($_POST!==[])throw new \RuntimeException('Ambient provider override');$o=\wc_get_order($id);if(!empty($o->meta['invoice_file']))return;++$GLOBALS['invoice_calls'];$o->meta['_wc_szamlazz_invoice']='TEST';$o->meta['_wc_szamlazz_invoice_pdf']='invoice.pdf';$o->meta['invoice_file']='/private/invoice.pdf';}}
 }
 namespace {
  if(PHP_SAPI!=='cli'){http_response_code(404);exit;}
  // The interface is needed before the namespace fake is declared (PHP declarations are deferred for implements).
  function wp_get_environment_type(){return $GLOBALS['env'];} function get_option($k,$d=false){return $GLOBALS['options'][$k]??$d;}
  function update_option($k,$v,$autoload){$GLOBALS['options'][$k]=$v;}
+ function do_action($hook,...$args){$GLOBALS['events'][]=[$hook,$args];}
  function doing_action($hook){return ($GLOBALS['hook']??'')===$hook;}
  function as_has_scheduled_action($h,$a,$g){return isset($GLOBALS['recurring'][$h]) || isset($GLOBALS['queue'][$h.':'.implode(',',$a)]);}
  function as_schedule_recurring_action($time,$interval,$hook,$args,$group,$unique){$GLOBALS['recurring'][$hook]=[$interval,$args,$group,$unique];}

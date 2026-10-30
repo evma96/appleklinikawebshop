@@ -88,6 +88,12 @@ final class OrderLifecycle
                 && ($this->store->notification($id, CustomerNotification::RECEIVED)['state'] ?? '') !== 'accepted') {
                 return 'waiting_acknowledgement';
             }
+            if ($event === CustomerNotification::SHIPPED
+                && (($order->submitted && ($this->store->notification($id, CustomerNotification::RECEIVED)['state'] ?? '') !== 'accepted')
+                    || ($this->store->notification($id, CustomerNotification::PAID)['state'] ?? '') !== 'accepted')) {
+                $this->store->issue($id, 'shipping_email_waiting_confirmation');
+                return 'waiting_confirmation';
+            }
             $record = $this->store->notification($id, $event);
             if (! CustomerNotification::mayAttempt($record)) {
                 return 'skipped';

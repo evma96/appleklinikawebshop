@@ -381,7 +381,7 @@ final class WooOrderBackOfficeRepository
     {
         $action = match ($document) {
             'invoice' => 'open_invoice',
-            'invoice_generation', 'invoice_generated', 'invoice_generation_failed' => $document,
+            'invoice_generation', 'invoice_generated', 'invoice_generation_failed', 'existing_invoice_recovered' => $document,
             'gls_label' => 'open_gls_label',
             'gls_label_generated', 'gls_automation_failed' => $document,
             'mpl_label' => 'open_mpl_label',

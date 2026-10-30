@@ -171,11 +171,11 @@ namespace {
     $invoice_order->meta = []; $invoice_provider->result = 'success';
     foreach (['production','staging'] as $env) {
         $invoice_environment = $env; $invoice_options['appleklinika_szamlazz_test_agent_sha256'] = '';
-        $reject(fn()=>$command->execute(529), 'TEST');
+        $reject(fn()=>$command->execute(529), 'igazolt');
     }
     $invoice_options['appleklinika_szamlazz_test_agent_sha256'] = hash('sha256', $invoice_provider->key);
     $invoice_options['home'] = 'https://appleklinika.com';
-    $reject(fn()=>$command->execute(529), 'TEST');
+    $reject(fn()=>$command->execute(529), 'igazolt');
     $invoice_options['home'] = 'https://teszt.appleklinika.com';
     $invoice_capability = false;
     $reject(fn()=>$command->execute(529), 'jogosultság');

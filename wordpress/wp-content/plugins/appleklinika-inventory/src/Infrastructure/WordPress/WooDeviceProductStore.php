@@ -39,7 +39,9 @@ final class WooDeviceProductStore implements DeviceProductStore
     public function apply(\WC_Product $p,array $plan): void
     {
         foreach($plan['photos'] as $id)$this->photos->sanitizeAttachment($id);
-        $type=$plan['inventory']['device_type'];$slug=['apple_watch'=>'apple-watch'][$type]??$type;
+        $type=$plan['inventory']['device_type'];
+        (new ApprovedMixedTaxConfiguration())->defaultForNewDevice($p, $type);
+        $slug=['apple_watch'=>'apple-watch'][$type]??$type;
         $category=get_term_by('slug',$slug,'product_cat');
         if(!$category)throw new InvalidArgumentException('A készülék Woo-kategóriája hiányzik; adminisztrátori beállítás szükséges.');
         $p->set_name($plan['title']);$p->set_status($plan['status']);

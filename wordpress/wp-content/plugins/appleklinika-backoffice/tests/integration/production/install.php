@@ -19,5 +19,5 @@ update_option('appleklinika_cash_pickup_enabled','yes');update_option('woocommer
 update_option('woocommerce_cod_settings',['enabled'=>'yes','enable_for_methods'=>['local_pickup']]);
 update_option('appleklinika_mpl_enabled','yes');update_option('appleklinika_mpl_api_enabled','no');
 update_option('woocommerce_manage_stock','yes');update_option('woocommerce_currency','HUF');
-update_option('woocommerce_calc_taxes','no');
+update_option('woocommerce_calc_taxes','yes');update_option('woocommerce_prices_include_tax','yes');update_option('woocommerce_default_country','HU');
 echo "Disposable Woo/HPOS installed; no imported data.\n";

@@ -75,13 +75,17 @@ from the reviewed clean public history, never from an old recovery bundle.
   SPF/DKIM/DMARC. Keep the existing failed/refund/account/password email paths.
 - No fatal/PHP leak/first-party 4xx/5xx, browser error, mobile overflow or trapped focus.
 
-## Open and first real activity (requires separate owner authorization)
+## Closed real-stock entry, then public opening (requires separate owner authorization)
 
-Only after the zero-catalog gate may Martin add each physical device through normal
+After recording the initial zero-catalog provisioning receipt, while public checkout
+remains closed, Martin may add each physical device through normal
 Woo admin: simple physical product, category/model/storage/color/grade, factual
 battery health, warranty/equipment, real price, managed stock 1/backorders off,
 individual sale, fresh main photo/gallery. No customer battery-choice UI.
-Verify card/detail/gallery/selectors/cart and no internal IMEI disclosure.
+Verify card/detail/gallery/selectors/cart and no internal IMEI disclosure. Then run
+the separate public-opening preflight, review actual product IDs, record its signed
+evidence and obtain explicit owner approval before opening purchases. Real inventory
+is allowed at this gate and must never be erased to recreate an empty catalog.
 
 Authorize one controlled real order separately, including recipient, amount and
 provider effects. Verify Barion/payment/invoice/customer delivery/GLS and prepaid personal-pickup

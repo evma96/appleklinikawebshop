@@ -33,7 +33,7 @@ final class ProductionTransportGuard
         $previous = libxml_use_internal_errors(true);
         try { $doc = simplexml_load_string($xml, \SimpleXMLElement::class, LIBXML_NONET); }
         finally { libxml_clear_errors(); libxml_use_internal_errors($previous); }
-        $key = $doc === false ? '' : (string)$doc->beallitasok->szamlaagentkulcs;
+        $key = $doc === false ? '' : (string)($doc->getName() === 'xmlszamlapdf' ? $doc->szamlaagentkulcs : $doc->beallitasok->szamlaagentkulcs);
         if ($key === '' || !ProductionReadiness::pinned('szamlazz',[$key]) || str_contains($xml,'<!DOCTYPE')) {
             throw new \RuntimeException('Production Agent request identity rejected.');
         }

@@ -30,6 +30,7 @@ if (!defined('APPLEKLINIKA_PRODUCTION_SAFETY_LOADED')) {
     (new Appleklinika\BackOffice\Interfaces\ProductionHooks())->register();
 }
 if (defined('WP_CLI') && WP_CLI) {
+    WP_CLI::add_command('appleklinika recover-existing-invoice', new Appleklinika\BackOffice\Interfaces\InvoiceRecoveryCommand());
     WP_CLI::add_command('appleklinika production-readiness', new Appleklinika\BackOffice\Interfaces\ProductionReadinessCommand());
 }
 

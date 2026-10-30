@@ -16,6 +16,7 @@ final class WooDeviceProductSafety
             (string) $product->get_meta('_appleklinika_device_model'),
             (string) $product->get_meta('_appleklinika_protection_group')
         );
+        (new ApprovedMixedTaxConfiguration())->defaultForNewAccessory($product);
         if ($product->get_meta(PhysicalDevice::MARKER) !== 'yes') {
             return; // Legacy/demo products are not silently migrated.
         }
@@ -29,6 +30,7 @@ final class WooDeviceProductSafety
             }
             PhysicalDevice::assertPublication($data);
         }
+        (new ApprovedMixedTaxConfiguration())->defaultForNewDevice($product, (string)$product->get_meta('_appleklinika_device_type'));
         PhysicalDevice::quantity($product->get_stock_quantity());
         if (!$product->is_type('simple') || !$product->get_manage_stock()
             || !$product->is_sold_individually() || $product->get_backorders() !== 'no') {

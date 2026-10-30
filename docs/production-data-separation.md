@@ -21,7 +21,7 @@ D = legal content owned by the legal approval process, unchanged here.
 | Administrators/employees | C | Recreate named approved humans with minimum roles; new credentials/MFA/recovery. No QA admin, shared password, application password or session token migration. |
 | Woo general/store/currency/tax/page configuration | A/C | Review non-secret values individually; regenerate target page IDs/URLs. Do not bulk-copy options/transients/scheduled actions. No invented tax or legal policy. |
 | Shipping rules | A/C | Preserve business model: GLS point/locker 1,490 / home 1,990; manual MPL point 1,040 / home 2,090; pickup 0 HUF. No generic free courier. Real dispatch/account details separately verified. |
-| BACS/payment selection | A | BACS intentionally OFF, instructions/description empty; do not request bank data. Barion online; cash only for personal pickup. |
+| BACS/payment selection | A | BACS intentionally OFF, instructions/description empty; do not request bank data. Barion only for all webshop orders, including personal pickup. COD/pay-at-pickup unavailable; separate Back Office in-store cash recording remains. |
 | Barion | A/C/B | Keep integration source. Configure separately approved live account/key/environment/callback URLs later. Never import sandbox keys, payment IDs or TEST callback jobs. |
 | Számlázz.hu | A/C/B | Keep adapters/email gates; separately authorize production service credentials and Woo PRO/site license. Do not transfer TEST invoice numbering/references/PDFs/retry jobs. Do not bypass licensing. |
 | GLS | A/C/B | Keep source/method model; separately authorize real sender/provider account and environment. No TEST parcels, tracking, labels or queued requests. |

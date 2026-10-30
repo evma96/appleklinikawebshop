@@ -179,9 +179,9 @@ namespace {
     $response->Status='Succeeded';$response->Total=999;$client->response=clone $response;$assert(str_contains($run('recheck_barion'),'nem egyezik') && !$order->paid,'Mismatched provider amount rejected.');$response->Total=1000;
     $response->PaymentId='foreign';$client->response=clone $response;$assert(str_contains($run('recheck_barion'),'nem egyezik'),'Foreign provider ID rejected.');$response->PaymentId='provider-id';
     $custom_callback=true;$client->response=clone $response;$assert(str_contains($run('recheck_barion'),'egyedi') && !$order->paid,'Existing custom callback policy not bypassed.');$custom_callback=false;
-    $order->meta['_barion_payment_close']=1;$assert(str_contains($run('recheck_barion'),'lezárási') && !$order->paid,'Closed inconsistent payment cannot be retried.');unset($order->meta['_barion_payment_close']);
-    $barion_env='live';$reject(fn()=>$run('recheck_barion'),'TEST');$barion_env='test';
-    $result=$run('recheck_barion');$assert($order->paid && $order->transaction==='REAL-PROVIDER-TXN' && $gateway->completions===1 && str_contains($result,'rögzítette'),'Succeeded exact provider evidence reuses existing gateway completion once.');
+    $order->meta['_barion_payment_close']=1; // Simulate interruption after the native callback marker, before payment_complete.
+    $barion_env='live';$reject(fn()=>$run('recheck_barion'),'igazolt');$barion_env='test';
+    $result=$run('recheck_barion');$assert($order->paid && $order->transaction==='REAL-PROVIDER-TXN' && $gateway->completions===1 && str_contains($result,'rögzítette'),'Interrupted closed-marker payment recovers once after independent exact provider evidence.');
     $reject(fn()=>$run('recheck_barion'),'rögzítve');$assert($gateway->completions===1,'No repeated completion after success.');
     $router=new \Appleklinika\BackOffice\Interfaces\BackOfficeRouter($repo);
     $_POST=['order_id'=>537,'backoffice_action'=>'resolve_shipping'];

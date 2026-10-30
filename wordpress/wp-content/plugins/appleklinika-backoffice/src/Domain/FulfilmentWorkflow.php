@@ -62,6 +62,7 @@ final class FulfilmentWorkflow
             'open_invoice' => 'Számla PDF megnyitása',
             'invoice_generation' => 'Számlázás helyreállításának indítása',
             'invoice_generated' => 'Számla kiállítva',
+            'existing_invoice_recovered' => 'Meglévő számla helyreállítva — új számla nélkül',
             'invoice_generation_failed' => 'Számlakiállítás — egyeztetés szükséges',
             'open_gls_label' => 'GLS címke PDF megnyitása',
             'gls_label_generated' => 'GLS címke automatikusan elkészült',

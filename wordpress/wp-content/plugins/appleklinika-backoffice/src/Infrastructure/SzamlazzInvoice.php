@@ -45,7 +45,7 @@ final class SzamlazzInvoice implements InvoiceIssuer
             return ['state' => 'configuration', 'label' => 'Számlázási kapcsolat ellenőrzése szükséges', 'reason' => $block];
         }
         $key = $this->selectedKey($order);
-        if ($key === '' || !$this->verifiedTestKey($key)) {
+        if ($key === '' || !$this->verifiedEnvironmentKey($key)) {
             return ['state' => 'configuration', 'label' => 'A kiválasztott számlázási fiók ellenőrzése szükséges', 'reason' => $block];
         }
         $skip = $this->automaticSkipReason($order);
@@ -133,8 +133,8 @@ final class SzamlazzInvoice implements InvoiceIssuer
         if ($key === '') {
             return 'Kiállítás nem indítható: ehhez a rendeléshez nincs beállított Számla Agent-kulcs.';
         }
-        if (! $this->verifiedTestKey($key)) {
-            return 'A rendeléshez kiválasztott számlázási fiók nem igazolt TEST-fiók, vagy nem TEST környezetben vagyunk. Kiállítás nem indítható.';
+        if (! $this->verifiedEnvironmentKey($key)) {
+            return 'A rendeléshez kiválasztott számlázási fiók nem igazolt fiók ebben a környezetben. Kiállítás nem indítható.';
         }
         $attempt = $order->get_meta(self::ATTEMPT, true);
         if ((is_array($attempt) && in_array($attempt['state'] ?? '', ['generating', 'failed', 'uncertain'], true))
@@ -180,7 +180,7 @@ final class SzamlazzInvoice implements InvoiceIssuer
         $_POST = [];
         $guard = function ($xml, $xmlOrder, $type) use ($id) {
             if (!$xmlOrder instanceof WC_Order || $xmlOrder->get_id() !== $id || $type !== 'invoice'
-                || !is_object($xml) || !$this->verifiedTestKey((string) ($xml->beallitasok->szamlaagentkulcs ?? ''))) {
+                || !is_object($xml) || !$this->verifiedEnvironmentKey((string) ($xml->beallitasok->szamlaagentkulcs ?? ''))) {
                 throw new \RuntimeException('Unverified invoice account at the provider boundary.');
             }
             return $xml;
@@ -236,8 +236,10 @@ final class SzamlazzInvoice implements InvoiceIssuer
         finally { $_POST = $post; }
     }
 
-    private function verifiedTestKey(string $key): bool
+    private function verifiedEnvironmentKey(string $key): bool
     {
+        if (!function_exists('wp_get_environment_type')) { return false; }
+        if (wp_get_environment_type() === 'production') { return class_exists(ProductionReadiness::class) && ProductionReadiness::allowed() && $key !== '' && ProductionReadiness::pinned('szamlazz', [$key]); }
         $home = strtolower((string) parse_url((string) get_option('home', ''), PHP_URL_HOST));
         if (!function_exists('wp_get_environment_type') || wp_get_environment_type() === 'production'
             || !in_array($home, ['teszt.appleklinika.com', 'localhost', '127.0.0.1'], true)) {

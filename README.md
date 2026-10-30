@@ -632,3 +632,9 @@ format, with read-back checksums, independent Mac download/decryption verificati
 are preserved. See [the operations guide](docs/storagebox-test-preparation.md) and
 [acceptance evidence](docs/qa/bx11-backup-20261030.md). External encrypted recovery-key
 custody still requires Martin's confirmation; production backup activation is not implied.
+
+## Red team remediation — 2026-10-30
+
+Closed production now rejects Store API draft writes before dispatch and guards classic/order-pay entry points. New eligible used iPhones receive the explicit K.AFA class; new protection accessories receive 27% without changing gross prices or other device-family defaults. Shipping notification dispatch waits for prerequisite acknowledgements/confirmation; recovery reuses native payment/stock/document operations.
+
+See [production reconciliation](docs/production-reconciliation.md), [activation and opening](docs/production-lifecycle-activation.md), and [remediation evidence](docs/qa/red-team-remediation-20261030.md). Initial empty provisioning and later public opening with reviewed real inventory are separate checks. Backup source is reproducible and versioned; production remains OFF. No provider transaction is needed to run the isolated production simulation.

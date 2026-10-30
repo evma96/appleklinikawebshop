@@ -20,12 +20,23 @@ final class BarionPaymentReview
     {
         WC()->payment_gateways()->payment_gateways();
         if (!self::$client || !self::$gateway) { return 'A telepített Barion kapcsolat nem érhető el. A meglévő Barion bővítmény / fiók beállítását kell helyreállítani; kézi fizetetté jelölés nincs.'; }
-        if (self::$gateway->get_option('environment') !== 'test' || !WooOrderReview::testEnvironment()) { return 'A Barion újraellenőrzése csak igazolt TEST-kapcsolattal engedélyezett ebben a körben.'; }
+        $valid = ProductionReadiness::production()
+            ? ProductionReadiness::allowed() && self::$gateway->get_option('environment') === 'live'
+            : WooOrderReview::testEnvironment() && self::$gateway->get_option('environment') === 'test';
+        if (!$valid) { return 'A Barion újraellenőrzéséhez igazolt, az adott környezethez engedélyezett kapcsolat szükséges.'; }
         if (!self::$gateway->get_barion_payment_id($order)) { return 'Nincs Barion fizetésazonosító a rendelésen. Az ügyfélnek a rendelés fizetési oldalán valódi Barion-fizetést kell indítania; kézi fizetetté jelölés nem helyettesítheti.'; }
         return null;
     }
 
     public static function recheck(\WC_Order $order): string
+    {
+        if (!current_user_can('manage_appleklinika_backoffice') && !current_user_can('manage_options')) {
+            throw new \InvalidArgumentException('Nincs rendelés-egyeztetési jogosultság.');
+        }
+        return (new WooOrderMutex())->synchronized($order->get_id(), static fn() => self::recheckLocked($order));
+    }
+
+    private static function recheckLocked(\WC_Order $order): string
     {
         if (($block = self::block($order)) !== null) { throw new \InvalidArgumentException($block); }
         $id = (string)self::$gateway->get_barion_payment_id($order);
@@ -64,7 +75,7 @@ final class BarionPaymentReview
         if (has_filter('woocommerce_barion_custom_callback_handler')) {
             return self::remember($fresh, $state, 'Barion: Succeeded, de egyedi visszahívás-kezelő aktív. Annak feldolgozását kell egyeztetni; a Back Office nem kerüli meg az egyedi fizetési szabályokat.');
         }
-        if ($fresh->get_meta('_barion_payment_close', true) || !in_array($fresh->get_status(), ['pending','failed'], true)) {
+        if (!in_array($fresh->get_status(), ['pending','failed','cancelled'], true)) {
             return self::remember($fresh, $state, 'Barion: Succeeded, de a rendelés állapota vagy a szolgáltató lezárási jelzője miatt a telepített Barion-kezelő nem enged biztonságos ismétlést. A visszahívás és a rendelés fizetési naplójának szolgáltatói egyeztetése szükséges.');
         }
         $transaction = '';
@@ -72,11 +83,16 @@ final class BarionPaymentReview
             if ((string)($row->POSTransactionId ?? '') === (string)$fresh->get_id() && is_string($row->TransactionId ?? null)) { $transaction = $row->TransactionId; break; }
         }
         if ($transaction === '') { return self::remember($fresh, $state, 'Barion: Succeeded, de nincs a rendeléshez illeszkedő valódi tranzakcióazonosító. Szolgáltatói egyeztetés szükséges.'); }
-        // Keep the gateway's closed-payment guard and its own completion/status mechanism.
-        $fresh->update_meta_data('_barion_payment_close', 1);
-        $fresh->save_meta_data();
-        self::$gateway->payment_complete($fresh, $transaction);
+        // A closed callback marker alone is not payment evidence. The existing
+        // native completion path still runs the shared stock/reservation admission.
+        // Interrupted/late payments can only proceed after this independent check.
+        try { self::$gateway->payment_complete($fresh, $transaction); }
+        catch (\Throwable) {
+            return self::remember(wc_get_order($fresh->get_id()), 'reconciliation_required',
+                'A Barion igazolja a fizetést, de a készlet vagy a feldolgozás egyeztetést igényel. Ne indíts új fizetést vagy számlát; ellenőrizd a rendelés kivételnaplóját.');
+        }
         $fresh = wc_get_order($fresh->get_id());
+        if ($fresh->is_paid()) { $fresh->update_meta_data('_barion_payment_close', 1); $fresh->save_meta_data(); }
         return self::remember($fresh, $state, $fresh->is_paid()
             ? 'Barion: Succeeded. A szolgáltatótól ellenőrzött fizetést a meglévő Barion-integráció rögzítette.'
             : 'Barion: Succeeded, de a WooCommerce visszaigazolás nem teljes. A visszahívás naplójának egyeztetése szükséges; új fizetést nem indítottunk.');
@@ -84,7 +100,7 @@ final class BarionPaymentReview
 
     private static function remember(\WC_Order $order, string $state, string $message): string
     {
-        $order->update_meta_data('_appleklinika_barion_review', ['state'=>$state,'message'=>$message,'at'=>current_time('mysql')]);
+        $order->update_meta_data('_appleklinika_barion_review', ['state'=>$state,'message'=>$message,'at'=>current_time('mysql'),'actor'=>get_current_user_id()]);
         $order->save_meta_data();
         return $message;
     }

@@ -22,7 +22,8 @@ final class ReconcileArtifacts
         $record = $this->store->journal($id, $kind);
         if ($facts['complete']) {
             // Also repairs the audit projection after successful provider persistence.
-            if (!empty($record['attempts']) && ($record['state'] ?? '') !== 'done') {
+            if (($record !== [] || ($facts['eligible'] && in_array($facts['attempt'], ['generating','failed','uncertain','document_missing'], true)))
+                && ($record['state'] ?? '') !== 'done') {
                 $this->store->audit($id, $kind, 'done', $kind . ':done');
                 $this->store->save($id, $kind, array_merge($record, ['state'=>'done','at'=>$now]));
             }

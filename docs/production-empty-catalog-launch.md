@@ -1,6 +1,6 @@
 # Production catalog boundary
 
-Owner decision, 2026-10-14: production intentionally starts with **zero products**.
+Owner decision, 2026-10-14: initial production provisioning intentionally starts with **zero products**.
 The current TEST/demo catalog is disposable functional-test data, not a production
 inventory source. Martin will add each real physical device manually with fresh,
 correct photographs and real device data after launch preparation.
@@ -19,10 +19,10 @@ to access or modify production now.
 2. Do not run development/demo product provisioners, fixture seeders or catalog
    imports on production. Installing application source is not authorization to
    populate the catalog. Ensure no scheduled/import job can repopulate demo data.
-3. Before opening customer traffic, use supported WordPress/WooCommerce CLI/API
+3. At initial provisioning, BEFORE real stock entry, use supported WordPress/WooCommerce CLI/API
    reads to count `product` and `product_variation` records across **all statuses**,
-   including drafts, private records, trash and any custom status. Both counts
-   must be zero. Stop the launch if any demo/test product is found; do not silently
+   including drafts, private records, trash and any custom status. Both initial counts
+   must be zero. Record the signed provisioning receipt; this is not the later public-opening check. Stop the launch if any demo/test product is found; do not silently
    delete an unexpected real device or customer record.
 4. Verify the storefront/search/category/featured sections contain no demo listing
    or stale product link and handle the empty catalog cleanly. Refresh relevant
@@ -103,3 +103,13 @@ was copied. Use HPOS (`woocommerce_custom_orders_table_enabled=yes`) as on appro
 TEST; legacy CPT is not the supported launch configuration for Back Office meta queries.
 Review Woo coming-soon state explicitly; fresh installation defaults may differ.
 No actual production deployment or destructive cleanup was exercised.
+
+## Public opening after real inventory entry — 2026-10-30
+
+Initial empty provisioning and public opening are separate gates. Martin adds real
+stock under closed/Coming Soon protection before public launch. The public-opening
+check allows explicitly reviewed real inventory with valid physical stock/identity;
+it rejects demo/QA records. Never delete real products to satisfy the old empty
+check. Use the current [activation sequence](production-lifecycle-activation.md).
+Barion only for all webshop shipping choices, including personal pickup; no BACS,
+COD or pay-at-pickup checkout. Buyback remains OFF at launch.

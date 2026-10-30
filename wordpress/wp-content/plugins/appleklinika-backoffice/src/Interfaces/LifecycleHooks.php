@@ -120,6 +120,11 @@ final class LifecycleHooks
                 // Release a paid notification that waited for acknowledgement.
                 $this->queue($id, CustomerNotification::PAID);
             }
+            if ($result === 'accepted' && $event === CustomerNotification::PAID) {
+                // Eligibility still requires a recorded carrier handoff. This only
+                // wakes a shipping message held behind the confirmation barrier.
+                $this->queue($id, CustomerNotification::SHIPPED);
+            }
             if ($result === 'failed' && ($this->store->notification($id, $event)['attempts'] ?? 0) < 3) {
                 // A known transport rejection is retryable. An uncertain send is not.
                 $this->queue($id, $event, 300);

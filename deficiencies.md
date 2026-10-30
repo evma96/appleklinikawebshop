@@ -1,3 +1,9 @@
+## 2026-10-30 red team remediation
+
+H1/H2/H3/H4 have targeted source fixes and offline/native validation; the matching TEST release is recorded in `docs/qa/red-team-remediation-20261030.md` and its external exact-SHA evidence. M1's verified encrypted BX11 upload/restore scripts, templates and installation workflow are source-controlled. No live providers or production environment were activated.
+
+Open independently: **H5** actual production LIVE credentials/account/site-license/readiness verification; **M2** dedicated business-queue/failure alerting beyond current infrastructure/backup monitoring; **M3** independent encrypted recovery-key custody (a physical drive is not required); **M4** GitHub historical object purge/support confirmation. SMTP acceptance order is enforced, but recipient Inbox order cannot be guaranteed. `make quality` remains placeholder lint/static targets, not comprehensive static analysis.
+
 # Deficiencies
 
 ## LOCAL performance fixes — 2026-10-28
