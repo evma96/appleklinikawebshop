@@ -3816,6 +3816,11 @@ function appleklinika_account_warranty_records(int $userId): array
             $product = $item->get_product();
             $productId = $product instanceof WC_Product ? $product->get_id() : 0;
             $warranty = $productId > 0 ? (string) get_post_meta($productId, '_appleklinika_warranty_duration', true) : '';
+            // Preserve pre-correction order terms without rewriting historical orders.
+            $previousTerms = $productId > 0 ? get_post_meta($productId, '_appleklinika_warranty_order_history', true) : [];
+            if (is_array($previousTerms) && array_key_exists($order->get_id(), $previousTerms)) {
+                $warranty = (string) $previousTerms[$order->get_id()];
+            }
 
             if ($warranty === '') {
                 continue;

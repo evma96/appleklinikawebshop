@@ -619,3 +619,7 @@ The focused accessory draft synchronization and approved mixed-invoice accountin
 ## Order stock safety (2026-10-30)
 
 A verified Barion payment now revalidates physical-device stock under order/product locks before Woo marks the order paid. A late captured payment that lost its stock is recorded as an actionable exception, without a second stock deduction, invoice or fulfilment. Native Woo reservations and in-store cash remain unchanged. See [focused acceptance](docs/qa/order-stock-safety.md).
+
+
+### Used-device warranty consistency (2026-10-30)
+Used-device demo warranty defaults now match the approved 12 months, independent of cosmetic grade. Missing warranty on newly entered supported devices defaults to 12 months; explicitly configured terms remain supported. The guarded LOCAL/TEST data correction preserves previous order terms in product metadata without rewriting orders. See `docs/qa/warranty-consistency.md`. Production and legal documents are unchanged.

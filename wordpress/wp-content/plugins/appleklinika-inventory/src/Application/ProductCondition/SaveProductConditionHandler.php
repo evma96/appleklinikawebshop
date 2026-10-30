@@ -53,7 +53,7 @@ final class SaveProductConditionHandler
             'case_size' => $caseSize,
             'case_material' => $caseMaterial,
             'strap' => $this->textValue($command->input, 'strap'),
-            'warranty_duration' => $this->textValue($command->input, 'warranty_duration'),
+            'warranty_duration' => $this->textValue($command->input, 'warranty_duration') ?: ($deviceType !== '' ? '12_months' : ''),
             'accessories' => $this->textareaValue($command->input, 'accessories'),
             'short_device_description' => $this->textareaValue($command->input, 'short_device_description'),
             'internal_identifier' => $this->textValue($command->input, 'internal_identifier'),
