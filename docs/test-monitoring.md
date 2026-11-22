@@ -2,11 +2,11 @@
 
 ## Independent public check
 
-`.github/workflows/test-availability.yml` checks the public TEST storefront and Back Office login with normal certificate validation every 15 minutes. It retries short maintenance interruptions, fails visibly in GitHub Actions and maintains one reusable GitHub issue. Only public endpoint names and generic failure codes enter the public issue. It never contains SSH access, response bodies, credentials or customer data. Enable GitHub notifications for that issue/repository to receive independent alerts.
+`.github/workflows/test-availability.yml` checks the existing public TEST storefront/login and the closed main/STAFF origins and login pages, plus the exact www redirect, with normal TLS validation every 15 minutes. Closed roots must return 401 with private/no-store and Cookie variance, without REVIEW basic-auth headers. Login 200 responses must contain the expected store title, native login fields and exact form destination; the TEST storefront must contain the installed theme and homepage markers. Arbitrary 200 responses and redirects to unrelated applications fail. It retries short maintenance interruptions, fails visibly in GitHub Actions and maintains one reusable GitHub issue. Only public endpoint names and generic failure codes enter the public issue. It never contains SSH access, response bodies, credentials or customer data. Enable GitHub notifications for that issue/repository to receive independent alerts.
 
-GitHub scheduled workflows run from the repository default branch, currently `feature/project-bootstrap`. Publish only the two monitoring files there through a normal fast-forward feature-branch update; never modify `main` or app source there. GitHub can delay scheduled jobs; public-repository schedules may be disabled after prolonged repository inactivity. Verify recent workflow runs as part of operational checks. This is a minimal availability monitor, not a guaranteed real-time paging service.
+GitHub scheduled workflows run from the repository default branch, currently `feature/project-bootstrap`. Publish only the two executable monitoring files and their directly necessary documentation there through a normal fast-forward feature-branch update; never modify `main` or app source there. GitHub can delay scheduled jobs; public-repository schedules may be disabled after prolonged repository inactivity. Verify recent workflow runs as part of operational checks. This is a minimal availability monitor, not a guaranteed real-time paging service.
 
-`--exercise` proves failure, duplicate suppression and recovery without stopping the server. The first workflow push runs this controlled drill; later scheduled runs check actual availability.
+`--exercise` proves failure, duplicate suppression and recovery without stopping the server. Publication and scheduled runs check actual availability only. The controlled drill is opt-in through workflow_dispatch and must not be used to claim email delivery without verifying the notification recipient.
 
 ## Internal material failures
 
@@ -19,3 +19,13 @@ Delivery state is root-private under `/var/lib/appleklinika-ops/alert-delivery.j
 Offline checks: `python3 scripts/operations/external-monitor.py --self-test` and `python3 scripts/operations/monitor-alert.py --self-test`.
 
 The monitor carries returned issue state through each run so delayed GitHub lists cannot duplicate the rapid failure/recovery drill. Existing exact-marker duplicate incidents are closed. Offline stale-list regression checks cover this behavior.
+
+
+## November 22 bounded extension evidence
+
+Seven targets run concurrently per attempt so an all-host outage cannot exhaust the five-minute job before incident reporting. 23 offline assertions cover identity, closed-route/header restrictions, redirect destination, incident deduplication/recovery and target aggregation. No secrets or response bodies enter issue content. Standard ubuntu-latest runs externally on GitHub; this repository is public, so standard hosted runner execution is free. No paid runner, artifact storage increase or spending change is enabled.
+
+The existing incident marker is retained to avoid duplicate incidents. There is no SMTP integration or imported webshop credential in this workflow. Verify the owner's GitHub email notification destination before the one authorized synthetic alert; distinguish issue creation, notification submission and confirmed Inbox delivery. A successful job alone is not receipt evidence. Recent runs show multi-hour scheduling gaps despite the 15-minute cron, and GitHub may delay/drop schedules under load or disable inactive public repository schedules.
+
+Sources: [GitHub billing](https://docs.github.com/en/actions/concepts/billing-and-usage), [scheduled event limitations](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule).
+

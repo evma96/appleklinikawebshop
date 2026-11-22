@@ -1,4 +1,4 @@
-name: TEST independent availability
+name: Closed main, STAFF and TEST independent availability
 on:
   schedule:
     - cron: '7,22,37,52 * * * *'
@@ -28,10 +28,10 @@ jobs:
           sparse-checkout: scripts/operations
       - name: Offline notification state checks
         run: python3 scripts/operations/external-monitor.py --self-test
-      - name: Public TEST endpoints and one incident
+      - name: Closed main, STAFF and TEST endpoints; one deduplicated incident
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          EXERCISE: ${{ inputs.exercise || github.event_name == 'push' }}
+          EXERCISE: ${{ inputs.exercise || false }}
         run: |
           if [ "$EXERCISE" = true ]; then
             python3 scripts/operations/external-monitor.py --exercise

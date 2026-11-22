@@ -108,3 +108,9 @@
 Independent TEST availability monitoring is documented in [docs/test-monitoring.md](docs/test-monitoring.md). This default feature branch carries only the public monitoring workflow; application deployment continues from `develop/post-deploy`.
 
 The monitor carries returned issue state through each run so delayed GitHub lists cannot duplicate the rapid failure/recovery drill. Existing exact-marker duplicate incidents are closed. Offline stale-list regression checks cover this behavior.
+
+
+## Closed main-domain monitoring follow-up — 2026-11-22
+
+The monitoring-only extension covers main/STAFF closed access, login identity and the exact www redirect, retaining TEST checks. 23 offline checks pass. The standard external runner uses the existing 15-minute best-effort schedule; observed delays are not an uptime SLA. GitHub issue notifications are the only configured channel in this workflow. Delivery to info@appleklinika.hu remains unverified; no webshop SMTP credential may be exported or repurposed. Publication/run success must be distinguished from an explicitly authorized synthetic alert and confirmed inbox receipt. No application deployment or LIVE operation is part of this change.
+

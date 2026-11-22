@@ -244,3 +244,9 @@ The seeder is idempotent by SKU, so rerunning it updates the same local selector
 Independent TEST availability monitoring is documented in [docs/test-monitoring.md](docs/test-monitoring.md). This default feature branch carries only the public monitoring workflow; application deployment continues from `develop/post-deploy`.
 
 The monitor carries returned issue state through each run so delayed GitHub lists cannot duplicate the rapid failure/recovery drill. Existing exact-marker duplicate incidents are closed. Offline stale-list regression checks cover this behavior.
+
+
+## Closed main-domain availability monitor — 2026-11-22
+
+The existing independent GitHub Actions monitor now includes the closed main and STAFF origins, their WordPress login pages and the www redirect, retaining the existing TEST targets. It validates TLS, the expected access restrictions and application identity rather than accepting an arbitrary HTTP 200 page. The standard hosted runner and existing 15-minute schedule are unchanged; scheduling is best effort. Notifications use the existing GitHub incident channel only; delivery to the owner's requested inbox must be verified separately. No webshop credentials, application deployment or financial operation is included. See [test-monitoring.md](docs/test-monitoring.md).
+
