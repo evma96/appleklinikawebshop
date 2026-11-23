@@ -3,10 +3,12 @@
 import argparse, datetime, json, os, ssl, time, urllib.error, urllib.request
 from html.parser import HTMLParser
 from concurrent.futures import ThreadPoolExecutor
+STOREFRONT_MODE = os.environ.get('STOREFRONT_MODE', 'closed')
+if STOREFRONT_MODE not in ('closed','open'): raise RuntimeError('Explicit closed/open monitor mode required')
 TARGETS = {
     'test_storefront': ('https://teszt.appleklinika.com/', 200),
     'test_backoffice_login': ('https://backoffice-teszt.appleklinika.com/wp-login.php', 200),
-    'closed_main': ('https://appleklinika.hu/', 401),
+    'main_storefront': ('https://appleklinika.hu/', 200 if STOREFRONT_MODE == 'open' else 401),
     'main_login': ('https://appleklinika.hu/wp-login.php', 200),
     'closed_staff': ('https://staff.appleklinika.hu/', 401),
     'staff_login': ('https://staff.appleklinika.hu/wp-login.php', 200),
@@ -47,7 +49,7 @@ def identity_error(url, body):
         brand='appleklinika.com' if 'backoffice-teszt.' in url else 'Apple Klinika'
         return None if (brand in page.title and 'WordPress' in page.title and
             {'loginform','user_login','user_pass'} <= page.ids and page.login_action==url) else 'application_identity_mismatch'
-    if url=='https://teszt.appleklinika.com/':
+    if url in ('https://teszt.appleklinika.com/','https://appleklinika.hu/'):
         return None if ('appleklinika' in page.title.lower() and
             {'appleklinika-theme-css','ak-product-search-field','ak-home-slide-0'} <= page.ids) else 'application_identity_mismatch'
     return 'unknown_identity_target'
@@ -151,8 +153,11 @@ def self_test():
     assert identity_error('https://teszt.appleklinika.com/',store) is None
     assert identity_error('https://teszt.appleklinika.com/','<title>appleklinika.com</title>')=='application_identity_mismatch'
     assert collect(lambda target: None)==[]
-    assert collect(lambda target: 'https_unavailable' if target==TARGETS['closed_main'] else None)==['closed_main:https_unavailable']
-    print('23 external-monitor identity/routing/privacy/dedup/recovery assertions passed; no network.')
+    assert collect(lambda target: 'https_unavailable' if target==TARGETS['main_storefront'] else None)==['main_storefront:https_unavailable']
+    assert identity_error('https://appleklinika.hu/',store) is None
+    assert identity_error('https://appleklinika.hu/','<title>Apple Klinika</title>')=='application_identity_mismatch'
+    assert identity_error('https://appleklinika.hu/',login)=='application_identity_mismatch'
+    print('26 external-monitor identity/routing/privacy/dedup/recovery assertions passed; no network.')
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--self-test',action='store_true');p.add_argument('--exercise',action='store_true');a=p.parse_args()

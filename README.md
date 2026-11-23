@@ -1,5 +1,10 @@
 # Appleklinika Webshop
 
+## Storefront monitoring mode — 2026-11-23
+
+The existing external workflow accepts `STOREFRONT_MODE=closed|open` (default `closed`). Closed mode requires the protected main-origin response; open mode requires HTTP 200 and the actual Apple Klinika homepage identity. STAFF remains private in either mode. A monitor mode change does not open the webshop. Set the repository variable to `open` only as part of a separately approved public opening, and restore `closed` if the storefront is closed again. Keep the existing schedule, one incident and notification deduplication; no application deployment or provider operation is part of this change. Offline checks cover both profiles. Workflow execution, notification submission and owner-confirmed Inbox delivery remain distinct evidence.
+
+
 Production-oriented WooCommerce webshop foundation for selling used Apple devices.
 
 ## Business Model

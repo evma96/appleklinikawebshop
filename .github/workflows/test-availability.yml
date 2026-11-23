@@ -32,6 +32,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           EXERCISE: ${{ inputs.exercise || false }}
+          STOREFRONT_MODE: ${{ vars.STOREFRONT_MODE || 'closed' }}
         run: |
           if [ "$EXERCISE" = true ]; then
             python3 scripts/operations/external-monitor.py --exercise

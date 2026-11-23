@@ -1,5 +1,10 @@
 # TEST monitoring and human alerts
 
+## Storefront monitoring mode — 2026-11-23
+
+The existing external workflow accepts `STOREFRONT_MODE=closed|open` (default `closed`). Closed mode requires the protected main-origin response; open mode requires HTTP 200 and the actual Apple Klinika homepage identity. STAFF remains private in either mode. A monitor mode change does not open the webshop. Set the repository variable to `open` only as part of a separately approved public opening, and restore `closed` if the storefront is closed again. Keep the existing schedule, one incident and notification deduplication; no application deployment or provider operation is part of this change. Offline checks cover both profiles. Workflow execution, notification submission and owner-confirmed Inbox delivery remain distinct evidence.
+
+
 ## Independent public check
 
 `.github/workflows/test-availability.yml` checks the existing public TEST storefront/login and the closed main/STAFF origins and login pages, plus the exact www redirect, with normal TLS validation every 15 minutes. Closed roots must return 401 with private/no-store and Cookie variance, without REVIEW basic-auth headers. Login 200 responses must contain the expected store title, native login fields and exact form destination; the TEST storefront must contain the installed theme and homepage markers. Arbitrary 200 responses and redirects to unrelated applications fail. It retries short maintenance interruptions, fails visibly in GitHub Actions and maintains one reusable GitHub issue. Only public endpoint names and generic failure codes enter the public issue. It never contains SSH access, response bodies, credentials or customer data. Enable GitHub notifications for that issue/repository to receive independent alerts.
