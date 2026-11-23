@@ -50,8 +50,9 @@ def identity_error(url, body):
         return None if (brand in page.title and 'WordPress' in page.title and
             {'loginform','user_login','user_pass'} <= page.ids and page.login_action==url) else 'application_identity_mismatch'
     if url in ('https://teszt.appleklinika.com/','https://appleklinika.hu/'):
-        return None if ('appleklinika' in page.title.lower() and
-            {'appleklinika-theme-css','ak-product-search-field','ak-home-slide-0'} <= page.ids) else 'application_identity_mismatch'
+        # Public titles are editorial/localized text. Identify the rendered shop
+        # by its theme, product search and homepage component instead.
+        return None if {'appleklinika-theme-css','ak-product-search-field','ak-home-slide-0'} <= page.ids else 'application_identity_mismatch'
     return 'unknown_identity_target'
 
 def check(target, opener=None):
@@ -157,7 +158,39 @@ def self_test():
     assert identity_error('https://appleklinika.hu/',store) is None
     assert identity_error('https://appleklinika.hu/','<title>Apple Klinika</title>')=='application_identity_mismatch'
     assert identity_error('https://appleklinika.hu/',login)=='application_identity_mismatch'
-    print('26 external-monitor identity/routing/privacy/dedup/recovery assertions passed; no network.')
+    # The same actual storefront must pass independently of title spelling or SEO text.
+    for url in ('https://appleklinika.hu/','https://teszt.appleklinika.com/'):
+        for title in ('Appleklinika','Apple Klinika','APPLE KLINIKA – Ellenőrzött készülékek',''):
+            assert identity_error(url,store.replace('appleklinika.com',title)) is None
+        for marker in ('appleklinika-theme-css','ak-product-search-field','ak-home-slide-0'):
+            assert identity_error(url,store.replace(marker,'missing-marker'))=='application_identity_mismatch'
+        assert identity_error(url,'<!-- '+store+' -->')=='application_identity_mismatch'
+    class PageResponse(Response):
+        status=200
+        headers={}
+        def read(self,limit): return store.replace('appleklinika.com','Apple Klinika').encode()[:limit]
+    class PageOpener:
+        def open(self,request,timeout): return PageResponse()
+    assert check(('https://appleklinika.hu/',200),PageOpener()) is None
+    class FailingOpener:
+        def __init__(self,error): self.error=error
+        def open(self,request,timeout): raise self.error
+    from io import BytesIO
+    faults=[
+        (urllib.error.HTTPError('https://appleklinika.hu/',503,'Unavailable',{},BytesIO()),'unexpected_http_status_503'),
+        (urllib.error.HTTPError('https://appleklinika.hu/',404,'Missing',{},BytesIO()),'unexpected_http_status_404'),
+        (ssl.SSLCertVerificationError('fixture certificate failure'),'https_unavailable'),
+        (urllib.error.URLError('fixture DNS failure'),'https_unavailable'),
+        (TimeoutError('fixture timeout'),'https_unavailable'),
+    ]
+    for fault,expected in faults:
+        error=check(('https://appleklinika.hu/',200),FailingOpener(fault))
+        assert error==expected
+        # Execute the unchanged incident/alert path with a fake GitHub API only.
+        state.clear();mutations.clear();reads.clear()
+        assert synchronize([['main_storefront:'+error],['main_storefront:'+error],[]],fake)==['create','unchanged','update']
+        assert mutations[0][0]=='POST' and mutations[-1][1]['state']=='closed' and len(mutations)==2
+    print('58 external-monitor identity/routing/privacy/HTTP/TLS/timeout/alert/recovery assertions passed; no network.')
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--self-test',action='store_true');p.add_argument('--exercise',action='store_true');a=p.parse_args()
